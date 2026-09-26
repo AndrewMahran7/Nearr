@@ -80,10 +80,10 @@ async function main() {
     'utf8',
   );
   const map = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
-  assert.match(coach, /AppState\.addEventListener[\s\S]{0,700}void refresh\(\)/,
-    'returning to the foreground refreshes the durable queue');
-  assert.match(coach, /isShareJobForTutorialFixture[\s\S]{0,700}observeOnboardingV2ShareReceived/,
-    'only the exact practice fixture advances receipt');
+  assert.match(coach, /deferOnboardingV2Practice/,
+    'legacy onboarding checkpoints receive a local compatibility continuation');
+  assert.doesNotMatch(coach, /AppState\.addEventListener|isShareJobForTutorialFixture|useOnboardingTutorialJobs|Linking\.openURL/,
+    'onboarding cannot consume the real share-extension queue');
   assert.match(map, /reconcileOnboardingV2SavedPlaces\(places\)/,
     'the host reconciles saved places after the user returns');
 

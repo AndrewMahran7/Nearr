@@ -103,7 +103,8 @@ assert.deepEqual(onboardingV2SyncCredentialDecision(restored, null), {
 const preAuth = read('components/onboarding/v2/OnboardingV2PreAuth.tsx');
 assert.match(preAuth, /<StartupSurface/);
 assert.match(preAuth, /useStartupWatchdog/);
-assert.match(preAuth, /ANONYMOUS_BOOTSTRAP_TIMEOUT_MS/);
+assert.match(preAuth, /selectOfflineOnboardingFixture/);
+assert.doesNotMatch(preAuth, /ANONYMOUS_BOOTSTRAP_TIMEOUT_MS|ensureAnonymousSession|useAuth/);
 assert.doesNotMatch(preAuth, /return <View style=\{styles\.loading\} \/>/);
 assert.equal(ANONYMOUS_BOOTSTRAP_TIMEOUT_MS, 12_000);
 const adapter = read('lib/onboardingV2.ts');

@@ -158,12 +158,12 @@ assert.equal((root.match(/expectedOnboardingV2Route\(/g) ?? []).length, 1);
 pass('12 root max-update-depth guard remains the sole V2 navigation authority');
 
 const preAuth = read('components/onboarding/v2/OnboardingV2PreAuth.tsx');
-assert.match(preAuth, /identityLifecycle === 'anonymous_active'/);
-assert.doesNotMatch(preAuth, /identityLifecycle !== 'none'/);
+assert.match(preAuth, /selectOfflineOnboardingFixture/);
+assert.doesNotMatch(preAuth, /useAuth|ensureAnonymousSession|identityLifecycle !== 'none'/);
 assert.doesNotMatch(preAuth, /Pick up where you left off|router\.replace\('\/activate'\)/);
 const anonymousRuntime = read('lib/anonymousOnboarding.ts');
 assert.match(anonymousRuntime, /discardOnboardingV2CheckpointForMissingIdentity/);
 assert.match(anonymousRuntime, /onboardingV2ResumeEligibility/);
-pass('invalid persisted identities self-heal instead of entering the resume surface');
+pass('invalid persisted identities self-heal while pre-auth onboarding stays local');
 
 console.log('\nAll deleted-account Onboarding V2 regression scenarios passed.');

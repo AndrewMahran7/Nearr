@@ -3,6 +3,7 @@ import { getOnboardingStatus } from '@/lib/onboarding';
 import { isOnboardingV2Enabled } from '@/lib/featureFlags';
 import {
   bypassOnboardingV2ForExistingUser,
+  completeOnboardingV2PermanentAccountLink,
   getOnboardingV2State,
 } from '@/lib/onboardingV2';
 import { finishOnboardingAccountTransition } from '@/lib/anonymousOnboarding';
@@ -36,13 +37,22 @@ export async function resolvePostAuthRoute(userId: string): Promise<PostAuthRout
       if (!session || session.user.id !== userId || session.user.is_anonymous === true) {
         throw new Error('permanent_onboarding_session_not_ready');
       }
-      const transition = await finishOnboardingAccountTransition(session.user);
-      continueOnboardingV2 = transition.continueOnboardingV2;
-      if (!continueOnboardingV2) {
-        onboardingTransferRoute = resolveOpenSavedPlaceRoute({
-          savedPlaceId: transition.tutorialSavedPlaceId,
-          source: 'onboarding_tutorial',
+      if (state.tutorialResult?.resolutionSource === 'onboarding_scripted' &&
+          state.identityLifecycle === 'none') {
+        const next = await completeOnboardingV2PermanentAccountLink({
+          permanentUserId: userId,
+          destinationWasEstablished: false,
         });
+        continueOnboardingV2 = next.stage === 'auth_success';
+      } else {
+        const transition = await finishOnboardingAccountTransition(session.user);
+        continueOnboardingV2 = transition.continueOnboardingV2;
+        if (!continueOnboardingV2) {
+          onboardingTransferRoute = resolveOpenSavedPlaceRoute({
+            savedPlaceId: transition.tutorialSavedPlaceId,
+            source: 'onboarding_tutorial',
+          });
+        }
       }
     }
   }

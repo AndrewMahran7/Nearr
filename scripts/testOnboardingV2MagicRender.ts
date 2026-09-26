@@ -14,7 +14,7 @@ import {
   startOnboardingV2,
   type OnboardingTutorialFixture,
 } from '../lib/onboardingV2Core';
-import { onboardingTutorialPreviewUrl } from '../lib/onboardingTutorialPreview';
+import * as offlineFixtures from '../onboarding/fixtures/offlineOnboardingFixtures';
 
 // Render the real affected component with small host mocks, then enforce the
 // React Native invariant that raw text may only appear below a Text host node.
@@ -61,7 +61,10 @@ Module._load = function mockedLoad(request, parent, isMain) {
     SocialToMapIllustration: (props: any) => React.createElement('SocialToMapIllustration', props),
     useOnboardingReduceMotion: () => reduceMotion,
   };
-  if (request === '@/lib/onboardingTutorialPreview') return { onboardingTutorialPreviewUrl };
+  if (request === '@/onboarding/assets/offlineOnboardingAssets') return {
+    offlineOnboardingAsset: (key: string) => ({ uri: `bundle:${key}` }),
+  };
+  if (request === '@/onboarding/fixtures/offlineOnboardingFixtures') return offlineFixtures;
   if (request.startsWith('@/')) return new Proxy({}, { get: () => () => undefined });
   return originalLoad(request, parent, isMain);
 };
@@ -84,9 +87,10 @@ function assertNativeTextInvariant(node: JsonNode, insideText = false): void {
   for (const child of node.children ?? []) assertNativeTextInvariant(child as JsonNode, nextInsideText);
 }
 
+const renderedOfflineFixture = offlineFixtures.selectOfflineOnboardingFixture('instagram', 'outdoors');
 const state = {
   preferredPlatform: 'instagram',
-  tutorialFixture: { thumbnailUrl: 'https://images.example/source.jpg' },
+  tutorialFixture: offlineFixtures.toOnboardingTutorialFixture(renderedOfflineFixture, '2026-09-10T12:00:00.000Z'),
 } as any;
 
 type ScheduledTimer = { id: number; delay: number; callback: () => void; cleared: boolean };
@@ -116,14 +120,17 @@ try {
     processing = TestRenderer.create(React.createElement(ProcessingScreen, { state, failed: false, onRetry() {} }));
   });
   assertNativeTextInvariant(processing.toJSON());
-  assert.match(textContent(processing.toJSON()), /Looking at the post/, 'zero/initial processing state renders');
+  assert.match(textContent(processing.toJSON()), /Post received/, 'zero/initial processing state renders');
   const firstStep = timers.find((timer) => timer.delay === 420 && !timer.cleared);
-  const secondStep = timers.find((timer) => timer.delay === 840 && !timer.cleared);
-  assert.ok(firstStep && secondStep, 'normal-motion processing schedules both delayed steps');
+  const secondStep = timers.find((timer) => timer.delay === 900 && !timer.cleared);
+  const thirdStep = timers.find((timer) => timer.delay === 1380 && !timer.cleared);
+  assert.ok(firstStep && secondStep && thirdStep, 'normal-motion processing schedules all deterministic delayed steps');
   TestRenderer.act(() => firstStep.callback());
-  assert.match(textContent(processing.toJSON()), /Finding visual clues/, 'first delayed step renders');
+  assert.match(textContent(processing.toJSON()), /Scanning video/, 'first delayed step renders');
   TestRenderer.act(() => secondStep.callback());
-  assert.match(textContent(processing.toJSON()), /Matching places/, 'second delayed step renders');
+  assert.match(textContent(processing.toJSON()), /Looking for clues/, 'second delayed step renders');
+  TestRenderer.act(() => thirdStep.callback());
+  assert.match(textContent(processing.toJSON()), /Matching the place/, 'third delayed step renders');
   assertNativeTextInvariant(processing.toJSON());
   processing.unmount();
 
@@ -132,40 +139,19 @@ try {
   TestRenderer.act(() => {
     reduced = TestRenderer.create(React.createElement(ProcessingScreen, { state, failed: false, onRetry() {} }));
   });
-  assert.match(textContent(reduced.toJSON()), /Matching places/, 'Reduce Motion reaches the stable final processing step without animation timers');
+  assert.match(textContent(reduced.toJSON()), /Matching the place/, 'Reduce Motion reaches the stable final processing step without animation timers');
   assertNativeTextInvariant(reduced.toJSON());
   reduced.unmount();
   reduceMotion = false;
 
-  const instagramFixture: OnboardingTutorialFixture = {
-    id: '93b1ded0-02ae-49c6-a03f-1786162fde2f', revision: 8, role: 'primary', platform: 'instagram',
-    identityKey: 'v1:instagram:C9Z963muLHI', identityVersion: 1, contentId: 'C9Z963muLHI',
-    canonicalUrl: 'https://www.instagram.com/reel/C9Z963muLHI/', launchUrl: 'https://www.instagram.com/reel/C9Z963muLHI/',
-    thumbnailUrl: null, selectedAt: '2026-09-10T12:00:00.000Z',
-  };
-  const youtubeFixture: OnboardingTutorialFixture = {
-    ...instagramFixture, id: '1c19f2d2-a020-4508-9fe3-ef9ef8bb052a', platform: 'youtube',
-    identityKey: 'v1:youtube:rrKmN3zZ0lM', contentId: 'rrKmN3zZ0lM',
-    canonicalUrl: 'https://www.youtube.com/watch?v=rrKmN3zZ0lM', launchUrl: 'https://www.youtube.com/watch?v=rrKmN3zZ0lM',
-  };
-  assert.equal(
-    onboardingTutorialPreviewUrl('instagram', instagramFixture.contentId),
-    'https://www.instagram.com/p/C9Z963muLHI/media/?size=l',
-    'a missing Instagram endpoint field resolves to the exact source poster route',
-  );
-  assert.equal(
-    onboardingTutorialPreviewUrl('youtube', youtubeFixture.contentId),
-    'https://i.ytimg.com/vi/rrKmN3zZ0lM/hqdefault.jpg',
-  );
+  const instagramFixture = offlineFixtures.toOnboardingTutorialFixture(offlineFixtures.selectOfflineOnboardingFixture('instagram', 'outdoors'), '2026-09-10T12:00:00.000Z');
+  const youtubeFixture = offlineFixtures.toOnboardingTutorialFixture(offlineFixtures.selectOfflineOnboardingFixture('youtube', 'food'), '2026-09-10T12:00:00.000Z');
 
   let instagram!: ReturnType<typeof TestRenderer.create>;
   TestRenderer.act(() => {
     instagram = TestRenderer.create(React.createElement(ChallengeSourcePreview, { fixture: instagramFixture, preferredPlatform: 'instagram' }));
   });
-  assert.equal(instagram.root.findByProps({ testID: 'onboarding-source-preview-image' }).props.source.uri, 'https://www.instagram.com/p/C9Z963muLHI/media/?size=l');
-  assert.ok(instagram.root.findByProps({ testID: 'onboarding-source-preview-loading' }), 'preview has an explicit loading state');
-  TestRenderer.act(() => instagram.root.findByProps({ testID: 'onboarding-source-preview-image' }).props.onLoad());
-  assert.equal(instagram.root.findAllByProps({ testID: 'onboarding-source-preview-loading' }).length, 0);
+  assert.equal(instagram.root.findByProps({ testID: 'onboarding-source-preview-image' }).props.source.uri, 'bundle:dorset_quarry');
   assertNativeTextInvariant(instagram.toJSON());
   instagram.unmount();
 
@@ -173,33 +159,9 @@ try {
   TestRenderer.act(() => {
     youtube = TestRenderer.create(React.createElement(ChallengeSourcePreview, { fixture: youtubeFixture, preferredPlatform: 'youtube' }));
   });
-  assert.equal(youtube.root.findByProps({ testID: 'onboarding-source-preview-image' }).props.source.uri, 'https://i.ytimg.com/vi/rrKmN3zZ0lM/hqdefault.jpg');
+  assert.equal(youtube.root.findByProps({ testID: 'onboarding-source-preview-image' }).props.source.uri, 'bundle:food_cafe');
   assertNativeTextInvariant(youtube.toJSON());
   youtube.unmount();
-
-  let fallback!: ReturnType<typeof TestRenderer.create>;
-  TestRenderer.act(() => {
-    fallback = TestRenderer.create(React.createElement(ChallengeSourcePreview, { fixture: instagramFixture, preferredPlatform: 'youtube' }));
-  });
-  assert.ok(fallback.root.findByProps({ testID: 'onboarding-source-preview-fallback' }), 'platform mismatch stays honestly Nearr-branded');
-  assert.equal(fallback.root.findAllByProps({ testID: 'onboarding-source-preview-image' }).length, 0);
-  assertNativeTextInvariant(fallback.toJSON());
-  fallback.unmount();
-
-  let failed!: ReturnType<typeof TestRenderer.create>;
-  TestRenderer.act(() => {
-    failed = TestRenderer.create(React.createElement(ChallengeSourcePreview, { fixture: instagramFixture, preferredPlatform: 'instagram' }));
-  });
-  TestRenderer.act(() => failed.root.findByProps({ testID: 'onboarding-source-preview-image' }).props.onError());
-  assert.ok(failed.root.findByProps({ testID: 'onboarding-source-preview-failed' }), 'image failure is explicit');
-  TestRenderer.act(() => failed.root.findByProps({ accessibilityLabel: 'Retry source preview' }).props.onPress());
-  assert.match(failed.root.findByProps({ testID: 'onboarding-source-preview-image' }).props.source.uri, /nearr_preview_retry=1$/, 'retry forces a new source request');
-  const loadTimeout = [...timers].reverse().find((timer) => timer.delay === 12_000 && !timer.cleared);
-  assert.ok(loadTimeout, 'a stalled request has a bounded loading state');
-  TestRenderer.act(() => loadTimeout.callback());
-  assert.ok(failed.root.findByProps({ testID: 'onboarding-source-preview-failed' }), 'a stalled preview becomes retryable instead of remaining a placeholder');
-  assertNativeTextInvariant(failed.toJSON());
-  failed.unmount();
 
   const started = startOnboardingV2(createInitialOnboardingV2State('2026-09-10T12:00:00.000Z'), '2026-09-10T12:00:01.000Z').state;
   const bound = bindAnonymousUser(started, 'anonymous-user', '11111111-1111-4111-8111-111111111111', '2026-09-10T12:00:02.000Z').state;
@@ -209,21 +171,14 @@ try {
   const more = advanceOnboardingSharingRehearsal(shared, 'more', '2026-09-10T12:00:05.000Z').state;
   const pending = beginOnboardingInAppTutorialResolution(more, '2026-09-10T12:00:06.000Z').state;
   assert.equal(pending.stage, 'tutorial_processing');
-  assert.equal(pending.tutorialJobId, null, 'pending render is valid before the create-job acknowledgement');
+  assert.equal(pending.tutorialJobId, `onboarding-scripted-job:${renderedOfflineFixture.id}`, 'local processing has a deterministic synthetic job identity');
   const resumed = decodeOnboardingV2State(encodeOnboardingV2State(pending), '2026-09-10T12:00:04.000Z');
   assert.equal(resumed.pendingShare?.attemptId, pending.pendingShare?.attemptId, 'persisted resume keeps the stable idempotency key');
   assert.equal(resumed.stage, 'tutorial_processing');
 
-  const result = {
-    jobId: 'tutorial-job', savedPlaceId: 'saved-dorset', fixtureId: instagramFixture.id,
-    fixtureRevision: instagramFixture.revision, fixtureRole: instagramFixture.role,
-    resolutionSource: 'tutorial_fixture' as const, sourceUrl: instagramFixture.canonicalUrl,
-    place: { googlePlaceId: 'ChIJG9E4hIhd4IkRwN0jnyQ9-F4', name: 'Dorset Marble Quarry', formattedAddress: 'Dorset, Vermont', latitude: 43.23596, longitude: -73.08348, primaryType: null, typeLabel: null, photoUrl: null, photoUrls: [] },
-  };
-  const fastObserved = observeOnboardingTutorialJob(pending, { jobId: result.jobId, sourceUrl: result.sourceUrl }, '2026-09-10T12:00:03.100Z').state;
-  assert.equal(resolveOnboardingTutorialResult(fastObserved, result, '2026-09-10T12:00:03.200Z').state.stage, 'tutorial_reveal', 'fast completion is accepted');
-  const delayedObserved = observeOnboardingTutorialJob(resumed, { jobId: result.jobId, sourceUrl: result.sourceUrl }, '2026-09-10T12:00:20.000Z').state;
-  assert.equal(resolveOnboardingTutorialResult(delayedObserved, result, '2026-09-10T12:00:21.000Z').state.stage, 'tutorial_reveal', 'delayed completion after persisted resume is accepted');
+  const result = offlineFixtures.buildOfflineOnboardingResult(renderedOfflineFixture);
+  assert.equal(resolveOnboardingTutorialResult(pending, result, '2026-09-10T12:00:03.200Z').state.stage, 'tutorial_reveal', 'fast scripted completion is accepted');
+  assert.equal(resolveOnboardingTutorialResult(resumed, result, '2026-09-10T12:00:21.000Z').state.stage, 'tutorial_reveal', 'scripted completion after persisted resume is accepted');
 } finally {
   global.setTimeout = realSetTimeout;
   global.clearTimeout = realClearTimeout;

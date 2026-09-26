@@ -139,8 +139,9 @@ assert.doesNotMatch(
   /const handleSelectMapCategory[\s\S]{0,700}(closeOnboarding|router\.|replace\(|dismiss)/,
   'filter selection does not dismiss or navigate onboarding',
 );
-assert.match(coach, /isOnboardingV2Phase2MapState/);
-assert.match(coach, /loadOnboardingPracticeFixture/);
+assert.match(coach, /state\?\.stage !== 'practice_ready'/);
+assert.match(coach, /deferOnboardingV2Practice/);
+assert.doesNotMatch(coach, /loadOnboardingPracticeFixture|useOnboardingTutorialJobs|Linking\.openURL/);
 assert.match(coach, /style=\{\[styles\.dock, \{ top: topOffset \}\]\}/);
 assert.doesNotMatch(coach, /useSafeAreaInsets|PHASE2_MAP_CHROME_CLEARANCE/);
 

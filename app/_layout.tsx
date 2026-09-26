@@ -463,6 +463,10 @@ function AuthGate({
       // Canonical shared places are public. Authentication is requested only
       // if the recipient chooses Save to my map.
       if (inSharedPlace) return;
+      if (expectedV2Route === '/(onboarding)/account' && !inAuth) {
+        replaceOnce(expectedV2Route);
+        return;
+      }
       if (!inAuth && !inOnboarding) {
         replaceOnce('/(onboarding)');
       }

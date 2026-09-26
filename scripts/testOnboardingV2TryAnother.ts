@@ -135,8 +135,8 @@ assert.equal(restoredTwo.stage, 'first_independent_save_complete');
 assert.equal(restoredTwo.practiceContentIds[1], replacementTwo.source.id);
 pass(7, '2/3 Try another and force-close preserve the replacement preview');
 
-// 8-10. Legacy pool exhaustion remains pure; the first-run surface now uses
-// one server-selected fixture with an explicit unavailable/deferral state.
+// 8-10. Legacy pool exhaustion remains pure; old checkpoints now receive a
+// local compatibility continuation with no live fixture or social launch.
 const exhausted = getNextPracticeSource({
   platform: 'instagram',
   interest: 'food',
@@ -145,11 +145,10 @@ const exhausted = getNextPracticeSource({
 });
 assert.deepEqual(exhausted, { kind: 'EXHAUSTED' });
 const coachmark = readFileSync(join(process.cwd(), 'components/onboarding/v2/OnboardingV2MapCoachmark.tsx'), 'utf8');
-assert.match(coachmark, /Practice is unavailable right now/);
-assert.match(coachmark, /Try later/);
-pass(8, 'server fixture exhaustion has a visible bounded fallback');
-const openBody = coachmark.slice(coachmark.indexOf('async function openSource'), coachmark.indexOf("if (recoveryVisible)"));
-assert.doesNotMatch(openBody, /router\.(replace|push)|\/(tabs)\/map/);
+assert.match(coachmark, /Continue with your local walkthrough/);
+assert.match(coachmark, /deferOnboardingV2Practice/);
+assert.doesNotMatch(coachmark, /loadOnboardingPracticeFixture|Linking\.openURL|router\.(replace|push)/);
+pass(8, 'legacy fixture exhaustion has a visible local continuation');
 pass(9, 'practice launch never performs a route reset');
 assert.equal(one.behavioralCompletedAt, null);
 assert.equal(two.behavioralCompletedAt, null);
@@ -161,7 +160,8 @@ pass(10, 'Try another never writes completion or graduation');
 const preAuth = readFileSync(join(process.cwd(), 'components/onboarding/v2/OnboardingV2PreAuth.tsx'), 'utf8');
 assert.match(preAuth, /<StartupSurface/);
 assert.match(preAuth, /useStartupWatchdog/);
-assert.match(preAuth, /ANONYMOUS_BOOTSTRAP_TIMEOUT_MS/);
+assert.match(preAuth, /selectOfflineOnboardingFixture/);
+assert.doesNotMatch(preAuth, /ANONYMOUS_BOOTSTRAP_TIMEOUT_MS|useAuth/);
 pass(11, 'post-delete black-screen fail-safe remains intact');
 assert.match(readFileSync(join(process.cwd(), 'services/accountService.ts'), 'utf8'), /finishAccountDeletionCleanupBoundary/);
 pass(12, 'account-deletion identity boundary remains intact');

@@ -73,15 +73,14 @@ assert.match(
   'map dismissal owns the single durable Place Detail close transition',
 );
 
-// 5-7: the legacy permanent-account pool remains deterministic while the
-// first-run anonymous flow uses a server-selected exact fixture.
+// 5-7: the retired permanent-account practice pool stays deterministic, while
+// first-run onboarding no longer reaches any live practice loader or social app.
 const pool = selectPracticeContent({ platform: 'tiktok', interest: 'food', excludeContentIds: [tutorialSave.contentId] });
 assert.equal(pool[0]?.platform, 'tiktok');
 assert.equal(pool[0]?.category, 'food');
-assert.match(coach, /loadOnboardingPracticeFixture/);
-assert.match(coach, /onboardingTutorialPreviewUrl\(fixture\.platform, fixture\.contentId/);
-assert.match(coach, /Linking\.openURL\(fixture\.launchUrl\)/);
-assert.match(coach, /A verified.*practice pair is not available yet/);
+assert.match(coach, /deferOnboardingV2Practice/);
+assert.match(coach, /Continue with your local walkthrough/);
+assert.doesNotMatch(coach, /loadOnboardingPracticeFixture|onboardingTutorialPreviewUrl|Linking\.openURL|useOnboardingTutorialJobs/);
 
 const first = pool[0]!;
 state = practiceState();
@@ -211,9 +210,8 @@ const preAuth = readFileSync(
   join(root, 'components/onboarding/v2/OnboardingV2PreAuth.tsx'),
   'utf8',
 );
-assert.match(preAuth, /useAuth\(\)/);
-assert.match(preAuth, /ANONYMOUS_BOOTSTRAP_TIMEOUT_MS/);
-assert.match(preAuth, /anonymousSessionReady/);
+assert.match(preAuth, /selectOfflineOnboardingFixture/);
+assert.doesNotMatch(preAuth, /useAuth\(\)|ANONYMOUS_BOOTSTRAP_TIMEOUT_MS|anonymousSessionReady/);
 assert.match(preAuth, /<StartupSurface/);
 assert.match(preAuth, /useStartupWatchdog/);
 

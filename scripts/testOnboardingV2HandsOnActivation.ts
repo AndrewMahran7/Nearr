@@ -65,9 +65,10 @@ for (const marker of ['tutorial_ready: 0.44', 'tutorial_share_tapped: 0.5', 'tut
 for (const marker of ['progress={0.73}', 'progress={0.8}', 'progress={0.84}', 'progress={0.87}', 'progress={0.93}', 'progress={1}']) assert.match(secondHalf, new RegExp(marker.replace(/[{}\.]/g, '\\$&')));
 assert.doesNotMatch(secondHalf, /Linking\.openURL\(url\)|instagram\.com\/['"]/i, 'final activation never opens a generic social feed');
 assert.match(secondHalf, /router\.replace\('\/\(tabs\)\/map'\)/, 'final exit opens the ordinary map without a repeated focus instruction');
-assert.match(coach, /Practice sharing/);
+assert.match(coach, /Continue with your local walkthrough/);
+assert.doesNotMatch(coach, /useOnboardingTutorialJobs|Linking\.openURL|loadOnboardingPracticeFixture/);
 assert.match(map, /recordOnboardingV2MapEntered\(liveData\.some/);
-assert.match(preAuth, /onboardingTutorialSourceAsset\(state\.tutorialFixture\.contentId\)/);
+assert.match(preAuth, /offlineOnboardingAsset/);
 assert.doesNotMatch(preAuth, /ONE LAST CHOICE|Favorites yet/);
 assert.match(immersive, /useWindowDimensions/);
 assert.match(immersive, /minHeight: 84|width: 50, height: 50/);

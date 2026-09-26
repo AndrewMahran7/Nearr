@@ -78,7 +78,7 @@ export type OnboardingTutorialResult = {
   fixtureId: string;
   fixtureRevision: number;
   fixtureRole: 'primary' | 'backup';
-  resolutionSource: 'tutorial_fixture';
+  resolutionSource: 'tutorial_fixture' | 'onboarding_scripted';
   sourceUrl: string;
   place: {
     googlePlaceId: string;
@@ -910,17 +910,20 @@ export function receiveOnboardingTutorialFixture(
   }]);
 }
 
-/** Start the first save without leaving Nearr. The ordinary share-job endpoint
- * still performs the save; this transition only creates the same durable,
- * exact-source attempt that the external share path uses. */
+/** Start the local first-save lesson without leaving Nearr or creating a job. */
 export function beginOnboardingInAppTutorialResolution(
   state: OnboardingV2State,
   now: string,
 ): OnboardingTransition {
   const fixture = state.tutorialFixture;
   if (state.stage !== 'tutorial_more_tapped' || !fixture) return unchanged(state);
-  const normalizedSourceUrl = normalizeOnboardingSourceUrl(fixture.canonicalUrl);
+  const normalizedSourceUrl = fixture.canonicalUrl.startsWith('onboarding://')
+    ? fixture.canonicalUrl.toLowerCase()
+    : normalizeOnboardingSourceUrl(fixture.canonicalUrl);
   if (!normalizedSourceUrl) return unchanged(state);
+  const scriptedJobId = fixture.canonicalUrl.startsWith('onboarding://')
+    ? `onboarding-scripted-job:${fixture.id}`
+    : null;
   const pendingShare: PendingOnboardingShare = {
     attemptId: `tutorial-in-app:${fixture.id}:${now}`,
     kind: 'tutorial',
@@ -936,8 +939,8 @@ export function beginOnboardingInAppTutorialResolution(
     stage: 'tutorial_processing',
     pendingShare,
     tutorialLaunchedAt: now,
-    tutorialShareReceivedAt: null,
-    tutorialJobId: null,
+    tutorialShareReceivedAt: scriptedJobId ? now : null,
+    tutorialJobId: scriptedJobId,
     tutorialResult: null,
     wrongShareJobId: null,
     lastFailure: null,
@@ -1084,7 +1087,8 @@ export function resolveOnboardingTutorialResult(
   if (state.stage !== 'tutorial_processing' || !fixture ||
       result.jobId !== state.tutorialJobId || result.fixtureId !== fixture.id ||
       result.fixtureRevision !== fixture.revision || result.fixtureRole !== fixture.role ||
-      result.resolutionSource !== 'tutorial_fixture' || !result.savedPlaceId) return unchanged(state);
+      !['tutorial_fixture', 'onboarding_scripted'].includes(result.resolutionSource) ||
+      !result.savedPlaceId) return unchanged(state);
   return transition(state, {
     stage: 'tutorial_reveal',
     tutorialResult: result,
@@ -1123,7 +1127,8 @@ export function confirmOnboardingFirstMagicMoment(
   const result = state.tutorialResult;
   const fixture = state.tutorialFixture;
   if (state.stage !== 'tutorial_reveal' || !result || !fixture ||
-      result.fixtureId !== fixture.id || result.resolutionSource !== 'tutorial_fixture') return unchanged(state);
+      result.fixtureId !== fixture.id ||
+      !['tutorial_fixture', 'onboarding_scripted'].includes(result.resolutionSource)) return unchanged(state);
   const tutorialSave: CompletedOnboardingSave = {
     kind: 'tutorial',
     contentId: fixture.contentId,
@@ -1298,8 +1303,18 @@ export function continueOnboardingAfterMakingNearrYours(
   state: OnboardingV2State,
   now: string,
 ): OnboardingTransition {
-  if (state.stage !== 'making_nearr_yours' || !state.tutorialSave ||
-      !['anonymous_active', 'permanent_account'].includes(state.identityLifecycle)) return unchanged(state);
+  if (state.stage !== 'making_nearr_yours' || !state.tutorialSave) return unchanged(state);
+  if (state.identityLifecycle === 'none') {
+    return transition(state, {
+      stage: 'account_required',
+      accountRequiredAt: state.accountRequiredAt ?? now,
+      mapReadyViewedAt: state.mapReadyViewedAt ?? now,
+    }, now, [
+      { name: 'onboarding_map_ready_viewed', properties: { account_backed_up: false } },
+      { name: 'onboarding_auth_viewed' },
+      { name: 'onboarding_account_viewed' },
+    ]);
+  }
   return transition(state, {
     stage: 'personalized_activation',
     personalizedActivationShownAt: state.personalizedActivationShownAt ?? now,
@@ -2329,7 +2344,9 @@ export function closePlaceTour(
   }
   return transition(
     state,
-    options.phase1Only
+    state.tutorialResult?.resolutionSource === 'onboarding_scripted'
+      ? { stage: 'first_magic_moment_complete', placeTourClosedAt: now, placeTourStep: null }
+      : options.phase1Only
       ? {
           stage: 'phase1_complete',
           placeTourClosedAt: now,

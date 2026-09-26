@@ -354,7 +354,15 @@ async function applyTransition(
     } catch (error) {
       console.warn('[onboarding-v2] state_write_failed', error);
     }
-    void syncStateToServer(result.state, serverSyncGeneration);
+    // The new pre-auth sandbox is local-only. Preserve checkpoint sync for
+    // legacy anonymous/permanent journeys, but never read a session for a
+    // not-yet-authenticated or explicitly scripted walkthrough.
+    const localSandbox = result.state.identityLifecycle === 'none' ||
+      result.state.tutorialFixture?.canonicalUrl.startsWith('onboarding://') === true ||
+      result.state.tutorialResult?.resolutionSource === 'onboarding_scripted';
+    if (!localSandbox && result.state.boundUserId) {
+      void syncStateToServer(result.state, serverSyncGeneration);
+    }
     void emitEvents(result.events, result.state);
     const reachedDurableCompletion =
       (!current.phase1CompletedAt && !!result.state.phase1CompletedAt) ||

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, AppState, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { prepareSavedPlacesForMapHandoff } from '@/hooks/useSavedPlaces';
 
 import { MapFormationIllustration, NearrSparkleMark, useOnboardingReduceMotion } from './OnboardingVisualLanguage';
 import { Phase1Colors, Phase1Frame, Phase1PrimaryButton } from './Phase1Visuals';
@@ -19,16 +18,13 @@ import {
   recordOnboardingV2NotificationResult,
   recordOnboardingV2ReminderInitialization,
   recordOnboardingV2MapHandoff,
-  resumeOnboardingV2DeferredPractice,
   showOnboardingV2ActivationChallenge,
 } from '@/lib/onboardingV2';
 import {
-  classifyReminderInitialization,
   desiredValueCopy,
   nearbyExample,
   painPointValueCopy,
   personalizedActivationCopy,
-  platformName,
 } from '@/lib/onboardingV2SecondHalfCore';
 import { getOnboardingLocationPermissionSnapshot, requestOnboardingBackgroundLocation, requestOnboardingForegroundLocation, requestOnboardingNotifications } from '@/lib/onboardingV2SecondHalf';
 import { registerPushTokenForCurrentUser } from '@/lib/pushTokens';
@@ -149,26 +145,12 @@ function MakingNearrYoursScreen({ state }: { state: OnboardingV2State }) {
     if (startedRef.current) return;
     startedRef.current = true;
     const initialize = async () => {
-      const [proximity, geofence, push, handoff] = await Promise.allSettled([
-        syncProximityWatch(),
-        syncGeofencesForSavedPlaces(),
-        state.notificationPermissionResult === 'granted' || state.notificationPermissionResult === 'provisional'
-          ? registerPushTokenForCurrentUser()
-          : Promise.resolve('not_requested' as const),
-        prepareSavedPlacesForMapHandoff([
-          state.tutorialSave?.savedPlaceId ?? '',
-          ...state.independentSaves.map((save) => save.savedPlaceId),
-        ]),
-      ]);
-      const result = classifyReminderInitialization({
-        backgroundLocation: state.locationBackgroundResult,
-        notifications: state.notificationPermissionResult,
-        proximity: proximity.status === 'fulfilled' ? proximity.value : 'rejected',
-        geofence: geofence.status === 'fulfilled' ? geofence.value.state : 'rejected',
-        push: push.status === 'fulfilled' && push.value === 'not_requested' ? 'not_requested' : push.status,
-      });
-      await recordOnboardingV2ReminderInitialization(result);
-      await recordOnboardingV2MapHandoff(handoff.status === 'fulfilled' ? handoff.value : 'failed');
+      const permissionsReady = state.locationBackgroundResult === 'granted' &&
+        (state.notificationPermissionResult === 'granted' || state.notificationPermissionResult === 'provisional');
+      await recordOnboardingV2ReminderInitialization(permissionsReady ? 'pending' : 'not_eligible');
+      // This handoff refers only to the bundled onboarding card. Real saved
+      // places and reminder services start after authentication.
+      await recordOnboardingV2MapHandoff('ready');
       await continueOnboardingV2AfterMakingNearrYours();
     };
     void initialize();
@@ -179,7 +161,7 @@ function MakingNearrYoursScreen({ state }: { state: OnboardingV2State }) {
   return <Phase1Frame progress={0.93} progressLabel="Onboarding progress" contentStyle={styles.makingContent}>
     <Text style={styles.eyebrowCentered}>MAKING NEARR YOURS</Text><Text style={styles.headlineCentered}>Building your map around what matters to you.</Text>
     <MapFormationIllustration placeName={state.tutorialResult?.place.name ?? 'Your first place'} platform={state.preferredPlatform} interest={state.interest} />
-    <View style={styles.checklist} accessibilityLiveRegion="polite"><SetupRow ready label="Demo place saved" /><SetupRow ready={!!state.sharingRehearsalCompletedAt} label={state.sharingRehearsalCompletedAt ? 'Sharing practice completed' : 'Sharing practice not completed'} neutral={!state.sharingRehearsalCompletedAt} /><SetupRow ready={!!state.practiceCompletedAt} label={state.practiceCompletedAt ? 'External practice place saved' : 'External practice saved for later'} neutral={!state.practiceCompletedAt} /><SetupRow ready={state.mapHandoffResult === 'ready'} label={mapHandoffLabel(state.mapHandoffResult)} neutral={state.mapHandoffResult !== 'ready'} /><SetupRow ready={foregroundReady} label={foregroundReady ? 'Location while using Nearr allowed' : 'In-app location not allowed'} neutral={!foregroundReady} /><SetupRow ready={backgroundReady} label={backgroundReady ? 'Background location allowed' : 'Background location not allowed'} neutral={!backgroundReady} /><SetupRow ready={notificationsReady} label={notificationsReady ? 'Notifications allowed' : 'Notifications not allowed'} neutral={!notificationsReady} /><SetupRow ready={state.reminderInitializationResult === 'ready'} label={reminderInitializationLabel(state.reminderInitializationResult)} neutral={state.reminderInitializationResult !== 'ready'} /></View>
+    <View style={styles.checklist} accessibilityLiveRegion="polite"><SetupRow ready label="Practice place ready" /><SetupRow ready={!!state.sharingRehearsalCompletedAt} label={state.sharingRehearsalCompletedAt ? 'Sharing practice completed' : 'Sharing practice not completed'} neutral={!state.sharingRehearsalCompletedAt} /><SetupRow ready={state.mapHandoffResult === 'ready'} label={mapHandoffLabel(state.mapHandoffResult)} neutral={state.mapHandoffResult !== 'ready'} /><SetupRow ready={foregroundReady} label={foregroundReady ? 'Location while using Nearr allowed' : 'In-app location not allowed'} neutral={!foregroundReady} /><SetupRow ready={backgroundReady} label={backgroundReady ? 'Background location allowed' : 'Background location not allowed'} neutral={!backgroundReady} /><SetupRow ready={notificationsReady} label={notificationsReady ? 'Notifications allowed' : 'Notifications not allowed'} neutral={!notificationsReady} /><SetupRow ready={state.reminderInitializationResult === 'ready'} label={reminderInitializationLabel(state.reminderInitializationResult)} neutral={state.reminderInitializationResult !== 'ready'} /></View>
   </Phase1Frame>;
 }
 
@@ -198,15 +180,14 @@ function FinalActivationScreen({ state }: { state: OnboardingV2State }) {
     const openMap = () => { router.replace('/(tabs)/map'); };
     if (reduceMotion) openMap(); else Animated.timing(transition, { toValue: 1, duration: 260, useNativeDriver: true }).start(openMap);
   };
-  const practice = async () => { if (busy) return; setBusy(true); let next = state; if (next.stage === 'auth_success') next = await continueOnboardingV2AfterAuth(); if (next.stage === 'personalized_activation') next = await showOnboardingV2ActivationChallenge(); if (next.stage === 'activation_challenge') await resumeOnboardingV2DeferredPractice(); router.replace('/(tabs)/map'); };
   const place = state.tutorialResult?.place;
   const savedCount = onboardingV2SavedPlaceProgress(state).count;
   return <View style={styles.flex}><Phase1Frame progress={1} progressLabel="Onboarding complete">
     <View style={styles.finalHeader}><View style={styles.successMark}><Feather name="check" size={24} color="#FFFFFF" /></View><View style={styles.progressPill}><Text style={styles.progressText}>{savedCount} {savedCount === 1 ? 'place' : 'places'} saved</Text></View></View>
-    <Text style={styles.eyebrow}>{state.mapHandoffResult === 'ready' ? 'READY TO EXPLORE' : 'OPENING YOUR MAP'}</Text><Text style={styles.headline}>{state.mapHandoffResult === 'ready' ? 'Your saved places are ready to use.' : 'Your saved place stays available while the map finishes loading.'}</Text><Text style={styles.body}>{place?.name} and every completed practice save belong on your private map. No account setup is needed to explore them.</Text>
+    <Text style={styles.eyebrow}>{state.mapHandoffResult === 'ready' ? 'READY TO EXPLORE' : 'OPENING YOUR MAP'}</Text><Text style={styles.headline}>{state.mapHandoffResult === 'ready' ? 'Your map is ready to use.' : 'Your map is getting ready.'}</Text><Text style={styles.body}>{place?.name} was a private practice example. New shares in the real app use Nearr's live recognition and save to your account.</Text>
     <MapFormationIllustration placeName={place?.name ?? 'Your first place'} platform={state.preferredPlatform} interest={state.interest} />
     <Text style={styles.personalCopy}>{personalizedActivationCopy({ platform: state.preferredPlatform, interest: state.interest })}</Text>
-    <View style={styles.finalActions}><Phase1PrimaryButton title="Explore my map" onPress={() => void finish()} loading={busy} />{!state.practiceCompletedAt ? <Pressable disabled={busy} onPress={() => void practice()} accessibilityRole="button" style={styles.secondaryAction}><Text style={styles.secondaryText}>Practice with the selected {platformName(state.practiceFixture?.platform ?? state.preferredPlatform)} post</Text></Pressable> : null}</View>
+    <View style={styles.finalActions}><Phase1PrimaryButton title="Explore my map" onPress={() => void finish()} loading={busy} /></View>
     <View style={styles.backupNote}><Feather name="shield" size={14} color={Phase1Colors.success} /><Text style={styles.backupText}>Back up your map from Settings whenever you're ready.</Text></View>
   </Phase1Frame><Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.mapTransition, { opacity: transition }]}><NearrSparkleMark size={68} /></Animated.View></View>;
 }

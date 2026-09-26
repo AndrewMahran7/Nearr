@@ -24,22 +24,23 @@ assert.match(preAuth, /What do you save most/);
 assert.match(preAuth, /Perfect/);
 assert.match(preAuth, /continueOnboardingV2FromPersonalizedPayoff/);
 assert.match(preAuth, /Practice sharing it/);
-assert.match(preAuth, /hostShareSubmitter\.submit/);
-assert.match(core, /tutorial-in-app:/);
+assert.match(preAuth, /buildOfflineOnboardingResult/);
+assert.doesNotMatch(preAuth, /hostShareSubmitter|useOnboardingTutorialJobs/);
+assert.match(core, /onboarding-scripted-job:/);
 assert.doesNotMatch(preAuth, /Show me how|Add to my map/);
-console.log('PASS single-job setup screens lead through a personalized payoff to the real in-app job');
+console.log('PASS setup screens lead through a personalized payoff to the local scripted walkthrough');
 
 assert.match(preAuth, /A POST WORTH SAVING/);
-assert.match(preAuth, /onboardingTutorialPreviewUrl/);
-assert.match(preAuth, /onboarding-source-preview-fallback/);
+assert.match(preAuth, /offlineOnboardingAsset/);
+assert.match(preAuth, /onboarding-source-preview-image/);
 assert.doesNotMatch(preAuth, /InstagramReelMock|fake social/i);
-console.log('PASS platform mismatch uses neutral Nearr framing rather than fake social UI');
+console.log('PASS bundled source preview uses neutral Nearr framing rather than fake social UI');
 
 assert.match(preAuth, /1 PLACE FOUND/);
 assert.match(preAuth, /Social apps save the video\. Nearr saves the place/);
 assert.match(visualLanguage, /AccessibilityInfo\.isReduceMotionEnabled/);
-assert.match(preAuth, /Saved to your map/);
-assert.match(preAuth, /MagicScanner/);
+assert.match(preAuth, /Saved for this walkthrough/);
+assert.match(preAuth, /localScanner/);
 console.log('PASS processing, progressive reveal, save proof, and Reduce Motion are integrated');
 
 assert.match(secondHalf, /YOUR SAVES HAVE A HOME/);
@@ -55,11 +56,11 @@ assert.match(account, /Continue with Apple|AppleAuthenticationButton/);
 assert.match(account, /GoogleSignInButton/);
 assert.match(account, /Back up your map/);
 assert.match(secondHalf, /Phase1PrimaryButton title="Explore my map"/);
-assert.match(secondHalf, /Practice with the selected/);
-assert.match(secondHalf, /No account setup is needed to explore them/);
+assert.match(secondHalf, /private practice example/);
+assert.match(secondHalf, /real app use Nearr's live recognition/);
 assert.match(settings, /Back up your map/);
 assert.match(index, /stage === 'onboarding_complete'/);
-console.log('PASS final activation enters the anonymous map and defers account backup to Settings');
+console.log('PASS final activation clearly hands off from scripted practice to the real app');
 
 assert.match(map, /cleanOnboardingLanding = placeSource === 'onboarding_tutorial'/);
 assert.match(map, /__DEV__ && !cleanOnboardingLanding/);

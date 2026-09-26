@@ -98,10 +98,12 @@ const picker = readFileSync(join(root, 'components/onboarding/v2/OnboardingV2Pre
 const anonymousRuntime = readFileSync(join(root, 'lib/anonymousOnboarding.ts'), 'utf8');
 const settings = readFileSync(join(root, 'app/(tabs)/settings.tsx'), 'utf8');
 const appConfig = readFileSync(join(root, 'app.config.js'), 'utf8');
-assert.match(coach, /const phase1Only = isOnboardingV2Phase1Only\(\)/);
-assert.match(coach, /resolveOnboardingV2VisibleOwner\(\{[\s\S]{0,180}phase1Only/);
-assert.match(picker, /ProductionV2Compatibility/);
-assert.match(picker, /disabled=\{item\.value !== 'instagram'\}/);
+assert.match(coach, /state\?\.stage !== 'practice_ready'/);
+assert.match(coach, /deferOnboardingV2Practice/);
+assert.doesNotMatch(coach, /loadOnboardingPracticeFixture|Linking\.openURL|useOnboardingTutorialJobs/);
+assert.match(picker, /selectOfflineOnboardingFixture/);
+assert.match(picker, /PLATFORMS\.map/);
+assert.doesNotMatch(picker, /disabled=\{item\.value !== 'instagram'\}|ProductionV2Compatibility/);
 assert.match(
   anonymousRuntime,
   /decision === 'restart_with_new_anonymous_session'/,
@@ -115,4 +117,4 @@ assert.match(appConfig, /IS_DEVELOPMENT_APP \? 'true' : ''/);
 
 console.log('PASS Phase 1 closes to the normal map without Phase 2/3');
 console.log('PASS Phase 1 completion is durable and future-safe');
-console.log('PASS non-Instagram immersive shells and production reset are unreachable');
+console.log('PASS every supported platform uses the bundled sandbox and production reset remains unreachable');

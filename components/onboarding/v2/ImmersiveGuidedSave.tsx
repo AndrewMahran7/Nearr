@@ -4,8 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NearrAppIcon } from '@/components/onboarding/demo';
 import { Phase1Colors } from '@/components/onboarding/v2/Phase1Visuals';
-import { onboardingTutorialPreviewUrl } from '@/lib/onboardingTutorialPreview';
-import { onboardingTutorialSourceAsset } from '@/lib/onboardingTutorialSourceAsset';
+import { offlineOnboardingAsset } from '@/onboarding/assets/offlineOnboardingAssets';
+import { offlineFixtureById } from '@/onboarding/fixtures/offlineOnboardingFixtures';
 import type { OnboardingTutorialFixture, OnboardingV2Stage } from '@/lib/onboardingV2Core';
 
 type ImmersiveStage = Extract<OnboardingV2Stage,
@@ -40,9 +40,8 @@ export function ImmersiveGuidedSave({ stage, fixture, onBack, onAdvance }: Props
   const { height } = useWindowDimensions();
   const platformKey = fixture?.platform ?? 'instagram';
   const platform = fixture ? PLATFORM_LABELS[fixture.platform] : 'Instagram';
-  const localFrame = fixture ? onboardingTutorialSourceAsset(fixture.contentId) : null;
-  const remoteFrame = fixture ? onboardingTutorialPreviewUrl(fixture.platform, fixture.contentId, fixture.thumbnailUrl) : null;
-  const source = localFrame ?? (remoteFrame ? { uri: remoteFrame } : null);
+  const localFixture = offlineFixtureById(fixture?.id);
+  const source = localFixture ? offlineOnboardingAsset(localFixture.assetKey) : null;
   const sheetHeight = Math.min(510, Math.max(360, height * 0.56));
 
   return <View style={styles.root}>
@@ -53,7 +52,7 @@ export function ImmersiveGuidedSave({ stage, fixture, onBack, onAdvance }: Props
       {source ? <Image source={source} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <View style={styles.missingFrame}><Feather name="image" size={32} color="#FFFFFF" /></View>}
       <View style={styles.shade} />
       <View style={[styles.header, { top: insets.top + 18 }]}><View style={styles.practiceBadge}><Text style={styles.practiceBadgeText}>PRACTICE INSIDE NEARR</Text></View><Text style={styles.platformLabel}>{platform}</Text></View>
-      <View style={styles.sourceAttribution}><Ionicons name={platformKey === 'instagram' ? 'logo-instagram' : platformKey === 'youtube' ? 'logo-youtube' : 'play-circle'} size={18} color="#FFFFFF" /><View style={styles.sourceCopy}><Text style={styles.sourceTitle}>A post worth saving</Text><Text style={styles.sourceMeta}>{fixture ? `Frame from the exact ${platform} post` : 'Guided sharing practice'}</Text></View></View>
+      <View style={styles.sourceAttribution}><Ionicons name={platformKey === 'instagram' ? 'logo-instagram' : platformKey === 'youtube' ? 'logo-youtube' : 'play-circle'} size={18} color="#FFFFFF" /><View style={styles.sourceCopy}><Text style={styles.sourceTitle}>A post worth saving</Text><Text style={styles.sourceMeta}>{fixture ? `Bundled ${platform} practice post` : 'Guided sharing practice'}</Text></View></View>
       <View style={styles.actionRail}><View style={styles.hint}><Text style={styles.hintText}>{stage === 'tutorial_ready' ? (platformKey === 'instagram' ? 'Tap Send' : 'Tap Share') : 'Nice'}</Text></View><Pressable disabled={stage !== 'tutorial_ready'} onPress={() => onAdvance('share')} accessibilityRole="button" accessibilityLabel={platformKey === 'instagram' ? 'Send or share this Instagram post' : `Share this ${platform} post`} accessibilityHint="Opens the next step of this Nearr practice lesson" style={({ pressed }) => [styles.sendButton, stage === 'tutorial_ready' && styles.activeTarget, pressed && styles.pressed]}><Feather name={platformKey === 'instagram' ? 'send' : 'share-2'} size={28} color="#FFFFFF" /></Pressable><Text style={styles.actionLabel}>{platformKey === 'instagram' ? 'Send' : 'Share'}</Text></View>
     </View>
     <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={8} style={({ pressed }) => [styles.back, { top: insets.top + 10 }, pressed && styles.pressed]}><Feather name="arrow-left" size={22} color="#FFFFFF" /></Pressable>
@@ -69,7 +68,7 @@ function PlatformShareMenu({ height, platform, onMore }: { height: number; platf
 function MenuAction({ icon, label }: { icon: keyof typeof Feather.glyphMap; label: string }) { return <View style={styles.moreAction}><View style={styles.menuIcon}><Feather name={icon} size={22} color="#FFFFFF" /></View><Text style={styles.menuLabel}>{label}</Text></View>; }
 
 function SystemShareSheet({ height, onNearr }: { height: number; onNearr: () => void }) {
-  return <View style={[styles.systemSheet, { height }]} accessibilityLabel="System share sheet practice"><View style={styles.systemGrabber} /><View style={styles.systemSource}><View style={styles.systemThumb}><Feather name="play" size={17} color="#FFFFFF" /></View><View style={styles.sourceCopy}><Text style={styles.systemTitle}>Social post</Text><Text style={styles.systemMeta}>Shared from the selected source</Text></View></View><Text style={styles.appsHeading}>Share with an app</Text><View style={styles.appsRow}><AppTile icon="message-circle" label="Messages" color="#31C95A" /><Pressable onPress={onNearr} accessibilityRole="button" accessibilityLabel="Choose Nearr" accessibilityHint="Submits the exact tutorial post through Nearr's normal save service" style={({ pressed }) => [styles.nearrTile, styles.activeTargetLight, pressed && styles.pressed]}><NearrAppIcon size={58} highlighted /><Text style={styles.appLabel}>Nearr</Text><View style={styles.hintAbove}><Text style={styles.hintText}>Choose Nearr</Text></View></Pressable><AppTile icon="more-horizontal" label="More" color="#D4D4D8" dark /></View><Text style={styles.systemLesson}>Your tap on Nearr starts this guided save. A real external share comes next.</Text></View>;
+  return <View style={[styles.systemSheet, { height }]} accessibilityLabel="System share sheet practice"><View style={styles.systemGrabber} /><View style={styles.systemSource}><View style={styles.systemThumb}><Feather name="play" size={17} color="#FFFFFF" /></View><View style={styles.sourceCopy}><Text style={styles.systemTitle}>Social post</Text><Text style={styles.systemMeta}>Practice post inside Nearr</Text></View></View><Text style={styles.appsHeading}>Share with an app</Text><View style={styles.appsRow}><AppTile icon="message-circle" label="Messages" color="#31C95A" /><Pressable onPress={onNearr} accessibilityRole="button" accessibilityLabel="Choose Nearr" accessibilityHint="Continues the local guided save" style={({ pressed }) => [styles.nearrTile, styles.activeTargetLight, pressed && styles.pressed]}><NearrAppIcon size={58} highlighted /><Text style={styles.appLabel}>Nearr</Text><View style={styles.hintAbove}><Text style={styles.hintText}>Choose Nearr</Text></View></Pressable><AppTile icon="more-horizontal" label="More" color="#D4D4D8" dark /></View><Text style={styles.systemLesson}>Your tap starts a quick practice run. Nothing is uploaded or added to your real map.</Text></View>;
 }
 
 function AppTile({ icon, label, color, dark }: { icon: keyof typeof Feather.glyphMap; label: string; color: string; dark?: boolean }) { return <View style={styles.nearrTile}><View style={[styles.appGlyph, { backgroundColor: color }]}><Feather name={icon} size={22} color={dark ? '#333338' : '#FFFFFF'} /></View><Text style={styles.appLabel}>{label}</Text></View>; }
