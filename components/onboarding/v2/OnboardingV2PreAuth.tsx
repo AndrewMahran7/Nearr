@@ -88,13 +88,20 @@ export function OnboardingV2PreAuth() {
   const startupWatchdog = useStartupWatchdog(startupPending);
 
   useEffect(() => {
-    if (state?.stage === 'interest_selected') void migrateInterruptedOnboardingV2ToFirstMagic();
+    if (state?.stage === 'interest_selected') {
+      void migrateInterruptedOnboardingV2ToFirstMagic().catch((error) => {
+        console.warn('[onboarding-v2] interrupted_migration_failed', error);
+      });
+    }
   }, [state?.stage]);
   useEffect(() => {
     if (state?.stage !== 'tutorial_loading' || fixtureInFlightRef.current) return;
     fixtureInFlightRef.current = true;
     const fixture = selectOfflineOnboardingFixture(state.preferredPlatform, state.interest);
     void setOnboardingV2TutorialFixture(toOnboardingTutorialFixture(fixture, new Date().toISOString()))
+      .catch((error) => {
+        console.warn('[onboarding-v2] offline_fixture_persist_failed', error);
+      })
       .finally(() => { fixtureInFlightRef.current = false; });
   }, [state?.interest, state?.preferredPlatform, state?.stage]);
   useEffect(() => {
@@ -105,7 +112,9 @@ export function OnboardingV2PreAuth() {
     const elapsed = Math.max(0, Date.now() - startedAt);
     const remaining = Math.max(0, OFFLINE_ONBOARDING_TIMING_MS.found - elapsed);
     const timer = setTimeout(() => {
-      void resolveOnboardingV2TutorialResult(buildOfflineOnboardingResult(fixture));
+      void resolveOnboardingV2TutorialResult(buildOfflineOnboardingResult(fixture)).catch((error) => {
+        console.warn('[onboarding-v2] deterministic_result_persist_failed', error);
+      });
     }, remaining);
     return () => clearTimeout(timer);
   }, [state?.stage, state?.tutorialFixture?.id, state?.tutorialLaunchedAt]);

@@ -75,7 +75,7 @@ const progressed: OnboardingV2State = {
 assert.equal(isFreshOnboardingV2State(fresh), true);
 assert.equal(isFreshOnboardingV2State(progressed), false);
 assert.match(adapter, /removeItem\(ONBOARDING_V2_STORAGE_KEY\)/);
-assert.match(adapter, /createInitialOnboardingV2State\(\)/);
+assert.match(adapter, /createInitialOnboardingV2State\([^)]*lifecycle\.installationId\)/);
 assert.match(runtime, /resetOnboardingV2LocalStateForDevelopment\(\)/);
 assert.match(runtime, /resetOnboarding\(userId\)/);
 assert.match(runtime, /removeItem\(ONBOARDING_V2_ACCOUNT_TRANSFER_KEY\)/);

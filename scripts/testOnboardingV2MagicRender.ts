@@ -61,6 +61,9 @@ Module._load = function mockedLoad(request, parent, isMain) {
     SocialToMapIllustration: (props: any) => React.createElement('SocialToMapIllustration', props),
     useOnboardingReduceMotion: () => reduceMotion,
   };
+  if (request === '@/components/onboarding/v2/OfflineFixtureVideo') return {
+    OfflineFixtureVideo: (props: any) => React.createElement('OfflineFixtureVideo', props),
+  };
   if (request === '@/onboarding/assets/offlineOnboardingAssets') return {
     offlineOnboardingAsset: (key: string) => ({ uri: `bundle:${key}` }),
   };
@@ -151,7 +154,7 @@ try {
   TestRenderer.act(() => {
     instagram = TestRenderer.create(React.createElement(ChallengeSourcePreview, { fixture: instagramFixture, preferredPlatform: 'instagram' }));
   });
-  assert.equal(instagram.root.findByProps({ testID: 'onboarding-source-preview-image' }).props.source.uri, 'bundle:dorset_quarry');
+  assert.equal(instagram.root.findByProps({ testID: 'onboarding-source-preview-video' }).props.assetKey, 'dorset_quarry');
   assertNativeTextInvariant(instagram.toJSON());
   instagram.unmount();
 
@@ -159,7 +162,7 @@ try {
   TestRenderer.act(() => {
     youtube = TestRenderer.create(React.createElement(ChallengeSourcePreview, { fixture: youtubeFixture, preferredPlatform: 'youtube' }));
   });
-  assert.equal(youtube.root.findByProps({ testID: 'onboarding-source-preview-image' }).props.source.uri, 'bundle:food_cafe');
+  assert.equal(youtube.root.findByProps({ testID: 'onboarding-source-preview-video' }).props.assetKey, 'mad_yolks');
   assertNativeTextInvariant(youtube.toJSON());
   youtube.unmount();
 
@@ -177,8 +180,8 @@ try {
   assert.equal(resumed.stage, 'tutorial_processing');
 
   const result = offlineFixtures.buildOfflineOnboardingResult(renderedOfflineFixture);
-  assert.equal(resolveOnboardingTutorialResult(pending, result, '2026-09-10T12:00:03.200Z').state.stage, 'tutorial_reveal', 'fast scripted completion is accepted');
-  assert.equal(resolveOnboardingTutorialResult(resumed, result, '2026-09-10T12:00:21.000Z').state.stage, 'tutorial_reveal', 'scripted completion after persisted resume is accepted');
+  assert.equal(resolveOnboardingTutorialResult(pending, result, '2026-09-10T12:00:03.200Z').state.stage, 'fixture_map_payoff', 'fast scripted completion opens the authentic map payoff');
+  assert.equal(resolveOnboardingTutorialResult(resumed, result, '2026-09-10T12:00:21.000Z').state.stage, 'fixture_map_payoff', 'persisted resume opens the same authentic map payoff');
 } finally {
   global.setTimeout = realSetTimeout;
   global.clearTimeout = realClearTimeout;

@@ -82,8 +82,10 @@ async function main() {
   const map = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
   assert.match(coach, /deferOnboardingV2Practice/,
     'legacy onboarding checkpoints receive a local compatibility continuation');
-  assert.doesNotMatch(coach, /AppState\.addEventListener|isShareJobForTutorialFixture|useOnboardingTutorialJobs|Linking\.openURL/,
-    'onboarding cannot consume the real share-extension queue');
+  assert.match(coach, /Linking\.openURL/,
+    'explicit Phase 2 practice may launch the user-selected real social URL');
+  assert.doesNotMatch(coach, /AppState\.addEventListener|isShareJobForTutorialFixture|useOnboardingTutorialJobs/,
+    'onboarding cannot consume or poll the real share-extension queue');
   assert.match(map, /reconcileOnboardingV2SavedPlaces\(places\)/,
     'the host reconciles saved places after the user returns');
 

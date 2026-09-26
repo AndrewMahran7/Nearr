@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
 
 import { sharedAuth } from './sharedAuth';
+import { ensureOnboardingInstallLifecycle } from './onboardingInstallLifecycle';
 import {
   initialSharedAuthSyncState,
   reduceSharedTokenWrite,
@@ -54,12 +55,30 @@ if (!isSupabaseConfigured) {
 // module-load time before any UI renders. Pass placeholder strings when the
 // real values are absent so the client object is created safely; every API
 // call will fail gracefully at runtime rather than on import.
+const installationGatedAuthStorage = {
+  async getItem(key: string): Promise<string | null> {
+    // Supabase cannot restore a persisted session until the native install
+    // epoch has been checked and any previous-install auth keys were removed.
+    const lifecycle = await ensureOnboardingInstallLifecycle();
+    if (!lifecycle.persistedAuthCleared) return null;
+    return AsyncStorage.getItem(key);
+  },
+  async setItem(key: string, value: string): Promise<void> {
+    await ensureOnboardingInstallLifecycle();
+    await AsyncStorage.setItem(key, value);
+  },
+  async removeItem(key: string): Promise<void> {
+    await ensureOnboardingInstallLifecycle();
+    await AsyncStorage.removeItem(key);
+  },
+};
+
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder-missing-config.supabase.co',
   supabaseAnonKey || 'placeholder-missing-config',
   {
     auth: {
-      storage: AsyncStorage,
+      storage: installationGatedAuthStorage,
       autoRefreshToken: true,
       persistSession: true,
       // We handle the deep-link callback ourselves in app/_layout.tsx because

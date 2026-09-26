@@ -219,6 +219,8 @@ export type OnboardingPlaceTourStep =
 
 export type OnboardingV2State = {
   version: typeof ONBOARDING_V2_VERSION;
+  /** Random install epoch. Anonymous checkpoints are invalid without an exact match. */
+  installationId: string | null;
   revision: number;
   cohort: 'new_user_v2' | 'existing_user_bypassed' | null;
   stage: OnboardingV2Stage;
@@ -345,9 +347,13 @@ function unchanged(state: OnboardingV2State): OnboardingTransition {
   return { state, changed: false, events: [] };
 }
 
-export function createInitialOnboardingV2State(now = new Date().toISOString()): OnboardingV2State {
+export function createInitialOnboardingV2State(
+  now = new Date().toISOString(),
+  installationId: string | null = null,
+): OnboardingV2State {
   return {
     version: ONBOARDING_V2_VERSION,
+    installationId,
     revision: 0,
     cohort: null,
     stage: 'not_started',
@@ -529,10 +535,10 @@ export function onboardingV2ResumeEligibility(
 
 /** Account deletion is a hard identity boundary, not a normal Back/sign-out. */
 export function freshOnboardingV2StateAfterAccountDeletion(
-  _state: OnboardingV2State,
+  state: OnboardingV2State,
   now = new Date().toISOString(),
 ): OnboardingV2State {
-  return createInitialOnboardingV2State(now);
+  return createInitialOnboardingV2State(now, state.installationId);
 }
 
 export function encodeOnboardingV2State(state: OnboardingV2State): string {
@@ -717,7 +723,7 @@ export function startOnboardingV2(
   ) {
     return unchanged(state);
   }
-  const fresh = createInitialOnboardingV2State(now);
+  const fresh = createInitialOnboardingV2State(now, state.installationId);
   return transition(
     fresh,
     { cohort: 'new_user_v2', stage: 'overview', startedAt: now },

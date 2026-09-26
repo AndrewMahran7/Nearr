@@ -5,6 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trackEvent } from '@/lib/analytics';
 import { getResolvedEnvironment } from '@/lib/appEnvironment';
 import { markOnboardingComplete } from '@/lib/onboarding';
+import { ensureOnboardingInstallLifecycle } from '@/lib/onboardingInstallLifecycle';
+import { decideInstallCheckpoint } from '@/lib/onboardingInstallLifecycleCore';
 import { isOnboardingV2Phase1Only } from '@/lib/featureFlags';
 import { restoreOnboardingFunnelId } from '@/lib/onboardingFunnelIdentity';
 import {
@@ -100,6 +102,7 @@ import {
   toggleOnboardingPlatform,
   launchOnboardingTutorial,
   migrateInterruptedOnboardingToFirstMagic,
+  ONBOARDING_V2_VERSION,
   type OnboardingInterest,
   type OnboardingActivationChoice,
   type OnboardingDesiredValue,
@@ -227,12 +230,51 @@ function nowIso(): string {
 }
 
 async function readStateFresh(): Promise<OnboardingV2State> {
+  const lifecycle = await ensureOnboardingInstallLifecycle();
   try {
     const raw = await AsyncStorage.getItem(ONBOARDING_V2_STORAGE_KEY);
-    cachedState = decodeOnboardingV2State(raw);
+    let checkpointVersionSupported = false;
+    let checkpointInstallationId: string | null = null;
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as { version?: unknown; installationId?: unknown };
+        checkpointVersionSupported = parsed.version === ONBOARDING_V2_VERSION;
+        checkpointInstallationId = typeof parsed.installationId === 'string'
+          ? parsed.installationId
+          : null;
+      } catch {
+        // The decision below resets malformed JSON to Welcome.
+      }
+    }
+    const decision = decideInstallCheckpoint({
+      isNewInstall: lifecycle.isNewInstall,
+      currentInstallationId: lifecycle.installationId,
+      checkpointInstallationId,
+      checkpointVersionSupported,
+      checkpointExists: !!raw,
+    });
+    if (decision.kind === 'welcome') {
+      const now = nowIso();
+      cachedState = startOnboardingV2(
+        createInitialOnboardingV2State(now, lifecycle.installationId),
+        now,
+      ).state;
+      try {
+        await AsyncStorage.setItem(ONBOARDING_V2_STORAGE_KEY, encodeOnboardingV2State(cachedState));
+      } catch (error) {
+        console.warn('[onboarding-v2] welcome_checkpoint_write_failed', error);
+      }
+      console.log(`[onboarding-v2] startup_checkpoint=${decision.reason} action=welcome`);
+    } else {
+      cachedState = decodeOnboardingV2State(raw);
+    }
   } catch (error) {
     console.warn('[onboarding-v2] state_read_failed', error);
-    cachedState = cachedState ?? createInitialOnboardingV2State();
+    const now = nowIso();
+    cachedState = cachedState ?? startOnboardingV2(
+      createInitialOnboardingV2State(now, lifecycle.installationId),
+      now,
+    ).state;
   }
   return cachedState;
 }
@@ -673,9 +715,10 @@ export async function shouldResumeOnboardingV2(userId: string): Promise<boolean>
   }).eligible;
 }
 
-/** Restore a newer server checkpoint after an app restart/reinstall. */
+/** Restore a newer server checkpoint only within the same verified installation. */
 export async function hydrateOnboardingV2FromServer(userId: string): Promise<OnboardingV2State> {
   const local = await getOnboardingV2State();
+  const lifecycle = await ensureOnboardingInstallLifecycle();
   try {
     const { data, error } = await supabase
       .from('onboarding_v2_sessions')
@@ -686,6 +729,10 @@ export async function hydrateOnboardingV2FromServer(userId: string): Promise<Onb
       .maybeSingle();
     if (error || !data?.state || Number(data.revision ?? -1) <= local.revision) return local;
     const restored = decodeOnboardingV2State(JSON.stringify(data.state));
+    if (restored.installationId !== lifecycle.installationId) {
+      console.log('[onboarding-v2] server_checkpoint_rejected=installation_mismatch');
+      return local;
+    }
     if (!onboardingV2ResumeEligibility(restored, {
       userId,
       identityExists: true,
@@ -854,7 +901,8 @@ export function acknowledgeOnboardingV2Graduation(): Promise<OnboardingV2State> 
 async function replaceOnboardingV2AfterIdentityDeletion(): Promise<OnboardingV2State> {
   const operation = mutationQueue.then(async () => {
     const current = cachedState ?? await readStateFresh();
-    const initial = freshOnboardingV2StateAfterAccountDeletion(current);
+    const reset = freshOnboardingV2StateAfterAccountDeletion(current);
+    const initial = startOnboardingV2(reset, nowIso()).state;
     // Publish first so the deleted identity cannot remain resumable in this
     // process even if device storage is temporarily unavailable.
     publish(initial);
@@ -896,13 +944,32 @@ export async function resetOnboardingV2ForTests(): Promise<void> {
 
 async function replaceOnboardingV2WithInitialLocalState(): Promise<OnboardingV2State> {
   const operation = mutationQueue.then(async () => {
+    const lifecycle = await ensureOnboardingInstallLifecycle();
     await AsyncStorage.removeItem(ONBOARDING_V2_STORAGE_KEY);
-    const initial = createInitialOnboardingV2State();
+    const initial = createInitialOnboardingV2State(nowIso(), lifecycle.installationId);
     publish(initial);
     return initial;
   });
   mutationQueue = operation.catch(() => undefined);
   return operation;
+}
+
+/** Fail-safe for rejected startup hydration. It always produces a visible Welcome state. */
+export async function recoverOnboardingV2ToWelcome(reason: string): Promise<OnboardingV2State> {
+  const lifecycle = await ensureOnboardingInstallLifecycle();
+  const now = nowIso();
+  const recovered = startOnboardingV2(
+    createInitialOnboardingV2State(now, lifecycle.installationId),
+    now,
+  ).state;
+  publish(recovered);
+  try {
+    await AsyncStorage.setItem(ONBOARDING_V2_STORAGE_KEY, encodeOnboardingV2State(recovered));
+  } catch (error) {
+    console.warn('[onboarding-v2] startup_recovery_write_failed', error);
+  }
+  console.warn(`[onboarding-v2] startup_recovered_to_welcome reason=${reason}`);
+  return recovered;
 }
 
 /** Guarded local slice used by the development reset orchestrator. */

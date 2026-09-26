@@ -32,9 +32,10 @@ console.log('PASS setup screens lead through a personalized payoff to the local 
 
 assert.match(preAuth, /A POST WORTH SAVING/);
 assert.match(preAuth, /offlineOnboardingAsset/);
-assert.match(preAuth, /onboarding-source-preview-image/);
+assert.match(preAuth, /onboarding-source-preview-video/);
+assert.match(preAuth, /OfflineFixtureVideo/);
 assert.doesNotMatch(preAuth, /InstagramReelMock|fake social/i);
-console.log('PASS bundled source preview uses neutral Nearr framing rather than fake social UI');
+console.log('PASS bundled source video uses neutral Nearr framing rather than fake social UI');
 
 assert.match(preAuth, /1 PLACE FOUND/);
 assert.match(preAuth, /Social apps save the video\. Nearr saves the place/);

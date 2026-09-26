@@ -729,10 +729,14 @@ function RootLayoutContent() {
   // root-layout-ready. Also mirror AppState into the diagnostic context and
   // breadcrumbs for the "Copy diagnostic" export.
   useEffect(() => {
-    void hydrateBreadcrumbs().then(() => {
-      recordBreadcrumb('app_launch', { appState: AppState.currentState });
-      recordBreadcrumb('root_layout_ready');
-    });
+    void hydrateBreadcrumbs()
+      .then(() => {
+        recordBreadcrumb('app_launch', { appState: AppState.currentState });
+        recordBreadcrumb('root_layout_ready');
+      })
+      .catch((error) => {
+        console.warn('[startup] breadcrumb_hydration_failed', error);
+      });
     setDiagnosticAppState(AppState.currentState);
     const sub = AppState.addEventListener('change', (state) => {
       setDiagnosticAppState(state);
@@ -751,20 +755,26 @@ function RootLayoutContent() {
   // Handle deep links (magic-link callback + share-incoming).
   useEffect(() => {
     // Cold-start: app launched by tapping the link.
-    ExpoLinking.getInitialURL().then(async (url) => {
-      if (!url) return;
-      setInitialUrlClassification(classifyInitialUrl(url));
-      recordBreadcrumb('initial_url_received', {
-        result: classifyInitialUrl(url),
+    void ExpoLinking.getInitialURL()
+      .then(async (url) => {
+        if (!url) return;
+        setInitialUrlClassification(classifyInitialUrl(url));
+        recordBreadcrumb('initial_url_received', {
+          result: classifyInitialUrl(url),
+        });
+        logDebug('deeplink', 'received URL', url.replace(/[?#].*$/, ''));
+        await processIncomingUrl(url);
+      })
+      .catch((error) => {
+        console.warn('[startup] initial_url_processing_failed', error);
       });
-      logDebug('deeplink', 'received URL', url.replace(/[?#].*$/, ''));
-      await processIncomingUrl(url);
-    });
     // Warm-start: app already open (e.g. tapping link while app is in background).
-    const sub = ExpoLinking.addEventListener('url', async ({ url }) => {
+    const sub = ExpoLinking.addEventListener('url', ({ url }) => {
       recordBreadcrumb('warm_url_received', { result: classifyInitialUrl(url) });
       logDebug('deeplink', 'received URL', url.replace(/[?#].*$/, ''));
-      await processIncomingUrl(url);
+      void processIncomingUrl(url).catch((error) => {
+        console.warn('[startup] warm_url_processing_failed', error);
+      });
     });
     return () => sub.remove();
   }, [processIncomingUrl]);
