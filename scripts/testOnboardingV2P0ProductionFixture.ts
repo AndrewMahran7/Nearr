@@ -179,7 +179,7 @@ assert.match(mapSource, /mapFilterOptions\(\s*mapPlaces,\s*phase2MapActive && !n
 assert.match(mapSource, /<MapCategoryFilterBar\s+options=\{mapFilterChoices\}/);
 assert.match(mapSource, /!searchVisible && !nearbyExplorer \? \([\s\S]{0,700}<ShareQueueButton \/>/);
 assert.match(mapSource, /<OnboardingV2MapCoachmark topOffset=\{phase2MapLayout\.dockTop\} \/>/);
-assert.match(coachSource, /state\?\.stage !== 'practice_ready'/);
+assert.match(coachSource, /'practice_ready', 'first_independent_external_video_opened'/);
 assert.match(coachSource, /deferOnboardingV2Practice/);
 assert.doesNotMatch(coachSource, /loadOnboardingPracticeFixture|useOnboardingTutorialJobs/);
 assert.match(coachSource, /Linking\.openURL/);

@@ -42,6 +42,26 @@ export function shouldRenderMapTopChrome(input: {
   );
 }
 
+/** Scripted tutorial saves are install-local starter content, not backend rows. */
+export function shouldShowLocalTutorialPlace(
+  state: OnboardingV2State | null | undefined,
+): boolean {
+  return !!state &&
+    state.cohort === 'new_user_v2' &&
+    !!state.tutorialSave &&
+    state.tutorialResult?.resolutionSource === 'onboarding_scripted';
+}
+
+export function shouldRestoreNormalMapChrome(input: {
+  wasPhase2MapActive: boolean;
+  phase2MapActive: boolean;
+  stage: OnboardingV2State['stage'] | null | undefined;
+}): boolean {
+  return input.wasPhase2MapActive &&
+    !input.phase2MapActive &&
+    (input.stage === 'onboarding_complete' || input.stage === 'graduated');
+}
+
 export type Phase2MapLayout = {
   filterBand: { top: number; bottom: number };
   queueBand: { top: number; bottom: number };

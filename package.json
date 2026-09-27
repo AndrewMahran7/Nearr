@@ -139,6 +139,7 @@
     "test:onboarding-fully-offline": "ts-node -P scripts/tsconfig.json scripts/testOnboardingFullyOffline.ts",
     "test:onboarding-authentic-phase2-auth": "ts-node -P scripts/tsconfig.json scripts/testOnboardingAuthenticPhase2Auth.ts",
     "test:onboarding-install-lifecycle": "ts-node -P scripts/tsconfig.json scripts/testOnboardingInstallLifecycle.ts",
+    "test:onboarding-phase2-auth-map-hardening": "ts-node -P scripts/tsconfig.json scripts/testOnboardingPhase2AuthMapHardening.ts",
     "test:onboarding-no-live-services": "ts-node -P scripts/tsconfig.json scripts/testOnboardingNoLiveServices.ts",
     "test:open-original-post": "ts-node -P scripts/tsconfig.json scripts/testOpenOriginalPost.ts",
     "test:share-jobs-ui": "ts-node -P scripts/tsconfig.json scripts/testShareJobsUi.ts",

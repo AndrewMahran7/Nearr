@@ -79,7 +79,8 @@ const pool = selectPracticeContent({ platform: 'tiktok', interest: 'food', exclu
 assert.equal(pool[0]?.platform, 'tiktok');
 assert.equal(pool[0]?.category, 'food');
 assert.match(coach, /deferOnboardingV2Practice/);
-assert.match(coach, /Share any place video to Nearr/);
+assert.match(coach, /Open practice video/);
+assert.match(coach, /ONBOARDING_PHASE2_PRACTICE\.canonicalUrl/);
 assert.match(coach, /Linking\.openURL/);
 assert.doesNotMatch(coach, /loadOnboardingPracticeFixture|onboardingTutorialPreviewUrl|useOnboardingTutorialJobs/);
 

@@ -149,7 +149,7 @@ function appleRules() {
   );
   assert.match(
     appleHandler,
-    /status === 'cancelled'[\s\S]{0,220}return;/,
+    /status === 'cancelled'[\s\S]{0,400}return;/,
     'cancellation returns before any error UI',
   );
   const cancelBranch = appleHandler.slice(

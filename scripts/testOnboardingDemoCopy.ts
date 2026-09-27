@@ -252,9 +252,12 @@ function finalCtaCreatesTheMap() {
 function authContinuity() {
   assert.match(
     account,
-    /anonymousOnboarding \? 'Keep your Nearr map' : 'Create your map'/,
-    'auth preserves the legacy promise and uses preservation copy after the real tutorial',
+    /const authCopy = onboardingAuthCopy\(authEntryIntent\)/,
+    'auth copy follows the explicit account-entry intent',
   );
+  assert.match(account, /authCopy\.headline/, 'the account heading renders the intent-specific copy');
+  assert.match(account, /authCopy\.subtext/, 'the account subtext renders the intent-specific copy');
+  assert.match(account, /authEntryIntent !== 'existing_account_sign_in'/, 'existing-account sign-in bypasses anonymous transfer preparation');
   assert.doesNotMatch(account, /Continue to Nearr/, 'no conflicting auth headline remains');
   assert.match(
     account,

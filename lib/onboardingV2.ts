@@ -118,6 +118,7 @@ import {
   type OnboardingV2State,
   type SimulatedTutorialAction,
 } from '@/lib/onboardingV2Core';
+import { onboardingPhase2PracticeFixture } from '@/lib/onboardingPhase2Practice';
 import type { OnboardingStarterContent } from '@/constants/onboardingStarterContent';
 import { saveSavedPlace } from '@/services/savedPlacesService';
 
@@ -526,7 +527,8 @@ export function deferOnboardingV2Practice(): Promise<OnboardingV2State> {
 }
 
 export function beginOnboardingV2RealPractice(): Promise<OnboardingV2State> {
-  return applyTransition(beginOnboardingRealPractice);
+  return applyTransition((state, now) =>
+    beginOnboardingRealPractice(state, now, onboardingPhase2PracticeFixture(now)));
 }
 
 export function beginOnboardingV2SharingRehearsal(): Promise<OnboardingV2State> {
@@ -798,7 +800,23 @@ export function prepareOnboardingV2RealPracticeShare(sourceUrl: string): Promise
     if (
       state.pendingShare?.kind === 'independent_1' ||
       state.pendingShare?.kind === 'independent_2'
-    ) return receiveSharedSource(state, sourceUrl, now);
+    ) {
+      const received = receiveSharedSource(state, sourceUrl, now);
+      if (received.changed) return received;
+      // A different real post is still a valid Nearr share. Replace only the
+      // guided attempt; the normal recognition/review pipeline stays in charge.
+      const normalized = normalizeOnboardingSourceUrl(sourceUrl);
+      if (!normalized) return { state, changed: false, events: [] };
+      const contentId = extractOnboardingContentIdentity(sourceUrl)?.contentId ?? normalized;
+      const selected = selectPracticeSource(state, contentId, now, true);
+      const opened = openExternalStarter(selected.state, { contentId, sourceUrl }, now);
+      const replacementReceived = receiveSharedSource(opened.state, sourceUrl, now);
+      return {
+        state: replacementReceived.state,
+        changed: selected.changed || opened.changed || replacementReceived.changed,
+        events: [...selected.events, ...opened.events, ...replacementReceived.events],
+      };
+    }
     if (state.stage !== 'practice_ready') return { state, changed: false, events: [] };
     const normalized = normalizeOnboardingSourceUrl(sourceUrl);
     if (!normalized) return { state, changed: false, events: [] };

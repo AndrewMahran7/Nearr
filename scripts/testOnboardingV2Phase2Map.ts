@@ -139,7 +139,7 @@ assert.doesNotMatch(
   /const handleSelectMapCategory[\s\S]{0,700}(closeOnboarding|router\.|replace\(|dismiss)/,
   'filter selection does not dismiss or navigate onboarding',
 );
-assert.match(coach, /state\?\.stage !== 'practice_ready'/);
+assert.match(coach, /'practice_ready', 'first_independent_external_video_opened'/);
 assert.match(coach, /deferOnboardingV2Practice/);
 assert.doesNotMatch(coach, /loadOnboardingPracticeFixture|useOnboardingTutorialJobs/);
 assert.match(coach, /Linking\.openURL/);

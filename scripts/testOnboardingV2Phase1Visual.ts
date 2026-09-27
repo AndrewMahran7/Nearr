@@ -9,6 +9,7 @@ const secondHalf = read('components/onboarding/v2/OnboardingV2SecondHalf.tsx');
 const frame = read('components/onboarding/v2/Phase1Visuals.tsx');
 const visualLanguage = read('components/onboarding/v2/OnboardingVisualLanguage.tsx');
 const account = read('app/(onboarding)/account.tsx');
+const authIntent = read('lib/onboardingAuthIntentCore.ts');
 const settings = read('app/(tabs)/settings.tsx');
 const index = read('app/index.tsx');
 const map = read('app/(tabs)/map.tsx');
@@ -55,7 +56,8 @@ console.log('PASS post-proof value, permission education, and truthful setup cho
 
 assert.match(account, /Continue with Apple|AppleAuthenticationButton/);
 assert.match(account, /GoogleSignInButton/);
-assert.match(account, /Back up your map/);
+assert.match(authIntent, /Back up your map/);
+assert.match(authIntent, /Sign in to Nearr/);
 assert.match(secondHalf, /Phase1PrimaryButton title="Explore my map"/);
 assert.match(secondHalf, /private practice example/);
 assert.match(secondHalf, /real app use Nearr's live recognition/);

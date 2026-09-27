@@ -170,6 +170,8 @@ import {
   PHASE2_REQUIRED_MAP_FILTERS,
   resolvePhase2MapLayout,
   shouldRenderMapTopChrome,
+  shouldRestoreNormalMapChrome,
+  shouldShowLocalTutorialPlace,
 } from '@/lib/onboardingV2MapPresentation';
 import {
   closeOnboardingV2PlaceTour,
@@ -542,6 +544,7 @@ export default function MapScreen() {
   const mapPinRedesignEnabled = isMapPinRedesignEnabled();
   const configuredClusteringEnabled = isMapClusteringEnabled();
   const [debugClusteringOverride, setDebugClusteringOverride] = useState<boolean | null>(null);
+  const [mapDiagnosticsExpanded, setMapDiagnosticsExpanded] = useState(false);
   const [mapPinGlyphsReady, setMapPinGlyphsReady] = useState(!mapPinRedesignEnabled);
   useEffect(() => {
     if (!mapPinRedesignEnabled) {
@@ -570,14 +573,15 @@ export default function MapScreen() {
     [mapPreview],
   );
   const fixtureSavedPlace = useMemo<SavedPlaceWithPlace | null>(() => {
-    if (!phase2MapActive || onboardingV2State?.tutorialResult?.resolutionSource !== 'onboarding_scripted') return null;
-    const fixture = offlineFixtureById(onboardingV2State.tutorialFixture?.id);
-    const save = onboardingV2State.tutorialSave;
+    if (!shouldShowLocalTutorialPlace(onboardingV2State)) return null;
+    const onboardingState = onboardingV2State!;
+    const fixture = offlineFixtureById(onboardingState.tutorialFixture?.id);
+    const save = onboardingState.tutorialSave;
     if (!fixture || !save) return null;
     const timestamp = save.completedAt;
     return {
       id: save.savedPlaceId,
-      user_id: onboardingV2State.boundUserId ?? 'onboarding-local-fixture',
+      user_id: onboardingState.boundUserId ?? 'onboarding-local-fixture',
       place_id: fixture.place.id,
       radius_value: null,
       radius_unit: null,
@@ -608,7 +612,7 @@ export default function MapScreen() {
         created_at: timestamp,
       },
     };
-  }, [onboardingV2State, phase2MapActive]);
+  }, [onboardingV2State]);
   const data = useMemo(() => {
     const base = mapPreview ? previewData : liveData;
     if (!fixtureSavedPlace || base.some((place) => place.id === fixtureSavedPlace.id)) return base;
@@ -1184,6 +1188,18 @@ export default function MapScreen() {
   const [previewExpanded, setPreviewExpanded] = useState(false);
   const previewExpandedRef = useRef(false);
   previewExpandedRef.current = previewExpanded;
+  const previousPhase2MapActiveRef = useRef(phase2MapActive);
+  useEffect(() => {
+    const shouldRestore = shouldRestoreNormalMapChrome({
+      wasPhase2MapActive: previousPhase2MapActiveRef.current,
+      phase2MapActive,
+      stage: onboardingV2State?.stage,
+    });
+    previousPhase2MapActiveRef.current = phase2MapActive;
+    if (!shouldRestore) return;
+    setPreviewExpanded(false);
+    previewTranslateY.setValue(0);
+  }, [onboardingV2State?.stage, phase2MapActive, previewTranslateY]);
   const sourceGroupBrowseActive = !nearbyExplorer
     && !previewExpanded
     && !!sourceGroupWheelSelectedPlace;
@@ -3775,23 +3791,27 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {__DEV__ && !cleanOnboardingLanding ? (
-        <Pressable
-          style={[styles.mapDiagnostics, { top: safeTopInset + 6 }]}
-          onPress={() => setDebugClusteringOverride((current) =>
-            !(current ?? configuredClusteringEnabled))}
-          accessibilityRole="button"
-          accessibilityLabel="Toggle map clustering diagnostics"
-        >
-          <Text style={styles.mapDiagnosticsText}>
-            {`Saved ${conservationLedger.source_count}  Eligible ${conservationLedger.eligible_count}\n`}
-            {`In viewport ${conservationLedger.viewport_eligible_count}  Input ${conservationLedger.cluster_input_count}\n`}
-            {`Represented ${conservationLedger.represented_in_viewport_count}  Missing ${conservationLedger.missing_ids.length}\n`}
-            {`Zoom ${effectiveClusterZoom}  Camera ${cameraRevision}/${conservationLedger.viewportRevision}\n`}
-            {`Clustering ${clusteringRequested ? 'ON' : 'OFF'}${conservationFallbackActive ? ' · FALLBACK' : ''}${rawMarkerLimitFallbackActive ? ' · RAW LIMIT' : ''}\n`}
-            {`${clusterRegion.latitude.toFixed(2)},${clusterRegion.longitude.toFixed(2)} ±${(clusterRegion.latitudeDelta / 2).toFixed(2)},${(clusterRegion.longitudeDelta / 2).toFixed(2)}`}
-          </Text>
-        </Pressable>
+      {__DEV__ && !cleanOnboardingLanding && !phase2MapActive ? (
+        <View style={[styles.mapDiagnostics, { top: safeTopInset + topChromeClearance + 8 }]}>
+          {mapDiagnosticsExpanded ? <>
+            <Text style={styles.mapDiagnosticsText}>
+              {`Saved ${conservationLedger.source_count}  Eligible ${conservationLedger.eligible_count}\n`}
+              {`In viewport ${conservationLedger.viewport_eligible_count}  Input ${conservationLedger.cluster_input_count}\n`}
+              {`Represented ${conservationLedger.represented_in_viewport_count}  Missing ${conservationLedger.missing_ids.length}\n`}
+              {`Zoom ${effectiveClusterZoom}  Camera ${cameraRevision}/${conservationLedger.viewportRevision}\n`}
+              {`Clustering ${clusteringRequested ? 'ON' : 'OFF'}${conservationFallbackActive ? ' · FALLBACK' : ''}${rawMarkerLimitFallbackActive ? ' · RAW LIMIT' : ''}\n`}
+              {`${clusterRegion.latitude.toFixed(2)},${clusterRegion.longitude.toFixed(2)} ±${(clusterRegion.latitudeDelta / 2).toFixed(2)},${(clusterRegion.longitudeDelta / 2).toFixed(2)}`}
+            </Text>
+            <View style={styles.mapDiagnosticsActions}>
+              <Pressable onPress={() => setDebugClusteringOverride((current) => !(current ?? configuredClusteringEnabled))} accessibilityRole="button" accessibilityLabel="Toggle map clustering"><Text style={styles.mapDiagnosticsActionText}>Toggle clustering</Text></Pressable>
+              <Pressable onPress={() => setMapDiagnosticsExpanded(false)} accessibilityRole="button" accessibilityLabel="Collapse map diagnostics"><Text style={styles.mapDiagnosticsActionText}>Collapse</Text></Pressable>
+            </View>
+          </> : (
+            <Pressable onPress={() => setMapDiagnosticsExpanded(true)} accessibilityRole="button" accessibilityLabel="Expand map diagnostics" style={styles.mapDiagnosticsChip}>
+              <Text style={styles.mapDiagnosticsChipText}>QA</Text>
+            </Pressable>
+          )}
+        </View>
       ) : null}
 
       {/* Non-blocking empty/loading pill. The map keeps rendering underneath.
@@ -4395,18 +4415,22 @@ function createStyles(
     position: 'absolute',
     right: 6,
     maxWidth: 230,
-    paddingHorizontal: 7,
-    paddingVertical: 5,
     borderRadius: 7,
-    backgroundColor: 'rgba(0,0,0,0.78)',
     zIndex: 100,
   },
+  mapDiagnosticsChip: { width: 32, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.68)' },
+  mapDiagnosticsChipText: { color: '#FFFFFF', fontSize: 10, fontWeight: '900' },
   mapDiagnosticsText: {
     color: '#FFFFFF',
     fontSize: 9,
     lineHeight: 12,
     fontVariant: ['tabular-nums'],
+    paddingHorizontal: 7,
+    paddingTop: 5,
+    backgroundColor: 'rgba(0,0,0,0.82)',
   },
+  mapDiagnosticsActions: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingHorizontal: 7, paddingVertical: 6, backgroundColor: 'rgba(0,0,0,0.88)', borderBottomLeftRadius: 7, borderBottomRightRadius: 7 },
+  mapDiagnosticsActionText: { color: '#FFB070', fontSize: 9, fontWeight: '800' },
   emptyPillText: {
     ...typography.caption,
     color: colors.text,

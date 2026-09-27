@@ -145,7 +145,8 @@ const exhausted = getNextPracticeSource({
 });
 assert.deepEqual(exhausted, { kind: 'EXHAUSTED' });
 const coachmark = readFileSync(join(process.cwd(), 'components/onboarding/v2/OnboardingV2MapCoachmark.tsx'), 'utf8');
-assert.match(coachmark, /Share any place video to Nearr/);
+assert.match(coachmark, /Open practice video/);
+assert.match(coachmark, /ONBOARDING_PHASE2_PRACTICE\.canonicalUrl/);
 assert.match(coachmark, /deferOnboardingV2Practice/);
 assert.doesNotMatch(coachmark, /loadOnboardingPracticeFixture|router\.(replace|push)/);
 assert.match(coachmark, /Linking\.openURL/);

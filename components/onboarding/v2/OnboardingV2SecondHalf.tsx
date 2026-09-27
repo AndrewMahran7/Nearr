@@ -52,23 +52,30 @@ function ShareEducationScreen({ state }: { state: OnboardingV2State }) {
 }
 
 function NearbyPermissionScreen({ state }: { state: OnboardingV2State }) {
-  const [busy, setBusy] = useState(false);
+  const [requestingOsPermission, setRequestingOsPermission] = useState(false);
+  const operationRef = useRef(false);
   const choose = async (request: boolean) => {
-    if (busy) return;
-    setBusy(true);
-    let next = state;
-    if (next.stage === 'nearby_value') next = await continueOnboardingV2ToLocationEducation();
-    if (next.stage === 'location_education') {
-      if (request) {
-        const attempt = await requestOnboardingForegroundLocation();
-        await recordOnboardingV2ForegroundLocationResult(attempt.result, { requested: attempt.requested });
-      } else {
-        await recordOnboardingV2ForegroundLocationResult('skipped', { requested: false });
+    if (operationRef.current) return;
+    operationRef.current = true;
+    try {
+      let next = state;
+      if (next.stage === 'nearby_value') next = await continueOnboardingV2ToLocationEducation();
+      if (next.stage === 'location_education') {
+        if (request) {
+          setRequestingOsPermission(true);
+          const attempt = await requestOnboardingForegroundLocation();
+          setRequestingOsPermission(false);
+          await recordOnboardingV2ForegroundLocationResult(attempt.result, { requested: attempt.requested });
+        } else {
+          await recordOnboardingV2ForegroundLocationResult('skipped', { requested: false });
+        }
       }
+    } finally {
+      setRequestingOsPermission(false);
+      operationRef.current = false;
     }
-    setBusy(false);
   };
-  return <Phase1Frame progress={0.8} progressLabel="Onboarding progress" footer={<View style={styles.actions}><Phase1PrimaryButton title="Allow while using Nearr" onPress={() => void choose(true)} loading={busy} /><Pressable disabled={busy} onPress={() => void choose(false)} accessibilityRole="button" style={styles.skipButton}><Text style={styles.skipText}>Not now</Text></Pressable></View>}>
+  return <Phase1Frame progress={0.8} progressLabel="Onboarding progress" footer={<View style={styles.actions}><Phase1PrimaryButton title="Allow while using Nearr" onPress={() => void choose(true)} loading={requestingOsPermission} /><Pressable disabled={requestingOsPermission} onPress={() => void choose(false)} accessibilityRole="button" style={styles.skipButton}><Text style={styles.skipText}>Not now</Text></Pressable></View>}>
     <Text style={styles.eyebrow}>USEFUL AT THE RIGHT MOMENT</Text><Text style={styles.headline}>Remember places when you're nearby.</Text>
     <Text style={styles.body}>Location can connect your saved map to what is close—for example, {nearbyExample(state.selectedInterests).toLowerCase()}.</Text>
     <View style={styles.radar} accessible accessibilityLabel={`Illustrative nearby-reminder example using ${state.tutorialResult?.place.name ?? 'a saved place'}; not a live distance`}><View style={styles.exampleBadge}><Text style={styles.exampleBadgeText}>EXAMPLE · NOT LIVE DISTANCE</Text></View><View style={styles.radarRingLarge} /><View style={styles.radarRingSmall} /><View style={styles.youDot}><Feather name="navigation" size={18} color="#FFFFFF" /></View><View style={styles.savedNearby}><Feather name="map-pin" size={23} color="#FFFFFF" /><Text style={styles.savedNearbyText} numberOfLines={1}>{state.tutorialResult?.place.name}</Text><Text style={styles.savedNearbyMeta}>saved place example</Text></View></View>
@@ -78,6 +85,7 @@ function NearbyPermissionScreen({ state }: { state: OnboardingV2State }) {
 
 function BackgroundLocationScreen({ state }: { state: OnboardingV2State }) {
   const [busy, setBusy] = useState(false);
+  const operationRef = useRef(false);
   const settingsOpenedRef = useRef(false);
   const result = state.locationBackgroundResult;
   const needsSettings = result != null && result !== 'granted' && result !== 'skipped';
@@ -88,24 +96,33 @@ function BackgroundLocationScreen({ state }: { state: OnboardingV2State }) {
       settingsOpenedRef.current = false;
       setBusy(true);
       void getOnboardingLocationPermissionSnapshot()
-        .then((snapshot) => recordOnboardingV2BackgroundLocationResult(snapshot.background, {
-          requested: false,
-          advance: snapshot.background === 'granted',
-        }))
+        .then((snapshot) => {
+          setBusy(false);
+          return recordOnboardingV2BackgroundLocationResult(snapshot.background, {
+            requested: false,
+            advance: snapshot.background === 'granted',
+          });
+        })
         .finally(() => setBusy(false));
     });
     return () => subscription.remove();
   }, []);
 
   const request = async () => {
-    if (busy) return;
-    setBusy(true);
-    const attempt = await requestOnboardingBackgroundLocation();
-    await recordOnboardingV2BackgroundLocationResult(attempt.result, {
-      requested: attempt.requested,
-      advance: attempt.result === 'granted',
-    });
-    setBusy(false);
+    if (operationRef.current) return;
+    operationRef.current = true;
+    try {
+      setBusy(true);
+      const attempt = await requestOnboardingBackgroundLocation();
+      setBusy(false);
+      await recordOnboardingV2BackgroundLocationResult(attempt.result, {
+        requested: attempt.requested,
+        advance: attempt.result === 'granted',
+      });
+    } finally {
+      setBusy(false);
+      operationRef.current = false;
+    }
   };
   const openSettings = async () => {
     settingsOpenedRef.current = true;
@@ -130,9 +147,26 @@ function BackgroundLocationScreen({ state }: { state: OnboardingV2State }) {
 }
 
 function NotificationEducationScreen({ state }: { state: OnboardingV2State }) {
-  const [busy, setBusy] = useState(false);
-  const choose = async (request: boolean) => { if (busy) return; setBusy(true); if (request) { const attempt = await requestOnboardingNotifications(); await recordOnboardingV2NotificationResult(attempt.result, { requested: attempt.requested }); } else { await recordOnboardingV2NotificationResult('skipped', { requested: false }); } setBusy(false); };
-  return <Phase1Frame progress={0.87} progressLabel="Onboarding progress" footer={<View style={styles.actions}><Phase1PrimaryButton title="Notify me" onPress={() => void choose(true)} loading={busy} /><Pressable disabled={busy} onPress={() => void choose(false)} accessibilityRole="button" style={styles.skipButton}><Text style={styles.skipText}>Not now</Text></Pressable></View>}>
+  const [requestingOsPermission, setRequestingOsPermission] = useState(false);
+  const operationRef = useRef(false);
+  const choose = async (request: boolean) => {
+    if (operationRef.current) return;
+    operationRef.current = true;
+    try {
+      if (request) {
+        setRequestingOsPermission(true);
+        const attempt = await requestOnboardingNotifications();
+        setRequestingOsPermission(false);
+        await recordOnboardingV2NotificationResult(attempt.result, { requested: attempt.requested });
+      } else {
+        await recordOnboardingV2NotificationResult('skipped', { requested: false });
+      }
+    } finally {
+      setRequestingOsPermission(false);
+      operationRef.current = false;
+    }
+  };
+  return <Phase1Frame progress={0.87} progressLabel="Onboarding progress" footer={<View style={styles.actions}><Phase1PrimaryButton title="Notify me" onPress={() => void choose(true)} loading={requestingOsPermission} /><Pressable disabled={requestingOsPermission} onPress={() => void choose(false)} accessibilityRole="button" style={styles.skipButton}><Text style={styles.skipText}>Not now</Text></Pressable></View>}>
     <View style={styles.heroIcon}><Feather name="bell" size={32} color="#FFFFFF" /></View><Text style={styles.eyebrow}>A QUIET HEADS-UP</Text><Text style={styles.headline}>Know when a saved place is nearby.</Text><Text style={styles.body}>Nearr can remind you at a useful moment. You stay in control in Settings.</Text>
     {state.locationForegroundResult !== 'granted' ? <PermissionResultNote text="Location is off, so nearby alerts will wait. Your map still works." /> : state.locationBackgroundResult !== 'granted' ? <PermissionResultNote text="Only in-app location is enabled. Notifications alone cannot enable background nearby reminders." /> : null}
     <View style={styles.notificationCard} accessible accessibilityLabel={`Example Nearr notification for ${nearbyExample(state.selectedInterests)}`}><View style={styles.notificationHeader}><Image source={require('../../../assets/icon.png')} style={styles.notificationLogo} /><Text style={styles.notificationApp}>NEARR · EXAMPLE</Text><Text style={styles.notificationTime}>now</Text></View><Text style={styles.notificationTitle}>A saved place is nearby</Text><Text style={styles.notificationBody}>{nearbyExample(state.selectedInterests)} is close to your route.</Text></View>

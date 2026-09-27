@@ -63,6 +63,12 @@ import {
 } from '@/components/onboarding';
 import { getPendingSharedPlaceIntent, type PendingSharedPlaceIntent } from '@/lib/sharedPlaceIntent';
 import { QUALIFIED_EXISTING_ACCOUNT_ROUTE, resolveExistingAccountSignIn } from '@/lib/existingAccountSignIn';
+import { readExistingAccountSignIn } from '@/lib/existingAccountSignIn';
+import {
+  onboardingAuthCopy,
+  requiresAnonymousTransferPreparation,
+  resolveOnboardingAuthEntryIntent,
+} from '@/lib/onboardingAuthIntentCore';
 import { persistNamesFromAuthUser } from '@/services/profileService';
 
 /**
@@ -108,12 +114,28 @@ const DEV_PASSWORD_LOGIN_ENABLED =
  */
 export default function AccountAuthScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ reason?: string }>();
+  const params = useLocalSearchParams<{ reason?: string; intent?: string | string[] }>();
   const { session } = useAuth();
   const { state: onboardingState } = useOnboardingV2();
   const anonymousOnboarding = session?.user.is_anonymous === true;
   const signedIn = !!session && !anonymousOnboarding;
   const mapBackupContext = anonymousOnboarding && !!onboardingState?.behavioralCompletedAt && onboardingState.stage === 'account_required';
+  const [storedExistingAccountIntent, setStoredExistingAccountIntent] = useState(params.intent === 'existing');
+  const existingAccountIntentRef = useRef(params.intent === 'existing');
+  const authEntryIntent = resolveOnboardingAuthEntryIntent({
+    routeIntent: params.intent,
+    storedExistingAccountIntent,
+    mapBackupContext,
+  });
+  const authCopy = onboardingAuthCopy(authEntryIntent);
+
+  useEffect(() => {
+    void readExistingAccountSignIn().then((intent) => {
+      if (!intent) return;
+      existingAccountIntentRef.current = true;
+      setStoredExistingAccountIntent(true);
+    });
+  }, []);
 
   const [emailState, setEmailState] = useState(() => initialEmailAuthState());
   const { mode, checkEmailReason, email } = emailState;
@@ -123,6 +145,8 @@ export default function AccountAuthScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(
     params.reason === 'new_account'
       ? 'This account still needs Nearr’s quick setup. Start there, then use the same sign-in.'
+      : params.reason === 'account_verification_failed'
+      ? 'Nearr could not verify that account yet. Retry your sign-in or go back to continue onboarding.'
       : null,
   );
   const [appleAvailable, setAppleAvailable] = useState<boolean | null>(null);
@@ -206,7 +230,7 @@ export default function AccountAuthScreen() {
   }
 
   async function handleBack() {
-    if (anonymousOnboarding) await cancelOnboardingAccountTransfer();
+    if (anonymousOnboarding && authEntryIntent !== 'existing_account_sign_in') await cancelOnboardingAccountTransfer();
     if (mapBackupContext) {
       router.replace('/');
       return;
@@ -223,6 +247,18 @@ export default function AccountAuthScreen() {
 
   async function prepareTransferIfNeeded(): Promise<boolean> {
     if (!anonymousOnboarding) return true;
+    // The persisted marker is the authority for magic-link/OAuth round trips.
+    // Read it at the operation boundary so a slow render effect cannot briefly
+    // route an existing-account attempt through anonymous transfer prep.
+    if (!existingAccountIntentRef.current) {
+      existingAccountIntentRef.current = !!(await readExistingAccountSignIn());
+    }
+    const intent = resolveOnboardingAuthEntryIntent({
+      routeIntent: params.intent,
+      storedExistingAccountIntent: existingAccountIntentRef.current,
+      mapBackupContext,
+    });
+    if (!requiresAnonymousTransferPreparation(intent)) return true;
     try {
       await prepareOnboardingAccountTransfer();
       return true;
@@ -264,7 +300,9 @@ export default function AccountAuthScreen() {
       void recordOnboardingV2AuthFailed(method, 'failed');
       console.warn('[onboarding-v2] account_transition_failed', error);
       if (mountedRef.current) {
-        setErrorMessage('Your account signed in, but Nearr could not preserve the tutorial yet. Try Continue again.');
+        setErrorMessage(authEntryIntent === 'existing_account_sign_in'
+          ? 'You’re signed in, but Nearr could not verify this account yet. Try Continue again.'
+          : 'Your account signed in, but Nearr could not preserve the tutorial yet. Try Continue again.');
       }
     } finally {
       endPostAuthRouting();
@@ -329,7 +367,7 @@ export default function AccountAuthScreen() {
       await completeAuthentication(user.id);
     } catch {
       void recordOnboardingV2AuthFailed('password_sign_in', 'failed');
-      if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
+      if (anonymousOnboarding && authEntryIntent !== 'existing_account_sign_in') void cancelOnboardingAccountTransfer();
       void trackEvent('onboarding_password_signin_failed', {});
       console.warn('[auth] password sign-in threw');
       if (mountedRef.current) {
@@ -367,7 +405,7 @@ export default function AccountAuthScreen() {
 
       void trackEvent('onboarding_password_signup_failed', {});
       void recordOnboardingV2AuthFailed('password_sign_up', 'failed');
-      if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
+      if (anonymousOnboarding && authEntryIntent !== 'existing_account_sign_in') void cancelOnboardingAccountTransfer();
       if (!mountedRef.current) return;
       setErrorMessage(
         toUserFacingAuthError(
@@ -422,10 +460,10 @@ export default function AccountAuthScreen() {
         void recordOnboardingV2AuthFailed('google', 'cancelled');
         // Backing out of the browser is a normal action — no error UI.
         void trackEvent('onboarding_google_cancelled', {});
-        if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
+        if (anonymousOnboarding && authEntryIntent !== 'existing_account_sign_in') void cancelOnboardingAccountTransfer();
         return;
       }
-      if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
+      if (anonymousOnboarding && authEntryIntent !== 'existing_account_sign_in') void cancelOnboardingAccountTransfer();
       void recordOnboardingV2AuthFailed('google', 'failed');
       void trackEvent('onboarding_google_failed', { reason: outcome.code });
       if (mountedRef.current) setErrorMessage(toUserFacingAuthError(null, 'google'));
@@ -450,10 +488,10 @@ export default function AccountAuthScreen() {
       if (outcome.status === 'cancelled') {
         void recordOnboardingV2AuthFailed('apple', 'cancelled');
         void trackEvent('onboarding_apple_cancelled', {});
-        if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
+        if (anonymousOnboarding && authEntryIntent !== 'existing_account_sign_in') void cancelOnboardingAccountTransfer();
         return;
       }
-      if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
+      if (anonymousOnboarding && authEntryIntent !== 'existing_account_sign_in') void cancelOnboardingAccountTransfer();
       void recordOnboardingV2AuthFailed('apple', 'failed');
       void trackEvent('onboarding_apple_failed', { reason: outcome.code });
       if (mountedRef.current) setErrorMessage(toUserFacingAuthError(null, 'apple'));
@@ -571,22 +609,15 @@ export default function AccountAuthScreen() {
           <Text style={styles.wordmark}>Nearr</Text>
         </View>
 
-        {/*
-          "Create your map" continues the promise made by the final onboarding
-          CTA. The subtext covers returning users, since every email path here
-          both signs in and creates an account.
-        */}
+        {/* Entry-intent copy keeps existing-account sign-in separate from
+            creating or backing up the current anonymous map. */}
         <Text style={styles.headline}>
-          {sharedPlaceIntent ? `Save ${sharedPlaceIntent.placeName || 'this place'}` : mapBackupContext ? 'Back up your map' : anonymousOnboarding ? 'Keep your Nearr map' : 'Create your map'}
+          {sharedPlaceIntent ? `Save ${sharedPlaceIntent.placeName || 'this place'}` : authCopy.headline}
         </Text>
         <Text style={styles.subtext}>
           {sharedPlaceIntent
             ? 'Sign in or create an account, then Nearr will bring you back here and save it to your map.'
-            : mapBackupContext
-            ? 'Add a sign-in so you can recover your places and use your map on another device.'
-            : anonymousOnboarding
-            ? 'Create or connect an account to preserve your places across devices.'
-            : 'Sign in or create an account to start saving the places you find online.'}
+            : authCopy.subtext}
         </Text>
 
         {signedIn ? (

@@ -90,8 +90,8 @@ export default function AuthCallbackScreen() {
             });
           }
         } catch (error) {
-          console.warn('[auth-callback] onboarding_transfer_failed', error);
-          router.replace('/(onboarding)/account');
+          console.warn('[auth-callback] post_auth_resolution_failed', error);
+          router.replace({ pathname: '/(onboarding)/account', params: { reason: 'account_verification_failed' } });
           return;
         }
         if (!hasLoggedOutcome.current) {

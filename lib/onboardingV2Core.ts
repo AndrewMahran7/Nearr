@@ -1994,9 +1994,14 @@ export function deferOnboardingPractice(
   state: OnboardingV2State,
   now: string,
 ): OnboardingTransition {
-  if (!['practice_ready', 'phase2_intro'].includes(state.stage) || !state.tutorialSave) return unchanged(state);
+  if (![
+    'practice_ready',
+    'phase2_intro',
+    'first_independent_external_video_opened',
+    'first_independent_share_returned',
+  ].includes(state.stage) || !state.tutorialSave) return unchanged(state);
   return transition(state, {
-    stage: state.behavioralCompletedAt ? 'onboarding_complete' : 'why_nearr',
+    stage: state.behavioralCompletedAt ? 'onboarding_complete' : 'first_magic_moment_complete',
     secondHalfStartedAt: state.secondHalfStartedAt ?? now,
   }, now, [{ name: 'onboarding_practice_deferred', properties: { fixture_id: state.practiceFixture?.id } }]);
 }
@@ -2007,8 +2012,7 @@ export function bypassExistingUserFromWelcome(
   userId: string,
   now: string,
 ): OnboardingTransition {
-  if (!userId || state.tutorialSave || state.independentSaves.length > 0) return unchanged(state);
-  if (!['not_started', 'overview'].includes(state.stage)) return unchanged(state);
+  if (!userId || state.cohort === 'existing_user_bypassed') return unchanged(state);
   return transition(state, {
     cohort: 'existing_user_bypassed',
     stage: 'graduated',
@@ -2019,6 +2023,17 @@ export function bypassExistingUserFromWelcome(
     authCompletedAt: now,
     graduationAcknowledgedAt: now,
     pendingShare: null,
+    tutorialContentId: null,
+    tutorialFixture: null,
+    tutorialFixtureError: null,
+    tutorialResult: null,
+    tutorialSave: null,
+    practiceFixture: null,
+    practiceFixtureError: null,
+    practiceContentIds: [],
+    practiceAttemptedContentIds: [],
+    independentSaves: [],
+    practiceRecovery: null,
   }, now, [{ name: 'onboarding_signin_completed', properties: { established_account: true, entry: 'welcome' } }]);
 }
 
@@ -2026,6 +2041,7 @@ export function bypassExistingUserFromWelcome(
 export function beginOnboardingRealPractice(
   state: OnboardingV2State,
   now: string,
+  practiceFixture?: OnboardingTutorialFixture,
 ): OnboardingTransition {
   if (
     state.stage !== 'phase2_intro' ||
@@ -2035,6 +2051,8 @@ export function beginOnboardingRealPractice(
   return transition(state, {
     stage: 'practice_ready',
     practiceLaunchedAt: state.practiceLaunchedAt ?? now,
+    practiceFixture: practiceFixture ?? state.practiceFixture,
+    practiceContentIds: practiceFixture ? [practiceFixture.contentId] : state.practiceContentIds,
     pendingShare: null,
     lastFailure: null,
   }, now, [{ name: 'practice_started', properties: { real_share_boundary: true } }]);
@@ -2254,7 +2272,7 @@ export function completePendingSave(
     return transition(
       state,
       {
-        stage: state.behavioralCompletedAt ? 'onboarding_complete' : 'why_nearr', pendingShare: null, independentSaves, practiceRecovery: null,
+        stage: state.behavioralCompletedAt ? 'onboarding_complete' : 'first_magic_moment_complete', pendingShare: null, independentSaves, practiceRecovery: null,
         practiceCompletedAt: now, secondHalfStartedAt: state.secondHalfStartedAt ?? now,
       },
       now,
@@ -2268,7 +2286,19 @@ export function completePendingSave(
           fixture_id: state.practiceFixture?.id,
           time_to_real_practice_save: Number.isFinite(practiceStartedMs) ? Math.max(0, Date.parse(now) - practiceStartedMs) : null,
         } },
-        { name: 'onboarding_real_external_practice_completed', properties: { fixture_id: state.practiceFixture?.id } },
+        ...(state.practiceFixture && isExpectedOnboardingSource({
+          attemptId: 'practice-fixture-match',
+          kind: 'independent_1',
+          contentId: state.practiceFixture.contentId,
+          sourceUrl: state.practiceFixture.canonicalUrl,
+          normalizedSourceUrl: normalizeOnboardingSourceUrl(state.practiceFixture.canonicalUrl) ?? state.practiceFixture.canonicalUrl,
+          contentIdentity: extractOnboardingContentIdentity(state.practiceFixture.canonicalUrl),
+          openedAt: now,
+          shareReceivedAt: null,
+          resultSeenAt: null,
+        }, input.sourceUrl)
+          ? [{ name: 'onboarding_real_external_practice_completed' as const, properties: { fixture_id: state.practiceFixture.id, guided_practice_matched: true } }]
+          : []),
       ],
     );
   }
