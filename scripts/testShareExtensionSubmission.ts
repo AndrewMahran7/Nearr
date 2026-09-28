@@ -79,10 +79,19 @@ async function main() {
     join(process.cwd(), 'components/onboarding/v2/OnboardingV2MapCoachmark.tsx'),
     'utf8',
   );
+  const realPractice = readFileSync(
+    join(process.cwd(), 'components/onboarding/v2/OnboardingV2RealPractice.tsx'),
+    'utf8',
+  );
+  const practiceLauncher = readFileSync(
+    join(process.cwd(), 'services/onboardingPracticeLauncher.ts'),
+    'utf8',
+  );
   const map = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
   assert.match(coach, /deferOnboardingV2Practice/,
     'legacy onboarding checkpoints receive a local compatibility continuation');
-  assert.match(coach, /Linking\.openURL/,
+  assert.match(realPractice, /openOnboardingPracticePost/);
+  assert.match(practiceLauncher, /Linking\.openURL/,
     'explicit Phase 2 practice may launch the user-selected real social URL');
   assert.doesNotMatch(coach, /isShareJobForTutorialFixture/,
     'onboarding does not use a fixture shortcut for the real share-extension queue');

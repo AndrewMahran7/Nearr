@@ -74,6 +74,7 @@ import {
 } from '@/lib/onboardingAuthIntentCore';
 import { persistNamesFromAuthUser } from '@/services/profileService';
 import { onboardingTransferErrorCopy } from '@/lib/onboardingTransferErrors';
+import { recordOnboardingV2RenderDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 
 /**
  * Gate for the DEBUGGING-ONLY developer login panel.
@@ -121,6 +122,8 @@ export default function AccountAuthScreen() {
   const params = useLocalSearchParams<{ reason?: string; intent?: string | string[] }>();
   const { session } = useAuth();
   const { state: onboardingState } = useOnboardingV2();
+  const renderMountIdRef = useRef(`account-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+  const renderLoggedRef = useRef(false);
   const anonymousOnboarding = session?.user.is_anonymous === true;
   const signedIn = !!session && !anonymousOnboarding;
   const mapBackupContext = anonymousOnboarding && !!onboardingState?.behavioralCompletedAt && onboardingState.stage === 'account_required';
@@ -132,6 +135,16 @@ export default function AccountAuthScreen() {
     mapBackupContext,
   });
   const authCopy = onboardingAuthCopy(authEntryIntent);
+
+  useEffect(() => {
+    if (renderLoggedRef.current) return;
+    renderLoggedRef.current = true;
+    recordOnboardingV2RenderDiagnostic({
+      screen: 'account',
+      mount_id: renderMountIdRef.current,
+      reason: 'route_mounted',
+    });
+  }, []);
 
   useEffect(() => {
     void readExistingAccountSignIn().then((intent) => {

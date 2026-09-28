@@ -1,12 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, AppState, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 
-import { MapFormationIllustration, NearrSparkleMark, useOnboardingReduceMotion } from './OnboardingVisualLanguage';
+import { MapFormationIllustration, NearrSparkleMark } from './OnboardingVisualLanguage';
 import { Phase1Colors, Phase1Frame, Phase1PrimaryButton } from './Phase1Visuals';
-import { syncGeofencesForSavedPlaces } from '@/lib/geofencing';
-import { syncProximityWatch } from '@/lib/notifications';
 import {
   completeOnboardingV2SecondHalf,
   continueOnboardingV2AfterAuth,
@@ -27,8 +24,10 @@ import {
   personalizedActivationCopy,
 } from '@/lib/onboardingV2SecondHalfCore';
 import { getOnboardingLocationPermissionSnapshot, requestOnboardingBackgroundLocation, requestOnboardingForegroundLocation, requestOnboardingNotifications } from '@/lib/onboardingV2SecondHalf';
-import { registerPushTokenForCurrentUser } from '@/lib/pushTokens';
 import { onboardingV2SavedPlaceProgress, type OnboardingReminderInitializationResult, type OnboardingV2State } from '@/lib/onboardingV2Core';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import { onboardingPhase2PracticeFromFixtureId } from '@/lib/onboardingPhase2Practice';
+import { offlineOnboardingAsset } from '@/onboarding/assets/offlineOnboardingAssets';
 
 export function OnboardingV2SecondHalf({ state }: { state: OnboardingV2State }) {
   if (state.stage === 'why_nearr') return <ShareEducationScreen state={state} />;
@@ -202,28 +201,36 @@ function MakingNearrYoursScreen({ state }: { state: OnboardingV2State }) {
 function LegacyGrowingMapAdvance() { useEffect(() => { void continueOnboardingV2AfterMakingNearrYours(); }, []); return <Phase1Frame contentStyle={styles.centered}><Text style={styles.bodyCentered}>Opening your map…</Text></Phase1Frame>; }
 
 function FinalActivationScreen({ state }: { state: OnboardingV2State }) {
-  const router = useRouter(); const [busy, setBusy] = useState(false); const reduceMotion = useOnboardingReduceMotion(); const transition = useRef(new Animated.Value(0)).current;
-  useEffect(() => { if (state.stage !== 'auth_success') return; void Promise.allSettled([registerPushTokenForCurrentUser(), syncProximityWatch(), syncGeofencesForSavedPlaces()]); void continueOnboardingV2AfterAuth(); }, [state.stage]);
+  const [busy, setBusy] = useState(false);
+  const { data: savedPlaces } = useSavedPlaces();
+  useEffect(() => { if (state.stage !== 'auth_success') return; void continueOnboardingV2AfterAuth(); }, [state.stage]);
   useEffect(() => { if (state.stage === 'personalized_activation') void showOnboardingV2ActivationChallenge(); }, [state.stage]);
   const finish = async () => {
     if (busy) return; setBusy(true); let next = state;
     if (next.stage === 'auth_success') next = await continueOnboardingV2AfterAuth();
     if (next.stage === 'personalized_activation') next = await showOnboardingV2ActivationChallenge();
     if (next.stage !== 'activation_challenge') { setBusy(false); return; }
-    next = await completeOnboardingV2SecondHalf('explore_map');
-    const openMap = () => { router.replace('/(tabs)/map'); };
-    if (reduceMotion) openMap(); else Animated.timing(transition, { toValue: 1, duration: 260, useNativeDriver: true }).start(openMap);
+    await completeOnboardingV2SecondHalf('explore_map');
+    // AuthGate owns the resulting onboarding_complete -> map replace edge.
   };
-  const place = state.tutorialResult?.place;
+  const practice = onboardingPhase2PracticeFromFixtureId(state.practiceFixture?.id);
+  const realSavedPlaceId = state.realPracticeSession?.savedPlaceId ?? state.independentSaves[0]?.savedPlaceId ?? null;
+  const realSave = realSavedPlaceId ? savedPlaces.find((saved) => saved.id === realSavedPlaceId) : undefined;
+  const realThumbnail = realSave?.sources?.find((source) => source.is_primary)?.thumbnail_url
+    ?? realSave?.sources?.[0]?.thumbnail_url
+    ?? null;
+  const realPlaceName = realSave?.place.name ?? state.realPracticeSession?.expectedPlaceName ?? practice?.expectedPlaceName ?? null;
+  const realPracticeCompleted = state.realPracticeSession?.completionReason === 'resolved' && !!realSavedPlaceId;
+  const tutorialPlace = state.tutorialResult?.place;
   const savedCount = onboardingV2SavedPlaceProgress(state).count;
   return <View style={styles.flex}><Phase1Frame progress={1} progressLabel="Onboarding complete">
     <View style={styles.finalHeader}><View style={styles.successMark}><Feather name="check" size={24} color="#FFFFFF" /></View><View style={styles.progressPill}><Text style={styles.progressText}>{savedCount} {savedCount === 1 ? 'place' : 'places'} saved</Text></View></View>
-    <Text style={styles.eyebrow}>{state.mapHandoffResult === 'ready' ? 'READY TO EXPLORE' : 'OPENING YOUR MAP'}</Text><Text style={styles.headline}>{state.mapHandoffResult === 'ready' ? 'Your map is ready to use.' : 'Your map is getting ready.'}</Text><Text style={styles.body}>{place?.name} was a private practice example. New shares in the real app use Nearr's live recognition and save to your account.</Text>
-    <MapFormationIllustration placeName={place?.name ?? 'Your first place'} platform={state.preferredPlatform} interest={state.interest} />
+    <Text style={styles.eyebrow}>{realPracticeCompleted ? 'YOU JUST DID IT FOR REAL' : state.mapHandoffResult === 'ready' ? 'READY TO EXPLORE' : 'OPENING YOUR MAP'}</Text><Text style={styles.headline}>{realPracticeCompleted ? `${realPlaceName} is on your map.` : state.mapHandoffResult === 'ready' ? 'Your map is ready to use.' : 'Your map is getting ready.'}</Text><Text style={styles.body}>{realPracticeCompleted ? 'Your real shared post became a saved place, with its source and directions kept together.' : `${tutorialPlace?.name ?? 'Your tutorial place'} was a private practice example. Your next real share will use Nearr's live recognition.`}</Text>
+    {realPracticeCompleted ? <Image source={realThumbnail ? { uri: realThumbnail } : offlineOnboardingAsset(practice?.localPreviewAssetKey ?? 'mad_yolks')} style={styles.realResultHero} resizeMode="cover" accessibilityLabel={`${realPlaceName} saved-place image`} /> : <MapFormationIllustration placeName={tutorialPlace?.name ?? 'Your first place'} platform={state.preferredPlatform} interest={state.interest} />}
     <Text style={styles.personalCopy}>{personalizedActivationCopy({ platform: state.preferredPlatform, interest: state.interest })}</Text>
     <View style={styles.finalActions}><Phase1PrimaryButton title="Explore my map" onPress={() => void finish()} loading={busy} /></View>
-    <View style={styles.backupNote}><Feather name="shield" size={14} color={Phase1Colors.success} /><Text style={styles.backupText}>Back up your map from Settings whenever you're ready.</Text></View>
-  </Phase1Frame><Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.mapTransition, { opacity: transition }]}><NearrSparkleMark size={68} /></Animated.View></View>;
+    <View style={styles.backupNote}><Feather name="shield" size={14} color={Phase1Colors.success} /><Text style={styles.backupText}>Your map is backed up to your account.</Text></View>
+  </Phase1Frame></View>;
 }
 
 function SetupRow({ label, ready, neutral }: { label: string; ready: boolean; neutral?: boolean }) { return <View style={styles.setupRow}><View style={[styles.setupIcon, neutral && styles.setupIconNeutral]}><Feather name={ready ? 'check' : 'minus'} size={15} color={neutral ? Phase1Colors.textMuted : '#FFFFFF'} /></View><Text style={[styles.setupLabel, neutral && styles.setupLabelNeutral]}>{label}</Text></View>; }
@@ -253,4 +260,5 @@ const styles = StyleSheet.create({
   heroIcon: { width: 70, height: 70, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.orange, marginBottom: 26 }, permissionResult: { flexDirection: 'row', gap: 9, marginTop: 17, padding: 12, borderRadius: 15, backgroundColor: '#FFF1E8' }, permissionResultText: { flex: 1, color: '#75503B', fontSize: 12, lineHeight: 18 }, notificationCard: { marginTop: 28, padding: 16, borderRadius: 23, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Phase1Colors.border, shadowColor: '#41352D', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 3 }, notificationHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 }, notificationLogo: { width: 27, height: 27, borderRadius: 8 }, notificationApp: { flex: 1, color: Phase1Colors.textMuted, fontSize: 10, fontWeight: '900' }, notificationTime: { color: '#989187', fontSize: 10 }, notificationTitle: { color: Phase1Colors.text, fontSize: 15, fontWeight: '900', marginTop: 13 }, notificationBody: { color: Phase1Colors.textMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
   checklist: { gap: 8, marginTop: 18 }, setupRow: { minHeight: 43, flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 13, borderRadius: 14, backgroundColor: '#FFFFFF' }, setupIcon: { width: 25, height: 25, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.success }, setupIconNeutral: { backgroundColor: '#EAE5DD' }, setupLabel: { flex: 1, color: Phase1Colors.text, fontSize: 13, fontWeight: '800' }, setupLabelNeutral: { color: Phase1Colors.textMuted },
   finalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }, successMark: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.success }, progressPill: { paddingHorizontal: 11, paddingVertical: 7, borderRadius: 12, backgroundColor: Phase1Colors.surface }, progressText: { color: Phase1Colors.textMuted, fontSize: 10, fontWeight: '800' }, personalCopy: { color: Phase1Colors.text, fontSize: 14, lineHeight: 20, fontWeight: '800', marginTop: 17 }, finalActions: { gap: 9, marginTop: 22 }, secondaryAction: { minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 18, borderWidth: 1, borderColor: Phase1Colors.border, backgroundColor: '#FFFFFF' }, secondaryText: { color: Phase1Colors.text, fontSize: 14, fontWeight: '900' }, backupNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 14, paddingBottom: 14 }, backupText: { color: Phase1Colors.textMuted, fontSize: 11, fontWeight: '700' }, mapTransition: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#171615' },
+  realResultHero: { width: '100%', height: 210, marginTop: 22, borderRadius: 24, backgroundColor: Phase1Colors.surface },
 });

@@ -54,14 +54,14 @@ export function expectedOnboardingV2Route(
     'auth_success',
     'personalized_activation',
     'activation_challenge',
+    'practice_ready',
+    'first_independent_external_video_opened',
+    'first_independent_share_returned',
   ].includes(stage)) return '/(onboarding)';
   if (stage.startsWith('tutorial_')) return '/activate';
   if (
     stage === 'place_tour' ||
     stage === 'phase1_complete' ||
-    stage === 'practice_ready' ||
-    stage === 'first_independent_external_video_opened' ||
-    stage === 'first_independent_share_returned' ||
     stage === 'first_independent_save_complete' ||
     stage === 'second_independent_external_video_opened' ||
     stage === 'second_independent_share_returned' ||
@@ -117,9 +117,6 @@ export function isOnboardingV2MapOwnedStage(
   return !!stage && [
     'place_tour',
     'phase1_complete',
-    'practice_ready',
-    'first_independent_external_video_opened',
-    'first_independent_share_returned',
     'first_independent_save_complete',
     'second_independent_external_video_opened',
     'second_independent_share_returned',
@@ -143,6 +140,11 @@ export function shouldPreserveOnboardingV2ProductRoute(input: {
   currentRoute: string;
   stage: OnboardingV2Stage | null | undefined;
 }): boolean {
+  const practiceQuickCheck = input.currentRoute.startsWith('/share-jobs/') && !!input.stage && [
+    'first_independent_external_video_opened',
+    'first_independent_share_returned',
+  ].includes(input.stage);
+  if (practiceQuickCheck) return true;
   if (!isOnboardingV2MapOwnedStage(input.stage)) return false;
   return PRODUCT_ROUTE_PREFIXES.some((prefix) =>
     input.currentRoute === prefix || input.currentRoute.startsWith(`${prefix}/`),

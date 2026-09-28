@@ -7,6 +7,7 @@ import { StartupSurface } from '@/components/StartupSurface';
 import { Phase1Colors, Phase1Frame, Phase1PrimaryButton } from '@/components/onboarding/v2/Phase1Visuals';
 import { NearrSparkleMark, SocialToMapIllustration, useOnboardingReduceMotion } from '@/components/onboarding/v2/OnboardingVisualLanguage';
 import { OnboardingV2SecondHalf } from '@/components/onboarding/v2/OnboardingV2SecondHalf';
+import { OnboardingV2RealPractice } from '@/components/onboarding/v2/OnboardingV2RealPractice';
 import { ImmersiveGuidedSave } from '@/components/onboarding/v2/ImmersiveGuidedSave';
 import { OfflineFixtureVideo } from '@/components/onboarding/v2/OfflineFixtureVideo';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
@@ -47,6 +48,7 @@ import {
 } from '@/lib/onboardingV2';
 import { onboardingPhase2PracticeForInterest, onboardingPhase2PracticeFromFixtureId } from '@/lib/onboardingPhase2Practice';
 import { openOnboardingPracticePost } from '@/services/onboardingPracticeLauncher';
+import { recordOnboardingV2RenderDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 import type { OnboardingDesiredValue, OnboardingInterest, OnboardingPainPoint, OnboardingPlatform, OnboardingTutorialFixture, OnboardingV2State } from '@/lib/onboardingV2Core';
 
 const PLATFORMS: Array<{ value: Exclude<OnboardingPlatform, 'other'>; label: string; icon: keyof typeof Ionicons.glyphMap; tint: string }> = [
@@ -80,6 +82,8 @@ export function OnboardingV2PreAuth() {
   const params = useLocalSearchParams<{ reason?: string }>();
   const { state, loading } = useOnboardingV2();
   const fixtureInFlightRef = useRef(false);
+  const mountIdRef = useRef(`onboarding-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+  const lastRenderedStageRef = useRef<string | null>(null);
   const screenOwnedStage = !!state && [
     'overview', 'platform', 'interest', 'interest_selected', 'personalized_payoff', 'pain_point',
     'desired_value', 'tutorial_loading', 'tutorial_challenge', 'tutorial_ready',
@@ -89,9 +93,22 @@ export function OnboardingV2PreAuth() {
     'nearby_value', 'location_education', 'location_background_education',
     'notification_education', 'making_nearr_yours', 'growing_map', 'auth_success',
     'personalized_activation', 'activation_challenge',
+    'practice_ready', 'first_independent_external_video_opened',
+    'first_independent_share_returned', 'first_independent_save_complete',
   ].includes(state.stage);
   const startupPending = loading || !screenOwnedStage;
   const startupWatchdog = useStartupWatchdog(startupPending);
+
+  useEffect(() => {
+    const stage = state?.stage ?? null;
+    if (!stage || stage === lastRenderedStageRef.current) return;
+    lastRenderedStageRef.current = stage;
+    recordOnboardingV2RenderDiagnostic({
+      screen: stage,
+      mount_id: mountIdRef.current,
+      reason: 'durable_stage_changed',
+    });
+  }, [state?.stage]);
 
   useEffect(() => {
     if (state?.stage === 'interest_selected') {
@@ -158,6 +175,11 @@ export function OnboardingV2PreAuth() {
   if (['tutorial_reveal', 'tutorial_celebration'].includes(state.stage) && state.tutorialResult) return <MagicMomentScreen state={state} />;
   if (state.stage === 'fixture_map_payoff' && state.tutorialResult) return <FixtureMapPayoffScreen state={state} />;
   if (state.stage === 'phase2_intro' && state.tutorialResult) return <Phase2IntroScreen state={state} />;
+  if ([
+    'practice_ready',
+    'first_independent_external_video_opened',
+    'first_independent_share_returned',
+  ].includes(state.stage)) return <OnboardingV2RealPractice state={state} />;
   if (state.stage === 'place_tour' && state.tutorialResult) return <OfflinePlaceDetailScreen state={state} />;
   if (state.stage === 'first_magic_moment_complete') return <FirstMagicCompleteScreen state={state} />;
   return <OnboardingV2SecondHalf state={state} />;

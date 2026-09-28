@@ -1451,7 +1451,11 @@ export function continueOnboardingAfterMakingNearrYours(
   now: string,
 ): OnboardingTransition {
   if (state.stage !== 'making_nearr_yours' || !state.tutorialSave) return unchanged(state);
-  if (state.identityLifecycle === 'none') {
+  // Anonymous auth exists only to support the real share-extension boundary;
+  // it is not the user's Nearr account. Treat every non-permanent identity as
+  // account-required so onboarding cannot graduate to the normal map and then
+  // bounce back through Settings for "backup" a few seconds later.
+  if (state.identityLifecycle !== 'permanent_account') {
     return transition(state, {
       stage: 'account_required',
       accountRequiredAt: state.accountRequiredAt ?? now,

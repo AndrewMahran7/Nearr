@@ -388,7 +388,9 @@ export default function SettingsScreen() {
     setOpeningMapBackup(true);
     try {
       await requestOnboardingV2MapBackup();
-      router.push('/(onboarding)/account');
+      // The durable account_required edge is owned by AuthGate. Dispatching a
+      // second PUSH here remounted the account screen and emitted the 14:10 QA
+      // trace's duplicate onboarding_email_started event.
     } catch (error) {
       console.warn('[settings] map backup entry failed', error);
       Alert.alert('Could not open map backup', 'Your map is still safe on this device. Try again.');

@@ -18,8 +18,7 @@ assert.equal(shouldPreserveCompletedOnboardingTab({
 }), false, 'a completed checkpoint can still leave onboarding for the map');
 
 const mapOwnedStages = [
-  'place_tour', 'phase1_complete', 'practice_ready',
-  'first_independent_external_video_opened', 'first_independent_share_returned',
+  'place_tour', 'phase1_complete',
   'first_independent_save_complete', 'second_independent_external_video_opened',
   'second_independent_share_returned', 'graduated', 'onboarding_complete',
 ] as const;
@@ -33,6 +32,13 @@ for (const stage of mapOwnedStages) {
   }
 }
 
+for (const stage of [
+  'practice_ready', 'first_independent_external_video_opened', 'first_independent_share_returned',
+] as const) {
+  assert.equal(shouldPreserveOnboardingV2ProductRoute({ currentRoute: '/(tabs)/settings', stage }), false,
+    `${stage} remains owned by the continuous onboarding route`);
+}
+
 for (const currentRoute of ['/', '/(onboarding)', '/(onboarding)/account', '/(auth)/sign-in', '/activate']) {
   assert.equal(shouldPreserveOnboardingV2ProductRoute({ currentRoute, stage: 'practice_ready' }), false,
     `stale flow route ${currentRoute} still reconciles`);
@@ -43,7 +49,7 @@ assert.equal(shouldPreserveOnboardingV2ProductRoute({
 
 for (let render = 0; render < 5; render += 1) {
   assert.equal(shouldPreserveOnboardingV2ProductRoute({
-    currentRoute: '/share-jobs', stage: 'first_independent_share_returned',
+    currentRoute: '/share-jobs/job-1', stage: 'first_independent_share_returned',
   }), true);
 }
 
@@ -68,4 +74,4 @@ assert.match(tabs, /tabPress:[\s\S]{0,220}route_request/);
 assert.match(queue, /screen_mounted[\s\S]{0,120}\/share-jobs/);
 assert.match(settings, /screen_mounted[\s\S]{0,120}\(tabs\)\/settings/);
 
-console.log('PASS map-owned onboarding preserves Settings, Queue, product routes, refresh, and repeated renders');
+console.log('PASS continuous practice owns onboarding, Quick Check is its bounded child, and completed map routes remain stable');

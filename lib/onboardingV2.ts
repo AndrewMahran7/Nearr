@@ -129,6 +129,7 @@ import {
 import type { OnboardingStarterContent } from '@/constants/onboardingStarterContent';
 import { saveSavedPlace } from '@/services/savedPlacesService';
 import { savedPlaceUuidOrNull } from '@/lib/savedPlaceIdentity';
+import { expectedOnboardingV2Route } from '@/lib/onboardingV2RoutingCore';
 
 export const ONBOARDING_V2_STORAGE_KEY = 'nearr:onboarding:v2:state';
 
@@ -404,11 +405,14 @@ async function applyTransition(
     const current = cachedState ?? await readStateFresh();
     const result = reducer(current, nowIso());
     const transitionSource = reducer.name || 'adapter';
+    const previousRoute = expectedOnboardingV2Route(current.stage) ?? 'none';
     if (!result.changed) {
-      if (__DEV__) console.debug(`[onboarding-transition] id=${current.revision} source=${transitionSource} ${current.stage}->${current.stage} owner=state_machine navigation=none duplicate_ignored=true reason=unchanged`);
+      if (__DEV__) console.debug(`[onboarding-transition] transition_id=${current.revision} source=${transitionSource} previous_phase=${current.stage} next_phase=${current.stage} previous_route=${previousRoute} next_route=${previousRoute} navigation_action=none duplicate_ignored=true`);
       return current;
     }
-    if (__DEV__) console.debug(`[onboarding-transition] id=${result.state.revision} source=${transitionSource} ${current.stage}->${result.state.stage} owner=state_machine navigation=route_guard duplicate_ignored=false reason=state_changed`);
+    const nextRoute = expectedOnboardingV2Route(result.state.stage) ?? 'none';
+    const navigationAction = previousRoute === nextRoute ? 'none' : 'replace';
+    if (__DEV__) console.debug(`[onboarding-transition] transition_id=${result.state.revision} source=${transitionSource} previous_phase=${current.stage} next_phase=${result.state.stage} previous_route=${previousRoute} next_route=${nextRoute} navigation_action=${navigationAction} duplicate_ignored=false`);
     publish(result.state);
     try {
       await AsyncStorage.setItem(ONBOARDING_V2_STORAGE_KEY, encodeOnboardingV2State(result.state));

@@ -22,3 +22,17 @@ export function recordOnboardingV2DevelopmentDiagnostic(
 }
 
 export const recordOnboardingV2RouteDiagnostic = recordOnboardingV2DevelopmentDiagnostic;
+
+/** Exact render marker used to prove that durable stage changes do not remount a screen. */
+export function recordOnboardingV2RenderDiagnostic(fields: {
+  screen: string;
+  mount_id: string;
+  reason: string;
+}): void {
+  if (!areDeveloperToolsVisible()) return;
+  console.log('[onboarding-render]', fields);
+  recordBreadcrumb('screen_mounted', {
+    route: fields.screen,
+    result: `${fields.mount_id}:${fields.reason}`,
+  });
+}

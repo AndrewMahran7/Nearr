@@ -9,6 +9,7 @@
       "distribution": "internal",
       "channel": "development",
       "environment": "development",
+      "autoIncrement": true,
       "ios": {
         "image": "latest"
       }

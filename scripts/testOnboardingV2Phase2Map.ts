@@ -86,9 +86,10 @@ function provePhase2Filters(
   state: OnboardingV2State,
   places: SavedPlaceWithPlace[],
   expectedProgress: 1 | 2,
+  expectedRoute: '/(onboarding)' | '/(tabs)/map',
 ) {
   assert.equal(onboardingV2SavedPlaceProgress(state).count, expectedProgress);
-  assert.equal(expectedOnboardingV2Route(state.stage), '/(tabs)/map');
+  assert.equal(expectedOnboardingV2Route(state.stage), expectedRoute);
   const options = mapFilterOptions(places, PHASE2_REQUIRED_MAP_FILTERS);
   assert.deepEqual(
     options.slice(0, 3).map((option) => option.label),
@@ -99,12 +100,12 @@ function provePhase2Filters(
   const visible = filterPlacesForMap(places, 'food_drink');
   assert.deepEqual(visible.map((saved) => saved.id), ['saved-food']);
   assert.equal(encodeOnboardingV2State(state), stateBeforeFiltering, 'filtering never mutates Practice progress');
-  assert.equal(expectedOnboardingV2Route(state.stage), '/(tabs)/map', 'filtering never navigates out of the map');
+  assert.equal(expectedOnboardingV2Route(state.stage), expectedRoute, 'filtering never changes durable route ownership');
   assert.ok(['practice_ready', 'first_independent_save_complete'].includes(state.stage), 'Practice remains active');
 }
 
-provePhase2Filters(oneOfThree, [food], 1);
-provePhase2Filters(twoOfThree, [food, outdoors], 2);
+provePhase2Filters(oneOfThree, [food], 1, '/(onboarding)');
+provePhase2Filters(twoOfThree, [food, outdoors], 2, '/(tabs)/map');
 
 // Default production semantics are unchanged outside Phase 2: a single-group
 // collection still suppresses no-op category chips.

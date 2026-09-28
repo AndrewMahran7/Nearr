@@ -100,14 +100,22 @@ assert.equal(state.stage, 'making_nearr_yours', 'permissions lead to a branded s
 assert.equal(notification.events.some((event) => event.name === 'onboarding_making_nearr_yours_viewed'), true);
 const mapReady = continueOnboardingAfterMakingNearrYours(state, at(9));
 state = mapReady.state;
-assert.equal(state.stage, 'personalized_activation');
+assert.equal(state.stage, 'account_required');
 assert.equal(mapReady.events.some((event) => event.name === 'onboarding_map_ready_viewed'), true);
+state = step(state, beginPermanentAccountLink, 9);
+state = completePermanentAccountLink(state, {
+  permanentUserId: 'permanent-user',
+  destinationWasEstablished: false,
+}, at(9)).state;
+assert.equal(state.stage, 'auth_success');
+state = step(state, continueOnboardingAfterAuth, 9);
+assert.equal(state.stage, 'personalized_activation');
 state = step(state, showOnboardingActivationChallenge, 10);
 assert.equal(state.stage, 'activation_challenge');
 assert.equal(expectedOnboardingV2Route(state.stage), '/(onboarding)');
 const completed = completeOnboardingSecondHalf(state, 'explore_map', at(11));
 assert.equal(completed.state.stage, 'onboarding_complete');
-assert.equal(completed.state.identityLifecycle, 'anonymous_active', 'permanent auth is not required before map entry');
+assert.equal(completed.state.identityLifecycle, 'permanent_account', 'permanent auth is required before final map entry');
 assert.equal(completed.state.behavioralCompletedAt, at(11));
 assert.equal(completed.state.tutorialSave?.savedPlaceId, save.savedPlaceId);
 assert.equal(completed.events.some((event) => event.name === 'onboarding_v2_completed'), true);
@@ -128,7 +136,16 @@ assert.equal(denied.stage, 'notification_education', 'location refusal does not 
 denied = recordOnboardingNotificationResult(denied, 'skipped', at(26)).state;
 assert.equal(denied.stage, 'making_nearr_yours', 'notification refusal does not block');
 
-const backupRequested = requestOnboardingMapBackup(completed.state, at(27));
+const legacyAnonymousCompleted: OnboardingV2State = {
+  ...completed.state,
+  identityLifecycle: 'anonymous_active',
+  anonymousUserId: 'legacy-anonymous-user',
+  boundUserId: 'legacy-anonymous-user',
+  permanentUserId: null,
+  permanentAccountEstablished: null,
+  authCompletedAt: null,
+};
+const backupRequested = requestOnboardingMapBackup(legacyAnonymousCompleted, at(27));
 assert.equal(backupRequested.state.stage, 'account_required', 'auth is available later as an explicit map backup action');
 const backupCancelled = cancelPermanentAccountLink(backupRequested.state, at(28));
 assert.equal(backupCancelled.state.stage, 'onboarding_complete', 'backing out of optional auth returns to the map');
