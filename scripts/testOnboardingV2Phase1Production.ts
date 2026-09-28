@@ -98,10 +98,11 @@ const picker = readFileSync(join(root, 'components/onboarding/v2/OnboardingV2Pre
 const anonymousRuntime = readFileSync(join(root, 'lib/anonymousOnboarding.ts'), 'utf8');
 const settings = readFileSync(join(root, 'app/(tabs)/settings.tsx'), 'utf8');
 const appConfig = readFileSync(join(root, 'app.config.js'), 'utf8');
-assert.match(coach, /state\?\.stage !== 'practice_ready'/);
+assert.match(coach, /state\?\.realPracticeSession/);
 assert.match(coach, /deferOnboardingV2Practice/);
 assert.match(coach, /Linking\.openURL/);
-assert.doesNotMatch(coach, /loadOnboardingPracticeFixture|useOnboardingTutorialJobs/);
+assert.doesNotMatch(coach, /loadOnboardingPracticeFixture/);
+assert.match(coach, /useOnboardingTutorialJobs/);
 assert.match(picker, /selectOfflineOnboardingFixture/);
 assert.match(picker, /PLATFORMS\.map/);
 assert.doesNotMatch(picker, /disabled=\{item\.value !== 'instagram'\}|ProductionV2Compatibility/);

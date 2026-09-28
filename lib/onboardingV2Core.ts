@@ -210,6 +210,46 @@ export type OnboardingPracticeRecovery = {
   dismissedAt: string | null;
 };
 
+export type OnboardingRealPracticeStatus =
+  | 'NOT_STARTED'
+  | 'POST_OPENED'
+  | 'WAITING_FOR_SHARE'
+  | 'SHARE_RECEIVED'
+  | 'PROCESSING'
+  | 'NEEDS_REVIEW'
+  | 'RESOLVED'
+  | 'FAILED'
+  | 'DECLINED';
+
+export type OnboardingPracticeCompletionReason =
+  | 'resolved'
+  | 'background_processing'
+  | 'declined';
+
+/**
+ * Install-local correlation record for the one real Phase 2 exercise.
+ * Source identity is the initial binding key; after the first exact match the
+ * durable job id (and its extension-generated request id) become authoritative.
+ */
+export type OnboardingRealPracticeSession = {
+  fixtureId: string;
+  expectedSourceUrl: string;
+  expectedNormalizedSourceUrl: string;
+  expectedContentIdentity: OnboardingContentIdentity | null;
+  expectedPlaceId: string | null;
+  expectedPlaceName: string;
+  startedAt: string;
+  status: OnboardingRealPracticeStatus;
+  submissionObservedAt: string | null;
+  clientRequestId: string | null;
+  shareJobId: string | null;
+  realJobStatus: string | null;
+  savedPlaceId: string | null;
+  failureReason: string | null;
+  completionReason: OnboardingPracticeCompletionReason | null;
+  updatedAt: string;
+};
+
 export type OnboardingPlaceTourStep =
   | 'found'
   | 'ai_note'
@@ -294,6 +334,7 @@ export type OnboardingV2State = {
   practiceContentIds: string[];
   practiceAttemptedContentIds: string[];
   practiceRecovery: OnboardingPracticeRecovery | null;
+  realPracticeSession: OnboardingRealPracticeSession | null;
   lastFailure: { kind: OnboardingSaveKind; at: string; reason: string } | null;
   behavioralCompletedAt: string | null;
   personalizedActivationShownAt: string | null;
@@ -427,6 +468,7 @@ export function createInitialOnboardingV2State(
     practiceContentIds: [],
     practiceAttemptedContentIds: [],
     practiceRecovery: null,
+    realPracticeSession: null,
     lastFailure: null,
     behavioralCompletedAt: null,
     personalizedActivationShownAt: null,
@@ -587,6 +629,31 @@ export function decodeOnboardingV2State(
             extractOnboardingContentIdentity(parsed.tutorialSave.sourceUrl),
         }
       : null;
+    const practiceFixture = parsed.practiceFixture ?? null;
+    const shouldRepairRealPracticeSession = !parsed.realPracticeSession && !!practiceFixture &&
+      ['practice_ready', 'first_independent_external_video_opened', 'first_independent_share_returned']
+        .includes(stage);
+    const repairedRealPracticeSession: OnboardingRealPracticeSession | null = shouldRepairRealPracticeSession
+      ? {
+          fixtureId: practiceFixture!.id,
+          expectedSourceUrl: practiceFixture!.canonicalUrl,
+          expectedNormalizedSourceUrl: normalizeOnboardingSourceUrl(practiceFixture!.canonicalUrl) ?? practiceFixture!.canonicalUrl,
+          expectedContentIdentity: extractOnboardingContentIdentity(practiceFixture!.canonicalUrl),
+          expectedPlaceId: null,
+          expectedPlaceName: '',
+          startedAt: parsed.practiceLaunchedAt ?? practiceFixture!.selectedAt ?? now,
+          status: pendingShare?.shareReceivedAt ? 'SHARE_RECEIVED'
+            : pendingShare ? 'WAITING_FOR_SHARE' : 'NOT_STARTED',
+          submissionObservedAt: pendingShare?.shareReceivedAt ?? null,
+          clientRequestId: null,
+          shareJobId: null,
+          realJobStatus: null,
+          savedPlaceId: null,
+          failureReason: null,
+          completionReason: null,
+          updatedAt: parsed.updatedAt ?? now,
+        }
+      : null;
     return {
       ...initial,
       ...parsed,
@@ -628,6 +695,19 @@ export function decodeOnboardingV2State(
             dismissedAt: parsed.practiceRecovery.dismissedAt ?? null,
           }
         : null,
+      realPracticeSession: parsed.realPracticeSession?.fixtureId
+        ? {
+            ...parsed.realPracticeSession,
+            expectedContentIdentity: parsed.realPracticeSession.expectedContentIdentity ??
+              extractOnboardingContentIdentity(parsed.realPracticeSession.expectedSourceUrl),
+            clientRequestId: parsed.realPracticeSession.clientRequestId ?? null,
+            shareJobId: parsed.realPracticeSession.shareJobId ?? null,
+            realJobStatus: parsed.realPracticeSession.realJobStatus ?? null,
+            savedPlaceId: parsed.realPracticeSession.savedPlaceId ?? null,
+            failureReason: parsed.realPracticeSession.failureReason ?? null,
+            completionReason: parsed.realPracticeSession.completionReason ?? null,
+          }
+        : repairedRealPracticeSession,
     };
   } catch {
     return initial;
@@ -1455,6 +1535,7 @@ export function completeOnboardingSecondHalf(
   if (state.stage !== 'activation_challenge' ||
       !['anonymous_active', 'permanent_account'].includes(state.identityLifecycle) ||
       !state.tutorialSave || !['find_another', 'explore_map'].includes(choice)) return unchanged(state);
+  if (state.realPracticeSession && !state.realPracticeSession.completionReason) return unchanged(state);
   const startedMs = state.startedAt ? Date.parse(state.startedAt) : Number.NaN;
   const duration = Number.isFinite(startedMs) ? Math.max(0, Date.parse(now) - startedMs) : null;
   return transition(state, {
@@ -2003,7 +2084,42 @@ export function deferOnboardingPractice(
   return transition(state, {
     stage: state.behavioralCompletedAt ? 'onboarding_complete' : 'first_magic_moment_complete',
     secondHalfStartedAt: state.secondHalfStartedAt ?? now,
-  }, now, [{ name: 'onboarding_practice_deferred', properties: { fixture_id: state.practiceFixture?.id } }]);
+    realPracticeSession: state.realPracticeSession
+      ? {
+          ...state.realPracticeSession,
+          status: 'DECLINED',
+          completionReason: 'declined',
+          updatedAt: now,
+        }
+      : state.realPracticeSession,
+  }, now, [{ name: 'onboarding_practice_deferred', properties: {
+    fixture_id: state.practiceFixture?.id,
+    completion_reason: 'declined',
+    share_job_id: state.realPracticeSession?.shareJobId,
+  } }]);
+}
+
+export function continueOnboardingPracticeInBackground(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  const session = state.realPracticeSession;
+  if (!session || !['SHARE_RECEIVED', 'PROCESSING'].includes(session.status) || session.completionReason) {
+    return unchanged(state);
+  }
+  return transition(state, {
+    stage: state.behavioralCompletedAt ? 'onboarding_complete' : 'first_magic_moment_complete',
+    secondHalfStartedAt: state.secondHalfStartedAt ?? now,
+    realPracticeSession: {
+      ...session,
+      completionReason: 'background_processing',
+      updatedAt: now,
+    },
+  }, now, [{ name: 'onboarding_practice_deferred', properties: {
+    fixture_id: session.fixtureId,
+    completion_reason: 'background_processing',
+    share_job_id: session.shareJobId,
+  } }]);
 }
 
 /** Existing-account entry from Welcome has no anonymous owner to transfer. */
@@ -2042,6 +2158,7 @@ export function beginOnboardingRealPractice(
   state: OnboardingV2State,
   now: string,
   practiceFixture?: OnboardingTutorialFixture,
+  expectedPlace?: { id?: string | null; name?: string },
 ): OnboardingTransition {
   if (
     state.stage !== 'phase2_intro' ||
@@ -2053,6 +2170,24 @@ export function beginOnboardingRealPractice(
     practiceLaunchedAt: state.practiceLaunchedAt ?? now,
     practiceFixture: practiceFixture ?? state.practiceFixture,
     practiceContentIds: practiceFixture ? [practiceFixture.contentId] : state.practiceContentIds,
+    realPracticeSession: practiceFixture ? {
+      fixtureId: practiceFixture.id,
+      expectedSourceUrl: practiceFixture.canonicalUrl,
+      expectedNormalizedSourceUrl: normalizeOnboardingSourceUrl(practiceFixture.canonicalUrl) ?? practiceFixture.canonicalUrl,
+      expectedContentIdentity: extractOnboardingContentIdentity(practiceFixture.canonicalUrl),
+      expectedPlaceId: expectedPlace?.id ?? null,
+      expectedPlaceName: expectedPlace?.name ?? '',
+      startedAt: now,
+      status: 'NOT_STARTED',
+      submissionObservedAt: null,
+      clientRequestId: null,
+      shareJobId: null,
+      realJobStatus: null,
+      savedPlaceId: null,
+      failureReason: null,
+      completionReason: null,
+      updatedAt: now,
+    } : state.realPracticeSession,
     pendingShare: null,
     lastFailure: null,
   }, now, [{ name: 'practice_started', properties: { real_share_boundary: true } }]);
@@ -2106,6 +2241,21 @@ export function openExternalStarter(
     practiceAttemptedContentIds: kind === 'tutorial' || state.practiceAttemptedContentIds.includes(input.contentId)
       ? state.practiceAttemptedContentIds
       : [...state.practiceAttemptedContentIds, input.contentId],
+    realPracticeSession: kind !== 'tutorial' && state.realPracticeSession
+      ? {
+          ...state.realPracticeSession,
+          status: 'POST_OPENED',
+          ...(state.realPracticeSession.status === 'FAILED' ? {
+            submissionObservedAt: null,
+            clientRequestId: null,
+            shareJobId: null,
+            realJobStatus: null,
+            savedPlaceId: null,
+          } : {}),
+          failureReason: null,
+          updatedAt: now,
+        }
+      : state.realPracticeSession,
   }, now, [
     { name: event, properties: { content_id: input.contentId } },
     ...(kind === 'tutorial' ? [] : [
@@ -2133,6 +2283,113 @@ export function replaceTutorialContent(
     { tutorialContentId: contentId, pendingShare: null, stage: 'tutorial_ready', lastFailure: null },
     now,
   );
+}
+
+export function markOnboardingPracticeWaitingForShare(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  const session = state.realPracticeSession;
+  if (!session || session.status !== 'POST_OPENED' || !state.pendingShare) return unchanged(state);
+  return transition(state, {
+    realPracticeSession: { ...session, status: 'WAITING_FOR_SHARE', updatedAt: now },
+  }, now);
+}
+
+export type OnboardingPracticeJobObservation = {
+  jobId: string;
+  clientRequestId: string | null;
+  sourceUrl: string;
+  status: string;
+  savedPlaceId: string | null;
+  failureReason: string | null;
+  observedAt: string;
+};
+
+export function isOnboardingPracticeJobMatch(
+  session: OnboardingRealPracticeSession | null,
+  job: Pick<OnboardingPracticeJobObservation, 'jobId' | 'clientRequestId' | 'sourceUrl'>,
+): boolean {
+  if (!session) return false;
+  if (session.shareJobId) return session.shareJobId === job.jobId;
+  if (session.clientRequestId && job.clientRequestId) {
+    return session.clientRequestId === job.clientRequestId;
+  }
+  const observedIdentity = extractOnboardingContentIdentity(job.sourceUrl);
+  if (session.expectedContentIdentity && observedIdentity) {
+    return session.expectedContentIdentity.platform === observedIdentity.platform &&
+      session.expectedContentIdentity.contentId === observedIdentity.contentId;
+  }
+  return normalizeOnboardingSourceUrl(job.sourceUrl) === session.expectedNormalizedSourceUrl;
+}
+
+export function reconcileOnboardingPracticeJob(
+  state: OnboardingV2State,
+  job: OnboardingPracticeJobObservation,
+  now: string,
+): OnboardingTransition {
+  const session = state.realPracticeSession;
+  if (!isOnboardingPracticeJobMatch(session, job)) return unchanged(state);
+
+  let base = state;
+  const events: OnboardingTransition['events'] = [];
+  if (base.pendingShare && !base.pendingShare.shareReceivedAt) {
+    const received = receiveSharedSource(base, job.sourceUrl, now);
+    base = received.state;
+    events.push(...received.events);
+  }
+
+  const normalizedStatus: OnboardingRealPracticeStatus =
+    job.status === 'needs_help' ? 'NEEDS_REVIEW'
+      : job.status === 'completed' && !!job.savedPlaceId ? 'RESOLVED'
+        : job.status === 'failed' || job.status === 'cancelled' ? 'FAILED'
+          : job.status === 'processing_metadata' ? 'PROCESSING'
+            : 'SHARE_RECEIVED';
+  const nextSession: OnboardingRealPracticeSession = {
+    ...session!,
+    status: normalizedStatus,
+    submissionObservedAt: session!.submissionObservedAt ?? job.observedAt,
+    clientRequestId: session!.clientRequestId ?? job.clientRequestId,
+    shareJobId: job.jobId,
+    realJobStatus: job.status,
+    savedPlaceId: job.savedPlaceId,
+    failureReason: normalizedStatus === 'FAILED' ? job.failureReason ?? 'share_job_failed' : null,
+    completionReason: normalizedStatus === 'RESOLVED' ? 'resolved' : session!.completionReason,
+    updatedAt: job.observedAt,
+  };
+
+  const sessionAlreadyCurrent = base === state &&
+    session!.status === nextSession.status &&
+    session!.submissionObservedAt === nextSession.submissionObservedAt &&
+    session!.clientRequestId === nextSession.clientRequestId &&
+    session!.shareJobId === nextSession.shareJobId &&
+    session!.realJobStatus === nextSession.realJobStatus &&
+    session!.savedPlaceId === nextSession.savedPlaceId &&
+    session!.failureReason === nextSession.failureReason &&
+    session!.completionReason === nextSession.completionReason &&
+    session!.updatedAt === nextSession.updatedAt;
+  if (sessionAlreadyCurrent) return unchanged(state);
+
+  if (normalizedStatus === 'RESOLVED' && job.savedPlaceId && base.pendingShare) {
+    const completed = completePendingSave(base, {
+      sourceUrl: job.sourceUrl,
+      savedPlaceId: job.savedPlaceId,
+    }, now);
+    if (completed.changed) {
+      return {
+        state: { ...completed.state, realPracticeSession: nextSession },
+        changed: true,
+        events: [...events, ...completed.events],
+      };
+    }
+  }
+
+  return transition(base, {
+    realPracticeSession: nextSession,
+    lastFailure: normalizedStatus === 'FAILED' && base.pendingShare
+      ? { kind: base.pendingShare.kind, at: now, reason: nextSession.failureReason ?? 'share_job_failed' }
+      : base.lastFailure,
+  }, now, events);
 }
 
 export function receiveSharedSource(
@@ -2228,6 +2485,16 @@ export function completePendingSave(
     savedPlaceId: input.savedPlaceId,
     completedAt: now,
   };
+  const resolvedRealPracticeSession = pending.kind !== 'tutorial' && state.realPracticeSession
+    ? {
+        ...state.realPracticeSession,
+        status: 'RESOLVED' as const,
+        savedPlaceId: input.savedPlaceId,
+        completionReason: 'resolved' as const,
+        failureReason: null,
+        updatedAt: now,
+      }
+    : state.realPracticeSession;
 
   if (pending.kind === 'tutorial') {
     return transition(
@@ -2258,7 +2525,13 @@ export function completePendingSave(
     if (state.identityLifecycle === 'permanent_account') {
       return transition(
         state,
-        { stage: 'first_independent_save_complete', pendingShare: null, independentSaves, practiceRecovery: null },
+        {
+          stage: 'first_independent_save_complete',
+          pendingShare: null,
+          independentSaves,
+          practiceRecovery: null,
+          realPracticeSession: resolvedRealPracticeSession,
+        },
         now,
         [
           ...(pending.shareReceivedAt ? [] : [{ name: 'first_independent_save_started', properties: { content_id: pending.contentId } }]),
@@ -2274,6 +2547,7 @@ export function completePendingSave(
       {
         stage: state.behavioralCompletedAt ? 'onboarding_complete' : 'first_magic_moment_complete', pendingShare: null, independentSaves, practiceRecovery: null,
         practiceCompletedAt: now, secondHalfStartedAt: state.secondHalfStartedAt ?? now,
+        realPracticeSession: resolvedRealPracticeSession,
       },
       now,
       [
@@ -2311,6 +2585,7 @@ export function completePendingSave(
       independentSaves: independentSaves.slice(0, 2),
       behavioralCompletedAt: now,
       practiceRecovery: null,
+      realPracticeSession: resolvedRealPracticeSession,
     },
     now,
     [

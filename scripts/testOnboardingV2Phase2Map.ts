@@ -127,7 +127,7 @@ assert.match(map, /<ShareQueueButton \/>/);
 assert.match(map, /<MapBottomSheet/);
 assert.match(
   map,
-  /mapFilterOptions\(\s*mapPlaces,\s*phase2MapActive && !nearbyExplorer \? PHASE2_REQUIRED_MAP_FILTERS : \[\],\s*\)/,
+  /shouldShowOnboardingStarterFilters\(onboardingV2State\)/,
 );
 assert.match(
   map,
@@ -139,9 +139,10 @@ assert.doesNotMatch(
   /const handleSelectMapCategory[\s\S]{0,700}(closeOnboarding|router\.|replace\(|dismiss)/,
   'filter selection does not dismiss or navigate onboarding',
 );
-assert.match(coach, /'practice_ready', 'first_independent_external_video_opened'/);
+assert.match(coach, /state\?\.realPracticeSession/);
 assert.match(coach, /deferOnboardingV2Practice/);
-assert.doesNotMatch(coach, /loadOnboardingPracticeFixture|useOnboardingTutorialJobs/);
+assert.doesNotMatch(coach, /loadOnboardingPracticeFixture/);
+assert.match(coach, /useOnboardingTutorialJobs/);
 assert.match(coach, /Linking\.openURL/);
 assert.match(coach, /style=\{\[styles\.dock, \{ top: topOffset \}\]\}/);
 assert.doesNotMatch(coach, /useSafeAreaInsets|PHASE2_MAP_CHROME_CLEARANCE/);

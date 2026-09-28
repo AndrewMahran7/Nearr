@@ -3,6 +3,16 @@ import { isOnboardingV2Phase2MapState } from "./onboardingV2Core";
 
 export const PHASE2_REQUIRED_MAP_FILTERS = ["food_drink", "outdoors"] as const;
 
+export type MapChromeDecision = {
+  route: '/(tabs)/map';
+  onboardingOwnsMap: boolean;
+  requiredFilterIds: readonly string[];
+  topChromeRendered: boolean;
+  filterRowEligible: boolean;
+  filterRowRendered: boolean;
+  suppressionReason: 'none' | 'search' | 'nearby_explorer' | 'expanded_place' | 'no_filter_options';
+};
+
 // Canonical production chrome geometry. These values mirror the actual search,
 // filter and Queue controls; the Phase 2 dock is derived from their visible
 // bottom edge instead of a second unrelated safe-area calculation.
@@ -50,6 +60,56 @@ export function shouldShowLocalTutorialPlace(
     state.cohort === 'new_user_v2' &&
     !!state.tutorialSave &&
     state.tutorialResult?.resolutionSource === 'onboarding_scripted';
+}
+
+/**
+ * The install-local starter card may remain after graduation, but it no
+ * longer owns the map. Keep the canonical starter categories available while
+ * normal search/Queue/Settings chrome is restored.
+ */
+export function shouldShowOnboardingStarterFilters(
+  state: OnboardingV2State | null | undefined,
+): boolean {
+  return shouldShowLocalTutorialPlace(state) && !!state?.behavioralCompletedAt &&
+    (state.stage === 'onboarding_complete' || state.stage === 'graduated');
+}
+
+export function resolveMapChromeDecision(input: {
+  phase2MapActive: boolean;
+  onboardingState: OnboardingV2State | null | undefined;
+  searchVisible: boolean;
+  nearbyExplorerActive: boolean;
+  hasSelectedPlace: boolean;
+  previewExpanded: boolean;
+  filterOptionCount: number;
+}): MapChromeDecision {
+  const requiredFilterIds = input.phase2MapActive || shouldShowOnboardingStarterFilters(input.onboardingState)
+    ? PHASE2_REQUIRED_MAP_FILTERS
+    : [];
+  const topChromeRendered = !input.nearbyExplorerActive && shouldRenderMapTopChrome({
+    searchVisible: input.searchVisible,
+    hasSelectedPlace: input.hasSelectedPlace,
+    previewExpanded: input.previewExpanded,
+  });
+  const filterRowEligible = topChromeRendered && input.filterOptionCount > 0;
+  const suppressionReason: MapChromeDecision['suppressionReason'] = input.searchVisible
+    ? 'search'
+    : input.nearbyExplorerActive
+      ? 'nearby_explorer'
+      : input.hasSelectedPlace && input.previewExpanded
+        ? 'expanded_place'
+        : input.filterOptionCount === 0
+          ? 'no_filter_options'
+          : 'none';
+  return {
+    route: '/(tabs)/map',
+    onboardingOwnsMap: input.phase2MapActive,
+    requiredFilterIds,
+    topChromeRendered,
+    filterRowEligible,
+    filterRowRendered: filterRowEligible,
+    suppressionReason,
+  };
 }
 
 export function shouldRestoreNormalMapChrome(input: {

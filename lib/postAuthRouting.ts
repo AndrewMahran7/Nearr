@@ -47,7 +47,7 @@ export async function resolvePostAuthRoute(userId: string): Promise<PostAuthRout
       } else {
         const transition = await finishOnboardingAccountTransition(session.user);
         continueOnboardingV2 = transition.continueOnboardingV2;
-        if (!continueOnboardingV2) {
+        if (!continueOnboardingV2 && transition.tutorialSavedPlaceId) {
           onboardingTransferRoute = resolveOpenSavedPlaceRoute({
             savedPlaceId: transition.tutorialSavedPlaceId,
             source: 'onboarding_tutorial',

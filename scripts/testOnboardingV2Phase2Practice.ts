@@ -82,7 +82,9 @@ assert.match(coach, /deferOnboardingV2Practice/);
 assert.match(coach, /Open practice video/);
 assert.match(coach, /ONBOARDING_PHASE2_PRACTICE\.canonicalUrl/);
 assert.match(coach, /Linking\.openURL/);
-assert.doesNotMatch(coach, /loadOnboardingPracticeFixture|onboardingTutorialPreviewUrl|useOnboardingTutorialJobs/);
+assert.doesNotMatch(coach, /loadOnboardingPracticeFixture|onboardingTutorialPreviewUrl/);
+assert.match(coach, /useOnboardingTutorialJobs/);
+assert.match(coach, /reconcileOnboardingV2PracticeJob/);
 
 const first = pool[0]!;
 state = practiceState();

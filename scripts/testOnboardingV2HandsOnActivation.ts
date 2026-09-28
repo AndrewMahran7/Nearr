@@ -67,7 +67,8 @@ assert.doesNotMatch(secondHalf, /Linking\.openURL\(url\)|instagram\.com\/['"]/i,
 assert.match(secondHalf, /router\.replace\('\/\(tabs\)\/map'\)/, 'final exit opens the ordinary map without a repeated focus instruction');
 assert.match(coach, /REAL SAVE .* OPTIONAL/);
 assert.match(coach, /Linking\.openURL/);
-assert.doesNotMatch(coach, /useOnboardingTutorialJobs|loadOnboardingPracticeFixture/);
+assert.doesNotMatch(coach, /loadOnboardingPracticeFixture/);
+assert.match(coach, /useOnboardingTutorialJobs/);
 assert.match(map, /recordOnboardingV2MapEntered\(liveData\.some/);
 assert.match(preAuth, /offlineOnboardingAsset/);
 assert.doesNotMatch(preAuth, /ONE LAST CHOICE|Favorites yet/);

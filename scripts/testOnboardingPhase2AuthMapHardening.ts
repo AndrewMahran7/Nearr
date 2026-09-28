@@ -192,7 +192,9 @@ pass(22, 'another real share works normally without claiming guided-post success
 assert.match(coachSource, /could not open[\s\S]*connection[\s\S]*try this later/i);
 assert.equal(deferOnboardingPractice(guided, at(25)).state.stage, 'first_magic_moment_complete');
 pass(23, 'offline/open failure is recoverable and remains skippable');
-assert.match(coachSource, /first_independent_external_video_opened/);
+assert.match(coachSource, /useOnboardingTutorialJobs/);
+assert.match(coachSource, /reconcileOnboardingV2PracticeJob/);
+assert.match(coachSource, /practiceSession\.completionReason/);
 assert.equal(guided.pendingShare?.shareReceivedAt != null, true);
 let returnedWithoutShare = beginOnboardingRealPractice(phase2State(), at(26), practiceFixture).state;
 returnedWithoutShare = openExternalStarter(returnedWithoutShare, { contentId: practiceFixture.contentId, sourceUrl: practiceFixture.canonicalUrl }, at(27)).state;

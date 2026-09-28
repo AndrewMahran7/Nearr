@@ -43,6 +43,7 @@ import {
   continueOnboardingToLocationEducation,
   continueOnboardingToNearbyValue,
   completePendingSave,
+  continueOnboardingPracticeInBackground,
   continueToTutorial,
   createInitialOnboardingV2State,
   decodeOnboardingV2State,
@@ -59,6 +60,7 @@ import {
   isExpectedOnboardingSource,
   isOnboardingV2InProgressState,
   observeOnboardingResult,
+  reconcileOnboardingPracticeJob,
   observeOnboardingTutorialJob,
   observeWrongOnboardingTutorialJob,
   normalizeOnboardingSourceUrl,
@@ -75,6 +77,7 @@ import {
   recordOnboardingMapEntered,
   recordOnboardingMapHandoff,
   recordPracticeReturnedWithoutShare,
+  markOnboardingPracticeWaitingForShare,
   receiveSharedSource,
   receiveOnboardingTutorialFixture,
   receiveOnboardingPracticeFixture,
@@ -118,9 +121,13 @@ import {
   type OnboardingV2State,
   type SimulatedTutorialAction,
 } from '@/lib/onboardingV2Core';
-import { onboardingPhase2PracticeFixture } from '@/lib/onboardingPhase2Practice';
+import {
+  ONBOARDING_PHASE2_PRACTICE,
+  onboardingPhase2PracticeFixture,
+} from '@/lib/onboardingPhase2Practice';
 import type { OnboardingStarterContent } from '@/constants/onboardingStarterContent';
 import { saveSavedPlace } from '@/services/savedPlacesService';
+import { savedPlaceUuidOrNull } from '@/lib/savedPlaceIdentity';
 
 export const ONBOARDING_V2_STORAGE_KEY = 'nearr:onboarding:v2:state';
 
@@ -372,7 +379,8 @@ async function syncStateToServer(
       p_revision: state.revision,
       p_state: state,
       p_lifecycle: state.identityLifecycle,
-      p_tutorial_saved_place_id: state.tutorialSave?.savedPlaceId ?? null,
+      // Scripted Phase 1 ids are install-local UI identities, never UUIDs.
+      p_tutorial_saved_place_id: savedPlaceUuidOrNull(state.tutorialSave?.savedPlaceId),
       p_tutorial_source_url: state.tutorialSave?.sourceUrl ?? state.pendingShare?.sourceUrl ?? null,
     });
     if (error) console.warn('[onboarding-v2] server_sync_failed', error.message);
@@ -528,7 +536,32 @@ export function deferOnboardingV2Practice(): Promise<OnboardingV2State> {
 
 export function beginOnboardingV2RealPractice(): Promise<OnboardingV2State> {
   return applyTransition((state, now) =>
-    beginOnboardingRealPractice(state, now, onboardingPhase2PracticeFixture(now)));
+    beginOnboardingRealPractice(
+      state,
+      now,
+      onboardingPhase2PracticeFixture(now),
+      { name: ONBOARDING_PHASE2_PRACTICE.expectedPlaceName },
+    ));
+}
+
+export function markOnboardingV2PracticeWaitingForShare(): Promise<OnboardingV2State> {
+  return applyTransition(markOnboardingPracticeWaitingForShare);
+}
+
+export function continueOnboardingV2PracticeInBackground(): Promise<OnboardingV2State> {
+  return applyTransition(continueOnboardingPracticeInBackground);
+}
+
+export function reconcileOnboardingV2PracticeJob(input: {
+  jobId: string;
+  clientRequestId: string | null;
+  sourceUrl: string;
+  status: string;
+  savedPlaceId: string | null;
+  failureReason: string | null;
+  observedAt: string;
+}): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => reconcileOnboardingPracticeJob(state, input, now));
 }
 
 export function beginOnboardingV2SharingRehearsal(): Promise<OnboardingV2State> {

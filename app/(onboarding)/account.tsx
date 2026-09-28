@@ -70,6 +70,7 @@ import {
   resolveOnboardingAuthEntryIntent,
 } from '@/lib/onboardingAuthIntentCore';
 import { persistNamesFromAuthUser } from '@/services/profileService';
+import { onboardingTransferErrorCopy } from '@/lib/onboardingTransferErrors';
 
 /**
  * Gate for the DEBUGGING-ONLY developer login panel.
@@ -266,9 +267,10 @@ export default function AccountAuthScreen() {
       void recordOnboardingV2AuthFailed(activeOperationRef.current ?? 'resume', 'failed');
       console.warn('[onboarding-v2] transfer_prepare_failed', error);
       if (mountedRef.current) {
-        setErrorMessage(mapBackupContext
-          ? 'Nearr could not prepare your map backup. Check your connection and try again.'
-          : 'Nearr could not protect your saved place before sign-in. Check your connection and try again.');
+        setErrorMessage(onboardingTransferErrorCopy(
+          error,
+          mapBackupContext ? 'backup' : 'account_creation',
+        ));
       }
       return false;
     }

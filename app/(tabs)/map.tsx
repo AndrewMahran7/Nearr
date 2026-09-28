@@ -168,10 +168,11 @@ import {
   MAP_QUEUE_CLEARANCE,
   MAP_TOP_CHROME_BASE_CLEARANCE,
   PHASE2_REQUIRED_MAP_FILTERS,
+  resolveMapChromeDecision,
   resolvePhase2MapLayout,
-  shouldRenderMapTopChrome,
   shouldRestoreNormalMapChrome,
   shouldShowLocalTutorialPlace,
+  shouldShowOnboardingStarterFilters,
 } from '@/lib/onboardingV2MapPresentation';
 import {
   closeOnboardingV2PlaceTour,
@@ -971,9 +972,11 @@ export default function MapScreen() {
   const mapFilterChoices = useMemo(
     () => mapFilterOptions(
       mapPlaces,
-      phase2MapActive && !nearbyExplorer ? PHASE2_REQUIRED_MAP_FILTERS : [],
+      !nearbyExplorer && (phase2MapActive || shouldShowOnboardingStarterFilters(onboardingV2State))
+        ? PHASE2_REQUIRED_MAP_FILTERS
+        : [],
     ),
-    [mapPlaces, nearbyExplorer, phase2MapActive],
+    [mapPlaces, nearbyExplorer, onboardingV2State, phase2MapActive],
   );
 
   // The markers that actually render. One memoized pass over an array the map
@@ -1203,11 +1206,35 @@ export default function MapScreen() {
   const sourceGroupBrowseActive = !nearbyExplorer
     && !previewExpanded
     && !!sourceGroupWheelSelectedPlace;
-  const shouldShowMapControls = !nearbyExplorer && shouldRenderMapTopChrome({
+  const mapChromeDecision = resolveMapChromeDecision({
+    phase2MapActive,
+    onboardingState: onboardingV2State,
     searchVisible,
+    nearbyExplorerActive: !!nearbyExplorer,
     hasSelectedPlace: !!selected,
     previewExpanded,
+    filterOptionCount: mapFilterChoices.length,
   });
+  const shouldShowMapControls = mapChromeDecision.topChromeRendered;
+  const lastMapChromeDiagnosticRef = useRef('');
+  useEffect(() => {
+    if (!__DEV__) return;
+    const diagnostic = JSON.stringify({
+      route: mapChromeDecision.route,
+      onboardingPhase: onboardingV2State?.stage ?? null,
+      onboardingOwnsMap: mapChromeDecision.onboardingOwnsMap,
+      selectedPlaceId: selected?.id ?? null,
+      previewExpanded,
+      phase2Visible: phase2MapActive,
+      graduated: !!onboardingV2State?.behavioralCompletedAt,
+      filtersEligible: mapChromeDecision.filterRowEligible,
+      filtersRendered: mapChromeDecision.filterRowRendered,
+      suppressionReason: mapChromeDecision.suppressionReason,
+    });
+    if (lastMapChromeDiagnosticRef.current === diagnostic) return;
+    lastMapChromeDiagnosticRef.current = diagnostic;
+    console.log(`[map_chrome_decision] ${diagnostic}`);
+  }, [mapChromeDecision, onboardingV2State?.behavioralCompletedAt, onboardingV2State?.stage, phase2MapActive, previewExpanded, selected?.id]);
   /**
    * Whether the selected place's own Place Detail card is on screen.
    *

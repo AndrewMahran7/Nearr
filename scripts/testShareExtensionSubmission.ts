@@ -84,8 +84,10 @@ async function main() {
     'legacy onboarding checkpoints receive a local compatibility continuation');
   assert.match(coach, /Linking\.openURL/,
     'explicit Phase 2 practice may launch the user-selected real social URL');
-  assert.doesNotMatch(coach, /AppState\.addEventListener|isShareJobForTutorialFixture|useOnboardingTutorialJobs/,
-    'onboarding cannot consume or poll the real share-extension queue');
+  assert.doesNotMatch(coach, /isShareJobForTutorialFixture/,
+    'onboarding does not use a fixture shortcut for the real share-extension queue');
+  assert.match(coach, /useOnboardingTutorialJobs/,
+    'Phase 2 reconciles the durable real share-extension queue');
   assert.match(map, /reconcileOnboardingV2SavedPlaces\(places\)/,
     'the host reconciles saved places after the user returns');
 

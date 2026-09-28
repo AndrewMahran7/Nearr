@@ -61,6 +61,7 @@ import {
   type CanonicalSaveOutcome,
   type CanonicalSaveSuccess,
 } from '@/lib/canonicalSaveContract';
+import { requireRealSavedPlaceId } from '@/lib/savedPlaceIdentity';
 import type {
   PlaceRow,
   RadiusUnit,
@@ -684,6 +685,7 @@ export async function listSavedPlaces(
 export async function getSavedPlace(id: string): Promise<SavedPlaceWithPlace | null> {
   if (isDemoMode()) return await getDemoSavedPlace(id);
   if (isMapPreviewMode()) return await getDemoSavedPlace(id);
+  id = requireRealSavedPlaceId(id, 'get_saved_place');
   try {
     const { data, error } = await supabase
       .from('saved_places')
@@ -791,6 +793,7 @@ export async function correctSavedPlace(args: {
   if (isDemoMode() || isMapPreviewMode()) {
     throw new Error('Corrections are unavailable in preview mode.');
   }
+  args = { ...args, savedPlaceId: requireRealSavedPlaceId(args.savedPlaceId, 'correct_saved_place') };
   const placeRow = await resolvePlaceRowForCandidate(args.replacement);
   const categoryResolution = resolvePlaceCategory({
     placeName: args.replacement.name,
@@ -872,6 +875,7 @@ function rethrowMutationError(action: string, err: unknown): never {
 
 export async function updateSavedPlace(id: string, patch: SavedPlacePatch): Promise<void> {
   if (isDemoMode()) return await updateDemoSavedPlace(id, patch);
+  id = requireRealSavedPlaceId(id, 'update_saved_place');
   console.log('[savedPlacesService] update', id, patch);
   try {
     const { error } = await supabase.from('saved_places').update(patch).eq('id', id);
@@ -894,6 +898,7 @@ export async function updateSavedPlace(id: string, patch: SavedPlacePatch): Prom
 
 export async function deleteSavedPlace(id: string): Promise<void> {
   if (isDemoMode()) return await deleteDemoSavedPlace(id);
+  id = requireRealSavedPlaceId(id, 'delete_saved_place');
   console.log('[savedPlacesService] delete', id);
   const { data: sessionData } = await supabase.auth.getSession();
   const userId = sessionData.session?.user?.id ?? null;
@@ -919,6 +924,7 @@ export async function rejectSavedPlaceRecognition(id: string): Promise<number> {
   if (isDemoMode() || isMapPreviewMode()) {
     throw new Error('Recognition feedback is unavailable in preview mode.');
   }
+  id = requireRealSavedPlaceId(id, 'reject_saved_place_recognition');
   try {
     const { data, error } = await supabase.rpc('reject_saved_place_recognition', {
       p_saved_place_id: id,
@@ -953,6 +959,7 @@ export async function rejectSavedPlaceRecognition(id: string): Promise<number> {
  */
 export async function markVisited(savedPlaceId: string): Promise<void> {
   if (isDemoMode()) return await markDemoVisited(savedPlaceId);
+  savedPlaceId = requireRealSavedPlaceId(savedPlaceId, 'mark_visited');
   const nowIso = new Date().toISOString();
   try {
     const { error } = await supabase
@@ -983,6 +990,7 @@ export async function markArchived(
   opts: { exhausted?: boolean } = {},
 ): Promise<void> {
   if (isDemoMode()) return await markDemoArchived(savedPlaceId, opts);
+  savedPlaceId = requireRealSavedPlaceId(savedPlaceId, 'mark_archived');
   const nowIso = new Date().toISOString();
   const patch: Record<string, unknown> = {
     archived_at: nowIso,
@@ -1013,6 +1021,7 @@ export async function markArchived(
  */
 export async function unarchive(savedPlaceId: string): Promise<void> {
   if (isDemoMode()) return await unarchiveDemo(savedPlaceId);
+  savedPlaceId = requireRealSavedPlaceId(savedPlaceId, 'unarchive');
   try {
     const { error } = await supabase
       .from('saved_places')

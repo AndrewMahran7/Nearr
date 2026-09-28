@@ -175,13 +175,14 @@ for (const fixture of [
 }
 
 // Verify the production component wiring, not just helper outputs.
-assert.match(mapSource, /mapFilterOptions\(\s*mapPlaces,\s*phase2MapActive && !nearbyExplorer \? PHASE2_REQUIRED_MAP_FILTERS : \[\],\s*\)/);
+assert.match(mapSource, /shouldShowOnboardingStarterFilters\(onboardingV2State\)/);
 assert.match(mapSource, /<MapCategoryFilterBar\s+options=\{mapFilterChoices\}/);
 assert.match(mapSource, /!searchVisible && !nearbyExplorer \? \([\s\S]{0,700}<ShareQueueButton \/>/);
 assert.match(mapSource, /<OnboardingV2MapCoachmark topOffset=\{phase2MapLayout\.dockTop\} \/>/);
-assert.match(coachSource, /'practice_ready', 'first_independent_external_video_opened'/);
+assert.match(coachSource, /state\?\.realPracticeSession/);
 assert.match(coachSource, /deferOnboardingV2Practice/);
-assert.doesNotMatch(coachSource, /loadOnboardingPracticeFixture|useOnboardingTutorialJobs/);
+assert.doesNotMatch(coachSource, /loadOnboardingPracticeFixture/);
+assert.match(coachSource, /useOnboardingTutorialJobs/);
 assert.match(coachSource, /Linking\.openURL/);
 assert.doesNotMatch(coachSource, /PHASE2_MAP_CHROME_CLEARANCE|useSafeAreaInsets/);
 

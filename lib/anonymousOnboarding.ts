@@ -23,6 +23,7 @@ import {
 import { onboardingV2ResumeEligibility } from '@/lib/onboardingV2Core';
 import { supabase } from '@/lib/supabase';
 import { markOnboardingComplete } from '@/lib/onboarding';
+import { realSavedPlaceIds } from '@/lib/savedPlaceIdentity';
 
 const TRANSFER_KEY = 'nearr:onboarding:v2:account-transfer';
 
@@ -31,6 +32,8 @@ type PendingTransfer = {
   anonymousUserId: string;
   secret: string;
   expiresAt: string;
+  /** Real database rows eligible for backup; scripted tutorial ids are absent. */
+  realSavedPlaceIds: string[];
 };
 
 function randomSecret(bytes: Uint8Array): string {
@@ -46,7 +49,10 @@ async function readTransfer(): Promise<PendingTransfer | null> {
       await AsyncStorage.removeItem(TRANSFER_KEY);
       return null;
     }
-    return parsed;
+    return {
+      ...parsed,
+      realSavedPlaceIds: realSavedPlaceIds(parsed.realSavedPlaceIds ?? []),
+    };
   } catch {
     return null;
   }
@@ -134,10 +140,14 @@ export async function prepareOnboardingAccountTransfer(): Promise<PendingTransfe
     throw new Error('anonymous_onboarding_transfer_not_ready');
   }
   const secret = randomSecret(await Crypto.getRandomBytesAsync(32));
+  const transferableIds = realSavedPlaceIds([
+    state.tutorialSave?.savedPlaceId,
+    ...state.independentSaves.map((save) => save.savedPlaceId),
+  ]);
   // The tutorial-save transition normally mirrors in the background. Flush it
   // here so a fast account tap cannot race grant creation on the server.
   await flushOnboardingV2StateToServer();
-  const { data, error } = await supabase.rpc('begin_onboarding_account_transfer', {
+  const { data, error } = await supabase.rpc('begin_onboarding_account_transfer_v2', {
     p_onboarding_session_id: state.funnelSessionId,
     p_transfer_secret: secret,
   });
@@ -147,6 +157,7 @@ export async function prepareOnboardingAccountTransfer(): Promise<PendingTransfe
     anonymousUserId: session.user.id,
     secret,
     expiresAt: new Date(Date.now() + 24 * 60 * 60_000).toISOString(),
+    realSavedPlaceIds: transferableIds,
   };
   await AsyncStorage.setItem(TRANSFER_KEY, JSON.stringify(transfer));
   await beginOnboardingV2PermanentAccountLink();
@@ -166,7 +177,7 @@ export async function clearOnboardingAccountTransferAfterDeletion(): Promise<voi
 export async function finishOnboardingAccountTransition(user: User): Promise<{
   route: '/(tabs)/map' | '/(onboarding)';
   destinationWasEstablished: boolean;
-  tutorialSavedPlaceId: string;
+  tutorialSavedPlaceId: string | null;
   continueOnboardingV2: boolean;
 }> {
   if (isAnonymousSupabaseUser(user)) throw new Error('permanent_identity_not_established');
@@ -184,7 +195,7 @@ export async function finishOnboardingAccountTransition(user: User): Promise<{
     result = parseAccountTransitionResult(data);
   } else {
     const operation = transfer
-      ? supabase.rpc('complete_onboarding_account_transfer', { p_transfer_secret: transfer.secret })
+      ? supabase.rpc('complete_onboarding_account_transfer_v2', { p_transfer_secret: transfer.secret })
       : supabase.rpc('resume_completed_onboarding_account_transfer', {
           p_onboarding_session_id: state.funnelSessionId,
         });
@@ -193,7 +204,6 @@ export async function finishOnboardingAccountTransition(user: User): Promise<{
     result = parseAccountTransitionResult(data);
   }
   if (!result) throw new Error('invalid_onboarding_transfer_result');
-  if (!result.tutorialSavedPlaceId) throw new Error('tutorial_saved_place_identity_missing');
   const nextState = await completeOnboardingV2PermanentAccountLink({
     permanentUserId: result.permanentUserId,
     destinationWasEstablished: result.destinationWasEstablished,

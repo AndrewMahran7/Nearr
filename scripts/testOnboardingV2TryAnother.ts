@@ -148,7 +148,8 @@ const coachmark = readFileSync(join(process.cwd(), 'components/onboarding/v2/Onb
 assert.match(coachmark, /Open practice video/);
 assert.match(coachmark, /ONBOARDING_PHASE2_PRACTICE\.canonicalUrl/);
 assert.match(coachmark, /deferOnboardingV2Practice/);
-assert.doesNotMatch(coachmark, /loadOnboardingPracticeFixture|router\.(replace|push)/);
+assert.doesNotMatch(coachmark, /loadOnboardingPracticeFixture|router\.replace/);
+assert.match(coachmark, /router\.push\(`\/share-jobs\/\$\{practiceSession\.shareJobId\}`\)/);
 assert.match(coachmark, /Linking\.openURL/);
 pass(8, 'legacy fixture exhaustion has a visible local continuation');
 pass(9, 'practice launch never performs a route reset');
