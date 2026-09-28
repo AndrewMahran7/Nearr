@@ -10,6 +10,7 @@ import { OnboardingV2SecondHalf } from '@/components/onboarding/v2/OnboardingV2S
 import { ImmersiveGuidedSave } from '@/components/onboarding/v2/ImmersiveGuidedSave';
 import { OfflineFixtureVideo } from '@/components/onboarding/v2/OfflineFixtureVideo';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useStartupWatchdog } from '@/hooks/useStartupWatchdog';
 import { hapticSelection, hapticSuccess } from '@/lib/haptics';
 import { offlineOnboardingAsset, offlineOnboardingMedia } from '@/onboarding/assets/offlineOnboardingAssets';
@@ -30,17 +31,22 @@ import {
   advanceOnboardingV2SharingRehearsal,
   confirmOnboardingV2FirstMagicMoment,
   beginOnboardingV2RealPractice,
+  markOnboardingV2PracticeWaitingForShare,
+  openOnboardingV2Starter,
   deferOnboardingV2Practice,
   beginOnboardingV2SecondHalf,
   finishOnboardingV2FirstMagicMoment, goBackOnboardingV2,
   migrateInterruptedOnboardingV2ToFirstMagic,
   recordOnboardingV2PlaceTourOpened, closeOnboardingV2PlaceTour,
   recordOnboardingV2CelebrationShown, recordOnboardingV2GetStarted,
+  repairOnboardingV2PreShareTutorialFixture,
   resolveOnboardingV2TutorialResult,
   setOnboardingV2DesiredValue, setOnboardingV2PainPoint,
   setOnboardingV2TutorialFixture,
   toggleOnboardingV2Interest,
 } from '@/lib/onboardingV2';
+import { onboardingPhase2PracticeForInterest, onboardingPhase2PracticeFromFixtureId } from '@/lib/onboardingPhase2Practice';
+import { openOnboardingPracticePost } from '@/services/onboardingPracticeLauncher';
 import type { OnboardingDesiredValue, OnboardingInterest, OnboardingPainPoint, OnboardingPlatform, OnboardingTutorialFixture, OnboardingV2State } from '@/lib/onboardingV2Core';
 
 const PLATFORMS: Array<{ value: Exclude<OnboardingPlatform, 'other'>; label: string; icon: keyof typeof Ionicons.glyphMap; tint: string }> = [
@@ -105,6 +111,15 @@ export function OnboardingV2PreAuth() {
       .finally(() => { fixtureInFlightRef.current = false; });
   }, [state?.interest, state?.preferredPlatform, state?.stage]);
   useEffect(() => {
+    if (!state || !['tutorial_challenge', 'tutorial_ready'].includes(state.stage)) return;
+    if (state.pendingShare || state.tutorialSave || state.tutorialResult) return;
+    const expected = selectOfflineOnboardingFixture(state.preferredPlatform, state.interest);
+    if (state.tutorialFixture?.id === expected.id) return;
+    void repairOnboardingV2PreShareTutorialFixture(
+      toOnboardingTutorialFixture(expected, new Date().toISOString()),
+    ).catch((error) => console.warn('[onboarding-v2] fixture_mapping_repair_failed', error));
+  }, [state]);
+  useEffect(() => {
     if (state?.stage !== 'tutorial_processing' || !state.tutorialFixture) return;
     const fixture = offlineFixtureById(state.tutorialFixture.id);
     if (!fixture) throw new Error(`offline_onboarding_fixture_invariant:${state.tutorialFixture.id}`);
@@ -144,7 +159,7 @@ export function OnboardingV2PreAuth() {
   if (state.stage === 'fixture_map_payoff' && state.tutorialResult) return <FixtureMapPayoffScreen state={state} />;
   if (state.stage === 'phase2_intro' && state.tutorialResult) return <Phase2IntroScreen state={state} />;
   if (state.stage === 'place_tour' && state.tutorialResult) return <OfflinePlaceDetailScreen state={state} />;
-  if (state.stage === 'first_magic_moment_complete') return <FirstMagicCompleteScreen />;
+  if (state.stage === 'first_magic_moment_complete') return <FirstMagicCompleteScreen state={state} />;
   return <OnboardingV2SecondHalf state={state} />;
 }
 
@@ -227,6 +242,7 @@ export function ProcessingScreen({ state }: { state: OnboardingV2State; failed?:
     return () => { clearTimeout(scanning); clearTimeout(clues); clearTimeout(matching); };
   }, [reduceMotion]);
   const fixture = offlineFixtureById(state.tutorialFixture?.id);
+  const practiceSource = onboardingPhase2PracticeForInterest(state.interest);
   if (!fixture) throw new Error(`offline_onboarding_fixture_invariant:${state.tutorialFixture?.id ?? 'missing'}`);
   const steps = ['Post received', 'Scanning video', 'Looking for clues', 'Matching the place'];
   return <Phase1Frame progress={0.6} progressLabel="Onboarding progress" contentStyle={styles.processingContent}><Text style={styles.processingEyebrow}>NEARR IS ON IT</Text><Text style={styles.headlineCentered}>{steps[step]}<Text style={styles.orangeDot}>.</Text></Text><View style={styles.localScanner}><OfflineFixtureVideo assetKey={fixture.assetKey} style={StyleSheet.absoluteFill} accessibilityLabel={`${fixture.place.name} bundled processing video`} /><View style={styles.previewShade} /><View style={styles.scanLineStatic} /><View style={styles.scannerPin}><Feather name="map-pin" size={22} color="#FFFFFF" /></View></View><View style={styles.processingSteps}>{steps.map((label, index) => <View key={label} style={[styles.processingStep, index <= step && styles.processingStepActive]}><View style={[styles.processingStepDot, index <= step && styles.processingStepDotActive]} /><Text style={[styles.processingStepText, index <= step && styles.processingStepTextActive]}>{label}</Text>{index < step ? <Feather name="check" size={15} color={Phase1Colors.success} /> : null}</View>)}</View></Phase1Frame>;
@@ -307,6 +323,7 @@ function FixtureMapPayoffScreen({ state }: { state: OnboardingV2State }) {
 
 function Phase2IntroScreen({ state }: { state: OnboardingV2State }) {
   const fixture = offlineFixtureById(state.tutorialFixture?.id);
+  const practiceSource = onboardingPhase2PracticeForInterest(state.interest);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   if (!fixture) throw new Error('offline_phase2_intro_invariant');
@@ -320,7 +337,15 @@ function Phase2IntroScreen({ state }: { state: OnboardingV2State }) {
         setError('A connection is needed for real sharing. Retry when you’re online or do this later.');
         return;
       }
-      await beginOnboardingV2RealPractice();
+      const next = await beginOnboardingV2RealPractice();
+      const practiceFixture = next.practiceFixture;
+      if (!practiceFixture) throw new Error('practice_fixture_missing');
+      await openOnboardingV2Starter({
+        contentId: practiceFixture.contentId,
+        sourceUrl: practiceFixture.canonicalUrl,
+      });
+      await openOnboardingPracticePost(practiceFixture);
+      await markOnboardingV2PracticeWaitingForShare();
     } catch {
       setError('A connection is needed for real sharing. Retry when you’re online or do this later.');
     } finally {
@@ -333,8 +358,8 @@ function Phase2IntroScreen({ state }: { state: OnboardingV2State }) {
       <View style={styles.phase2Sheet}>
         <Text style={styles.eyebrow}>OPTIONAL REAL-WORLD PRACTICE</Text>
         <Text style={styles.headline}>Ready to save one of your own?</Text>
-        <Text style={styles.body}>Open a real social video, use Share, then choose Nearr. This step uses the Development backend and needs a connection.</Text>
-        <View style={styles.phase2Proof}><Image source={offlineOnboardingAsset(fixture.assetKey)} style={styles.phase2ProofImage} /><View style={styles.flex}><Text style={styles.detailLabel}>YOUR PRACTICE SAVE</Text><Text style={styles.detailText}>{fixture.place.name} stays visible while you try the real flow.</Text></View></View>
+        <Text style={styles.body}>One tap opens the exact practice post. Use Share, then choose Nearr. A connection is needed for this optional real save.</Text>
+        <View style={styles.phase2Proof}><Image source={offlineOnboardingAsset(practiceSource.localPreviewAssetKey)} style={styles.phase2ProofImage} /><View style={styles.flex}><Text style={styles.detailLabel}>YOUR REAL PRACTICE POST</Text><Text style={styles.detailText}>{practiceSource.expectedPlaceName} is a {interestLabel(state.interest).toLowerCase()} example. Nearr will still verify the shared post before saving anything.</Text></View></View>
         {error ? <Text style={styles.phase2Error} accessibilityRole="alert">{error}</Text> : null}
       </View>
     </Phase1Frame>
@@ -355,8 +380,28 @@ function OfflinePlaceDetailScreen({ state }: { state: OnboardingV2State }) {
   </Phase1Frame>;
 }
 
-function FirstMagicCompleteScreen() {
-  return <Phase1Frame progress={0.76} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title="Set up Nearr" onPress={() => void beginOnboardingV2SecondHalf()} />} contentStyle={styles.centered}><View style={styles.celebrationMark}><NearrSparkleMark size={78} /><View style={styles.checkBadge}><Feather name="check" size={18} color="#FFFFFF" /></View></View><Text style={styles.headlineCentered}>You know how to save places.</Text><Text style={styles.celebrationCopy}>Your tutorial place is on the map. Next, choose whether Nearr can help bring saved places back when you’re nearby.</Text></Phase1Frame>;
+function FirstMagicCompleteScreen({ state }: { state: OnboardingV2State }) {
+  const { data: savedPlaces } = useSavedPlaces();
+  const practice = onboardingPhase2PracticeFromFixtureId(state.practiceFixture?.id);
+  const practiceSavedPlaceId = state.realPracticeSession?.savedPlaceId
+    ?? state.independentSaves[0]?.savedPlaceId
+    ?? null;
+  const realSave = practiceSavedPlaceId
+    ? savedPlaces.find((saved) => saved.id === practiceSavedPlaceId)
+    : undefined;
+  const sourceThumbnail = realSave?.sources?.find((source) => source.is_primary)?.thumbnail_url
+    ?? realSave?.sources?.[0]?.thumbnail_url
+    ?? null;
+  const placeName = realSave?.place.name ?? practice?.expectedPlaceName ?? 'Your place';
+  const fallbackAsset = practice?.localPreviewAssetKey ?? 'mad_yolks';
+  return <Phase1Frame progress={0.76} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title="Set up Nearr" onPress={() => void beginOnboardingV2SecondHalf()} />} contentStyle={styles.centered}>
+    <View style={styles.celebrationMark}><NearrSparkleMark size={78} /><View style={styles.checkBadge}><Feather name="check" size={18} color="#FFFFFF" /></View></View>
+    <Text style={styles.headlineCentered}>{placeName} is saved.</Text>
+    <View style={styles.realSaveProof}>
+      <Image source={sourceThumbnail ? { uri: sourceThumbnail } : offlineOnboardingAsset(fallbackAsset)} style={styles.realSaveFallback} resizeMode="cover" accessibilityLabel={`${placeName} saved-place photo`} />
+    </View>
+    <Text style={styles.celebrationCopy}>It’s now on your map. Next, choose whether Nearr can bring saved places back when you’re nearby.</Text>
+  </Phase1Frame>;
 }
 function LoadingState({ label }: { label: string }) { return <Phase1Frame progress={0.34} progressLabel="Onboarding progress" contentStyle={styles.centered}><NearrSparkleMark size={76} /><Text style={styles.loadingLabel}>{label}</Text><Text style={styles.bodyCentered}>Matching your choices with a real guided example.</Text></Phase1Frame>; }
 function interestLabel(value: OnboardingInterest | null): string { switch (value) { case 'outdoors': case 'beaches': return 'Outdoor spots'; case 'food': return 'Food spots'; case 'cafes': return 'Cafes'; case 'travel': return 'Travel places'; case 'things_to_do': return 'Things to do'; case 'shopping': return 'Shops'; default: return 'Great places'; } }
@@ -389,4 +434,5 @@ const styles = StyleSheet.create({
   localHeroPhoto: { width: '100%', height: 292, borderRadius: 30 }, localMapRoadOne: { position: 'absolute', width: 220, borderTopWidth: 2, borderColor: '#AFC5B4', top: 30, left: -20, transform: [{ rotate: '-14deg' }] }, localMapRoadTwo: { position: 'absolute', height: 130, borderLeftWidth: 2, borderColor: '#BDCEBF', left: 88, top: -24, transform: [{ rotate: '30deg' }] }, localMapPin: { position: 'absolute', left: '48%', top: '31%', width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.orange }, detailNote: { flexDirection: 'row', gap: 10, marginTop: 14, padding: 14, borderRadius: 18, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, detailLabel: { color: Phase1Colors.orange, fontSize: 9, fontWeight: '900', letterSpacing: 1 }, detailText: { color: Phase1Colors.text, fontSize: 13, lineHeight: 19, fontWeight: '700', marginTop: 4 }, localMapCard: { height: 130, marginTop: 14, borderRadius: 20, overflow: 'hidden', backgroundColor: '#DDE9E0', borderWidth: 1, borderColor: Phase1Colors.border }, localMapCopy: { position: 'absolute', left: 12, right: 12, bottom: 10, padding: 8, borderRadius: 11, backgroundColor: 'rgba(255,255,255,0.9)' }, nearbyList: { gap: 7 }, nearbyRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 11, borderRadius: 12, backgroundColor: Phase1Colors.surface }, nearbyText: { flex: 1, color: Phase1Colors.text, fontSize: 12, fontWeight: '800' },
   revealTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }, revealCount: { color: Phase1Colors.orange, fontSize: 10, fontWeight: '900', letterSpacing: 1.5 }, revealFound: { color: Phase1Colors.textMuted, fontSize: 16, fontWeight: '800', marginBottom: 4 }, revealCheck: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.success }, savedBanner: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 12, borderRadius: 17, backgroundColor: '#E8F6EF' }, savedBannerIcon: { width: 27, height: 27, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.success }, savedBannerText: { color: '#1D7150', fontSize: 13, fontWeight: '900' }, transformationCard: { minHeight: 88, flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14, padding: 9, borderRadius: 21, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, transformSource: { width: 78, height: 68, borderRadius: 14, overflow: 'hidden', backgroundColor: '#2E2B28' }, transformThumb: { width: '100%', height: '100%' }, transformThumbFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#423B36' }, transformArrow: { width: 30, alignItems: 'center' }, transformMap: { flex: 1, height: 68, borderRadius: 14, overflow: 'hidden', backgroundColor: '#D9E5DD' }, transformLabel: { position: 'absolute', left: 6, bottom: 6, color: '#FFFFFF', fontSize: 8, fontWeight: '900', letterSpacing: 1, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6, overflow: 'hidden', backgroundColor: 'rgba(22,20,18,0.72)' }, whyStatement: { color: Phase1Colors.text, fontSize: 16, lineHeight: 23, fontWeight: '900', marginTop: 18 }, whyBody: { color: Phase1Colors.textMuted, fontSize: 13, lineHeight: 19, marginTop: 5 },
   celebrationMark: { width: 126, height: 126, borderRadius: 63, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', backgroundColor: Phase1Colors.orange }, celebrationHalo: { position: 'absolute', width: 156, height: 156, borderRadius: 78, borderWidth: 1, borderColor: 'rgba(255,106,26,0.38)' }, checkBadge: { position: 'absolute', right: 1, bottom: 6, width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: '#2FA76E', borderWidth: 3, borderColor: Phase1Colors.background }, celebrationCopy: { color: Phase1Colors.textMuted, fontSize: 17, lineHeight: 24, textAlign: 'center', marginTop: 13 }, savedProof: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'center', marginTop: 28, paddingHorizontal: 16, borderRadius: 18, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, savedProofText: { color: Phase1Colors.text, fontSize: 13, fontWeight: '900' }, loadingLabel: { color: Phase1Colors.text, fontSize: 16, fontWeight: '800', marginTop: 18 },
+  realSaveProof: { width: '100%', height: 154, marginTop: 22, overflow: 'hidden', borderRadius: 18, backgroundColor: Phase1Colors.surfaceRaised }, realSaveFallback: { width: '100%', height: '100%' },
 });

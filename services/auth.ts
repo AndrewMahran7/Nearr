@@ -7,6 +7,7 @@ import type { User } from '@supabase/supabase-js';
 
 import { supabase } from '@/lib/supabase';
 import { handleAuthDeepLink } from '@/lib/authDeepLink';
+import { beginGoogleAuthTransaction, setAuthTransactionStatus } from '@/lib/authTransaction';
 import { buildAppleNameMetadata } from '@/lib/appleName';
 import { classifySignUpResult, type SignUpOutcomeKind } from '@/lib/authScreenState';
 import { persistNamesFromAuthUser, persistProviderProfileNames } from '@/services/profileService';
@@ -170,32 +171,30 @@ export type SocialSignInOutcome =
  * Never logs the provider URL, the callback URL, tokens or the auth code.
  */
 export async function startGoogleSignIn(): Promise<SocialSignInOutcome> {
+  const transaction = beginGoogleAuthTransaction();
+  if (!transaction) return { status: 'failed', code: 'auth_in_flight' };
   const redirectTo = getAuthCallbackUrl();
 
   let providerUrl: string | null = null;
-  const current = await supabase.auth.getSession();
-  const linkInPlace = current.data.session?.user.is_anonymous === true;
   try {
-    const { data, error } = linkInPlace
-      ? await supabase.auth.linkIdentity({
-          provider: 'google',
-          options: { redirectTo, skipBrowserRedirect: true },
-        })
-      : await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo, skipBrowserRedirect: true },
-        });
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo, skipBrowserRedirect: true },
+    });
     if (error) {
+      setAuthTransactionStatus(transaction.id, 'failed');
       console.warn('[auth] google oauth_start_failed');
       return { status: 'failed', code: 'oauth_start_failed' };
     }
     providerUrl = data?.url ?? null;
   } catch {
+    setAuthTransactionStatus(transaction.id, 'failed');
     console.warn('[auth] google oauth_start_threw');
     return { status: 'failed', code: 'oauth_start_failed' };
   }
 
   if (!providerUrl) {
+    setAuthTransactionStatus(transaction.id, 'failed');
     console.warn('[auth] google missing_oauth_url');
     return { status: 'failed', code: 'missing_oauth_url' };
   }
@@ -204,6 +203,7 @@ export async function startGoogleSignIn(): Promise<SocialSignInOutcome> {
   try {
     result = await WebBrowser.openAuthSessionAsync(providerUrl, redirectTo);
   } catch {
+    setAuthTransactionStatus(transaction.id, 'failed');
     console.warn('[auth] google auth_session_failed');
     return { status: 'failed', code: 'auth_session_failed' };
   }
@@ -211,41 +211,25 @@ export async function startGoogleSignIn(): Promise<SocialSignInOutcome> {
   // `cancel` = the user tapped Cancel/back, `dismiss` = the sheet was swiped
   // away. Both are ordinary user actions, not failures.
   if (result.type === 'cancel' || result.type === 'dismiss') {
+    setAuthTransactionStatus(transaction.id, 'cancelled');
     return { status: 'cancelled' };
   }
   if (result.type !== 'success' || !result.url) {
+    setAuthTransactionStatus(transaction.id, 'failed');
     console.warn(`[auth] google callback_missing type=${result.type}`);
     return { status: 'failed', code: 'callback_missing' };
   }
 
   const linkResult = await handleAuthDeepLink(result.url, { source: 'oauth_result' });
   const user = await resolveSessionUser(linkResult.sessionEstablished);
-  if (user && !user.is_anonymous) return { status: 'signed_in', user };
+  if (user && !user.is_anonymous) {
+    setAuthTransactionStatus(transaction.id, 'authenticated');
+    return { status: 'signed_in', user };
+  }
 
-  // Linking fails when the Google identity already belongs to an established
-  // account. Start a normal sign-in only in that collision case; the transfer
-  // grant made before opening the provider authorizes the later merge.
-  if (linkInPlace) return startGoogleSignInAsExistingAccount();
-
+  setAuthTransactionStatus(transaction.id, 'failed');
   console.warn(`[auth] google exchange_failed reason=${linkResult.reason}`);
   return { status: 'failed', code: linkResult.reason };
-}
-
-async function startGoogleSignInAsExistingAccount(): Promise<SocialSignInOutcome> {
-  const redirectTo = getAuthCallbackUrl();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo, skipBrowserRedirect: true },
-  });
-  if (error || !data.url) return { status: 'failed', code: 'oauth_existing_start_failed' };
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-  if (result.type === 'cancel' || result.type === 'dismiss') return { status: 'cancelled' };
-  if (result.type !== 'success' || !result.url) return { status: 'failed', code: 'callback_missing' };
-  const exchanged = await handleAuthDeepLink(result.url, { source: 'oauth_result' });
-  const user = await resolveSessionUser(exchanged.sessionEstablished);
-  return user && !user.is_anonymous
-    ? { status: 'signed_in', user }
-    : { status: 'failed', code: exchanged.reason };
 }
 
 /**
@@ -261,9 +245,8 @@ async function resolveSessionUser(exchangeSucceeded: boolean): Promise<User | nu
   if (data.session?.user) return data.session.user;
   if (!exchangeSucceeded) return null;
   // The exchange reported success but the session read raced it — retry once.
-  await new Promise((resolve) => setTimeout(resolve, 250));
-  const retry = await supabase.auth.getSession();
-  return retry.data.session?.user ?? null;
+  const verified = await supabase.auth.getUser();
+  return verified.data.user ?? null;
 }
 
 // ---------------------------------------------------------------------------

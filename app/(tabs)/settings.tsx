@@ -31,7 +31,7 @@ import {
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 
-import { Button, Card, DemoModeBanner, DevModeBanner, EmptyState, HowNearrWorksModal, Input, Screen, SetupChecklist } from '@/components';
+import { Button, Card, DemoModeBanner, DevModeBanner, HowNearrWorksModal, Input, Screen, SetupChecklist } from '@/components';
 import { Radius, Spacing } from '@/constants';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -737,33 +737,9 @@ export default function SettingsScreen() {
   }
 
   // ---------------------------------------------------------------------
-  if (loading) {
-    return (
-      <Screen>
-        <View style={styles.center}>
-          <ActivityIndicator />
-        </View>
-      </Screen>
-    );
-  }
-
-  if (loadError && !profile) {
-    return (
-      <Screen>
-        <EmptyState
-          variant="error"
-          title="Couldn&rsquo;t load your settings"
-          body={loadError}
-          actionTitle="Try again"
-          onAction={load}
-        />
-      </Screen>
-    );
-  }
-
   // Local-UI session with no profile: show banner + Exit Dev Mode and skip
   // the form entirely (the form requires a real profile to load).
-  if (isLocalUiSession && !profile) {
+  if (!loading && isLocalUiSession && !profile) {
     return (
       <Screen padded={false}>
         <ScrollView contentContainerStyle={styles.scroll}>
@@ -822,6 +798,18 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
+        {loading ? (
+          <Card style={styles.section}>
+            <View style={styles.unitRow}><ActivityIndicator /><Text style={[typography.caption, styles.muted]}>Loading account preferences…</Text></View>
+          </Card>
+        ) : loadError && !profile ? (
+          <Card style={styles.section}>
+            <Text style={typography.bodyStrong}>Couldn’t load account preferences</Text>
+            <Text style={[typography.caption, styles.muted]}>{loadError}</Text>
+            <Button title="Try again" variant="secondary" onPress={load} />
+          </Card>
+        ) : null}
+
         {/* --- Notifications ------------------------------------------- */}
         <Text style={styles.sectionLabel}>Nearby alerts</Text>
         <Card style={styles.section}>
@@ -830,6 +818,7 @@ export default function SettingsScreen() {
             sub="Let Nearr send reminders and updates."
             value={notificationsOn}
             onValueChange={setNotificationsOn}
+            disabled={loading || !profile}
           />
           <View style={styles.divider} />
           <ToggleRow
@@ -837,7 +826,7 @@ export default function SettingsScreen() {
             sub="Remind me when I&apos;m near a place I saved."
             value={nearbyOn}
             onValueChange={setNearbyOn}
-            disabled={!notificationsOn}
+            disabled={loading || !profile || !notificationsOn}
           />
           <View style={styles.divider} />
           <Pressable
@@ -864,6 +853,7 @@ export default function SettingsScreen() {
             sub="Pause reminders during a daily window."
             value={quietOn}
             onValueChange={setQuietOn}
+            disabled={loading || !profile}
           />
           {quietOn ? (
             <View style={styles.quietGrid}>
@@ -898,7 +888,7 @@ export default function SettingsScreen() {
         {hasUnsavedChanges ? (
           <>
             <View style={{ height: Spacing.lg }} />
-            <Button title="Save changes" onPress={handleSave} loading={saving} />
+            <Button title="Save changes" onPress={handleSave} loading={saving} disabled={loading || !profile} />
           </>
         ) : null}
 

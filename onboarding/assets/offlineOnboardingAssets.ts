@@ -33,6 +33,14 @@ const OFFLINE_ONBOARDING_ASSETS: Record<OfflineOnboardingAssetKey, OfflineOnboar
       require('../../assets/onboarding/authentic/hydra-old-town-place-2.jpg'),
     ],
   },
+  old_towne_shops_v2: {
+    sourceVideoAsset: require('../../assets/onboarding/authentic/old-towne-shops-loop-v2.mp4'),
+    sourcePosterAsset: require('../../assets/onboarding/authentic/old-towne-shops-poster-v2.png'),
+    placePhotoAssets: [
+      require('../../assets/onboarding/authentic/old-towne-shops-poster-v2.png'),
+      require('../../assets/onboarding/authentic/old-towne-shops-place-v2.png'),
+    ],
+  },
 };
 
 export function offlineOnboardingMedia(key: OfflineOnboardingAssetKey): OfflineOnboardingMediaPackage {

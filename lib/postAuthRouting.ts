@@ -90,6 +90,7 @@ export async function resolvePostAuthRoute(userId: string): Promise<PostAuthRout
 // `begin` with an `end` in a `finally`.
 // ---------------------------------------------------------------------------
 let pendingPostAuthRoutes = 0;
+let postAuthRetryRequired = false;
 
 export function beginPostAuthRouting(): void {
   pendingPostAuthRoutes += 1;
@@ -100,5 +101,13 @@ export function endPostAuthRouting(): void {
 }
 
 export function isPostAuthRoutingPending(): boolean {
-  return pendingPostAuthRoutes > 0;
+  return pendingPostAuthRoutes > 0 || postAuthRetryRequired;
+}
+
+export function requirePostAuthRoutingRetry(): void {
+  postAuthRetryRequired = true;
+}
+
+export function clearPostAuthRoutingRetry(): void {
+  postAuthRetryRequired = false;
 }

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
 
 import { useOnboardingTutorialJobs } from '@/hooks/useOnboardingTutorialJobs';
@@ -13,17 +12,10 @@ import {
   openOnboardingV2Starter,
   reconcileOnboardingV2PracticeJob,
 } from '@/lib/onboardingV2';
-import { ONBOARDING_PHASE2_PRACTICE } from '@/lib/onboardingPhase2Practice';
+import { onboardingPhase2PracticeFromFixtureId } from '@/lib/onboardingPhase2Practice';
 import { recordOnboardingV2DevelopmentDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
-
-async function openOnboardingPhase2PracticePost(): Promise<void> {
-  try {
-    await Linking.openURL(ONBOARDING_PHASE2_PRACTICE.canonicalUrl);
-  } catch {
-    // Retain the exact post. Never degrade to an Instagram home/feed URL.
-    await WebBrowser.openBrowserAsync(ONBOARDING_PHASE2_PRACTICE.canonicalUrl);
-  }
-}
+import { offlineOnboardingAsset } from '@/onboarding/assets/offlineOnboardingAssets';
+import { openOnboardingPracticePost } from '@/services/onboardingPracticeLauncher';
 
 /** Real Phase 2 share UI, backed by the durable queue rather than a local guess. */
 export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
@@ -32,6 +24,7 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const practiceSession = state?.realPracticeSession ?? null;
+  const practiceSource = onboardingPhase2PracticeFromFixtureId(practiceSession?.fixtureId);
   const { jobs, error: jobsError } = useOnboardingTutorialJobs(
     practiceSession?.startedAt ?? null,
     !!practiceSession && !practiceSession.completionReason,
@@ -68,11 +61,10 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
     setOpening(true);
     setError(null);
     try {
-      await openOnboardingV2Starter({
-        contentId: ONBOARDING_PHASE2_PRACTICE.contentId,
-        sourceUrl: ONBOARDING_PHASE2_PRACTICE.canonicalUrl,
-      });
-      await openOnboardingPhase2PracticePost();
+      const fixture = state.practiceFixture;
+      if (!fixture) throw new Error('practice_fixture_missing');
+      await openOnboardingV2Starter({ contentId: fixture.contentId, sourceUrl: fixture.canonicalUrl });
+      await openOnboardingPracticePost(fixture);
       await markOnboardingV2PracticeWaitingForShare();
     } catch {
       setError('The practice video could not open. Check your connection or try this later.');
@@ -111,6 +103,7 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
   };
 
   return <View style={[styles.dock, { top: topOffset }]}>
+    {practiceSource ? <Image source={offlineOnboardingAsset(practiceSource.localPreviewAssetKey)} style={styles.preview} resizeMode="cover" accessibilityLabel={`${practiceSource.category} practice source preview`} /> : null}
     <View style={styles.header}>
       <View style={styles.icon}><Feather name="share-2" size={16} color="#FFFFFF" /></View>
       <View style={styles.copy}>
@@ -138,6 +131,7 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
 
 const styles = StyleSheet.create({
   dock: { position: 'absolute', left: 16, right: 16, zIndex: 80, elevation: 12, padding: 12, borderRadius: 18, backgroundColor: 'rgba(17,17,17,0.96)', borderWidth: 1, borderColor: '#303030', shadowColor: '#000000', shadowOpacity: 0.24, shadowRadius: 10, shadowOffset: { width: 0, height: 5 } },
+  preview: { width: '100%', height: 72, borderRadius: 12, marginBottom: 10 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   icon: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: '#2FA76E' },
   copy: { flex: 1 },

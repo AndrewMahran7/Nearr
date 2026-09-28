@@ -44,11 +44,13 @@ const assets = {
   dorset_quarry: ['dorset-quarry-loop.mp4', 'dorset-quarry-poster.jpg', 'dorset-quarry-place-2.jpg'],
   mad_yolks: ['mad-yolks-loop.mp4', 'mad-yolks-poster.jpg', 'mad-yolks-place-2.jpg'],
   hydra_old_town: ['hydra-old-town-loop.mp4', 'hydra-old-town-poster.jpg', 'hydra-old-town-place-2.jpg'],
+  old_towne_shops_v2: ['old-towne-shops-loop-v2.mp4', 'old-towne-shops-poster-v2.png', 'old-towne-shops-place-v2.png'],
 } as const;
 const expectedPlace = {
   dorset_quarry: 'Dorset Quarry',
   mad_yolks: 'Mad Yolks',
   hydra_old_town: 'Hydra Old Town',
+  old_towne_shops_v2: 'Old Towne Orange Shops',
 } as const;
 const registry = read('onboarding/assets/offlineOnboardingAssets.ts');
 

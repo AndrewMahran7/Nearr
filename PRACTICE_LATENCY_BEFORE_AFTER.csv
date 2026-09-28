@@ -1,0 +1,9 @@
+path,milestone,before_ms,after_ms,status,notes
+opening,tap_to_anonymous_session_ready,4403,,observed_before,"Includes Development network/auth readiness; after requires physical measurement"
+opening,tap_to_os_link_request,,not_measured,implemented,"One tap now prepares then opens exact URL; no second CTA"
+opening,os_link_to_external_post_visible,,not_observable,external,"Instagram rendering is outside Nearr telemetry"
+processing,extension_submission_to_durable_acceptance,0,0,observed_before,"Submission was durably accepted at 20:00:19.780 UTC"
+processing,durable_acceptance_to_saved_result,26299,,observed_before,"Save complete at 20:00:46.079 UTC"
+processing,durable_acceptance_to_client_completion_ui,26921,,observed_before,"Client completion event at 20:00:46.701 UTC"
+processing,post_save_media_enrichment,47000,,observed_separate,"Railway work after save; not the primary review gate"
+processing,known_source_cache_savings,,not_measured,pending_physical,"Ordinary eligible cache may be reused; no result is hardcoded and no other user's job is reused"

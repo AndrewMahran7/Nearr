@@ -17,6 +17,7 @@ export type AuthDeepLinkResult = {
     | 'non_auth_link'
     | 'duplicate'
     | 'missing_auth_params'
+    | 'provider_error'
     | 'set_session_error'
     | 'exchange_code_error'
     | 'session_not_found_after_auth'
@@ -78,7 +79,7 @@ export async function handleAuthDeepLink(
   }
 
   const isDuplicate = duplicateAuthLinkGuard.shouldIgnore(url, parsed.params);
-  if (isDuplicate && source === 'deep_link') {
+  if (isDuplicate) {
     console.log('[auth-link] ignored_duplicate=true');
     return {
       handled: false,
@@ -91,6 +92,17 @@ export async function handleAuthDeepLink(
   }
 
   try {
+    if (parsed.params.error) {
+      console.warn('[auth-link] failed reason=provider_error');
+      return {
+        handled: true,
+        sessionEstablished: false,
+        ignored: false,
+        failed: true,
+        isRecovery: parsed.isRecovery,
+        reason: 'provider_error',
+      };
+    }
     if (parsed.params.access_token && parsed.params.refresh_token) {
       const { error } = await supabase.auth.setSession({
         access_token: parsed.params.access_token,

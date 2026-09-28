@@ -34,7 +34,7 @@ import {
 const at = (second: number) => `2026-09-25T12:00:${String(second).padStart(2, '0')}.000Z`;
 const apply = (state: OnboardingV2State, reducer: (value: OnboardingV2State, now: string) => { state: OnboardingV2State }, second: number) => reducer(state, at(second)).state;
 
-assert.equal(OFFLINE_ONBOARDING_FIXTURES.length, 12, 'four platforms × three content categories are bundled');
+assert.equal(OFFLINE_ONBOARDING_FIXTURES.length, 16, 'four platforms × four content categories are bundled');
 for (const platform of ['instagram', 'tiktok', 'facebook', 'youtube'] as const) {
   for (const [interest, category] of [['outdoors', 'outdoors'], ['food', 'food'], ['travel', 'travel']] as const) {
     const fixture = selectOfflineOnboardingFixture(platform, interest);

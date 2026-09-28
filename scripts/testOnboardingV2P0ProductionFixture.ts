@@ -183,7 +183,7 @@ assert.match(coachSource, /state\?\.realPracticeSession/);
 assert.match(coachSource, /deferOnboardingV2Practice/);
 assert.doesNotMatch(coachSource, /loadOnboardingPracticeFixture/);
 assert.match(coachSource, /useOnboardingTutorialJobs/);
-assert.match(coachSource, /Linking\.openURL/);
+assert.match(coachSource, /openOnboardingPracticePost\(fixture\)/);
 assert.doesNotMatch(coachSource, /PHASE2_MAP_CHROME_CLEARANCE|useSafeAreaInsets/);
 
 const detailSource = readFileSync(join(root, 'components/map/SelectedPlaceDetails.tsx'), 'utf8');

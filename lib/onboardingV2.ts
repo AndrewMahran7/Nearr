@@ -80,6 +80,7 @@ import {
   markOnboardingPracticeWaitingForShare,
   receiveSharedSource,
   receiveOnboardingTutorialFixture,
+  repairPreShareTutorialFixture,
   receiveOnboardingPracticeFixture,
   resolveOnboardingTutorialResult,
   retryOnboardingTutorialShare,
@@ -122,7 +123,7 @@ import {
   type SimulatedTutorialAction,
 } from '@/lib/onboardingV2Core';
 import {
-  ONBOARDING_PHASE2_PRACTICE,
+  onboardingPhase2PracticeForInterest,
   onboardingPhase2PracticeFixture,
 } from '@/lib/onboardingPhase2Practice';
 import type { OnboardingStarterContent } from '@/constants/onboardingStarterContent';
@@ -402,7 +403,12 @@ async function applyTransition(
     // successful writes remain the process-death authority.
     const current = cachedState ?? await readStateFresh();
     const result = reducer(current, nowIso());
-    if (!result.changed) return current;
+    const transitionSource = reducer.name || 'adapter';
+    if (!result.changed) {
+      if (__DEV__) console.debug(`[onboarding-transition] id=${current.revision} source=${transitionSource} ${current.stage}->${current.stage} owner=state_machine navigation=none duplicate_ignored=true reason=unchanged`);
+      return current;
+    }
+    if (__DEV__) console.debug(`[onboarding-transition] id=${result.state.revision} source=${transitionSource} ${current.stage}->${result.state.stage} owner=state_machine navigation=route_guard duplicate_ignored=false reason=state_changed`);
     publish(result.state);
     try {
       await AsyncStorage.setItem(ONBOARDING_V2_STORAGE_KEY, encodeOnboardingV2State(result.state));
@@ -535,13 +541,28 @@ export function deferOnboardingV2Practice(): Promise<OnboardingV2State> {
 }
 
 export function beginOnboardingV2RealPractice(): Promise<OnboardingV2State> {
-  return applyTransition((state, now) =>
+  return applyTransition((state, now) => {
+    const source = onboardingPhase2PracticeForInterest(state.interest);
+    return (
     beginOnboardingRealPractice(
       state,
       now,
-      onboardingPhase2PracticeFixture(now),
-      { name: ONBOARDING_PHASE2_PRACTICE.expectedPlaceName },
+      onboardingPhase2PracticeFixture(now, source),
+      { name: source.expectedPlaceName },
     ));
+  });
+}
+
+export function repairOnboardingV2PreShareTutorialFixture(fixture: OnboardingTutorialFixture): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => repairPreShareTutorialFixture(state, fixture, now));
+}
+
+/** Authoritative save transition used by Quick Check before any navigation. */
+export function completeOnboardingV2PracticeSave(input: {
+  sourceUrl: string;
+  savedPlaceId: string;
+}): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => completePendingSave(state, input, now));
 }
 
 export function markOnboardingV2PracticeWaitingForShare(): Promise<OnboardingV2State> {

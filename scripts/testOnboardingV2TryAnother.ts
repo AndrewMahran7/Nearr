@@ -146,11 +146,11 @@ const exhausted = getNextPracticeSource({
 assert.deepEqual(exhausted, { kind: 'EXHAUSTED' });
 const coachmark = readFileSync(join(process.cwd(), 'components/onboarding/v2/OnboardingV2MapCoachmark.tsx'), 'utf8');
 assert.match(coachmark, /Open practice video/);
-assert.match(coachmark, /ONBOARDING_PHASE2_PRACTICE\.canonicalUrl/);
+assert.match(coachmark, /state\.practiceFixture/);
 assert.match(coachmark, /deferOnboardingV2Practice/);
 assert.doesNotMatch(coachmark, /loadOnboardingPracticeFixture|router\.replace/);
 assert.match(coachmark, /router\.push\(`\/share-jobs\/\$\{practiceSession\.shareJobId\}`\)/);
-assert.match(coachmark, /Linking\.openURL/);
+assert.match(coachmark, /openOnboardingPracticePost\(fixture\)/);
 pass(8, 'legacy fixture exhaustion has a visible local continuation');
 pass(9, 'practice launch never performs a route reset');
 assert.equal(one.behavioralCompletedAt, null);

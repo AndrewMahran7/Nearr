@@ -19,9 +19,12 @@ import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { areDeveloperToolsVisible } from '@/lib/appEnvironment';
 import {
   beginPostAuthRouting,
+  clearPostAuthRoutingRetry,
   endPostAuthRouting,
+  requirePostAuthRoutingRetry,
   resolvePostAuthRoute,
 } from '@/lib/postAuthRouting';
+import { completeAuthenticatedTransaction, markAuthenticatedTransactionTransferring } from '@/lib/authTransaction';
 import { toUserFacingAuthError, type AuthErrorLike } from '@/lib/authErrors';
 import {
   applyEmailModeTransition,
@@ -284,21 +287,29 @@ export default function AccountAuthScreen() {
    */
   async function completeAuthentication(userId: string, method = activeOperationRef.current ?? 'resume') {
     beginPostAuthRouting();
+    markAuthenticatedTransactionTransferring();
     try {
       const current = await supabase.auth.getUser();
       if (current.data.user?.id === userId) await persistNamesFromAuthUser(current.data.user);
       const existing = await resolveExistingAccountSignIn(userId);
       if (existing.kind === 'qualified') {
+        clearPostAuthRoutingRetry();
+        completeAuthenticatedTransaction();
         router.replace(QUALIFIED_EXISTING_ACCOUNT_ROUTE);
         return;
       }
       if (existing.kind === 'new_account') {
+        clearPostAuthRoutingRetry();
+        completeAuthenticatedTransaction();
         router.replace({ pathname: '/(onboarding)', params: { reason: 'new_account' } });
         return;
       }
       const route = await resolvePostAuthRoute(userId);
+      clearPostAuthRoutingRetry();
+      completeAuthenticatedTransaction();
       router.replace(route);
     } catch (error) {
+      requirePostAuthRoutingRetry();
       void recordOnboardingV2AuthFailed(method, 'failed');
       console.warn('[onboarding-v2] account_transition_failed', error);
       if (mountedRef.current) {
@@ -306,6 +317,7 @@ export default function AccountAuthScreen() {
           ? 'You’re signed in, but Nearr could not verify this account yet. Try Continue again.'
           : 'Your account signed in, but Nearr could not preserve the tutorial yet. Try Continue again.');
       }
+      router.replace({ pathname: '/(onboarding)/account', params: { reason: 'account_verification_failed' } });
     } finally {
       endPostAuthRouting();
     }
@@ -449,6 +461,7 @@ export default function AccountAuthScreen() {
     if (!requireSupabase()) return;
     if (!beginOperation('google')) return;
 
+    beginPostAuthRouting();
     void trackEvent('onboarding_google_started', {});
     try {
       if (!(await prepareTransferIfNeeded())) return;
@@ -470,6 +483,7 @@ export default function AccountAuthScreen() {
       void trackEvent('onboarding_google_failed', { reason: outcome.code });
       if (mountedRef.current) setErrorMessage(toUserFacingAuthError(null, 'google'));
     } finally {
+      endPostAuthRouting();
       endOperation();
     }
   }

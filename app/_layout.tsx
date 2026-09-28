@@ -12,6 +12,7 @@ import { isOnboardingPreviewActive } from '@/lib/onboarding';
 import { LegalAgreementModal, SetupReminderModal } from '@/components';
 import { getLocationStatus } from '@/components/SetupChecklist';
 import { handleAuthDeepLink, parseAuthCallbackUrl } from '@/lib/authDeepLink';
+import { browserTransactionOwnsCallback } from '@/lib/authTransaction';
 import { AuthLinkStatusContext } from '@/lib/authLinkStatus';
 import {
   createAuthLinkDuplicateGuard,
@@ -555,15 +556,15 @@ function AuthGate({
     signedInSecondHalfContinuation,
   ]);
 
-  // Run a one-shot proximity check on sign-in and on app foreground. The
-  // background task does the heavy lifting; this just makes sure we react
-  // promptly when the user opens the app. Skipped in dev-session mode
+  // Synchronize notification infrastructure on sign-in, but do not run a
+  // proximity check merely because the authenticated account changed. A
+  // foreground transition supplies the fresh user/location context required
+  // for a nearby alert. Skipped in dev-session mode
   // because there's no real Supabase auth — the query would just return
   // empty and we'd needlessly trigger the location prompt.
   useEffect(() => {
     if (!session || isDevSession || isAnonymousSession) return;
     void syncProximityWatch();
-    void checkProximityOnce();
     // Register this device's Expo push token for server-sent share-job
     // notifications. No-op unless the async flag is on + permission granted.
     void registerPushTokenForCurrentUser();
@@ -678,6 +679,11 @@ function RootLayoutContent() {
   const processIncomingUrl = useCallback(async (url: string) => {
     const preview = parseAuthCallbackUrl(url);
     if (!preview.matches) return;
+
+    if (browserTransactionOwnsCallback(url)) {
+      console.log('[auth-link] ignored_browser_owned_callback=true');
+      return;
+    }
 
     if (incomingAuthLinkGuardRef.current.shouldIgnore(url, preview.params)) {
       console.log('[auth-link] layout_ignored_duplicate=true');

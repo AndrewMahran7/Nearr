@@ -84,7 +84,7 @@ export function Phase1Frame({
       {scroll ? (
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, !!footer && styles.scrollContentWithFooter]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -168,9 +168,11 @@ const styles = StyleSheet.create({
   progressFill: { height: 6, borderRadius: 99, backgroundColor: Phase1Colors.orange },
   scroll: { flex: 1 },
   scrollContent: { flexGrow: 1 },
+  scrollContentWithFooter: { paddingBottom: 8 },
   content: { flex: 1, paddingHorizontal: 24, paddingTop: 18, paddingBottom: 28 },
   immersiveContent: { paddingHorizontal: 12, paddingTop: 6, paddingBottom: 12 },
   footer: {
+    flexShrink: 0,
     paddingTop: 10,
     paddingHorizontal: 18,
     backgroundColor: Phase1Colors.background,

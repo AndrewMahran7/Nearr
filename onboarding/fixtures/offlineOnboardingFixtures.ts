@@ -5,8 +5,12 @@ import type {
   OnboardingTutorialResult,
 } from '../../lib/onboardingV2Core';
 
-export type OfflineOnboardingCategory = 'outdoors' | 'food' | 'travel';
-export type OfflineOnboardingAssetKey = 'dorset_quarry' | 'mad_yolks' | 'hydra_old_town';
+export type OfflineOnboardingCategory = 'outdoors' | 'food' | 'travel' | 'shopping';
+export type OfflineOnboardingAssetKey =
+  | 'dorset_quarry'
+  | 'mad_yolks'
+  | 'hydra_old_town'
+  | 'old_towne_shops_v2';
 
 export type OfflineOnboardingFixture = {
   id: string;
@@ -53,7 +57,7 @@ const CATEGORY_BY_INTEREST: Record<OnboardingInterest, OfflineOnboardingCategory
   cafes: 'food',
   travel: 'travel',
   things_to_do: 'travel',
-  shopping: 'travel',
+  shopping: 'shopping',
   anything: 'travel',
 };
 
@@ -128,12 +132,30 @@ const CATEGORY_CONTENT: Record<OfflineOnboardingCategory, {
       nearby: ['Hydra Harbor', 'Historical Archives Museum', 'Kamini Beach'],
     },
   },
+  shopping: {
+    assetKey: 'old_towne_shops_v2',
+    caption: 'A walkable block of independent boutiques, vintage finds, ceramics, and small local shops.',
+    comments: ['Saving this for the next shopping day', 'Those little home-goods shops look perfect'],
+    place: {
+      id: 'onboarding-place-old-towne-orange-shops-v2',
+      name: 'Old Towne Orange Shops',
+      address: 'Plaza Square, Orange, CA 92866',
+      latitude: 33.7879,
+      longitude: -117.8531,
+      category: 'shopping',
+      typeLabel: 'Shopping district',
+      aiNote: 'A walkable historic district with antique stores, independent boutiques, and specialty shops around Plaza Square.',
+      distanceLabel: 'Saved for a shopping day',
+      directionsLabel: 'Boutiques around Plaza Square',
+      nearby: ['Orange Circle Antique Mall', 'Country Roads Antiques', 'The Potting Shed'],
+    },
+  },
 };
 
 const SUPPORTED_PLATFORMS: Array<Exclude<OnboardingPlatform, 'other'>> = [
   'instagram', 'tiktok', 'facebook', 'youtube',
 ];
-const SUPPORTED_CATEGORIES: OfflineOnboardingCategory[] = ['outdoors', 'food', 'travel'];
+const SUPPORTED_CATEGORIES: OfflineOnboardingCategory[] = ['outdoors', 'food', 'travel', 'shopping'];
 
 const PROVENANCE_BY_ASSET: Record<OfflineOnboardingAssetKey, OfflineOnboardingFixture['provenance']> = {
   dorset_quarry: {
@@ -148,15 +170,20 @@ const PROVENANCE_BY_ASSET: Record<OfflineOnboardingAssetKey, OfflineOnboardingFi
     sourceUrl: 'https://www.youtube.com/watch?v=6e38Z0ErVoU',
     sourceKind: 'exact_place_external_fallback',
   },
+  old_towne_shops_v2: {
+    sourceUrl: 'https://www.octa.net/getting-around/rail/metrolink/metrolink-weekends/overview/orange-daycation/old-towne-orange-antiquing/',
+    sourceKind: 'nearr_development',
+  },
 };
 
 export const OFFLINE_ONBOARDING_FIXTURES: readonly OfflineOnboardingFixture[] = SUPPORTED_PLATFORMS.flatMap(
   (platform) => SUPPORTED_CATEGORIES.map((category) => {
     const platformCopy = PLATFORM_COPY[platform];
     const categoryContent = CATEGORY_CONTENT[category];
-    const contentId = `${platform}-${category}-offline-v1`;
+    const mappingVersion = category === 'shopping' ? 2 : 1;
+    const contentId = `${platform}-${category}-offline-v${mappingVersion}`;
     return {
-      id: `onboarding-offline-${platform}-${category}-v1`,
+      id: `onboarding-offline-${platform}-${category}-v${mappingVersion}`,
       platform,
       category,
       contentId,
@@ -203,10 +230,10 @@ export function toOnboardingTutorialFixture(
   const source = `onboarding://${fixture.platform}/${fixture.contentId}`;
   return {
     id: fixture.id,
-    revision: 1,
+    revision: fixture.category === 'shopping' ? 2 : 1,
     role: 'primary',
     platform: fixture.platform,
-    identityKey: `onboarding:v1:${fixture.platform}:${fixture.contentId}`,
+    identityKey: `onboarding:v${fixture.category === 'shopping' ? 2 : 1}:${fixture.platform}:${fixture.contentId}`,
     identityVersion: 1,
     contentId: fixture.contentId,
     canonicalUrl: source,
@@ -224,7 +251,7 @@ export function buildOfflineOnboardingResult(
     jobId: `onboarding-scripted-job:${fixture.id}`,
     savedPlaceId: `onboarding-scripted-save:${fixture.place.id}`,
     fixtureId: fixture.id,
-    fixtureRevision: 1,
+    fixtureRevision: fixture.category === 'shopping' ? 2 : 1,
     fixtureRole: 'primary',
     resolutionSource: 'onboarding_scripted',
     sourceUrl,

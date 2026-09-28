@@ -1001,6 +1001,31 @@ export function receiveOnboardingTutorialFixture(
   }]);
 }
 
+/**
+ * Repairs only untouched, pre-share checkpoints after a versioned category
+ * mapping changes. Once a share/save exists, the original fixture remains the
+ * durable historical truth and is never silently replaced.
+ */
+export function repairPreShareTutorialFixture(
+  state: OnboardingV2State,
+  fixture: OnboardingTutorialFixture,
+  now: string,
+): OnboardingTransition {
+  if (state.cohort !== 'new_user_v2') return unchanged(state);
+  if (!['tutorial_challenge', 'tutorial_ready'].includes(state.stage)) return unchanged(state);
+  if (state.pendingShare || state.tutorialSave || state.tutorialResult) return unchanged(state);
+  if (state.tutorialFixture?.id === fixture.id) return unchanged(state);
+  return transition(state, {
+    tutorialFixture: fixture,
+    tutorialFixtureError: null,
+    tutorialContentId: fixture.contentId,
+    stage: 'tutorial_challenge',
+  }, now, [{
+    name: 'onboarding_tutorial_challenge_shown',
+    properties: { fixture_id: fixture.id, fixture_role: fixture.role, fixture_platform: fixture.platform, reason: 'mapping_repaired' },
+  }]);
+}
+
 /** Start the local first-save lesson without leaving Nearr or creating a job. */
 export function beginOnboardingInAppTutorialResolution(
   state: OnboardingV2State,

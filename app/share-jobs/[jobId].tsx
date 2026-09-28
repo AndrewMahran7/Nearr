@@ -136,8 +136,9 @@ import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { getSavedPlacesCacheSnapshot, upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
-import { observeOnboardingV2Result } from '@/lib/onboardingV2';
+import { completeOnboardingV2PracticeSave, observeOnboardingV2Result } from '@/lib/onboardingV2';
 import { isExpectedOnboardingSource } from '@/lib/onboardingV2Core';
+import { recordOnboardingV2DevelopmentDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { setCurrentShareJobId } from '@/lib/diagnosticContext';
 import { createOnceLatch } from '@/lib/onceLatch';
@@ -1135,9 +1136,22 @@ function ShareJobDetailScreen() {
       });
     }
     await markShareJobResolved(jobId, savedPlaceId);
+    const onboardingOwnsCompletion = !!(onboardingShare && sourceUrl);
+    if (onboardingOwnsCompletion) {
+      const previousStage = onboardingV2?.stage ?? 'unknown';
+      const next = await completeOnboardingV2PracticeSave({ sourceUrl, savedPlaceId });
+      recordOnboardingV2DevelopmentDiagnostic('practice_save_reconciled', {
+        jobId,
+        savedPlaceId,
+        route: '/(onboarding)',
+        result: `${previousStage}->${next.stage}:owner=auth_gate:replace_once`,
+      });
+    }
     completeManualSave(
       duplicate ? [] : [savedPlaceId],
       duplicate ? [savedPlaceId] : [],
+      0,
+      onboardingOwnsCompletion,
     );
   }
 
@@ -1149,12 +1163,20 @@ function ShareJobDetailScreen() {
     createdSavedPlaceIds: string[],
     duplicateSavedPlaceIds: string[],
     failedCount = 0,
+    onboardingOwnsCompletion = false,
   ) {
     const completionIds = [...createdSavedPlaceIds, ...duplicateSavedPlaceIds];
     if (
       completionIds.length === 0 ||
       !navigateOnceRef.current.acquire()
     ) return;
+    if (onboardingOwnsCompletion) {
+      recordBreadcrumb('actual_navigation', {
+        savedPlaceId: completionIds[0] ?? null,
+        result: 'suppressed:owner=onboarding_state_machine',
+      });
+      return;
+    }
     const shouldNavigate = claimSaveCompletionSignal(completionIds);
     recordBreadcrumb('actual_navigation', {
       savedPlaceId: completionIds[0] ?? null,

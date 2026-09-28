@@ -1,13 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as ExpoLinking from 'expo-linking';
 
 import { Screen } from '@/components';
 import { Colors, Spacing, Typography } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { trackEvent } from '@/lib/analytics';
-import { parseAuthCallbackUrl } from '@/lib/authDeepLink';
+import { initiatingScreenOwnsAuthNavigation } from '@/lib/authTransaction';
 import { resolvePostAuthRoute, type PostAuthRoute } from '@/lib/postAuthRouting';
 import { decideAuthCallbackNavigation } from '@/lib/authDeepLinkCore';
 import { useAuthLinkStatus } from '@/lib/authLinkStatus';
@@ -34,19 +33,16 @@ export default function AuthCallbackScreen() {
   const sessionRef = useRef(session);
   sessionRef.current = session;
 
-  const decision = decideAuthCallbackNavigation({ status, hasSession: !!session });
+  const initiatingScreenOwnsNavigation = initiatingScreenOwnsAuthNavigation();
+  const decision = initiatingScreenOwnsNavigation
+    ? 'wait'
+    : decideAuthCallbackNavigation({ status, hasSession: !!session });
 
   useEffect(() => {
     if (hasLoggedOpen.current) return;
     hasLoggedOpen.current = true;
     console.log('[auth-callback] opened');
 
-    void ExpoLinking.getInitialURL().then((url) => {
-      const parsed = url
-        ? parseAuthCallbackUrl(url)
-        : { matches: false, params: {} as Record<string, string> };
-      console.log('[auth-callback] has_code=' + Boolean(parsed.params.code));
-    });
   }, []);
 
   // Single navigation authority. Resolves the moment the pure decision leaves
@@ -116,6 +112,7 @@ export default function AuthCallbackScreen() {
   // Last-resort safety net (see AUTH_CALLBACK_SAFETY_MS). Cleared on unmount,
   // which happens as soon as the primary resolution navigates away.
   useEffect(() => {
+    if (initiatingScreenOwnsNavigation) return;
     const timer = setTimeout(() => {
       if (hasNavigated.current) return;
       hasNavigated.current = true;
@@ -127,7 +124,7 @@ export default function AuthCallbackScreen() {
       router.replace(current ? '/(tabs)/map' : '/(onboarding)/account');
     }, AUTH_CALLBACK_SAFETY_MS);
     return () => clearTimeout(timer);
-  }, [router]);
+  }, [initiatingScreenOwnsNavigation, router]);
 
   return (
     <Screen>

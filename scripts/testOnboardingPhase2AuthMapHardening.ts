@@ -201,7 +201,7 @@ returnedWithoutShare = openExternalStarter(returnedWithoutShare, { contentId: pr
 assert.equal(returnedWithoutShare.stage, 'first_independent_external_video_opened');
 pass(24, 'returning without a share leaves Phase 2 available');
 assert.equal(guidedComplete.state.stage, 'first_magic_moment_complete');
-assert.match(welcomeSource, /You know how to save places/);
+assert.match(welcomeSource, /is saved\./);
 pass(25, 'real share completion advances through the short tutorial-complete beat');
 const needsReview = observeOnboardingResult(guided, practiceFixture.canonicalUrl, 'multiple', at(28));
 assert.equal(needsReview.state.stage, 'first_independent_share_returned');
