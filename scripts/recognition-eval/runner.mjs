@@ -37,14 +37,32 @@ export function validateDataset(inputs, labels) {
   }
   if (labelById.size !== ids.size) throw new Error('orphan_labels');
 }
-export function validateObservation(input, o) {
+export function validateObservation(input, o, expectedBoundary = null) {
   if (!o || o.caseId !== input.caseId || !['completed', 'review', 'failed'].includes(o.status)) throw new Error(`invalid_observation:${input.caseId}`);
   if (!['deterministic_policy_replay', 'retained_historical_observation', 'local_media_microbenchmark', 'fresh_end_to_end'].includes(o.boundary)) throw new Error(`missing_boundary:${input.caseId}`);
+  if (expectedBoundary && o.boundary !== expectedBoundary) throw new Error(`observation_boundary_mismatch:${input.caseId}`);
   if (o.status !== 'completed' && o.autonomous === true) throw new Error(`failed_or_review_autonomy:${input.caseId}`);
   if (!Array.isArray(o.places) || !Array.isArray(o.candidates) || !Array.isArray(o.providerUsage)) throw new Error(`missing_observation_fields:${input.caseId}`);
   if (o.wallTimeMs !== null && (!Number.isFinite(o.wallTimeMs) || o.wallTimeMs < 0)) throw new Error(`invalid_wall_clock:${input.caseId}`);
-  for (const u of o.providerUsage) if (!['measured', 'retained', 'estimated', 'unknown'].includes(u.measurement) || !Number.isInteger(u.calls) || u.calls < 0 || (u.costUsd !== null && (!Number.isFinite(u.costUsd) || u.costUsd < 0))) throw new Error(`invalid_usage:${input.caseId}`);
+  for (const u of o.providerUsage) if (!['measured', 'retained', 'estimated', 'unknown'].includes(u.measurement) || (u.calls !== null && (!Number.isInteger(u.calls) || u.calls < 0)) || (u.calls === null && u.measurement !== 'unknown') || (u.costUsd !== null && (!Number.isFinite(u.costUsd) || u.costUsd < 0))) throw new Error(`invalid_usage:${input.caseId}`);
   for (const span of o.stages ?? []) if (!Number.isFinite(span.startMs) || !Number.isFinite(span.endMs) || span.endMs < span.startMs) throw new Error(`invalid_span:${input.caseId}`);
+}
+export function validateAdapterVariant(definition, variant) {
+  if (!definition?.variants || !Object.hasOwn(definition.variants, variant)) throw new Error(`unsupported_adapter_variant:${variant}`);
+  return { adapterId: definition.id, boundary: definition.boundary, ...definition.variants[variant] };
+}
+export function quarantineObservation(input, observed, validationError, boundary) {
+  return {
+    caseId: input.caseId, status: 'failed', places: [], candidates: [], autonomous: false,
+    multiPlaceDecision: null, wallTimeMs: null, providerUsage: [], providerLedgerComplete: false,
+    boundary, failureClass: 'observation_contract_violation', observationValidationError: validationError,
+    invalidAutonomyObserved: observed?.autonomous === true && observed?.status !== 'completed',
+  };
+}
+export function inferenceInput(input) {
+  // Grouping keys may contain adjudicated venue names. They belong exclusively
+  // to splitting/scoring and must never become adapter routing features.
+  return { caseId: input.caseId, sourceUrl: input.sourceUrl, evidenceRefs: structuredClone(input.evidenceRefs ?? []) };
 }
 function seal(value) {
   if (value && typeof value === 'object') { Object.values(value).forEach(seal); Object.freeze(value); }
@@ -76,30 +94,46 @@ export async function run(args) {
   if (!selected.length) throw new Error(`empty_split:${split}`);
   const output = path.resolve(root, options.out ?? `artifacts/recognition-optimization-2026-10-08/runs/${variant}`);
   if (fs.existsSync(output)) throw new Error(`immutable_output_exists:${output}`);
-  let recognize, adapterProvenance;
+  let recognize, adapterProvenance, executionPlan;
   if (options.observations) {
     if (variant === 'baseline_repaired') throw new Error('baseline_repaired_requires_executable_policy_adapter');
     const bytes = fs.readFileSync(path.resolve(root, options.observations)), observed = JSON.parse(bytes).observations;
     const mapped = new Map(observed.map((o) => [o.caseId, o]));
     if (mapped.size !== observed.length) throw new Error('duplicate_retained_observations');
-    recognize = async (input) => mapped.get(input.caseId) ?? ({ caseId: input.caseId, status: 'failed', places: [], candidates: [], autonomous: false, multiPlaceDecision: null, wallTimeMs: null, providerUsage: [], providerLedgerComplete: false, boundary: 'retained_historical_observation', failureClass: 'stored_observation_unavailable' });
+    recognize = async (input) => mapped.get(input.caseId) ?? ({ caseId: input.caseId, status: 'failed', places: [], candidates: [], autonomous: false, observationAvailable: false, multiPlaceDecision: null, wallTimeMs: null, providerUsage: [], providerLedgerComplete: false, boundary: 'retained_historical_observation', failureClass: 'stored_observation_unavailable' });
     adapterProvenance = { kind: 'retained_historical_observation', sha256: hash(bytes) };
+    executionPlan = { adapterId: 'retained_observations', boundary: 'retained_historical_observation', comparisonScope: 'historical_record_scoring_only', transforms: [], performanceAblation: false };
   } else {
     const adapterName = options.adapter ?? 'retained-policy';
     if (!/^[a-z0-9_-]+$/.test(adapterName)) throw new Error('audited_local_adapter_required');
     const file = path.join(root, 'scripts/recognition-eval/adapters', `${adapterName}.mjs`);
     adapterProvenance = { path: path.relative(root, file), sha256: hash(fs.readFileSync(file)) };
-    denyNetwork(); ({ recognize } = await import(pathToFileURL(file).href));
+    denyNetwork(); const adapter = await import(pathToFileURL(file).href); ({ recognize } = adapter);
+    executionPlan = validateAdapterVariant(adapter.definition, variant);
     if (typeof recognize !== 'function') throw new Error('adapter_recognize_export_required');
   }
   const sourcePaths = ['services/media-worker/src/premium/premiumCanonicalization.ts', 'services/media-worker/src/premium/premiumRecognitionSafety.ts', 'services/media-worker/src/automaticDeep/automaticDeepRecognitionProvider.ts', 'lib/automaticCompletion.ts', 'lib/exactIdentitySafety.ts'];
   const sourceProvenance = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), files: sourcePaths.map((file) => ({ path: file, sha256: hash(fs.readFileSync(path.join(root, file))) })) };
-  writeOnce(path.join(output, 'run.json'), JSON.stringify({ schemaVersion: 1, variant, split, startedAt: new Date().toISOString(), inputSha256: frozen.inputSha256, labelSha256: frozen.labelSha256, adapterProvenance, sourceProvenance, paidSpendUsd: 0, observationCount: selected.length }, null, 2) + '\n');
+  let comparisonRows;
+  if (options.compare) {
+    const comparisonFile = path.resolve(root, options.compare);
+    const comparisonManifest = JSON.parse(fs.readFileSync(path.join(path.dirname(comparisonFile), 'run.json'), 'utf8'));
+    if (comparisonManifest.inputSha256 !== frozen.inputSha256 || comparisonManifest.labelSha256 !== frozen.labelSha256) throw new Error('comparison_dataset_hash_mismatch');
+    comparisonRows = JSON.parse(fs.readFileSync(comparisonFile, 'utf8'));
+  }
+  writeOnce(path.join(output, 'run.json'), JSON.stringify({ schemaVersion: 1, variant, split, startedAt: new Date().toISOString(), inputSha256: frozen.inputSha256, labelSha256: frozen.labelSha256, adapterProvenance, executionPlan, sourceProvenance, paidSpendUsd: 0, observationCount: selected.length }, null, 2) + '\n');
   const observations = [];
   for (const input of selected) {
     let observed;
-    try { observed = await recognize(seal(structuredClone(input)), { variant, signal: new AbortController().signal }); validateObservation(input, observed); }
-    catch (error) { observed = { caseId: input.caseId, status: 'failed', places: [], candidates: [], autonomous: false, multiPlaceDecision: null, wallTimeMs: null, providerUsage: [], providerLedgerComplete: false, boundary: 'deterministic_policy_replay', failureClass: `adapter_failure:${String(error.message).slice(0, 200)}` }; }
+    try { observed = await recognize(seal(inferenceInput(input)), { variant, executionPlan, signal: new AbortController().signal }); }
+    catch { observed = { caseId: input.caseId, status: 'failed', places: [], candidates: [], autonomous: false, multiPlaceDecision: null, wallTimeMs: null, providerUsage: [], providerLedgerComplete: false, boundary: executionPlan.boundary, failureClass: 'adapter_execution_failure' }; }
+    try { validateObservation(input, observed, executionPlan.boundary); }
+    catch (error) {
+      // Persist what the adapter actually emitted before quarantining it. A failed
+      // confident output must remain a counted safety violation, never be erased.
+      writeOnce(path.join(output, 'invalid-observations', `${input.caseId.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`), JSON.stringify({ validationError: error.message, observation: observed }, null, 2) + '\n');
+      observed = quarantineObservation(input, observed, error.message, executionPlan.boundary);
+    }
     observations.push(observed);
     writeOnce(path.join(output, 'observations', `${input.caseId.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`), JSON.stringify(observed, null, 2) + '\n');
   }
@@ -107,13 +141,13 @@ export async function run(args) {
   validateDataset(inputs, labels);
   const labelMap = new Map(labels.map((l) => [l.caseId, l]));
   const rows = selected.map((input, i) => scoreCase(input, labelMap.get(input.caseId), observations[i]));
-  const columns = ['caseId', 'group', 'split', 'kind', 'label', 'boundary', 'status', 'autonomous', 'correctAutonomous', 'exactSet', 'top1', 'tp', 'expectedCount', 'predictedCount', 'multiCorrect', 'wrongCountry', 'wrongRegion', 'unsupportedAutosave', 'wallTimeMs', 'timeToCorrectUsableMs', 'costUsd', 'retries', 'cacheBehavior', 'failureClass', 'places', 'candidates', 'stages'];
+  const columns = ['caseId', 'group', 'split', 'kind', 'label', 'boundary', 'status', 'observationAvailable', 'autonomous', 'correctAutonomous', 'exactSet', 'top1', 'tp', 'expectedCount', 'predictedCount', 'multiCorrect', 'wrongCountry', 'wrongRegion', 'unsupportedAutosave', 'failedConfidentResult', 'observationValidationError', 'wallTimeMs', 'timeToCorrectUsableMs', 'costUsd', 'retries', 'cacheBehavior', 'failureClass', 'places', 'candidates', 'stages'];
   writeOnce(path.join(output, variant === 'baseline_repaired' ? 'baseline_results.csv' : 'per_case_results.csv'), csv(rows, columns));
   writeOnce(path.join(output, 'scores.json'), JSON.stringify(rows, null, 2) + '\n');
   writeOnce(path.join(output, 'summary.json'), JSON.stringify(summarize(rows), null, 2) + '\n');
   const ledger = observations.flatMap((o) => o.providerUsage.map((u) => ({ variant, caseId: o.caseId, boundary: o.boundary, ...u })));
   writeOnce(path.join(output, 'provider_usage_ledger.csv'), csv(ledger, ['variant', 'caseId', 'boundary', 'provider', 'operation', 'calls', 'costUsd', 'measurement']));
-  if (options.compare) writeOnce(path.join(output, 'paired_comparison.json'), JSON.stringify(pairedBootstrap(JSON.parse(fs.readFileSync(path.resolve(root, options.compare), 'utf8')), rows), null, 2) + '\n');
+  if (comparisonRows) writeOnce(path.join(output, 'paired_comparison.json'), JSON.stringify({ comparisonScope: executionPlan.comparisonScope, performanceAblation: executionPlan.performanceAblation, ...pairedBootstrap(comparisonRows, rows) }, null, 2) + '\n');
   console.log(JSON.stringify({ variant, cases: rows.length, output, paidSpendUsd: 0 }));
   return { rows, summary: summarize(rows) };
 }

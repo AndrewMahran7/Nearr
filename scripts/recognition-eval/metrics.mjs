@@ -1,5 +1,5 @@
 // Scoring only. This module never supplies labels to an inference adapter.
-export const normalize = (s) => String(s ?? '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+export const normalize = (s) => String(s ?? '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 export function quantile(values, q) {
   const xs = values.filter(Number.isFinite).sort((a, b) => a - b);
   if (!xs.length) return null;
@@ -39,12 +39,14 @@ function matchCount(places, expected) {
 }
 export function scoreCase(input, label, observation) {
   const places = observation.places ?? [], candidates = observation.candidates ?? [];
-  const exactEligible = input.kind === 'real' && ['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI'].includes(label.label);
+  const observationAvailable = observation.observationAvailable !== false;
+  const exactLabelEligible = input.kind === 'real' && ['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI'].includes(label.label);
+  const exactEligible = exactLabelEligible && observationAvailable;
   const expected = label.expectedPlaces ?? [];
   const tp = exactEligible ? matchCount(places, expected) : null;
   const exactSet = exactEligible ? tp === expected.length && places.length === expected.length : null;
   const multiExpected = label.label === 'VERIFIED_MULTI';
-  const multiCorrect = label.multiPlaceExpected == null ? null : observation.multiPlaceDecision === label.multiPlaceExpected;
+  const multiCorrect = !observationAvailable || label.multiPlaceExpected == null ? null : observation.multiPlaceDecision === label.multiPlaceExpected;
   const autonomous = observation.autonomous === true && observation.status === 'completed';
   const correctAutonomous = exactEligible ? autonomous && exactSet && (!multiExpected || multiCorrect) : null;
   const top1 = label.label === 'VERIFIED_EXACT_SINGLE' && exactEligible ? Boolean(candidates[0] && match(candidates[0], expected[0])) : null;
@@ -53,15 +55,16 @@ export function scoreCase(input, label, observation) {
   const wrongRegion = geographyAdjudicated && autonomous && label.region && places.some((p) => p.region) ? places.some((p) => p.region && normalize(p.region) !== normalize(label.region)) : null;
   const usage = observation.providerUsage ?? [];
   // An empty ledger only means zero with an explicit complete-ledger assertion.
-  const costKnown = observation.providerLedgerComplete === true && usage.every((u) => Number.isFinite(u.costUsd));
+  const costKnown = observationAvailable && observation.providerLedgerComplete === true && usage.every((u) => u.measurement !== 'unknown' && Number.isFinite(u.costUsd));
   const costUsd = costKnown ? usage.reduce((n, u) => n + u.costUsd, 0) : null;
   return {
     caseId: input.caseId, group: input.group, split: input.split, kind: input.kind, label: label.label,
-    status: observation.status, autonomous, exactEligible, exactSet, correctAutonomous, top1,
+    status: observation.status, autonomous, observationAvailable, exactLabelEligible, exactEligible, exactSet, correctAutonomous, top1,
     predictedCount: places.length, expectedCount: expected.length, tp, multiCorrect, multiExpected,
     wrongCountry, wrongRegion, unsupportedAutosave: observation.unsupportedAutosave ?? null,
-    knownNegativeAutosave: label.label === 'KNOWN_NEGATIVE' ? autonomous : null,
-    failedConfidentResult: observation.status === 'failed' && observation.autonomous === true,
+    knownNegativeAutosave: observationAvailable && label.label === 'KNOWN_NEGATIVE' ? autonomous : null,
+    failedConfidentResult: (observation.status === 'failed' && observation.autonomous === true) || observation.invalidAutonomyObserved === true,
+    observationValidationError: observation.observationValidationError ?? null,
     confidence: observation.confidence ?? null, places, candidates,
     candidateRecall: Object.fromEntries([1, 3, 5, candidates.length].map((k) => [String(k), exactEligible ? matchCount(candidates.slice(0, k), expected) / expected.length : null])),
     wallTimeMs: Number.isFinite(observation.wallTimeMs) ? observation.wallTimeMs : null,
@@ -72,29 +75,35 @@ export function scoreCase(input, label, observation) {
   };
 }
 export function summarize(rows) {
-  const real = rows.filter((r) => r.kind === 'real'), exact = real.filter((r) => r.exactEligible);
+  const submitted = rows.filter((r) => r.kind === 'real'), real = submitted.filter((r) => r.observationAvailable !== false), exact = real.filter((r) => r.exactEligible);
   const autonomous = exact.filter((r) => r.autonomous), correct = exact.filter((r) => r.correctAutonomous);
   const adjudicableAutomatic = real.filter((r) => r.autonomous && (r.exactEligible || r.label === 'KNOWN_NEGATIVE'));
   const single = exact.filter((r) => r.label === 'VERIFIED_EXACT_SINGLE'), multi = exact.filter((r) => r.label === 'VERIFIED_MULTI');
   const sum = (rs, key) => rs.reduce((n, r) => n + (r[key] ?? 0), 0);
   const trueRate = (rs, key) => rate(rs.filter((r) => r[key] === true).length, rs.filter((r) => r[key] !== null).length);
   const p = sum(multi, 'tp'), predicted = sum(multi, 'predictedCount'), expected = sum(multi, 'expectedCount');
-  const allCostsKnown = real.length > 0 && real.every((r) => r.costUsd !== null), total = allCostsKnown ? sum(real, 'costUsd') : null;
+  const allCostsKnown = submitted.length > 0 && submitted.every((r) => r.costUsd !== null), total = allCostsKnown ? sum(real, 'costUsd') : null;
   return {
-    submittedReal: real.length, exactEligible: exact.length, unverifiedExcluded: real.filter((r) => r.label === 'UNVERIFIED').length,
+    submittedReal: submitted.length, observedReal: real.length, unavailableObservations: submitted.length - real.length, exactLabeledCases: submitted.filter((r) => r.exactLabelEligible ?? r.exactEligible).length, exactEligible: exact.length, unverifiedExcluded: real.filter((r) => r.label === 'UNVERIFIED').length,
     correctAutonomousResolution: rate(correct.length, exact.length), autonomousCoverage: rate(correct.length, exact.length),
     autonomousResultPrecision: rate(correct.length, adjudicableAutomatic.length),
     autonomousPlacePrecision: rate(sum(autonomous, 'tp'), sum(adjudicableAutomatic, 'predictedCount')),
     single: { exactTop1: trueRate(single, 'top1'), correctAutonomous: trueRate(single, 'correctAutonomous') },
     multi: { cases: multi.length, detection: trueRate(real.filter((r) => r.multiCorrect !== null), 'multiCorrect'), placePrecision: rate(p, predicted), placeRecall: rate(p, expected), f1: predicted + expected ? 2 * p / (predicted + expected) : null, exactSet: trueRate(multi, 'exactSet'), correctAutonomous: trueRate(multi, 'correctAutonomous') },
-    safety: { wrongCountry: trueRate(real, 'wrongCountry'), wrongRegion: trueRate(real, 'wrongRegion'), unsupportedAutosave: trueRate(real, 'unsupportedAutosave'), negativeAutosave: trueRate(real, 'knownNegativeAutosave'), failedConfidentResults: rows.filter((r) => r.failedConfidentResult).length },
+    safety: { wrongCountry: trueRate(real, 'wrongCountry'), wrongRegion: trueRate(real, 'wrongRegion'), unsupportedAutosave: trueRate(real, 'unsupportedAutosave'), negativeAutosave: trueRate(real, 'knownNegativeAutosave'), failedConfidentResults: rows.filter((r) => r.failedConfidentResult).length, invalidObservations: rows.filter((r) => r.observationValidationError).length },
     latency: { all: distribution(real.map((r) => r.wallTimeMs)), correctUsable: distribution(exact.map((r) => r.timeToCorrectUsableMs)), correctAutonomous: distribution(correct.map((r) => r.wallTimeMs)), review: distribution(real.filter((r) => r.status === 'review').map((r) => r.wallTimeMs)) },
     cost: { totalUsd: total, knownSubmissions: real.filter((r) => r.costUsd !== null).length, costPerSubmission: total === null ? null : total / real.length, costPerCorrectResult: total === null || !exact.some((r) => r.exactSet) ? null : total / exact.filter((r) => r.exactSet).length, costPerCorrectAutonomousResult: total === null || !correct.length ? null : total / correct.length },
     boundaries: [...new Set(rows.map((r) => r.boundary))],
   };
 }
 export function pairedBootstrap(before, after, iterations = 2000, seed = 731) {
+  if (new Set(before.map((r) => r.caseId)).size !== before.length || new Set(after.map((r) => r.caseId)).size !== after.length) throw new Error('paired_duplicate_case');
   const byId = new Map(after.map((r) => [r.caseId, r]));
+  if (before.length !== after.length || before.some((r) => !byId.has(r.caseId))) throw new Error('paired_case_set_mismatch');
+  for (const row of before) {
+    const other = byId.get(row.caseId);
+    for (const key of ['group', 'split', 'kind', 'label', 'expectedCount', 'boundary']) if (row[key] !== other[key]) throw new Error(`paired_${key}_mismatch:${row.caseId}`);
+  }
   const pairs = before.filter((r) => r.exactEligible && byId.get(r.caseId)?.exactEligible).map((r) => [r, byId.get(r.caseId)]);
   const groups = new Map();
   for (const pair of pairs) { const key = pair[0].group; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(pair); }
@@ -106,7 +115,7 @@ export function pairedBootstrap(before, after, iterations = 2000, seed = 731) {
     const timed = selected.filter(([a, b]) => a.boundary === b.boundary && Number.isFinite(a.wallTimeMs) && Number.isFinite(b.wallTimeMs));
     if (timed.length) latencyDeltas.push(quantile(timed.map((p) => p[1].wallTimeMs), .9) - quantile(timed.map((p) => p[0].wallTimeMs), .9));
   }
-  return { pairedCases: pairs.length, independentGroups: clusters.length, iterations, correctAutonomousDelta95: deltas.length ? [quantile(deltas, .025), quantile(deltas, .975)] : null, p90WallClockDelta95: latencyDeltas.length ? [quantile(latencyDeltas, .025), quantile(latencyDeltas, .975)] : null, changedCases: pairs.filter(([a, b]) => a.correctAutonomous !== b.correctAutonomous || a.autonomous !== b.autonomous).map(([a, b]) => ({ caseId: a.caseId, before: a.correctAutonomous, after: b.correctAutonomous, beforeAutonomous: a.autonomous, afterAutonomous: b.autonomous })) };
+  return { submittedPairs: before.length, unavailablePairs: before.filter((r) => r.observationAvailable === false || byId.get(r.caseId).observationAvailable === false).length, pairedCases: pairs.length, independentGroups: clusters.length, iterations, correctAutonomousDelta95: deltas.length ? [quantile(deltas, .025), quantile(deltas, .975)] : null, p90WallClockDelta95: latencyDeltas.length ? [quantile(latencyDeltas, .025), quantile(latencyDeltas, .975)] : null, changedCases: pairs.filter(([a, b]) => a.correctAutonomous !== b.correctAutonomous || a.autonomous !== b.autonomous).map(([a, b]) => ({ caseId: a.caseId, before: a.correctAutonomous, after: b.correctAutonomous, beforeAutonomous: a.autonomous, afterAutonomous: b.autonomous })) };
 }
 export function paretoFrontier(arms) {
   const comparable = arms.filter((a) => a.gatesPassed === true && Number.isFinite(a.accuracy) && Number.isFinite(a.precision) && Number.isFinite(a.p90) && Number.isFinite(a.cost));

@@ -1,0 +1,81 @@
+{
+  "caseId": "P03",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJSado-SVAjoARLJTf9JyolQE",
+      "name": "Chocolate (Chocolate the Restaurant)",
+      "locality": "Santa Cruz",
+      "region": "California",
+      "country": "United States",
+      "address": "1522 Pacific Ave, Santa Cruz, CA 95060, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJSado-SVAjoARLJTf9JyolQE",
+      "name": "Chocolate (Chocolate the Restaurant)",
+      "locality": "Santa Cruz",
+      "region": "California",
+      "country": "United States",
+      "address": "1522 Pacific Ave, Santa Cruz, CA 95060, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.22629999999998063,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.08689999999995734,
+      "endMs": 0.1834999999999809
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.18410000000000082,
+      "endMs": 0.2138999999999669
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.216700000000003,
+      "endMs": 0.22399999999998954
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Chocolate (Chocolate the Restaurant)",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.038928,
+    "modelLatencyMs": 8625,
+    "totalLatencyMs": 19391
+  }
+}

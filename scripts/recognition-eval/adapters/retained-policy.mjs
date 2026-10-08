@@ -9,6 +9,14 @@ import { applyAutomaticDeepReviewPolicy } from '../../../services/media-worker/s
 import { planAutomaticCompletion } from '../../../lib/automaticCompletion.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+export const definition = {
+  id: 'retained_policy.v2', boundary: 'deterministic_policy_replay',
+  variants: Object.fromEntries(['baseline_repaired', 'winner', 'policy_parity'].map((name) => [name, {
+    comparisonScope: 'current_source_policy_parity_only', performanceAblation: false,
+    transforms: [], placesExecutionModeApplied: false,
+    note: 'Variant names identify captured source arms. This adapter does not execute media or Places-session scheduling changes; their dedicated benchmarks supply performance evidence.',
+  }])),
+};
 const loaded = new Map();
 function readChecked(ref) {
   const file = path.resolve(root, ref.path);
