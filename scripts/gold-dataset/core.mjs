@@ -219,6 +219,7 @@ export function scoreOne(record, label, observation, split, view) {
   if (!['completed', 'review', 'failed'].includes(observation.status)) fail(`invalid_observation_status:${record.case_id}`);
   if (observation.autonomous === true && observation.status !== 'completed') fail(`invalid_autonomous_status:${record.case_id}`);
   if (!Array.isArray(observation.places) || !Array.isArray(observation.candidates) || typeof observation.autonomous !== 'boolean') fail(`invalid_observation_shape:${record.case_id}`);
+  if (observation.wrong_confident_cache != null && typeof observation.wrong_confident_cache !== 'boolean') fail(`invalid_cache_signal:${record.case_id}`);
   if (observation.cost_usd != null && (!Number.isFinite(observation.cost_usd) || observation.cost_usd < 0)) fail(`invalid_observation_cost:${record.case_id}`);
   if (observation.elapsed_ms != null && (!Number.isFinite(observation.elapsed_ms) || observation.elapsed_ms < 0)) fail(`invalid_observation_elapsed:${record.case_id}`);
   const places = array(observation.places), candidates = array(observation.candidates);
@@ -227,7 +228,9 @@ export function scoreOne(record, label, observation, split, view) {
   const tp = exactEligible ? matchCount(places, expected) : null;
   const exactSet = exactEligible ? tp === expected.length && places.length === expected.length : null;
   const autonomous = observation.autonomous === true;
+  const autonomousPlaceOutput = autonomous && places.length > 0;
   const correctAutonomous = exactEligible ? autonomous && exactSet : null;
+  const wrongConfident = observation.wrong_confident_cache === true || (autonomousPlaceOutput && (exactEligible ? !exactSet : ['KNOWN_NEGATIVE', 'VERIFIED_REGION_ONLY'].includes(label.label_class)));
   const geographic = label.geography ?? (expected.length === 1 ? expected[0] : {});
   const statedGeo = [observation.geography, ...places].filter(Boolean);
   const wrongCountry = Boolean(autonomous && geographic.country && statedGeo.some((p) => p.country && norm(p.country) !== norm(geographic.country)));
@@ -235,7 +238,7 @@ export function scoreOne(record, label, observation, split, view) {
   const multiDetected = label.label_class === 'VERIFIED_MULTI' && typeof observation.multi_place_detected === 'boolean' ? observation.multi_place_detected : null;
   return {
     case_id: record.case_id, source_group_id: record.source_group_id, split, view, label_class: label.label_class,
-    status: observation.status, autonomous, exact_eligible: exactEligible, reasonable_autonomous_expected: label.reasonable_autonomous_expected !== false,
+    status: observation.status, autonomous, autonomous_place_output: autonomousPlaceOutput, wrong_confident: wrongConfident, exact_eligible: exactEligible, reasonable_autonomous_expected: label.reasonable_autonomous_expected !== false,
     correct_autonomous: correctAutonomous, exact_set: exactSet,
     exact_top1: label.label_class === 'VERIFIED_EXACT_SINGLE' ? Boolean(candidates[0] && placeMatches(candidates[0], expected[0])) : null,
     candidate_recall_at_1: exactEligible ? matchCount(candidates.slice(0, 1), expected) / expected.length : null,
@@ -243,10 +246,10 @@ export function scoreOne(record, label, observation, split, view) {
     candidate_recall_at_5: exactEligible ? matchCount(candidates.slice(0, 5), expected) / expected.length : null,
     true_positives: tp, predicted_places: places.length, expected_places: expected.length,
     multi_detected: multiDetected, extras: exactEligible ? places.length - tp : null, misses: exactEligible ? expected.length - tp : null,
-    negative_correct_abstention: label.label_class === 'KNOWN_NEGATIVE' ? observation.status !== 'failed' && (!autonomous || places.length === 0) : null,
-    negative_unsupported_exact: label.label_class === 'KNOWN_NEGATIVE' ? autonomous && places.length > 0 : null,
+    negative_correct_abstention: label.label_class === 'KNOWN_NEGATIVE' ? observation.status !== 'failed' && !wrongConfident && !autonomousPlaceOutput : null,
+    negative_unsupported_exact: label.label_class === 'KNOWN_NEGATIVE' ? autonomousPlaceOutput : null,
     region_correct: label.label_class === 'VERIFIED_REGION_ONLY' ? observation.status !== 'failed' && !wrongCountry && !wrongRegion && Boolean(observation.geography?.country || observation.geography?.region) && (!geographic.country || norm(observation.geography?.country) === norm(geographic.country)) && (!geographic.region || norm(observation.geography?.region) === norm(geographic.region)) : null,
-    region_unsupported_exact: label.label_class === 'VERIFIED_REGION_ONLY' ? autonomous && places.length > 0 : null,
+    region_unsupported_exact: label.label_class === 'VERIFIED_REGION_ONLY' ? autonomousPlaceOutput : null,
     wrong_country: wrongCountry, wrong_region: wrongRegion,
     elapsed_ms: Number.isFinite(observation.elapsed_ms) ? observation.elapsed_ms : null,
     time_to_correct_usable_ms: exactSet && Number.isFinite(observation.first_usable_result_ms) ? observation.first_usable_result_ms : null,
@@ -257,7 +260,7 @@ export function summarizeScores(rows) {
   const expected = rows.filter((r) => r.exact_eligible && r.reasonable_autonomous_expected);
   const correct = expected.filter((r) => r.correct_autonomous === true);
   const adjudicable = rows.filter((r) => !['AMBIGUOUS', 'UNVERIFIED'].includes(r.label_class));
-  const automatic = adjudicable.filter((r) => r.autonomous);
+  const automatic = adjudicable.filter((r) => r.autonomous_place_output);
   const multi = rows.filter((r) => r.label_class === 'VERIFIED_MULTI');
   const singles = rows.filter((r) => r.label_class === 'VERIFIED_EXACT_SINGLE');
   const negative = rows.filter((r) => r.label_class === 'KNOWN_NEGATIVE');
@@ -280,6 +283,7 @@ export function summarizeScores(rows) {
     correct_autonomous_resolution: ratio(correct.length, expected.length),
     autonomous_precision: ratio(automatic.filter((r) => r.correct_autonomous === true).length, automatic.length),
     autonomous_unadjudicable_outputs: rows.filter((r) => r.autonomous && ['AMBIGUOUS', 'UNVERIFIED'].includes(r.label_class)).length,
+    wrong_confident: ratio(adjudicable.filter((r) => r.wrong_confident).length, adjudicable.length),
     single: { cases: singles.length, exact_top1: ratio(singles.filter((r) => r.exact_top1).length, singles.length), candidate_recall_at_1: ratio(singles.filter((r) => r.candidate_recall_at_1 === 1).length, singles.length), correct_autonomous: ratio(singles.filter((r) => r.correct_autonomous).length, singles.filter((r) => r.reasonable_autonomous_expected).length) },
     multi: { cases: multi.length, detection: ratio(multi.filter((r) => r.multi_detected).length, multi.filter((r) => r.multi_detected !== null).length), place_precision: ratio(mp, pp), place_recall: ratio(mp, ep), f1: pp + ep ? 2 * mp / (pp + ep) : null, exact_set: ratio(multi.filter((r) => r.exact_set).length, multi.length), extra_places: sum(multi, 'extras'), missed_places: sum(multi, 'misses') },
     negative: { cases: negative.length, correct_abstention: ratio(negative.filter((r) => r.negative_correct_abstention).length, negative.length), unsupported_exact: ratio(negative.filter((r) => r.negative_unsupported_exact).length, negative.length) },

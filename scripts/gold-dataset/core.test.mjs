@@ -123,6 +123,8 @@ test('single score requires exact physical identity and excludes review from aut
   const summary = summarizeScores([good, wrong, review]);
   assert.deepEqual(summary.correct_autonomous_resolution, { numerator: 1, denominator: 3, rate: 1 / 3 });
   assert.deepEqual(summary.autonomous_precision, { numerator: 1, denominator: 2, rate: 0.5 });
+  assert.deepEqual(summary.wrong_confident, { numerator: 1, denominator: 3, rate: 1 / 3 });
+  assert.equal(summary.latency.correct_autonomous.p90, 100);
 });
 
 test('branch name alone is insufficient when branch location cannot be checked', () => {
@@ -169,6 +171,12 @@ test('negative and region only cases count unsupported exact output', () => {
   assert.equal(summary.autonomous_precision.rate, 0);
   const failedNegative = scoreOne(r, negative, observation(r, 'full', { status: 'failed', autonomous: false, places: [] }), 'development', 'full');
   assert.equal(failedNegative.negative_correct_abstention, false);
+  const emptyCompletedNegative = scoreOne(r, negative, observation(r, 'full', { places: [] }), 'development', 'full');
+  assert.equal(emptyCompletedNegative.negative_correct_abstention, true);
+  assert.equal(summarizeScores([emptyCompletedNegative]).autonomous_precision.rate, null);
+  const cachedNegative = scoreOne(r, negative, observation(r, 'full', { status: 'review', autonomous: false, places: [], wrong_confident_cache: true }), 'development', 'full');
+  assert.equal(cachedNegative.negative_correct_abstention, false);
+  assert.equal(cachedNegative.wrong_confident, true);
 });
 
 test('scorer rejects noncompleted autonomous observations and missing arrays', () => {
@@ -223,6 +231,44 @@ test('materialization re-encodes source metadata and hides source names, paths, 
       assert.ok(path.resolve(output.mapping).startsWith(localRoot));
       fs.rmSync(path.dirname(output.input), { recursive: true, force: true });
       fs.rmSync(output.mapping, { force: true });
+    }
+  }
+});
+
+test('CLI scores a development observation and rejects an unsealed held-out attempt', () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'nearr-gold-score-'));
+  const caseId = opaqueCaseId('youtube', randomUUID());
+  const r = manifest({ case_id: caseId, source_group_id: opaqueSourceGroupId(randomUUID()), platform: 'youtube', source_public_id: randomUUID(), source_url_reference: 'https://youtube.com/watch?v=score', evidence: { ...manifest().evidence, frame_paths: ['C:/nonexistent/frame.jpg'] } });
+  const l = label({ case_id: caseId });
+  const manifestFile = path.join(scratch, 'manifest.jsonl'), labelsFile = path.join(scratch, 'labels.jsonl');
+  const splitFile = path.join(scratch, 'splits.json'), observationsFile = path.join(scratch, 'observations.jsonl');
+  const resultFile = path.join(scratch, `score-${randomUUID()}.json`);
+  let privateResult;
+  try {
+    fs.writeFileSync(manifestFile, JSON.stringify(r) + '\n');
+    fs.writeFileSync(labelsFile, JSON.stringify(l) + '\n');
+    fs.writeFileSync(splitFile, JSON.stringify({ schema_version: 1, assignments: { [caseId]: 'development' } }));
+    fs.writeFileSync(observationsFile, JSON.stringify(observation(r, 'full')) + '\n');
+    const command = ['scripts/gold-dataset/cli.mjs', 'score', '--manifest', manifestFile, '--labels', labelsFile, '--splits', splitFile, '--split', 'development', '--view', 'full', '--observations', observationsFile, '--out', resultFile];
+    const scored = spawnSync(process.execPath, command, { cwd: root, encoding: 'utf8', windowsHide: true });
+    assert.equal(scored.status, 0, scored.stderr);
+    const output = JSON.parse(fs.readFileSync(resultFile, 'utf8'));
+    assert.deepEqual(output.summary.correct_autonomous_resolution, { numerator: 1, denominator: 1, rate: 1 });
+    privateResult = path.resolve(root, output.per_case_private_path);
+    assert.ok(fs.existsSync(privateResult));
+    assert.doesNotMatch(fs.readFileSync(resultFile, 'utf8'), /Cala Varques|google:123/);
+    const held = spawnSync(process.execPath, [...command.slice(0, command.indexOf('--split')), '--split', 'held_out', ...command.slice(command.indexOf('--view'))], { cwd: root, encoding: 'utf8', windowsHide: true });
+    assert.notEqual(held.status, 0);
+    assert.match(held.stderr, /heldout_requires_explicit_flag|ineligible_holdout/);
+  } finally {
+    const tempRoot = path.resolve(os.tmpdir()) + path.sep;
+    assert.ok(path.resolve(scratch).startsWith(tempRoot));
+    fs.rmSync(scratch, { recursive: true, force: true });
+    if (privateResult) {
+      const localRoot = path.resolve(root, '.local/recognition-gold-dataset') + path.sep;
+      assert.ok(privateResult.startsWith(localRoot));
+      fs.rmSync(privateResult, { force: true });
     }
   }
 });
