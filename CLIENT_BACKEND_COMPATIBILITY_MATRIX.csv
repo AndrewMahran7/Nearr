@@ -1,0 +1,20 @@
+contract,old client uses?,1.5 uses?,current Production supports?,required change?,backward-compatible?,test,rollback
+auth session/OAuth/OTP/anonymous,yes,yes,yes,no,yes,static source review only; live authenticated test pending,leave auth unchanged
+profiles legacy selector/settings,yes,yes,yes,no,yes,Production-schema names rehearsal and local RLS passed; live client pending,retain columns and policies
+profiles.first_name/last_name,no,yes,no,add nullable columns,yes in local rehearsal,Production-schema nullable/upsert/RLS tests passed; live provider/device pending,leave additive columns
+handle_new_user trigger,yes,yes,yes,no,yes,live definition hash captured; unchanged by proposed migration,do not replace
+upsert_onboarding_v2_session,yes,yes,yes,no,yes,source/static only; live authenticated test pending,retain function
+begin/complete_onboarding_account_transfer v1,yes,no,yes,no,yes if untouched,source/static only; live old-client test pending,retain functions
+begin/complete_onboarding_account_transfer_v2,no,yes,no,add safe V2 RPCs,UNPROVEN,Development SQL rejected; complete transfer/RLS/concurrency rehearsal pending,do not deploy
+finalize_onboarding_identity_link and resume_completed_transfer,yes,yes,yes,no,yes if untouched,source/static only; live test pending,retain functions
+saved_places and places owner CRUD,yes,yes,yes,no,yes if unchanged,local Production-schema owner read passed; live map/save/upgrade pending,retain schema
+saved_place_sources owner/select/attach,yes,yes,yes,transfer must preserve owner,UNPROVEN,V2 source-reference audit found omission,do not deploy V2
+share_jobs and share_job_place_results,yes,yes,yes,no for client schema,yes if unchanged,local Production-schema owner read and notification payload tests passed; live Queue pending,retain tables/RLS
+create-share-job/process-share-link Edge,yes,yes,yes,no,yes if unchanged,function versions recorded; live extension/share pending,retain functions
+process-share-jobs notification drain,yes,yes,yes cron only,minimal immediate backport,likely but unproven,local worker boot/payload/routing passed; concurrent send test pending,redeploy exact v123
+share-job notification payload/deep link,yes,yes,yes,no schema change,yes in static tests,all 900 observed payloads had matching jobId; device taps pending,retain payload and v123
+register_push_token/user_push_tokens,yes,yes,yes,no,yes,static source only; physical push pending,retain RPC/table
+notification_events/bump_reminder_opportunity_count,yes,yes,yes,no,yes,static source only; device reminders pending,retain RPC/table
+get-place-videos/public-place/delete-account,yes,yes,yes,no,yes if unchanged,function versions/source unchanged; live test pending,retain endpoints
+Railway media-worker recognition callback,yes,yes,yes,no,yes if unchanged,deployment identity captured; replay not yet run,no deployment
+device photo snapshots and five-photo cache,device-side,device-side,not backend gated,no,unknown until upgrade QA,physical old-to-new snapshot migration pending,no backend rollback

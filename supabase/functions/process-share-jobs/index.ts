@@ -56,6 +56,7 @@ import {
   type ShareFailureCategory,
 } from '../../../lib/shareFailurePresentation.ts';
 import { isNearrCategory, resolvePlaceCategory } from '../../../lib/placeCategory.ts';
+import { authoritativeShareJobNotification } from '../../../lib/shareJobNotificationAuthority.ts';
 import {
   evaluateDeliverableAiPlaceNote,
   generateAiPlaceNote,
@@ -4618,8 +4619,32 @@ async function processPendingNotifications(admin: any, limit = 25): Promise<void
   }
 
   const rows = Array.isArray(claimed) ? claimed : [];
-  for (const row of rows) {
-    const payload = parseNotificationPayload(row.notification_payload);
+  for (const claimedRow of rows) {
+    const { data: currentRow, error: currentRowError } = await admin
+      .from('share_jobs')
+      .select('id,user_id,status,notification_status,notification_payload,notification_attempts,notification_max_attempts')
+      .eq('id', claimedRow.id)
+      .maybeSingle();
+    if (currentRowError) {
+      console.log(`[share-job] notification_authority_read_failed job_id=${claimedRow.id} code=${currentRowError.code ?? 'unknown'}`);
+      continue;
+    }
+    const authoritative = authoritativeShareJobNotification(currentRow);
+    if (!authoritative) {
+      console.log(`[share-job] notification_authority_rejected job_id=${claimedRow.id}`);
+      await admin
+        .from('share_jobs')
+        .update({
+          notification_status: 'permanently_failed',
+          notification_error_code: 'authoritative_state_rejected',
+          notification_next_attempt_at: null,
+        })
+        .eq('id', claimedRow.id)
+        .eq('notification_status', 'sending');
+      continue;
+    }
+    const row = currentRow;
+    const payload = parseNotificationPayload(authoritative.payload);
     if (!payload) {
       await admin
         .from('share_jobs')
@@ -4633,7 +4658,8 @@ async function processPendingNotifications(admin: any, limit = 25): Promise<void
       continue;
     }
 
-    const result = await submitPushToUser(admin, row.user_id, payload);
+    console.log(`[share-job] notification_dispatch_started job_id=${row.id} at=${nowIso()}`);
+    const result = await submitPushToUser(admin, authoritative.userId, payload);
     if (result.status === 'submitted') {
       await admin
         .from('share_jobs')
@@ -4830,6 +4856,11 @@ serve(async (req) => {
         invocation,
         recognitionCachePolicy,
       );
+      if (response.ok) {
+        // Dispatch a committed result without waiting for the minute sweep.
+        // The sweep remains the retry/recovery backstop.
+        await processPendingNotifications(admin, 25);
+      }
       console.log(JSON.stringify({
         marker: 'phase2_reliability',
         invocationId: invocation.id,

@@ -1,0 +1,11 @@
+# Founder physical-device QA for exact build 58 (pending TestFlight/ASC upload)
+
+This checklist is not evidence of a pass. Record device/iOS version, installed app version/build, account type, source post, job IDs, timestamps, screenshots, and whether the app is foreground/background. Keep test data separate from real-user content.
+
+1. **Clean install, 1.5.58/58:** icon/launch; deterministic Phase 1 and local tutorial card; Phase 2; cancel/retry Google and Apple; structured first/last names; fresh account and existing account; real Instagram/TikTok share; extension accepted UI and durable job ID; Queue/review/save; five photos after app restart; nearby radius/category; notification tap and same-result foreground suppression; Watch post/source video.
+2. **In-place upgrade, public 1.4.55/56 → 1.5.58/58:** begin with an established signed-in account, saved places, cached photos, nearby/settings/reminders and Queue content. Update without deleting the app. Confirm session survives, no onboarding replay or duplicate profile, same saved-place IDs and map pins, photos recover and persist, Queue and reminder state stay coherent, settings remain, and Share Extension still hands off. Repeat from logged-out state.
+3. **Legacy continues:** on a second device/build retaining 1.4.55 and its latest OTA, repeat sign-in, save/map/filter, Queue/share/result/review, notification tap, reminders, settings, source video after backend parity. No forced update.
+4. **Transfer matrix:** tutorial-only with zero database saves; anonymous real save; tutorial plus real save; destination already containing the same place; established-account sign-in; provider cancel/retry; interrupted/replayed callback. Verify each real save and source association exactly once, no foreign content, no deleted source data, and no duplicate push.
+5. **Notification timeline:** record server result-ready, claim/start, Expo acceptance, device receipt and presented/suppressed separately. Test background, same job open, different job open, needs-review → saved, failure → recovered, and transient offline retry.
+
+Any lost session/place/source/photo, old-client regression, wrong-account content, duplicate push, unsupported field, or unexplained metadata/legal issue stops the release. Founder decides public release only after review approval and this QA.

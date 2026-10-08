@@ -1,0 +1,18 @@
+# Current public iOS client contract (observed 2026-10-08)
+
+The US App Store listing for `com.nearr.ios` is **1.4.55**. Its finished EAS App Store build is build **56**, runtime **1.4.55**, embedded source `627ad618d57c99faa280fb085e7b0692fc0bd58f` (`e0aea8d9-b89c-442b-8ee6-c880d5763385`). The latest production-channel OTA for that runtime is `01a0849a-63a3-76ff-b495-e1b766edc03e`, group `f9a9846f-3643-4644-a05f-a59be8baa1da`, from **`ded040465176a193bba8c6921b179b07ef6a9a64`**. This document uses that OTA source as the effective JavaScript contract; an offline client could still run the embedded build-56 code. Its critical profile selector and v1 transfer RPC names were checked and match the OTA generation, but the embedded/OTA backend-contract difference has not been fully tested.
+
+| User area | Requests and persisted contract in `ded0404` |
+|---|---|
+| Startup/auth | Supabase `auth.getSession/getUser`, anonymous sign-in, OAuth/ID-token/OTP/password, refresh and sign-out; `profiles` self-select and missing-row self-insert. |
+| Profile/settings | `profiles` selector includes `id,email,notifications_enabled,nearby_notifications_enabled,quiet_hours_*,terms_accepted_at,privacy_accepted_at,legal_version,created_at,updated_at`; writes legal and notification settings. It does **not** select or write provider-name columns. |
+| Anonymous onboarding | `upsert_onboarding_v2_session`; old `begin_onboarding_account_transfer(uuid,text)` and `complete_onboarding_account_transfer(text)`; `finalize_onboarding_identity_link` and `resume_completed_onboarding_account_transfer`. Old RPCs must remain callable with identical signatures and behavior. |
+| Saved places/map/filters/photos | `places`, `saved_places`, `saved_place_sources` via RLS; `attach_saved_place_source`, saved-place updates, recognition rejection/correction RPCs; Google place/photo data and cached presentation state. `saved_places` ownership and existing columns must remain unchanged. |
+| Share Extension and host | Native build-56 extension/host submit to `create-share-job` (v45), optional `process-share-link` (v153), durable `share_jobs` ID and `?sid=` handoff. `delete-share-job` is used for deletion. |
+| Queue/review/save | RLS `share_jobs` and `share_job_place_results`; `resolve_share_job`, `retry_share_job`, `undo_auto_saved_place`, named-lead recovery, soft-alternative, archive-active-queue RPCs. Queue statuses include queued, processing_metadata, needs_help, completed, failed, cancelled, and awaiting_purchase. |
+| Recognition/results | `process-share-jobs` v123 and Production Railway media worker; result/candidate payload and saved-place references. No recognition change is authorized here. |
+| Result notifications | `share_jobs.notification_status` and payload; `register_push_token`, `user_push_tokens`; `share_job_completed`/`share_job_needs_help` with `data.jobId`; tap route to queue item or existing fallback. `claim_share_job_notifications` and receipts are server-only. |
+| Nearby reminders | `saved_places`, `profiles`, `notification_events`, `bump_reminder_opportunity_count`; device location/notification APIs. |
+| Other account routes | `create_public_place_share`, `save_shared_place`, `get-place-videos`, feedback, and `delete-account`. |
+
+Evidence: `services/profileService.ts`, `lib/anonymousOnboarding.ts`, `services/savedPlacesService.ts`, `services/shareJobsService.ts`, `lib/notifications.ts`, `lib/pushTokens.ts`, `ShareExtension.tsx`, `lib/shareJobRouting.ts` at `ded0404`; exact OTA identity from EAS `update:view`. This is a source contract inventory, **not** an authenticated live Production pass. See `CLIENT_BACKEND_COMPATIBILITY_MATRIX.csv` for the still-open proof gates.
