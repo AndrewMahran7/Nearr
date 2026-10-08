@@ -33,3 +33,11 @@ expo-config.json
 # Recognition audit raw output — contains real user-shared source URLs.
 # Summaries for sharing use audit IDs only; raw records stay local.
 artifacts/recognition-audit/
+
+# Gold benchmark labels, held-out cases, review pages, and materialized media
+# must remain outside commits. A public manifest is for development only.
+.local/recognition-gold-dataset/
+artifacts/recognition-gold-dataset/dataset_labels_private.jsonl
+artifacts/recognition-gold-dataset/heldout_seal_private.json
+artifacts/recognition-gold-dataset/heldout_manifest_private.jsonl
+artifacts/recognition-gold-dataset/collection/*private*.jsonl

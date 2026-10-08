@@ -4,6 +4,13 @@
   "main": "./index.js",
   "scripts": {
     "eval:recognition": "node --import ./services/media-worker/node_modules/tsx/dist/loader.mjs scripts/recognition-eval/runner.mjs",
+    "dataset:validate": "node scripts/gold-dataset/cli.mjs validate",
+    "dataset:split": "node scripts/gold-dataset/cli.mjs split",
+    "dataset:materialize": "node scripts/gold-dataset/cli.mjs materialize",
+    "dataset:review": "node scripts/gold-dataset/cli.mjs review",
+    "dataset:seal": "node scripts/gold-dataset/cli.mjs seal",
+    "dataset:score": "node scripts/gold-dataset/cli.mjs score",
+    "test:gold-dataset": "node --test scripts/gold-dataset/core.test.mjs",
     "test:recognition-evaluation": "node --test scripts/recognition-eval/metrics.test.mjs",
     "start": "expo start",
     "android": "expo run:android",

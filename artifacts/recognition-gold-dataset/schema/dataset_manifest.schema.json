@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nearr.local/schema/recognition-gold-manifest-v1",
+  "title": "Recognition gold source manifest record",
+  "type": "object",
+  "required": ["case_id", "source_group_id", "platform", "source_public_id", "source_url_reference", "retrieval_date", "categories", "evidence", "answer_spans", "view_eligibility", "state", "exposure"],
+  "properties": {
+    "case_id": { "type": "string", "pattern": "^g_[a-f0-9]{16}$" },
+    "source_group_id": { "type": "string", "pattern": "^sg_[a-f0-9]{16}$" },
+    "platform": { "enum": ["instagram", "tiktok", "youtube", "facebook", "other"] },
+    "source_public_id": { "type": ["string", "null"] },
+    "source_url_reference": { "type": ["string", "null"], "format": "uri" },
+    "retrieval_date": { "type": ["string", "null"], "format": "date" },
+    "inventoried_at": { "type": "string", "format": "date" },
+    "source_record_date": { "type": ["string", "null"], "format": "date" },
+    "categories": { "type": "array", "items": { "type": "string" } },
+    "geography": { "type": ["object", "null"], "description": "Research metadata; never forwarded to inference without an explicit evidence field." },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "caption": { "type": ["string", "null"] },
+        "description": { "type": ["string", "null"] },
+        "hashtags": { "type": "array", "items": { "type": "string" } },
+        "tagged_accounts": { "type": "array", "items": { "type": "string" } },
+        "location_tag": { "type": ["string", "null"] },
+        "source_geography": { "type": ["object", "null"] },
+        "transcript": { "type": ["string", "null"] },
+        "frame_paths": { "type": "array", "items": { "type": "string" }, "description": "Local temporary paths; materializer re-encodes into neutral names. Do not commit media." }
+      },
+      "additionalProperties": true
+    },
+    "answer_spans": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field", "start", "end", "kind"],
+        "properties": {
+          "field": { "enum": ["caption", "description", "hashtags", "tagged_accounts", "location_tag", "source_geography", "transcript"] },
+          "start": { "type": "integer", "minimum": 0 },
+          "end": { "type": "integer", "minimum": 1 },
+          "kind": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Offsets and categories only; do not repeat answer text here."
+    },
+    "view_eligibility": {
+      "type": "object",
+      "required": ["full", "description_hidden", "location_hidden", "visual_only", "text_only"],
+      "properties": {
+        "full": { "type": "boolean" },
+        "description_hidden": { "type": "boolean" },
+        "location_hidden": { "type": "boolean" },
+        "visual_only": { "type": "boolean" },
+        "text_only": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "visual_answer_overlay": { "type": "boolean" },
+    "state": { "enum": ["candidate", "ready"] },
+    "exposure": { "enum": ["new_unscored", "historical_outcomes_already_exposed"] }
+  },
+  "additionalProperties": true
+}
