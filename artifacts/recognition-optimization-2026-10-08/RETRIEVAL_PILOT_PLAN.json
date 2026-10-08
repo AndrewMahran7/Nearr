@@ -1,0 +1,15 @@
+{
+  "generation": 1,
+  "boundary": "offline descriptor and geometric correspondence pilot, not autonomous recognition",
+  "frozenBeforeModelOutputs": true,
+  "model": "EigenPlaces ResNet18 512-D, official v1.0 checkpoint",
+  "codeRevision": "a2969f71d5ea31017443af490b15273ca4c50af1",
+  "geometricModel": "Kornia 0.8.1 DISK depth plus LightGlue disk",
+  "imageResizeLongEdge": 640,
+  "sources": ["cavitt_a_video", "cavitt_b_video", "la_jolla_a_video", "la_jolla_b_video", "dettifoss_video", "cocoa_pier_video", "griffith_video", "niagara_video", "golden_gate_video", "sydney_opera_video", "summersville_video", "etretat_video"],
+  "referencePolicy": "Existing user-authorized cached Commons clips only. Three frames from source A at fractions 0.15, 0.5, 0.85. Independent source B queries at 0.2,0.8; no source B reference frames. Remaining clips use temporal repeat controls, never generalization proof.",
+  "geographyPolicy": "Compare all gallery versus source-catalog country filter where explicit; coarse location supplied as an experimental prior, never inferred from correct identity. Unknown country uses full gallery. La Jolla labels are locality-only because Commons location/category conflict prevents verified exact venue status.",
+  "scoring": "Recall@1/3/5 by catalog source locality group, source-level counts. Same-video versus independent clips reported separately. No query labels influence descriptor model, similarity, or matching.",
+  "geometricPolicy": "Top three descriptor shortlist entries only; 512 DISK features; RANSAC homography with 4px reprojection error; >=8 inliers and >=0.2 ratio means visual overlap support, never venue proof. Include mismatched place comparisons and repeated water scenes.",
+  "stop": "No tuning from output. If data rights/model installation/coverage fail, record limitation. No paid provider calls, no new server, no runtime activation or permanent Google imagery corpus."
+}
