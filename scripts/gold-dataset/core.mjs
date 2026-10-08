@@ -41,6 +41,7 @@ export function validateManifest(records) {
     if (!r.view_eligibility || !VIEWS.every((x) => typeof r.view_eligibility[x] === 'boolean')) fail(`invalid_view_eligibility:${r.case_id}`);
     if (!['candidate', 'ready'].includes(r.state) || !['new_unscored', 'historical_outcomes_already_exposed'].includes(r.exposure)) fail(`invalid_case_state:${r.case_id}`);
     if (['full', 'description_hidden', 'location_hidden'].some((view) => r.view_eligibility[view]) && !array(r.evidence.frame_paths).length) fail(`missing_visual_evidence_for_view:${r.case_id}`);
+    if (r.view_eligibility.description_hidden && r.visual_answer_overlay === true) fail(`description_hidden_overlay_leak:${r.case_id}`);
     if (r.view_eligibility.visual_only && (!array(r.evidence.frame_paths).length || r.visual_answer_overlay === true)) fail(`invalid_visual_only_eligibility:${r.case_id}`);
     if (r.view_eligibility.text_only && !TEXT_FIELDS.some((x) => Boolean(r.evidence[x]?.length || (typeof r.evidence[x] === 'object' && Object.keys(r.evidence[x]).length)))) fail(`invalid_text_only_eligibility:${r.case_id}`);
   }
@@ -54,12 +55,14 @@ export function validateLabels(manifest, labels) {
     ids.add(l.case_id);
     if (!LABELS.includes(l.label_class)) fail(`invalid_label_class:${l.case_id}`);
     if (!Array.isArray(l.expected_places) || !Array.isArray(l.provenance) || !Array.isArray(l.place_group_ids)) fail(`invalid_label_arrays:${l.case_id}`);
+    if (!l.expected_places.every((p) => ['depicted', 'mentioned_only'].includes(p.role))) fail(`invalid_place_role:${l.case_id}`);
+    if (!l.provenance.every((p) => p && typeof p.kind === 'string' && typeof p.reference === 'string')) fail(`invalid_provenance:${l.case_id}`);
     if (!l.place_group_ids.every((x) => PLACE_GROUP_ID.test(x))) fail(`invalid_place_group:${l.case_id}`);
     if (['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI'].includes(l.label_class)) {
       const wanted = l.label_class === 'VERIFIED_MULTI' ? 2 : 1;
       const depicted = l.expected_places.filter((p) => p.role !== 'mentioned_only');
       if (depicted.length < wanted || (l.label_class === 'VERIFIED_EXACT_SINGLE' && depicted.length !== 1)) fail(`incomplete_exact_label:${l.case_id}`);
-      if (!l.provenance.length || l.complete_set_established !== true) fail(`unproven_exact_label:${l.case_id}`);
+      if (!l.provenance.some((p) => !/model|prediction/i.test(p.kind)) || l.complete_set_established !== true) fail(`unproven_exact_label:${l.case_id}`);
       for (const p of depicted) if (!p.name || !Array.isArray(p.aliases) || !p.aliases.length) fail(`invalid_expected_place:${l.case_id}`);
     }
     if (['KNOWN_NEGATIVE', 'AMBIGUOUS', 'UNVERIFIED'].includes(l.label_class) && l.expected_places.some((p) => p.role !== 'mentioned_only')) fail(`unsupported_exact_truth:${l.case_id}`);
@@ -71,10 +74,14 @@ export function validateLabels(manifest, labels) {
 export function holdoutEligibility(record, label) {
   const reasons = [];
   if (record.state !== 'ready') reasons.push('not_ready');
+  if (record.view_eligibility?.full !== true || !array(record.evidence?.frame_paths).length) reasons.push('full_visual_evidence_missing');
   if (record.exposure !== 'new_unscored') reasons.push('historical_outcome_exposed');
   if (!record.retrieval_date) reasons.push('source_not_retrieved');
   if (!label || ['UNVERIFIED', 'AMBIGUOUS'].includes(label.label_class)) reasons.push('truth_not_adjudicated');
   if (!label?.review || !['accept', 'region_only', 'negative'].includes(label.review.decision) || !label.review.reviewer || !label.review.reviewed_at || label.review.independent !== true) reasons.push('independent_manual_review_missing');
+  const expectedDecision = { VERIFIED_EXACT_SINGLE: 'accept', VERIFIED_MULTI: 'accept', VERIFIED_REGION_ONLY: 'region_only', KNOWN_NEGATIVE: 'negative' }[label?.label_class];
+  if (expectedDecision && label?.review?.decision !== expectedDecision) reasons.push('review_label_mismatch');
+  if (label?.collected_by && label.collected_by === label?.review?.reviewer) reasons.push('reviewer_not_independent');
   if (['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI'].includes(label?.label_class)) {
     const independentProof = array(label.provenance).some((p) => p.independent === true && p.reference);
     if (!independentProof) reasons.push('independent_provenance_missing');
@@ -143,6 +150,7 @@ function safeField(record, field) {
 }
 export function inferencePayload(record, label, view) {
   if (!VIEWS.includes(view) || record.view_eligibility?.[view] !== true) fail(`ineligible_view:${view}`);
+  if (view === 'description_hidden' && record.visual_answer_overlay === true) fail('description_hidden_overlay_leak');
   const visual = view !== 'text_only';
   const frames = visual ? array(record.evidence.frame_paths) : [];
   if (view === 'visual_only' && (!frames.length || record.visual_answer_overlay === true)) fail('visual_only_not_clean');
@@ -151,7 +159,11 @@ export function inferencePayload(record, label, view) {
     for (const key of TEXT_FIELDS) evidence[key] = safeField(record, key);
     if (view === 'description_hidden') {
       evidence.caption = null; evidence.description = null; evidence.hashtags = null;
-      for (const key of ['tagged_accounts', 'location_tag', 'source_geography', 'transcript']) if (bearing(record, key)) evidence[key] = null;
+      const answerNames = array(label?.expected_places).flatMap((p) => [p.name, ...array(p.aliases)]).map(norm).filter((x) => x.length >= 4);
+      for (const key of ['tagged_accounts', 'location_tag', 'source_geography', 'transcript']) {
+        const normalized = norm(JSON.stringify(evidence[key]));
+        if (bearing(record, key) || answerNames.some((name) => normalized.includes(name))) evidence[key] = null;
+      }
     }
     if (view === 'location_hidden') { evidence.location_tag = null; evidence.source_geography = null; }
   }
@@ -185,8 +197,8 @@ export function placeMatches(pred, truth) {
   if (!aliases.includes(norm(pred.name))) return false;
   for (const key of ['country', 'region', 'city']) if (truth[key] && (!pred[key] || norm(truth[key]) !== norm(pred[key]))) return false;
   if (truth.coordinates && pred.coordinates) return distanceMeters(truth.coordinates, pred.coordinates) <= (truth.accepted_radius_meters ?? 100);
-  if (truth.branch_disambiguation === true && !truth.coordinates && !truth.address) return false;
-  if (truth.address) return Boolean(pred.address && norm(truth.address) === norm(pred.address));
+  if (truth.branch_disambiguation === true && !truth.coordinates && !truth.address && !array(truth.accepted_addresses).length) return false;
+  if (truth.address || array(truth.accepted_addresses).length) return Boolean(pred.address && [truth.address, ...array(truth.accepted_addresses)].map(norm).includes(norm(pred.address)));
   // Exact names without geographic anchors are insufficient for physical identity.
   return Boolean(truth.country && (truth.region || truth.city));
 }
@@ -220,7 +232,7 @@ export function scoreOne(record, label, observation, split, view) {
   const statedGeo = [observation.geography, ...places].filter(Boolean);
   const wrongCountry = Boolean(autonomous && geographic.country && statedGeo.some((p) => p.country && norm(p.country) !== norm(geographic.country)));
   const wrongRegion = Boolean(autonomous && geographic.region && statedGeo.some((p) => p.region && norm(p.region) !== norm(geographic.region)));
-  const multiDetected = label.label_class === 'VERIFIED_MULTI' ? observation.multi_place_detected === true : null;
+  const multiDetected = label.label_class === 'VERIFIED_MULTI' && typeof observation.multi_place_detected === 'boolean' ? observation.multi_place_detected : null;
   return {
     case_id: record.case_id, source_group_id: record.source_group_id, split, view, label_class: label.label_class,
     status: observation.status, autonomous, exact_eligible: exactEligible, reasonable_autonomous_expected: label.reasonable_autonomous_expected !== false,
@@ -231,12 +243,13 @@ export function scoreOne(record, label, observation, split, view) {
     candidate_recall_at_5: exactEligible ? matchCount(candidates.slice(0, 5), expected) / expected.length : null,
     true_positives: tp, predicted_places: places.length, expected_places: expected.length,
     multi_detected: multiDetected, extras: exactEligible ? places.length - tp : null, misses: exactEligible ? expected.length - tp : null,
-    negative_correct_abstention: label.label_class === 'KNOWN_NEGATIVE' ? !autonomous || places.length === 0 : null,
+    negative_correct_abstention: label.label_class === 'KNOWN_NEGATIVE' ? observation.status !== 'failed' && (!autonomous || places.length === 0) : null,
     negative_unsupported_exact: label.label_class === 'KNOWN_NEGATIVE' ? autonomous && places.length > 0 : null,
-    region_correct: label.label_class === 'VERIFIED_REGION_ONLY' ? !wrongCountry && !wrongRegion && Boolean(observation.geography?.country || observation.geography?.region) && (!geographic.country || norm(observation.geography?.country) === norm(geographic.country)) && (!geographic.region || norm(observation.geography?.region) === norm(geographic.region)) : null,
+    region_correct: label.label_class === 'VERIFIED_REGION_ONLY' ? observation.status !== 'failed' && !wrongCountry && !wrongRegion && Boolean(observation.geography?.country || observation.geography?.region) && (!geographic.country || norm(observation.geography?.country) === norm(geographic.country)) && (!geographic.region || norm(observation.geography?.region) === norm(geographic.region)) : null,
     region_unsupported_exact: label.label_class === 'VERIFIED_REGION_ONLY' ? autonomous && places.length > 0 : null,
     wrong_country: wrongCountry, wrong_region: wrongRegion,
     elapsed_ms: Number.isFinite(observation.elapsed_ms) ? observation.elapsed_ms : null,
+    time_to_correct_usable_ms: exactSet && Number.isFinite(observation.first_usable_result_ms) ? observation.first_usable_result_ms : null,
     cost_usd: Number.isFinite(observation.cost_usd) ? observation.cost_usd : null,
   };
 }
@@ -253,18 +266,28 @@ export function summarizeScores(rows) {
   const mp = sum(multi, 'true_positives'), pp = sum(multi, 'predicted_places'), ep = sum(multi, 'expected_places');
   const allCostKnown = rows.length > 0 && rows.every((r) => r.cost_usd !== null);
   const totalCost = allCostKnown ? sum(rows, 'cost_usd') : null;
+  const quantile = (values, q) => {
+    if (!values.length) return null;
+    const sorted = [...values].sort((a, b) => a - b), position = (sorted.length - 1) * q;
+    return sorted[Math.floor(position)] + (sorted[Math.ceil(position)] - sorted[Math.floor(position)]) * (position - Math.floor(position));
+  };
+  const distribution = (values) => {
+    const measured = values.filter(Number.isFinite);
+    return { n: measured.length, p50: quantile(measured, .5), p75: quantile(measured, .75), p90: quantile(measured, .9), p95: quantile(measured, .95) };
+  };
   return {
     cases: rows.length,
     correct_autonomous_resolution: ratio(correct.length, expected.length),
     autonomous_precision: ratio(automatic.filter((r) => r.correct_autonomous === true).length, automatic.length),
     autonomous_unadjudicable_outputs: rows.filter((r) => r.autonomous && ['AMBIGUOUS', 'UNVERIFIED'].includes(r.label_class)).length,
     single: { cases: singles.length, exact_top1: ratio(singles.filter((r) => r.exact_top1).length, singles.length), candidate_recall_at_1: ratio(singles.filter((r) => r.candidate_recall_at_1 === 1).length, singles.length), correct_autonomous: ratio(singles.filter((r) => r.correct_autonomous).length, singles.filter((r) => r.reasonable_autonomous_expected).length) },
-    multi: { cases: multi.length, detection: ratio(multi.filter((r) => r.multi_detected).length, multi.length), place_precision: ratio(mp, pp), place_recall: ratio(mp, ep), f1: pp + ep ? 2 * mp / (pp + ep) : null, exact_set: ratio(multi.filter((r) => r.exact_set).length, multi.length), extra_places: sum(multi, 'extras'), missed_places: sum(multi, 'misses') },
+    multi: { cases: multi.length, detection: ratio(multi.filter((r) => r.multi_detected).length, multi.filter((r) => r.multi_detected !== null).length), place_precision: ratio(mp, pp), place_recall: ratio(mp, ep), f1: pp + ep ? 2 * mp / (pp + ep) : null, exact_set: ratio(multi.filter((r) => r.exact_set).length, multi.length), extra_places: sum(multi, 'extras'), missed_places: sum(multi, 'misses') },
     negative: { cases: negative.length, correct_abstention: ratio(negative.filter((r) => r.negative_correct_abstention).length, negative.length), unsupported_exact: ratio(negative.filter((r) => r.negative_unsupported_exact).length, negative.length) },
     region: { cases: region.length, correct_geography: ratio(region.filter((r) => r.region_correct).length, region.length), unsupported_exact: ratio(region.filter((r) => r.region_unsupported_exact).length, region.length) },
     wrong_country: ratio(rows.filter((r) => r.wrong_country).length, adjudicable.length),
     wrong_region: ratio(rows.filter((r) => r.wrong_region).length, adjudicable.length),
-    cost: { total_usd: totalCost, per_submission: totalCost === null ? null : totalCost / rows.length, per_correct_autonomous: totalCost === null || !correct.length ? null : totalCost / correct.length },
+    latency: { submitted: distribution(rows.map((r) => r.elapsed_ms)), correct_usable: distribution(rows.map((r) => r.time_to_correct_usable_ms)), correct_autonomous: distribution(correct.map((r) => r.elapsed_ms)) },
+    cost: { total_usd: totalCost, per_submission: totalCost === null ? null : totalCost / rows.length, per_correct_result: totalCost === null || !rows.some((r) => r.exact_set) ? null : totalCost / rows.filter((r) => r.exact_set).length, per_correct_autonomous: totalCost === null || !correct.length ? null : totalCost / correct.length },
   };
 }
 

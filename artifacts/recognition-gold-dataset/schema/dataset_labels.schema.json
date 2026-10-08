@@ -21,6 +21,7 @@
           "region": { "type": ["string", "null"] },
           "city": { "type": ["string", "null"] },
           "address": { "type": ["string", "null"] },
+          "accepted_addresses": { "type": "array", "items": { "type": "string" }, "description": "Reviewer-approved exact branch address renderings, not fuzzy address matches." },
           "coordinates": { "type": ["object", "null"], "required": ["lat", "lng"], "properties": { "lat": { "type": "number" }, "lng": { "type": "number" } } },
           "accepted_radius_meters": { "type": ["number", "null"], "minimum": 0 },
           "branch_disambiguation": { "type": "boolean" },
@@ -35,6 +36,7 @@
     "place_group_ids": { "type": "array", "items": { "type": "string", "pattern": "^pg_[a-f0-9]{16}$" } },
     "provenance": { "type": "array", "items": { "type": "object", "required": ["kind", "reference"], "properties": { "kind": { "type": "string" }, "reference": { "type": "string" }, "independent": { "type": "boolean" } }, "additionalProperties": true } },
     "confidence": { "type": ["string", "number", "null"] },
+    "collected_by": { "type": ["string", "null"] },
     "review": { "type": "object", "properties": { "decision": { "enum": ["accept", "reject", "needs_more_research", "region_only", "ambiguous", "negative"] }, "reviewer": { "type": ["string", "null"] }, "reviewed_at": { "type": ["string", "null"], "format": "date-time" }, "independent": { "type": "boolean" } }, "additionalProperties": true }
   },
   "additionalProperties": true
