@@ -30,6 +30,7 @@ test('batched hashing preserves JPEGs, timestamps and scene evidence on CFR, VFR
       for (const strategy of ['legacy', 'batched_hash'] as const) {
         const dir = path.join(work, `${kind}-${strategy}`); await mkdir(dir);
         const frames = await extractFramesWithStrategy(cfg, probe, input, dir, signal, strategy);
+        assert.ok(frames.every((frame) => /^[0-9a-f]{16}$/.test(frame.aHash)), `${kind}/${strategy}: every synthetic frame must hash`);
         representations.push({ images: await Promise.all(frames.map(async (frame) => ({
           time: frame.timestampSeconds, reason: frame.reason, hash: frame.aHash, sha256: await sha256File(frame.path),
         }))), survivors: deduplicateFrames(frames).map((f) => f.timestampSeconds) });
