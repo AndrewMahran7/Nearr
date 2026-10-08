@@ -119,6 +119,8 @@ export type WorkerConfig = {
   jobTimeoutMs: number; // 8min: hard ceiling for a single task incl. model calls
   maxSelectedFrames: number; // 24: enough visual coverage; caps model cost
   frameIntervalSeconds: number; // 1s baseline sampling cadence
+  /** Batched JPEG hashing preserves selected image bytes; legacy is the replay arm. */
+  frameExtractionStrategy?: 'legacy' | 'batched_hash';
   redirectLimit: number; // 3: public CDN rarely needs more; limits SSRF surface
 
   // ---- Host allowlist (HTTPS only) ----
@@ -285,6 +287,7 @@ export function loadConfig(): WorkerConfig {
     jobTimeoutMs: int('MEDIA_JOB_TIMEOUT_MS', 8 * 60_000, 10_000),
     maxSelectedFrames: int('MEDIA_MAX_SELECTED_FRAMES', 24, 1),
     frameIntervalSeconds: int('MEDIA_FRAME_INTERVAL_SECONDS', 1, 1),
+    frameExtractionStrategy: str('MEDIA_FRAME_EXTRACTION_STRATEGY', 'legacy') === 'batched_hash' ? 'batched_hash' : 'legacy',
     redirectLimit: int('MEDIA_REDIRECT_LIMIT', 3, 0),
 
     allowedMediaHosts: list('MEDIA_ALLOWED_HOSTS', DEFAULT_ALLOWED_HOSTS),
