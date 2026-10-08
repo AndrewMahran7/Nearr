@@ -35,6 +35,17 @@ assert.equal(planNamedLeadAutomaticRecovery({ jobId: 'job', status: 'needs_help'
   leads: [{ ...lead, confidence: 0.35, upstreamSafetyDecision: 'REVIEW' }] }).length, 0);
 assert.equal(planNamedLeadAutomaticRecovery({ jobId: 'job', status: 'completed', savedPlaceId: 'saved', leads: [lead] }).length, 0);
 
+for (const status of ['failed', 'cancelled', 'queued', 'processing_metadata']) {
+  assert.equal(planNamedLeadAutomaticRecovery({ jobId: 'job', status, savedPlaceId: null, leads: [lead] }).length, 0,
+    `authoritative ${status} cannot restart automatic completion`);
+}
+
+const terminalFence = readFileSync('supabase/migrations/20261008000001_recognition_named_lead_terminal_fence.sql', 'utf8');
+assert.match(terminalFence, /where j.id=p_job_id and j.user_id=v_uid for update/g);
+assert.match(terminalFence, /v_job.status <> 'needs_help'/g);
+assert.match(terminalFence, /v_existing.google_place_id=p_google_place_id/);
+assert.match(terminalFence, /v_confidence,'named-lead-auto-v3-terminal-fence'/);
+
 const migration = readFileSync('supabase/migrations/20260907000001_named_lead_automatic_completion.sql', 'utf8');
 const ambiguityFix = readFileSync('supabase/migrations/20260907000002_fix_named_lead_saved_place_ambiguity.sql', 'utf8');
 const pointerFix = readFileSync('supabase/migrations/20260907000003_fix_named_lead_job_pointer_ambiguity.sql', 'utf8');

@@ -1,6 +1,6 @@
 import type { VayrinIdentityLead } from './vayrinPresentation';
 
-export const NAMED_LEAD_AUTO_RECOVERY_POLICY = 'named-lead-auto-v2';
+export const NAMED_LEAD_AUTO_RECOVERY_POLICY = 'named-lead-auto-v3-terminal-fence';
 
 export type NamedLeadRecoveryTarget = {
   logicalResultId: string;
@@ -20,7 +20,7 @@ export function planNamedLeadAutomaticRecovery(args: {
 }): NamedLeadRecoveryTarget[] {
   // A partially completed multi-place job can already have the legacy
   // saved_place_id compatibility pointer while another slot still needs work.
-  if (!args.jobId || !['needs_help', 'failed'].includes(args.status ?? '')) return [];
+  if (!args.jobId || args.status !== 'needs_help') return [];
   return args.leads
     .filter((lead) => lead.evidenceKind === 'observable' && lead.resultType === 'RAW_NAME')
     .filter((lead) => (lead.confidence ?? 0) >= 0.9 && lead.upstreamSafetyDecision === 'AUTO_SAVE')
