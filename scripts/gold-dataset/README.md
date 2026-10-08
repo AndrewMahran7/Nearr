@@ -1,0 +1,26 @@
+# Gold recognition benchmark tooling
+
+This is a local benchmark interface. It does not call recognition providers, deploy code, or change the app. Its source manifest, private labels, split assignments, materialized inference input, and observations are separate files. See the [manifest schema](../../artifacts/recognition-gold-dataset/schema/dataset_manifest.schema.json), [label schema](../../artifacts/recognition-gold-dataset/schema/dataset_labels.schema.json), and [observation schema](../../artifacts/recognition-gold-dataset/schema/observation.schema.json).
+
+`dataset_manifest.jsonl` contains **one real post per line** and no ground-truth label. Case and group IDs are opaque. For platform IDs use the actual Instagram/TikTok/YouTube/Facebook content ID. If the ID cannot be recovered, retain the complete public URL; the validator hashes the *whole* URL, including `?v=`. Confirmed reposts and mirrors share a source group. Cross-platform mirrors require manual confirmation. Historical posts may have `retrieval_date: null`, with `inventoried_at` and `source_record_date` recorded separately.
+
+`dataset_labels_private.jsonl` contains accepted truth, aliases, place groups, provenance, depicted versus mentioned-only roles, approximate segments, and review decisions. It is ignored by Git. So are the held-out manifest, seal, review pages, mapping files, and per-case scores. Keep a backed-up, access-controlled copy of private files outside this repository; Git history cannot recover them. An encrypted team store with a versioned digest is appropriate. When moving worktrees, export the private files explicitly through that store and check SHA-256 after import. Never paste held-out labels into an issue, PR, public branch, or model prompt.
+
+The public committed manifest should contain development/calibration cases only. For a future holdout, keep its source records in `heldout_manifest_private.jsonl`, then create a **local combined manifest** under `.local/recognition-gold-dataset/` for validation, sealing, materialization, and scoring using `--manifest`. A public manifest with answer-bearing captions and source links is not sealed merely because the accepted label is in another file.
+
+Commands (all use local files and make no network request):
+
+```powershell
+npm run dataset:validate
+npm run dataset:split
+npm run dataset:materialize -- --case g_0123456789abcdef --view visual_only
+npm run dataset:review -- --case g_0123456789abcdef
+npm run dataset:score -- --split development --view full --observations .local/recognition-gold-dataset/observations.jsonl
+npm run dataset:seal
+```
+
+All commands accept `--manifest`, `--labels`, and `--splits`. `dataset:split` is a deterministic **proposal** based on connected source and place groups; freeze and review it before use. Any historical outcome forces its component to development. New cases without independent manual review also stay in development. `dataset:seal` refuses fewer than 250 total posts or fewer than 60 held-out cases/source groups, rejects more than 80 held-out cases, and checks every held-out label's independent review and provenance. An empty holdout is the correct state until those checks pass. `dataset:score` refuses held-out scoring without `--explicit-heldout` and a matching local seal. It writes aggregates to the chosen output and per-case rows only under the ignored `.local` directory. Write-once outputs prevent an unnoticed rerun from replacing the initial baseline.
+
+Materialization supports five views: `full`, `description_hidden`, `location_hidden`, `visual_only`, and `text_only`. These are views of **retained evidence**. Video/audio must first be represented by explicitly captured transcript and/or frames; the current tool does not fetch a social video or silently turn a source URL into model input. `visual_only` requires actual frame paths and disallows known answer text overlays. The materializer decodes and re-encodes each image with FFmpeg, strips metadata, and gives it a neutral numbered filename. It writes `input.json` with an opaque input ID, only allowlisted evidence fields, and a disabled candidate cache. The case-ID mapping lives outside the input directory. Any source path, public URL, answer-span annotation, label, ground-truth value, source group, and split stay out of inference input. The recognition adapter must receive only `input.json` and its neutral frames. Do not let it read the source manifest, mapping directory, private labels, or existing answer caches.
+
+These checks address accidental leakage in our trusted local tools. They are not a security sandbox against arbitrary code with filesystem access. Run inference in a separate process/workspace with access limited to materialized input if a sealed evaluation is conducted.

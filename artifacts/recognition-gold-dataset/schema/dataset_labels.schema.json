@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nearr.local/schema/recognition-gold-label-v1",
+  "title": "Recognition gold private label record",
+  "type": "object",
+  "required": ["case_id", "label_class", "expected_places", "provenance", "place_group_ids", "review"],
+  "properties": {
+    "case_id": { "type": "string", "pattern": "^g_[a-f0-9]{16}$" },
+    "label_class": { "enum": ["VERIFIED_EXACT_SINGLE", "VERIFIED_MULTI", "VERIFIED_REGION_ONLY", "KNOWN_NEGATIVE", "AMBIGUOUS", "UNVERIFIED"] },
+    "expected_places": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "aliases", "role"],
+        "properties": {
+          "place_id": { "type": ["string", "null"] },
+          "name": { "type": "string" },
+          "aliases": { "type": "array", "items": { "type": "string" } },
+          "role": { "enum": ["depicted", "mentioned_only"] },
+          "country": { "type": ["string", "null"] },
+          "region": { "type": ["string", "null"] },
+          "city": { "type": ["string", "null"] },
+          "address": { "type": ["string", "null"] },
+          "coordinates": { "type": ["object", "null"], "required": ["lat", "lng"], "properties": { "lat": { "type": "number" }, "lng": { "type": "number" } } },
+          "accepted_radius_meters": { "type": ["number", "null"], "minimum": 0 },
+          "branch_disambiguation": { "type": "boolean" },
+          "segments": { "type": "array", "items": { "type": "object", "required": ["start_s", "end_s"], "properties": { "start_s": { "type": "number", "minimum": 0 }, "end_s": { "type": "number", "minimum": 0 } } } }
+        },
+        "additionalProperties": true
+      }
+    },
+    "complete_set_established": { "type": "boolean" },
+    "reasonable_autonomous_expected": { "type": "boolean" },
+    "geography": { "type": ["object", "null"] },
+    "place_group_ids": { "type": "array", "items": { "type": "string", "pattern": "^pg_[a-f0-9]{16}$" } },
+    "provenance": { "type": "array", "items": { "type": "object", "required": ["kind", "reference"], "properties": { "kind": { "type": "string" }, "reference": { "type": "string" }, "independent": { "type": "boolean" } }, "additionalProperties": true } },
+    "confidence": { "type": ["string", "number", "null"] },
+    "review": { "type": "object", "properties": { "decision": { "enum": ["accept", "reject", "needs_more_research", "region_only", "ambiguous", "negative"] }, "reviewer": { "type": ["string", "null"] }, "reviewed_at": { "type": ["string", "null"], "format": "date-time" }, "independent": { "type": "boolean" } }, "additionalProperties": true }
+  },
+  "additionalProperties": true
+}

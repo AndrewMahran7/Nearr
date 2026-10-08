@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nearr.local/schema/recognition-gold-observation-v1",
+  "title": "Recognition observation after inference",
+  "type": "object",
+  "required": ["input_id", "view", "status", "autonomous", "places", "candidates"],
+  "properties": {
+    "input_id": { "type": "string", "pattern": "^i_[a-f0-9]{24}$" },
+    "view": { "enum": ["full", "description_hidden", "location_hidden", "visual_only", "text_only"] },
+    "status": { "enum": ["completed", "review", "failed"] },
+    "autonomous": { "type": "boolean" },
+    "places": { "type": "array", "items": { "$ref": "#/$defs/place" } },
+    "candidates": { "type": "array", "items": { "$ref": "#/$defs/place" } },
+    "multi_place_detected": { "type": ["boolean", "null"] },
+    "geography": { "type": ["object", "null"] },
+    "elapsed_ms": { "type": ["number", "null"], "minimum": 0 },
+    "cost_usd": { "type": ["number", "null"], "minimum": 0 }
+  },
+  "$defs": {
+    "place": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "place_id": { "type": ["string", "null"] },
+        "name": { "type": "string" },
+        "country": { "type": ["string", "null"] },
+        "region": { "type": ["string", "null"] },
+        "city": { "type": ["string", "null"] },
+        "address": { "type": ["string", "null"] },
+        "coordinates": { "type": ["object", "null"], "required": ["lat", "lng"], "properties": { "lat": { "type": "number" }, "lng": { "type": "number" } } }
+      }
+    }
+  },
+  "additionalProperties": true
+}
