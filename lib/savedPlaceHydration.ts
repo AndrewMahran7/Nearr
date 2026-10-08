@@ -18,6 +18,7 @@ import type {
   SavedPlaceGoogleDisplayDetails,
 } from '@/services/placesService';
 import type { SavedPlaceWithPlace } from '@/types';
+import { distinctPlacePhotoUris } from './placePhotos';
 
 export type SavedPlaceHydrationTrigger =
   | 'map_detail'
@@ -70,6 +71,7 @@ type MemoryEntry = {
 
 const memory = new Map<string, MemoryEntry>();
 const inFlight = new Map<string, Promise<HydratedSavedPlace>>();
+const progressivePhotoWrites = new Map<string, Promise<void>>();
 
 function memoryKey(userId: string, savedPlaceId: string): string {
   return `${userId}:${savedPlaceId}`;
@@ -95,6 +97,42 @@ function detailsFromSnapshot(
     openingHours: snapshot.openingHours,
     utcOffsetMinutes: snapshot.utcOffsetMinutes,
   };
+}
+
+async function persistPhotoSet(args: {
+  userId: string;
+  savedPlaceId: string;
+  sourceUris: readonly (string | null | undefined)[];
+  persistImage: NonNullable<SavedPlaceHydrationDependencies['persistImage']>;
+  startIndex?: number;
+}): Promise<string[]> {
+  const persisted: string[] = [];
+  const sources = distinctPlacePhotoUris(args.sourceUris);
+  const startIndex = args.startIndex ?? 0;
+  // Deliberately sequential: photo 1 wins priority; photos 2-5 are acquired
+  // progressively by the save/hydration background task rather than bursting.
+  for (let index = 0; index < sources.length; index += 1) {
+    const uri = await args.persistImage({
+      userId: args.userId,
+      savedPlaceId: args.savedPlaceId,
+      sourceUri: sources[index],
+      index: startIndex + index,
+    });
+    if (uri) persisted.push(uri);
+  }
+  return persisted;
+}
+
+async function usableLocalPhotos(
+  snapshot: SavedPlaceSnapshot,
+  isImageUsable: NonNullable<SavedPlaceHydrationDependencies['isImageUsable']>,
+): Promise<string[]> {
+  const candidates = distinctPlacePhotoUris([
+    ...(snapshot.localPhotoUris ?? []),
+    snapshot.localImageUri,
+  ]);
+  const checks = await Promise.all(candidates.map(async (uri) => ({ uri, usable: await isImageUsable(uri) })));
+  return checks.filter((entry) => entry.usable).map((entry) => entry.uri);
 }
 
 function eventBase(saved: SavedPlaceWithPlace, trigger: SavedPlaceHydrationTrigger) {
@@ -150,9 +188,8 @@ export async function hydrateSavedPlace(
   const googlePlaceId = args.saved.place.google_place_id?.trim() || null;
   const cached = memory.get(key);
   if (cached && cached.googlePlaceId === googlePlaceId) {
-    const localImageUri = cached.value.snapshot.localImageUri;
-    const localImageUsable = localImageUri ? await isImageUsable(localImageUri) : false;
-    if (!localImageUri || localImageUsable) {
+    const localPhotos = await usableLocalPhotos(cached.value.snapshot, isImageUsable);
+    if (cached.value.snapshot.localPhotoUris.length === 0 || localPhotos.length > 0) {
       dependencies.record('saved_place_snapshot_hit', {
         ...eventBase(args.saved, trigger),
         storage: 'memory',
@@ -166,7 +203,7 @@ export async function hydrateSavedPlace(
         details: detailsFromSnapshot(
           args.saved,
           cached.value.snapshot,
-          localImageUri ? [localImageUri] : [],
+          localPhotos,
         ),
       };
     }
@@ -186,11 +223,9 @@ export async function hydrateSavedPlace(
       requireProviderHydration: true,
     });
     if (local.status === 'hit') {
-      const localImageUsable = local.snapshot.localImageUri
-        ? await isImageUsable(local.snapshot.localImageUri)
-        : false;
-      if (localImageUsable && local.snapshot.localImageUri) {
-        const details = detailsFromSnapshot(args.saved, local.snapshot, [local.snapshot.localImageUri]);
+      const localPhotos = await usableLocalPhotos(local.snapshot, isImageUsable);
+      if (localPhotos.length > 0) {
+        const details = detailsFromSnapshot(args.saved, local.snapshot, localPhotos);
         const value: HydratedSavedPlace = { details, source: 'snapshot', snapshot: local.snapshot };
         memory.set(key, { googlePlaceId, value });
         dependencies.record('saved_place_snapshot_hit', {
@@ -206,17 +241,18 @@ export async function hydrateSavedPlace(
       }
       const knownImageUri = args.knownImageUri?.trim() || null;
       if (knownImageUri) {
-        const persistedImageUri = await persistImage({
-          userId: args.userId,
-          savedPlaceId: args.saved.id,
-          sourceUri: knownImageUri,
+        const localPhotoUris = await persistPhotoSet({
+          userId: args.userId, savedPlaceId: args.saved.id,
+          sourceUris: [knownImageUri], persistImage,
         });
+        const persistedImageUri = localPhotoUris[0] ?? null;
         const snapshot = buildSavedPlaceSnapshot({
           userId: args.userId,
           saved: args.saved,
           openingHours: local.snapshot.openingHours,
           utcOffsetMinutes: local.snapshot.utcOffsetMinutes,
           localImageUri: persistedImageUri,
+          localPhotoUris,
           visualRecoveryStatus: persistedImageUri ? 'available' : 'unavailable',
           providerHydrationComplete: true,
           source: 'durable_fallback',
@@ -249,15 +285,16 @@ export async function hydrateSavedPlace(
 
     const knownImageUri = args.knownImageUri?.trim() || null;
     if (knownImageUri) {
-      const persistedImageUri = await persistImage({
-        userId: args.userId,
-        savedPlaceId: args.saved.id,
-        sourceUri: knownImageUri,
+      const localPhotoUris = await persistPhotoSet({
+        userId: args.userId, savedPlaceId: args.saved.id,
+        sourceUris: [knownImageUri], persistImage,
       });
+      const persistedImageUri = localPhotoUris[0] ?? null;
       const snapshot = buildSavedPlaceSnapshot({
         userId: args.userId,
         saved: args.saved,
         localImageUri: persistedImageUri,
+        localPhotoUris,
         visualRecoveryStatus: persistedImageUri ? 'available' : 'unavailable',
         providerHydrationComplete: true,
         source: 'durable_fallback',
@@ -284,17 +321,20 @@ export async function hydrateSavedPlace(
       });
       try {
         const google = await dependencies.fetchGoogle(googlePlaceId);
-        const localImageUri = await persistImage({
+        const localPhotoUris = await persistPhotoSet({
           userId: args.userId,
           savedPlaceId: args.saved.id,
-          sourceUri: google.photoUrls[0],
+          sourceUris: google.photoUrls,
+          persistImage,
         });
+        const localImageUri = localPhotoUris[0] ?? null;
         const snapshot = buildSavedPlaceSnapshot({
           userId: args.userId,
           saved: args.saved,
           openingHours: google.openingHours,
           utcOffsetMinutes: google.utcOffsetMinutes,
           localImageUri,
+          localPhotoUris,
           visualRecoveryStatus: localImageUri ? 'available' : 'unavailable',
           providerHydrationComplete: true,
           source: 'google_fallback',
@@ -315,7 +355,7 @@ export async function hydrateSavedPlace(
           details: detailsFromSnapshot(
             args.saved,
             snapshot,
-            localImageUri ? [localImageUri, ...google.photoUrls.slice(1)] : google.photoUrls,
+            localPhotoUris.length ? localPhotoUris : google.photoUrls,
           ),
           source: 'google_fallback',
           snapshot,
@@ -380,19 +420,22 @@ export async function persistSavedPlaceSnapshotAfterSave(
   const prior = existing.status === 'hit' && existing.snapshot.providerHydrationComplete
     ? existing.snapshot
     : null;
-  const priorLocalImageUri = prior?.localImageUri && await isImageUsable(prior.localImageUri)
-    ? prior.localImageUri
-    : null;
-  const availableImageUri = args.candidate.photoUrls?.find((uri) => !!uri?.trim())
-    ?? args.candidate.photoUrl
-    ?? (args.candidate as PlaceCandidate & { sourceFrameUrl?: string | null }).sourceFrameUrl
-    ?? alreadyRich?.photoUrls.find((uri) => !!uri?.trim())
-    ?? null;
-  const localImageUri = priorLocalImageUri ?? await persistImage({
-    userId: args.userId,
-    savedPlaceId: args.saved.id,
-    sourceUri: availableImageUri,
-  });
+  const priorLocalPhotoUris = prior ? await usableLocalPhotos(prior, isImageUsable) : [];
+  const availablePhotoUris = distinctPlacePhotoUris([
+    ...(args.candidate.photoUrls ?? []),
+    args.candidate.photoUrl,
+    (args.candidate as PlaceCandidate & { sourceFrameUrl?: string | null }).sourceFrameUrl,
+    ...(alreadyRich?.photoUrls ?? []),
+  ]);
+  const localPhotoUris = priorLocalPhotoUris.length
+    ? priorLocalPhotoUris
+    : await persistPhotoSet({
+        userId: args.userId,
+        savedPlaceId: args.saved.id,
+        sourceUris: availablePhotoUris.slice(0, 1),
+        persistImage,
+      });
+  const localImageUri = localPhotoUris[0] ?? null;
   const snapshot = buildSavedPlaceSnapshot({
     userId: args.userId,
     saved: args.saved,
@@ -400,9 +443,10 @@ export async function persistSavedPlaceSnapshotAfterSave(
     openingHours: alreadyRich?.openingHours ?? prior?.openingHours ?? null,
     utcOffsetMinutes: alreadyRich?.utcOffsetMinutes ?? prior?.utcOffsetMinutes ?? null,
     localImageUri,
+    localPhotoUris,
     visualRecoveryStatus: localImageUri
       ? 'available'
-      : availableImageUri ? 'unavailable' : googlePlaceId ? 'not_attempted' : 'unavailable',
+      : availablePhotoUris.length ? 'unavailable' : googlePlaceId ? 'not_attempted' : 'unavailable',
     // Name/address/coordinates/category from the durable save payload satisfy
     // the detail UI. Hours are an optional enhancement, not a reason to turn
     // the first post-save open into a Google request.
@@ -410,7 +454,54 @@ export async function persistSavedPlaceSnapshotAfterSave(
     source: 'save_payload',
   });
   memory.delete(memoryKey(args.userId, args.saved.id));
-  return recordWrite(snapshot, args.trigger ?? 'save', dependencies as SavedPlaceHydrationDependencies);
+  const primaryWritten = await recordWrite(
+    snapshot,
+    args.trigger ?? 'save',
+    dependencies as SavedPlaceHydrationDependencies,
+  );
+  const taskKey = memoryKey(args.userId, args.saved.id);
+  if (
+    !priorLocalPhotoUris.length
+    && availablePhotoUris.length > 1
+    && !progressivePhotoWrites.has(taskKey)
+  ) {
+    const task = (async () => {
+      const remaining = await persistPhotoSet({
+        userId: args.userId,
+        savedPlaceId: args.saved.id,
+        sourceUris: availablePhotoUris.slice(1),
+        persistImage,
+        startIndex: 1,
+      });
+      if (remaining.length === 0) return;
+      const current = await dependencies.readSnapshot({
+        userId: args.userId,
+        savedPlaceId: args.saved.id,
+        googlePlaceId,
+      });
+      const base = current.status === 'hit' ? current.snapshot : snapshot;
+      const completedPhotos = distinctPlacePhotoUris([...localPhotoUris, ...remaining]);
+      await recordWrite({
+        ...base,
+        localImageUri: completedPhotos[0] ?? null,
+        localPhotoUris: completedPhotos,
+        visualRecoveryStatus: completedPhotos.length ? 'available' : base.visualRecoveryStatus,
+        capturedAt: new Date().toISOString(),
+      }, args.trigger ?? 'save', dependencies as SavedPlaceHydrationDependencies);
+      memory.delete(taskKey);
+    })().catch((error) => {
+      dependencies.record('saved_place_snapshot_write_failed', {
+        saved_place_id: args.saved.id,
+        trigger: args.trigger ?? 'save',
+        source: 'save_payload',
+        progressive_photo_error: error instanceof Error ? error.name : 'unknown',
+      });
+    }).finally(() => {
+      if (progressivePhotoWrites.get(taskKey) === task) progressivePhotoWrites.delete(taskKey);
+    });
+    progressivePhotoWrites.set(taskKey, task);
+  }
+  return primaryWritten;
 }
 
 export async function invalidateSavedPlaceHydration(
@@ -438,4 +529,9 @@ export function clearSavedPlaceHydrationMemoryForUser(userId: string | null | un
 export function resetSavedPlaceHydrationMemoryForTests(): void {
   memory.clear();
   inFlight.clear();
+}
+
+/** Test seam for deterministic proof that photos 2-5 complete off the save path. */
+export async function waitForProgressiveSavedPlacePhotosForTests(): Promise<void> {
+  await Promise.all([...progressivePhotoWrites.values()]);
 }

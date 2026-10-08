@@ -123,6 +123,9 @@ import type { NearbyMapExplorerPayload } from '@/lib/nearbyMapExplorer';
 import type { PlaceCandidate, PlaceRichDetails } from '@/services/placesService';
 import type { RadiusUnit, SavedPlaceWithPlace } from '@/types';
 import { logDebug } from '@/lib/logger';
+import { placeCapabilities } from '@/lib/placeCapabilities';
+import { offlineFixtureByPlaceId } from '@/onboarding/fixtures/offlineOnboardingFixtures';
+import { offlineOnboardingMedia } from '@/onboarding/assets/offlineOnboardingAssets';
 
 /**
  * Category glyphs for the hero's context line. Ionicons only (already bundled
@@ -241,6 +244,15 @@ export function SelectedPlaceDetails({
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const { session } = useAuth();
   const { state: onboardingState } = useOnboardingV2();
+  const capabilities = useMemo(() => placeCapabilities(saved), [saved]);
+  const tutorialPhotoUris = useMemo(() => {
+    const fixture = offlineFixtureByPlaceId(saved.place.id);
+    if (!fixture) return [];
+    return offlineOnboardingMedia(fixture.assetKey).placePhotoAssets
+      .map((asset) => Image.resolveAssetSource(asset).uri)
+      .filter(Boolean)
+      .slice(0, 5);
+  }, [saved.place.id]);
   const onboardingTourStep = onboardingState?.stage === 'place_tour' &&
     onboardingState.tutorialSave?.savedPlaceId === saved.id
     ? onboardingState.placeTourStep
@@ -405,6 +417,25 @@ export function SelectedPlaceDetails({
   useEffect(() => {
     let canceled = false;
     setFailedPhotoUrls({});
+    if (tutorialPhotoUris.length) {
+      setRichDetails({
+        googlePlaceId: '',
+        name: saved.place.name,
+        formattedAddress: saved.place.formatted_address,
+        latitude: saved.place.latitude,
+        longitude: saved.place.longitude,
+        category: savedPlaceCategory(saved),
+        googleMapsUrl: null,
+        websiteUrl: null,
+        formattedPhoneNumber: null,
+        internationalPhoneNumber: null,
+        photoUrls: tutorialPhotoUris,
+        openingHours: null,
+        utcOffsetMinutes: null,
+      });
+      setDetailsLoading(false);
+      return () => { canceled = true; };
+    }
     const userId = session?.user?.id ?? null;
     if (!userId) {
       setRichDetails(null);
@@ -430,7 +461,7 @@ export function SelectedPlaceDetails({
     // Re-run only for a new saved/provider identity. Unrelated cache updates
     // while the sheet is open are not additional "opens" for cost telemetry.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [googlePlaceId, saved.id, session?.user?.id]);
+  }, [googlePlaceId, saved.id, session?.user?.id, tutorialPhotoUris]);
 
   const radiusHelperText = useMemo(() => {
     if (mode === 'default') {
@@ -451,6 +482,7 @@ export function SelectedPlaceDetails({
   }, [milesText, minutesText, mode]);
 
   const dirty = useMemo(() => {
+    if (!capabilities.canEdit) return false;
     if (notifyOn !== saved.notifications_enabled) return true;
     if (mode === 'default') {
       return saved.radius_unit !== null || saved.radius_value !== null;
@@ -463,7 +495,7 @@ export function SelectedPlaceDetails({
     const parsed = Number.parseInt(minutesText, 10);
     if (!Number.isFinite(parsed) || parsed <= 0) return true;
     return saved.radius_unit !== 'minutes' || saved.radius_value !== parsed;
-  }, [milesText, minutesText, mode, notifyOn, saved]);
+  }, [capabilities.canEdit, milesText, minutesText, mode, notifyOn, saved]);
 
   // Only offer the "open original" affordance when a non-empty source URL is
   // actually stored (share/paste flows). Manual saves have none → no button.
@@ -513,9 +545,10 @@ export function SelectedPlaceDetails({
   );
 
   const photoUrls = useMemo(() => {
+    if (tutorialPhotoUris.length) return tutorialPhotoUris.filter((url) => !failedPhotoUrls[url]);
     if (!richDetails?.photoUrls?.length) return [];
     return richDetails.photoUrls.filter((url) => !failedPhotoUrls[url]).slice(0, 5);
-  }, [failedPhotoUrls, richDetails?.photoUrls]);
+  }, [failedPhotoUrls, richDetails?.photoUrls, tutorialPhotoUris]);
 
   const photoRolodexItems = useMemo(() => photoUrls.map((uri, index) => ({
     key: uri,
@@ -847,6 +880,14 @@ export function SelectedPlaceDetails({
   // Sharing is about the canonical place. The original post stays available
   // through the separate source action above, never as the primary payload.
   async function sharePlace() {
+    if (!capabilities.isServerAddressable) {
+      const address = saved.place.formatted_address?.trim();
+      await Share.share({
+        title: saved.place.name,
+        message: [saved.place.name, address].filter(Boolean).join('\n'),
+      });
+      return;
+    }
     let publicPlaceId = saved.place.id;
     let referralId: string | null = null;
     try {
@@ -1066,7 +1107,7 @@ export function SelectedPlaceDetails({
           styles={styles}
           tint={colors.accent}
         />
-        {sourceUrl && sourceAttribution ? (
+        {capabilities.canWatchSource && sourceUrl && sourceAttribution ? (
           <Pressable
             onPress={() => {
               void openSource();
@@ -1098,8 +1139,8 @@ export function SelectedPlaceDetails({
           tint={colors.text}
         />
 
-        <View style={styles.actionDivider} />
-        {reminderCluster}
+        {capabilities.canSetReminder ? <View style={styles.actionDivider} /> : null}
+        {capabilities.canSetReminder ? reminderCluster : null}
       </View>
 
       {onboardingTourStep && ['source', 'directions', 'close'].includes(onboardingTourStep) ? (
@@ -1113,7 +1154,7 @@ export function SelectedPlaceDetails({
 
       {/* Reminder distance settings — unchanged behaviour, just no longer a
           permanently-open card competing with the place itself. */}
-      {notifyOn && reminderSettingsExpanded ? (
+      {capabilities.canSetReminder && notifyOn && reminderSettingsExpanded ? (
         <View style={styles.reminderSettings}>
           <View style={styles.radiusGroup}>
             <RadiusOption label="Auto" active={mode === 'default'} onPress={() => setMode('default')} />
@@ -1298,7 +1339,7 @@ export function SelectedPlaceDetails({
         <View style={styles.savedBecauseHeader}>
           <Feather name="bookmark" size={15} color={colors.accent} />
           <Text style={styles.savedBecauseTitle}>{savedBecauseLabel}</Text>
-          {hasReason ? (
+          {hasReason && capabilities.canEdit ? (
             <Pressable
               onPress={() => beginNoteEdit(whySaved.seedFromSourceNote)}
               accessibilityRole="button"
@@ -1338,7 +1379,7 @@ export function SelectedPlaceDetails({
           <View style={styles.savedBecauseCopy}>
             {hasReason ? (
               <Text style={styles.reasonText}>{`“${whySaved.text}”`}</Text>
-            ) : (
+            ) : !hasReason && capabilities.canEdit ? (
               // No note and none was extracted. Nothing is invented; the offer
               // to write one is a quiet link, not the headline.
               <Pressable
@@ -1350,7 +1391,7 @@ export function SelectedPlaceDetails({
               >
                 <Text style={styles.addNoteLink}>Add a note</Text>
               </Pressable>
-            )}
+            ) : null}
             {/* The platform is already in the heading when there is no reason,
                 so this line would just repeat it. */}
             {sourceAttribution && hasReason ? (
@@ -1382,7 +1423,7 @@ export function SelectedPlaceDetails({
       {/* Have I gone yet? A saved place can be BOTH saved and visited —
           answering this never removes the place from the map, and the answer
           persists, so reopening never asks again as if nothing happened. */}
-      <View style={styles.visitCard}>
+      {capabilities.canMarkVisited ? <View style={styles.visitCard}>
         <View style={styles.visitIcon}>
           <Feather
             name={visited.visited ? 'check-circle' : 'clipboard'}
@@ -1454,7 +1495,7 @@ export function SelectedPlaceDetails({
             </Pressable>
           </View>
         )}
-      </View>
+      </View> : null}
 
       {/* The user's OWN saves around this one — never Google discovery, and
           the same selection semantics as a marker tap (exact saved_places.id).
@@ -1570,17 +1611,17 @@ export function SelectedPlaceDetails({
 
       {/* Management actions stay reachable but never compete with the place
           or with Directions. */}
-      <View style={styles.manageRow}>
-        <Pressable
+      {capabilities.canReportWrongPlace || capabilities.canDelete ? <View style={styles.manageRow}>
+        {capabilities.canReportWrongPlace ? <Pressable
           accessibilityRole="button"
           accessibilityLabel="Wrong place? Correct this saved place"
           onPress={() => setWrongPlaceOpen(true)}
           style={({ pressed }) => [styles.manageAction, pressed && styles.pressed]}
         >
           <Text style={styles.manageText}>Wrong place?</Text>
-        </Pressable>
-        <View style={styles.manageDivider} />
-        <Pressable
+        </Pressable> : null}
+        {capabilities.canReportWrongPlace && capabilities.canDelete ? <View style={styles.manageDivider} /> : null}
+        {capabilities.canDelete ? <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Remove ${saved.place.name} from saved places`}
           onPress={confirmDelete}
@@ -1592,10 +1633,10 @@ export function SelectedPlaceDetails({
           ) : (
             <Text style={styles.manageText}>Remove</Text>
           )}
-        </Pressable>
-      </View>
+        </Pressable> : null}
+      </View> : null}
 
-      <WrongPlaceSheet
+      {capabilities.canReportWrongPlace ? <WrongPlaceSheet
         visible={wrongPlaceOpen}
         saved={saved}
         actingUserId={session?.user?.id ?? null}
@@ -1611,7 +1652,7 @@ export function SelectedPlaceDetails({
           if (onRemoved) onRemoved(saved.id);
           else onRequestDismiss();
         }}
-      />
+      /> : null}
       <NoteEditorModal
         visible={noteEditor.open}
         initialValue={noteEditor.draft}

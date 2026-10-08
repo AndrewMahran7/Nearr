@@ -52,6 +52,10 @@ async function run() {
     savedPlaceImageUri('file://documents/', 'owner-a', 'saved-a'),
     'file://documents/nearr/saved-place-images/owner-a/saved-a/hero.jpg',
   );
+  assert.equal(
+    savedPlaceImageUri('file://documents/', 'owner-a', 'saved-a', 4),
+    'file://documents/nearr/saved-place-images/owner-a/saved-a/photo-5.jpg',
+  );
   const [shown, one, coalesced] = await Promise.all([
     acquirePlacePresentationImage('https://photo.test/a', deps),
     persistSavedPlaceImage({ userId: 'owner-a', savedPlaceId: 'saved-a', sourceUri: 'https://photo.test/a' }, deps),
@@ -61,6 +65,15 @@ async function run() {
   assert.equal(one, coalesced);
   assert.equal(downloads, 1, 'active display and save-time persistence share one download');
   assert.equal(await isUsableSavedPlaceImage(one, deps), true);
+
+  const fifth = await persistSavedPlaceImage({
+    userId: 'owner-a',
+    savedPlaceId: 'saved-a',
+    sourceUri: 'https://photo.test/e',
+    index: 4,
+  }, deps);
+  assert.equal(fifth, 'file://documents/nearr/saved-place-images/owner-a/saved-a/photo-5.jpg');
+  assert.equal(await isUsableSavedPlaceImage(fifth, deps), true);
 
   files.set('file://incoming/source.jpg', 128);
   const copiesBeforeLocal = copies;

@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { canonicalContentIdentity } from '@/lib/shareAgent/contentIdentity';
 import { trackEvent } from '@/lib/analytics';
 import type { SourceType } from '@/types';
+import { isRealSavedPlaceId } from '@/lib/savedPlaceIdentity';
 
 /** Attach public source provenance without ever turning a successful save into
  * a failure. The database RPC owns race-safe dedupe and owner validation. */
@@ -16,6 +17,7 @@ export async function attachSavedPlaceSource(args: {
   aiNote?: string | null;
   thumbnailUrl?: string | null;
 }): Promise<'attached' | 'deduped' | 'skipped'> {
+  if (!isRealSavedPlaceId(args.savedPlaceId)) return 'skipped';
   const sourceUrl = args.sourceUrl?.trim();
   if (!sourceUrl || !args.sourceType || args.sourceType === 'manual') return 'skipped';
   const identity = canonicalContentIdentity(sourceUrl);

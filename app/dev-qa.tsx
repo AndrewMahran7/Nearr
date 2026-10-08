@@ -11,6 +11,10 @@ import {
   resetOnboardingV2WithFreshAnonymousUserForDevelopment,
 } from '@/lib/onboardingV2DevReset';
 import { useTheme } from '@/lib/theme';
+import { PHASE2_PREVIEW_FIXTURES } from '@/lib/phase2Preview';
+import { VAYRIN_CANDIDATE_FIXTURES } from '@/lib/vayrinCandidateFixtures';
+import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
+import { getSavedPlacesCacheSnapshot } from '@/hooks/useSavedPlaces';
 
 export default function DevelopmentQaScreen() {
   const router = useRouter();
@@ -45,6 +49,22 @@ export default function DevelopmentQaScreen() {
     );
   }
 
+  function openMapGroupPreview() {
+    const savedPlaceIds = (getSavedPlacesCacheSnapshot() ?? [])
+      .slice(0, 8)
+      .map((place) => place.id);
+    if (savedPlaceIds.length < 2) {
+      Alert.alert('Add two saved places first', 'This preview uses the current local cache and never writes data.');
+      return;
+    }
+    const request = createMapGroupFocusRequest({
+      savedPlaceIds,
+      source: 'development_preview',
+      failedCount: 2,
+    });
+    if (request) router.push({ pathname: '/(tabs)/map', params: { mapGroupId: request.id } });
+  }
+
   return (
     <Screen>
       <View style={styles.header}>
@@ -63,6 +83,28 @@ export default function DevelopmentQaScreen() {
         <Text style={[typography.bodyStrong, { color: colors.text }]}>Fresh anonymous QA user</Text>
         <Text style={[typography.caption, styles.copy, { color: colors.textSecondary }]}>Signs out only this device, clears local onboarding/cache state, and immediately creates a different anonymous identity. A permanent account and all prior saves/jobs remain untouched.</Text>
         <Button title="Create fresh anonymous QA user" loading={busy === 'fresh_anonymous'} disabled={!!busy} onPress={() => void run('fresh_anonymous')} />
+      </Card>
+
+      <Card style={styles.card}>
+        <Text style={[typography.bodyStrong, { color: colors.text }]}>Read-only product previews</Text>
+        <Text style={[typography.caption, styles.copy, { color: colors.textSecondary }]}>Fixtures live only on this Development QA surface and do not appear in the normal queue.</Text>
+        {PHASE2_PREVIEW_FIXTURES.map((fixture) => (
+          <Button
+            key={fixture.id}
+            title={fixture.label}
+            variant="secondary"
+            onPress={() => router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: fixture.id } })}
+          />
+        ))}
+        {VAYRIN_CANDIDATE_FIXTURES.map((fixture) => (
+          <Button
+            key={fixture.id}
+            title={fixture.label}
+            variant="secondary"
+            onPress={() => router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: fixture.id } })}
+          />
+        ))}
+        <Button title="Current group map" variant="secondary" onPress={openMapGroupPreview} />
       </Card>
 
       <Text style={[typography.caption, styles.identity, { color: colors.textMuted }]}>Current identity: {user ? `${user.is_anonymous === true ? 'anonymous' : 'permanent'} ${user.id.slice(0, 8)}…` : 'signed out'}</Text>

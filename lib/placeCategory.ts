@@ -364,7 +364,7 @@ export const CATEGORY_BROWSE_SECTIONS = [
 
 export const CATEGORY_FILTER_GROUPS = {
   all: NEARR_CATEGORIES,
-  food: ['restaurant', 'bakery', 'bar', 'brewery', 'winery', 'dessert'] as const,
+  food: ['restaurant', 'cafe', 'bakery', 'bar', 'brewery', 'winery', 'dessert'] as const,
   cafes: ['cafe'] as const,
   hotels: ['hotel', 'resort'] as const,
   outdoors: ['hiking_trail', 'park', 'beach', 'waterfall', 'lake', 'marina', 'island', 'scenic_spot'] as const,

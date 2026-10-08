@@ -13,8 +13,17 @@ export function realSavedPlaceIds(values: readonly unknown[]): string[] {
   return [...new Set(values.map(savedPlaceUuidOrNull).filter((id): id is string => !!id))];
 }
 
+export class SavedPlaceCapabilityError extends Error {
+  readonly code = 'local_saved_place_not_server_addressable' as const;
+
+  constructor(readonly operation: string) {
+    super('This tutorial place is stored only on this device, so that change is not available.');
+    this.name = 'SavedPlaceCapabilityError';
+  }
+}
+
 export function requireRealSavedPlaceId(value: unknown, operation: string): string {
   const id = savedPlaceUuidOrNull(value);
-  if (!id) throw new Error(`local_saved_place_not_server_addressable:${operation}`);
+  if (!id) throw new SavedPlaceCapabilityError(operation);
   return id;
 }

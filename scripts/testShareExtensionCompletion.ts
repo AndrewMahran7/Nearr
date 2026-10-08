@@ -40,7 +40,7 @@ async function main() {
   const accepted = completionView({ kind: 'accepted', duplicate: false });
   assert.deepEqual(accepted, {
     title: 'Sent to Nearr',
-    body: "We'll find the place and add it to your map.",
+    body: "We'll add it to your map in the background. You can close this.",
     primary: 'Done',
     secondary: 'Open Nearr',
     showsConfirmationMark: true,

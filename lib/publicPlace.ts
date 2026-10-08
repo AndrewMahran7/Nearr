@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 
 import { supabase } from '@/lib/supabase';
+import { requireRealSavedPlaceId } from '@/lib/savedPlaceIdentity';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REF_RE = /^r_[A-Za-z0-9_-]{20,64}$/;
@@ -85,7 +86,7 @@ export async function createPublicPlaceShare(
   placeId: string,
   sourceSurface = 'place_detail',
 ): Promise<PublicPlaceShareResult> {
-  if (!validPublicPlaceId(placeId)) throw new Error('invalid_public_place_id');
+  placeId = requireRealSavedPlaceId(placeId, 'create_public_place_share');
   const { data, error } = await supabase.rpc('create_public_place_share', {
     p_place_id: placeId,
     p_source_surface: sourceSurface,

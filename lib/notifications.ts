@@ -48,7 +48,7 @@
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { trackEvent } from './analytics';
@@ -70,6 +70,7 @@ import {
 } from './placeNotificationDedupe';
 import { supabase } from './supabase';
 import { distanceMeters, type LatLng } from './geo';
+import { shouldPresentCurrentForegroundNotification } from './notificationForegroundPolicy';
 import {
   readActiveReminderSnapshot,
   readReminderSnapshot,
@@ -375,13 +376,22 @@ export const NOTIFY_CATEGORY_FINAL = 'NEARR_NEARBY_FINAL';
 logDebug('NOTIFICATIONS_INIT', 'setting notification handler');
 try {
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
+    handleNotification: async (notification) => {
+      const shouldPresent = shouldPresentCurrentForegroundNotification(
+        AppState.currentState,
+        notification.request.content.data,
+      );
+      if (!shouldPresent) {
+        logDebug('notifications', 'foreground result suppressed for currently viewed share job');
+      }
+      return {
+        shouldShowAlert: shouldPresent,
+        shouldPlaySound: shouldPresent,
+        shouldSetBadge: false,
+        shouldShowBanner: shouldPresent,
+        shouldShowList: shouldPresent,
+      };
+    },
   });
 } catch (e) {
   console.error('[NOTIFICATIONS_INIT] setNotificationHandler failed (non-fatal)', e);

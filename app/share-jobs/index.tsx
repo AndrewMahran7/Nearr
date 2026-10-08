@@ -36,10 +36,7 @@ import {
   savedPlaceRemovalA11yLabel,
   savedPlaceRemovalCopy,
 } from '@/lib/savedPlaceRemoval';
-import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import { recordOnboardingV2RouteDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
-import { PHASE2_PREVIEW_FIXTURES } from '@/lib/phase2Preview';
-import { VAYRIN_CANDIDATE_FIXTURES } from '@/lib/vayrinCandidateFixtures';
 import {
   QUEUE_EMPTY_COPY,
   activeQueueCount,
@@ -91,7 +88,12 @@ import { isLikelyOfflineError } from '@/lib/savedPlacesCache';
 import {
   isPersistableShareJobCandidate,
   saveResolvedQueueCandidate,
+  shareJobCandidateToPlaceCandidate,
 } from '@/services/shareJobCandidateSave';
+import {
+  hydrateSavedPlace,
+  persistSavedPlaceSnapshotAfterSave,
+} from '@/lib/savedPlaceHydration';
 import {
   archiveActiveQueue,
   archiveQueueJobs,
@@ -105,6 +107,46 @@ import {
 // safe escape hatch instead of an eternal spinner — WITHOUT pretending the job
 // is progressing.
 const STALE_PROCESSING_MS = RECOGNITION_LONG_RUNNING_MS;
+
+function RecentAutoSaveImage({ item }: { item: RecentAutoSave }) {
+  const knownPhotos = useMemo(() => item.candidate?.photoUrls?.length
+    ? item.candidate.photoUrls
+    : item.candidate?.photoUrl ? [item.candidate.photoUrl] : [], [item.candidate]);
+  const [localPhoto, setLocalPhoto] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (item.candidate && isPersistableShareJobCandidate(item.candidate)) {
+        await persistSavedPlaceSnapshotAfterSave({
+          userId: item.savedPlace.user_id,
+          saved: item.savedPlace,
+          candidate: shareJobCandidateToPlaceCandidate(item.candidate),
+        });
+      }
+      const hydrated = await hydrateSavedPlace({
+        userId: item.savedPlace.user_id,
+        saved: item.savedPlace,
+        trigger: 'saved_library',
+        knownImageUri: knownPhotos[0] ?? item.candidate?.sourceFrameUrl ?? null,
+      });
+      if (!cancelled) setLocalPhoto(hydrated.details.photoUrls[0] ?? null);
+    };
+    void load().catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [item.candidate, item.savedPlace, knownPhotos]);
+
+  return (
+    <PlaceImage
+      googlePlaceId={item.savedPlace.place.google_place_id}
+      hydrationPolicy="saved_snapshot"
+      initialPhotoUrls={localPhoto ? [localPhoto] : knownPhotos}
+      fallbackSourceUri={item.candidate?.sourceFrameUrl}
+      size={64}
+      borderRadius={12}
+    />
+  );
+}
 
 function isStalledProcessing(job: ShareJob): boolean {
   if (job.status !== 'queued' && job.status !== 'processing_metadata') return false;
@@ -552,7 +594,7 @@ function ShareJobsQueueScreen() {
         accessibilityRole="button"
         accessibilityLabel={`Open ${item.savedPlace.place.name}`}
       >
-        <PlaceImage googlePlaceId={item.savedPlace.place.google_place_id} allowGoogleLookup={false} size={64} borderRadius={12} />
+        <RecentAutoSaveImage item={item} />
         <View style={styles.rowMain}>
           <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={2}>{item.savedPlace.place.name}</Text>
           <View style={styles.autoSaveMeta}>
@@ -636,23 +678,6 @@ function ShareJobsQueueScreen() {
       default:
         break; // already on the queue
     }
-  }
-
-  function openMapGroupPreview() {
-    const savedPlaceIds = (getSavedPlacesCacheSnapshot() ?? [])
-      .slice(0, 8)
-      .map((place) => place.id);
-    if (savedPlaceIds.length < 2) {
-      Alert.alert('Add two saved places first', 'The group map preview uses your current local cache and never writes data.');
-      return;
-    }
-    const request = createMapGroupFocusRequest({
-      savedPlaceIds,
-      source: 'development_preview',
-      failedCount: 2,
-    });
-    if (!request) return;
-    router.push({ pathname: '/(tabs)/map', params: { mapGroupId: request.id } });
   }
 
   function renderRow(job: ShareJob) {
@@ -872,37 +897,6 @@ function ShareJobsQueueScreen() {
             </View>
           </View>
         ) : null}
-        {__DEV__ ? (
-          <View style={styles.previewSection}>
-            <Text style={[typography.label, styles.sectionTitle]}>Development previews</Text>
-            <Text style={[typography.caption, styles.previewHelp]}>Read-only fixtures. No save mutations run.</Text>
-            <View style={styles.previewActions}>
-              {PHASE2_PREVIEW_FIXTURES.map((fixture) => (
-                <Pressable
-                  key={fixture.id}
-                  onPress={() => router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: fixture.id } })}
-                  style={styles.previewButton}
-                >
-                  <Text style={styles.previewButtonText}>{fixture.label}</Text>
-                </Pressable>
-              ))}
-              {VAYRIN_CANDIDATE_FIXTURES.map((fixture) => (
-                <Pressable
-                  key={fixture.id}
-                  onPress={() => router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: fixture.id } })}
-                  style={styles.previewButton}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${fixture.label}. ${fixture.description}`}
-                >
-                  <Text style={styles.previewButtonText}>{fixture.label}</Text>
-                </Pressable>
-              ))}
-              <Pressable onPress={openMapGroupPreview} style={styles.previewButton}>
-                <Text style={styles.previewButtonText}>Current group map</Text>
-              </Pressable>
-            </View>
-          </View>
-        ) : null}
       </ScrollView>
     </ShareJobsSheet>
   );
@@ -915,19 +909,6 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     stateWrap: { paddingTop: Spacing.xl, paddingHorizontal: Spacing.lg },
     intro: { color: colors.textSecondary, lineHeight: 22, marginBottom: Spacing.xl },
     section: { marginBottom: Spacing.xl },
-    previewSection: { marginTop: Spacing.lg, marginBottom: Spacing.xl },
-    previewHelp: { color: colors.textSecondary, marginTop: 4, marginBottom: Spacing.md },
-    previewActions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-    previewButton: {
-      minHeight: 38,
-      justifyContent: 'center',
-      paddingHorizontal: Spacing.md,
-      borderRadius: Radius.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
-    },
-    previewButtonText: { color: colors.textSecondary, fontSize: 13, fontWeight: '600' },
     sectionHeader: {
       flexDirection: 'row',
       alignItems: 'center',

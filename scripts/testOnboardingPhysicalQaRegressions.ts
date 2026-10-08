@@ -171,7 +171,12 @@ test('established-account sign-in skips transfer preparation', () => {
   assert.equal(requiresAnonymousTransferPreparation('existing_account_sign_in'), false);
 });
 test('synthetic id is rejected at real saved-place mutation boundary', () => {
-  assert.throws(() => requireRealSavedPlaceId(syntheticId, 'test'), /local_saved_place_not_server_addressable/);
+  assert.throws(
+    () => requireRealSavedPlaceId(syntheticId, 'test'),
+    (error: unknown) => error instanceof Error
+      && (error as Error & { code?: string }).code === 'local_saved_place_not_server_addressable'
+      && /stored only on this device/i.test(error.message),
+  );
 });
 test('scripted id can never become a UUID parameter', () => {
   assert.equal(savedPlaceUuidOrNull(syntheticId), null);

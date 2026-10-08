@@ -18,6 +18,7 @@ import type {
   ShareJobCandidatePayload,
   ShareJobResultCandidate,
 } from '@/lib/shareJobResult';
+import { normalizeResultCandidate } from '@/lib/shareJobResult';
 import type { SavedPlaceWithPlace } from '@/types';
 import type { ShareFailureCategory } from '@/lib/shareFailurePresentation';
 import type { PremiumRequestState } from '@/lib/premiumRequestMonetization';
@@ -105,6 +106,7 @@ export type RecentAutoSave = {
   finalizedAt: string;
   confidenceScore: number | null;
   savedPlace: SavedPlaceWithPlace;
+  candidate: ShareJobCandidate | null;
 };
 
 export type ShareJobSoftAlternative = {
@@ -320,7 +322,7 @@ export async function listShareJobs(limit = 100): Promise<ShareJob[]> {
 }
 
 const RECENT_AUTO_SAVE_COLUMNS =
-  'id, share_job_id, saved_place_id, finalized_at, confidence_score, share_job:share_jobs!inner(queue_archived_at), saved_place:saved_places!share_job_place_results_saved_place_id_fkey(*, place:places(*))';
+  'id, share_job_id, saved_place_id, finalized_at, confidence_score, candidate_snapshot, share_job:share_jobs!inner(queue_archived_at), saved_place:saved_places!share_job_place_results_saved_place_id_fkey(*, place:places(*))';
 
 function normalizeRecentAutoSave(row: any): RecentAutoSave | null {
   const savedPlace = Array.isArray(row?.saved_place) ? row.saved_place[0] : row?.saved_place;
@@ -332,6 +334,7 @@ function normalizeRecentAutoSave(row: any): RecentAutoSave | null {
     finalizedAt: row.finalized_at,
     confidenceScore: typeof row.confidence_score === 'number' ? row.confidence_score : null,
     savedPlace: savedPlace as SavedPlaceWithPlace,
+    candidate: normalizeResultCandidate(row.candidate_snapshot),
   };
 }
 

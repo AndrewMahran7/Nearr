@@ -88,7 +88,7 @@ const CATEGORY_CONTENT: Record<OfflineOnboardingCategory, {
       address: '1848 VT-30, Dorset, VT 05251',
       latitude: 43.2359604,
       longitude: -73.0834756,
-      category: 'outdoors',
+      category: 'scenic_spot',
       typeLabel: 'Swimming hole',
       aiNote: 'A scenic former marble quarry known for clear water and a relaxed outdoor stop.',
       distanceLabel: 'Saved for later',
@@ -106,7 +106,7 @@ const CATEGORY_CONTENT: Record<OfflineOnboardingCategory, {
       address: '1411 Pacific Ave, Santa Cruz, CA 95060',
       latitude: 36.9750378,
       longitude: -122.0266371,
-      category: 'food',
+      category: 'restaurant',
       typeLabel: 'Breakfast restaurant',
       aiNote: 'A casual downtown breakfast stop known for egg sandwiches, brunch plates, and coffee.',
       distanceLabel: 'Saved for brunch',
@@ -124,7 +124,7 @@ const CATEGORY_CONTENT: Record<OfflineOnboardingCategory, {
       address: 'Hydra 180 40, Greece',
       latitude: 37.3499,
       longitude: 23.4669,
-      category: 'travel',
+      category: 'attraction',
       typeLabel: 'Historic destination',
       aiNote: 'A car-free island town with stone lanes, harbor views, and easy walking routes through the old center.',
       distanceLabel: 'Saved for your trip',
@@ -221,6 +221,11 @@ export function selectOfflineOnboardingFixture(
 export function offlineFixtureById(id: string | null | undefined): OfflineOnboardingFixture | null {
   if (!id) return null;
   return OFFLINE_ONBOARDING_FIXTURES.find((fixture) => fixture.id === id) ?? null;
+}
+
+export function offlineFixtureByPlaceId(id: string | null | undefined): OfflineOnboardingFixture | null {
+  if (!id) return null;
+  return OFFLINE_ONBOARDING_FIXTURES.find((fixture) => fixture.place.id === id) ?? null;
 }
 
 export function toOnboardingTutorialFixture(

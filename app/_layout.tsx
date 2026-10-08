@@ -1,6 +1,6 @@
 import { Component, useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -71,6 +71,7 @@ import { StartupSurface } from '@/components/StartupSurface';
 import { useStartupWatchdog } from '@/hooks/useStartupWatchdog';
 import { ownerForStartupRoute, resolveStartupPresentation } from '@/lib/startupWatchdogCore';
 import { isOnboardingV2DevelopmentResetAvailable } from '@/lib/onboardingV2DevReset';
+import { setNotificationForegroundPathname } from '@/lib/notificationForegroundPolicy';
 
 logInfo('APP_START', '_layout module loaded');
 
@@ -650,6 +651,7 @@ export default function RootLayout() {
 function RootLayoutContent() {
   const router = useRouter();
   const segments = useSegments();
+  const pathname = usePathname();
   const { colors, resolvedTheme } = useTheme();
   // Terminal-state model for magic-link handling. `idle` before any link,
   // `processing` during the exchange, then a STICKY `succeeded`/`failed` that a
@@ -757,6 +759,11 @@ function RootLayoutContent() {
     setDiagnosticRoute(route);
     recordBreadcrumb('actual_navigation', { route });
   }, [segments]);
+
+  useEffect(() => {
+    setNotificationForegroundPathname(pathname);
+    return () => setNotificationForegroundPathname(null);
+  }, [pathname]);
 
   // Handle deep links (magic-link callback + share-incoming).
   useEffect(() => {

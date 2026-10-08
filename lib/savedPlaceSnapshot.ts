@@ -2,7 +2,7 @@ import type { PlaceOpeningHours } from '@/lib/placeHours';
 import type { SavedPlaceWithPlace } from '@/types';
 import type { PlaceCandidate } from '@/services/placesService';
 
-export const SAVED_PLACE_SNAPSHOT_SCHEMA_VERSION = 2 as const;
+export const SAVED_PLACE_SNAPSHOT_SCHEMA_VERSION = 3 as const;
 
 export type SavedPlaceSnapshotSource =
   | 'save_payload'
@@ -24,6 +24,8 @@ export type SavedPlaceSnapshot = {
   utcOffsetMinutes: number | null;
   /** Account-scoped file URI for the saved place's normal hero/list image. */
   localImageUri: string | null;
+  /** Stable ordered local gallery, capped at the product contract of five. */
+  localPhotoUris: string[];
   /**
    * `not_attempted` permits one bounded recovery. `unavailable` prevents an
    * every-open retry loop after a completed no-photo or failed-write attempt.
@@ -119,6 +121,9 @@ export function isSavedPlaceSnapshot(value: unknown): value is SavedPlaceSnapsho
     && validOpeningHours(candidate.openingHours)
     && (candidate.utcOffsetMinutes === null || finiteNumber(candidate.utcOffsetMinutes))
     && nullableString(candidate.localImageUri)
+    && Array.isArray(candidate.localPhotoUris)
+    && candidate.localPhotoUris.length <= 5
+    && candidate.localPhotoUris.every((uri) => typeof uri === 'string' && uri.startsWith('file://'))
     && ['available', 'not_attempted', 'unavailable'].includes(candidate.visualRecoveryStatus ?? '')
     && typeof candidate.providerHydrationComplete === 'boolean'
     && typeof candidate.capturedAt === 'string'
@@ -259,6 +264,7 @@ export function buildSavedPlaceSnapshot(args: {
   openingHours?: PlaceOpeningHours | null;
   utcOffsetMinutes?: number | null;
   localImageUri?: string | null;
+  localPhotoUris?: readonly string[] | null;
   visualRecoveryStatus?: SavedPlaceSnapshot['visualRecoveryStatus'];
   providerHydrationComplete: boolean;
   source: SavedPlaceSnapshotSource;
@@ -277,9 +283,16 @@ export function buildSavedPlaceSnapshot(args: {
     googleMapsUrl: candidate?.googleMapsUrl ?? args.saved.place.google_maps_url ?? null,
     openingHours: args.openingHours ?? null,
     utcOffsetMinutes: args.utcOffsetMinutes ?? null,
-    localImageUri: args.localImageUri?.trim() || null,
+    localImageUri: args.localPhotoUris?.[0]?.trim() || args.localImageUri?.trim() || null,
+    localPhotoUris: [...new Set(
+      (args.localPhotoUris ?? (args.localImageUri ? [args.localImageUri] : []))
+        .map((uri) => uri?.trim())
+        .filter((uri): uri is string => !!uri && uri.startsWith('file://')),
+    )].slice(0, 5),
     visualRecoveryStatus: args.visualRecoveryStatus
-      ?? (args.localImageUri?.trim() ? 'available' : 'not_attempted'),
+      ?? (args.localPhotoUris?.some((uri) => !!uri?.trim()) || args.localImageUri?.trim()
+        ? 'available'
+        : 'not_attempted'),
     providerHydrationComplete: args.providerHydrationComplete,
     capturedAt: new Date().toISOString(),
     source: args.source,

@@ -18,8 +18,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as Location from 'expo-location';
 
-import { distanceMeters } from '@/lib/geo';
+import {
+  nearbyPlacesForLocation,
+  type NearbyCoordinates,
+  type NearbyPlace,
+} from '@/lib/nearbyPlaces';
 import type { SavedPlaceWithPlace } from '@/types';
+
+export { nearbyPlacesForLocation } from '@/lib/nearbyPlaces';
+export type { NearbyPlace } from '@/lib/nearbyPlaces';
 
 export type NearbyLocationState =
   | 'idle'
@@ -28,8 +35,6 @@ export type NearbyLocationState =
   | 'permission_denied'
   | 'unavailable'
   | 'error';
-
-export type NearbyPlace = SavedPlaceWithPlace & { distanceMeters: number };
 
 export type UseNearbyPlacesOptions = {
   /** Maximum number of nearby places to return. Unlimited when omitted. */
@@ -46,10 +51,8 @@ export type UseNearbyPlacesOptions = {
   requestPermission?: boolean;
 };
 
-type Coords = { latitude: number; longitude: number };
-
 export type UseNearbyPlacesResult = {
-  location: Coords | null;
+  location: NearbyCoordinates | null;
   nearbyPlaces: NearbyPlace[];
   locationState: NearbyLocationState;
   error: string | null;
@@ -65,7 +68,7 @@ export function useNearbyPlaces(
   const enabled = options?.enabled ?? true;
   const requestPermission = options?.requestPermission ?? false;
 
-  const [location, setLocation] = useState<Coords | null>(null);
+  const [location, setLocation] = useState<NearbyCoordinates | null>(null);
   const [locationState, setLocationState] = useState<NearbyLocationState>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -133,25 +136,7 @@ export function useNearbyPlaces(
   }, [enabled, locationState, loadLocation]);
 
   const nearbyPlaces = useMemo<NearbyPlace[]>(() => {
-    if (!location) return [];
-
-    const withDistance = places
-      .filter(
-        (p) =>
-          !!p.place &&
-          Number.isFinite(p.place.latitude) &&
-          Number.isFinite(p.place.longitude),
-      )
-      .map((p) => ({
-        ...p,
-        distanceMeters: distanceMeters(
-          { latitude: location.latitude, longitude: location.longitude },
-          { latitude: p.place.latitude, longitude: p.place.longitude },
-        ),
-      }))
-      .sort((left, right) => left.distanceMeters - right.distanceMeters);
-
-    return typeof limit === 'number' ? withDistance.slice(0, limit) : withDistance;
+    return nearbyPlacesForLocation(places, location, limit);
   }, [location, places, limit]);
 
   return { location, nearbyPlaces, locationState, error, refreshLocation, requestLocationPermission };

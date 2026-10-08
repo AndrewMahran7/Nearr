@@ -18,6 +18,7 @@ import {
   hydrateSavedPlace,
   persistSavedPlaceSnapshotAfterSave,
   resetSavedPlaceHydrationMemoryForTests,
+  waitForProgressiveSavedPlacePhotosForTests,
   type SavedPlaceHydrationDependencies,
 } from '../lib/savedPlaceHydration';
 import type { PlaceCandidate, SavedPlaceGoogleDisplayDetails } from '../services/placesService';
@@ -57,12 +58,15 @@ const candidate: PlaceCandidate = {
   formattedAddress: '1 Main St, Los Angeles, CA', latitude: 34.1, longitude: -118.2,
   category: 'cafe', googleMapsUrl: 'https://maps.google.com/example', rawTypes: ['cafe'],
   photoUrl: 'https://photos.test/already-acquired.jpg',
-  photoUrls: ['https://photos.test/already-acquired.jpg'],
+  photoUrls: Array.from({ length: 5 }, (_, index) => `https://photos.test/acquired-${index + 1}.jpg`),
 };
 
 const googleDetails: SavedPlaceGoogleDisplayDetails = {
   googlePlaceId: 'google-1',
-  photoUrls: ['https://maps.googleapis.com/maps/api/place/photo?photo_reference=secret'],
+  photoUrls: Array.from(
+    { length: 5 },
+    (_, index) => `https://maps.googleapis.com/maps/api/place/photo?photo_reference=secret-${index + 1}`,
+  ),
   openingHours: {
     periods: [{ open: { day: 1, time: '0900' }, close: { day: 1, time: '1700' } }],
     weekdayDescriptions: ['Monday: 9:00 AM – 5:00 PM'],
@@ -72,7 +76,11 @@ const googleDetails: SavedPlaceGoogleDisplayDetails = {
 
 const localAssets = new Set<string>();
 
-function dependencies(store: MemoryStore, fetchGoogle: () => Promise<SavedPlaceGoogleDisplayDetails>) {
+function dependencies(
+  store: MemoryStore,
+  fetchGoogle: () => Promise<SavedPlaceGoogleDisplayDetails>,
+  secondaryGate?: Promise<void>,
+) {
   const events: string[] = [];
   const deps: SavedPlaceHydrationDependencies = {
     readSnapshot: readSavedPlaceSnapshot,
@@ -80,9 +88,11 @@ function dependencies(store: MemoryStore, fetchGoogle: () => Promise<SavedPlaceG
     fetchGoogle: async () => fetchGoogle(),
     record: (event) => { events.push(event); },
     peekRichDetails: () => null,
-    persistImage: async ({ savedPlaceId, sourceUri }) => {
+    persistImage: async ({ savedPlaceId, sourceUri, index = 0 }) => {
       if (!sourceUri) return null;
-      const uri = `file://saved-place-images/${savedPlaceId}/hero.jpg`;
+      if (index > 0 && secondaryGate) await secondaryGate;
+      const filename = index === 0 ? 'hero.jpg' : `photo-${index + 1}.jpg`;
+      const uri = `file://saved-place-images/${savedPlaceId}/${filename}`;
       localAssets.add(uri);
       return uri;
     },
@@ -127,10 +137,12 @@ async function run() {
   );
 
   let googleCalls = 0;
+  let releaseSecondary!: () => void;
+  const secondaryGate = new Promise<void>((resolve) => { releaseSecondary = resolve; });
   const first = dependencies(store, async () => {
     googleCalls += 1;
     return googleDetails;
-  });
+  }, secondaryGate);
   const persisted = await persistSavedPlaceSnapshotAfterSave(
     { userId: 'user-a', saved, candidate },
     first.deps,
@@ -144,11 +156,22 @@ async function run() {
   );
   assert.equal(googleCalls, 0, 'first open after save is satisfied by the save payload');
   assert.equal(firstOpen.source, 'snapshot');
-  assert.deepEqual(firstOpen.details.photoUrls, ['file://saved-place-images/saved-1/hero.jpg']);
+  assert.equal(firstOpen.details.photoUrls.length, 1, 'primary photo is available before background gallery acquisition');
+  assert.equal(firstOpen.details.photoUrls[0], 'file://saved-place-images/saved-1/hero.jpg');
+
+  releaseSecondary();
+  await waitForProgressiveSavedPlacePhotosForTests();
+  resetSavedPlaceHydrationMemoryForTests();
+  const galleryOpen = await hydrateSavedPlace(
+    { userId: 'user-a', saved, trigger: 'map_detail' },
+    first.deps,
+  );
+  assert.equal(galleryOpen.details.photoUrls.length, 5);
+  assert.equal(galleryOpen.details.photoUrls[4], 'file://saved-place-images/saved-1/photo-5.jpg');
 
   const repeatedOpen = await hydrateSavedPlace({ userId: 'user-a', saved, trigger: 'map_detail' }, first.deps);
   assert.equal(googleCalls, 0, 'repeated open in one process makes zero Google requests');
-  assert.deepEqual(repeatedOpen.details.photoUrls, ['file://saved-place-images/saved-1/hero.jpg']);
+  assert.equal(repeatedOpen.details.photoUrls.length, 5);
 
   resetSavedPlaceHydrationMemoryForTests();
   const afterRestart = await hydrateSavedPlace(
@@ -157,7 +180,7 @@ async function run() {
   );
   assert.equal(googleCalls, 0, 'app restart plus reopen uses persisted snapshot');
   assert.equal(afterRestart.source, 'snapshot');
-  assert.deepEqual(afterRestart.details.photoUrls, ['file://saved-place-images/saved-1/hero.jpg']);
+  assert.equal(afterRestart.details.photoUrls.length, 5, 'all five photos survive app restart');
   assert.ok(first.events.includes('saved_place_snapshot_hit'));
 
   // A legacy/transitional incomplete snapshot gets exactly one minimal
@@ -175,6 +198,7 @@ async function run() {
   assert.equal(googleCalls, 1, 'incomplete legacy snapshot performs one fallback');
   assert.equal(legacyOpen.source, 'google_fallback');
   assert.equal(legacyOpen.details.photoUrls[0], 'file://saved-place-images/saved-1/hero.jpg');
+  assert.equal(legacyOpen.details.photoUrls.length, 5, 'provider recovery persists the complete bounded gallery');
   const rawAfterFallback = store.values.get(savedPlaceSnapshotKey('user-a', saved.id)) ?? '';
   assert.doesNotMatch(rawAfterFallback, /photo_reference|maps\/api\/place\/photo/, 'Google photo URI is never persisted');
   assert.match(rawAfterFallback, /file:\/\/saved-place-images\/saved-1\/hero\.jpg/);
@@ -189,6 +213,7 @@ async function run() {
   );
   assert.equal(googleCalls, 1, 'recovered local image prevents an every-open refetch loop');
   assert.equal(recoveredReopen.details.photoUrls[0], 'file://saved-place-images/saved-1/hero.jpg');
+  assert.equal(recoveredReopen.details.photoUrls.length, 5, 'recovered gallery survives process restart');
 
   resetSavedPlaceHydrationMemoryForTests();
   const otherUser = await readSavedPlaceSnapshot({

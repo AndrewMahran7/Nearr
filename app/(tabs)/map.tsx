@@ -30,6 +30,7 @@ import {
   AppState,
   type AppStateStatus,
   BackHandler,
+  Image,
   Linking,
   PanResponder,
   Platform,
@@ -98,7 +99,8 @@ import {
   type SheetSnap,
 } from '@/components/map';
 import { OnboardingV2MapCoachmark } from '@/components/onboarding/v2';
-import { offlineFixtureById } from '@/onboarding/fixtures/offlineOnboardingFixtures';
+import { offlineFixtureById, offlineFixtureByPlaceId } from '@/onboarding/fixtures/offlineOnboardingFixtures';
+import { offlineOnboardingMedia } from '@/onboarding/assets/offlineOnboardingAssets';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
 import {
   isMeaningfulInteraction,
@@ -589,7 +591,7 @@ export default function MapScreen() {
       notes: null,
       ai_note: fixture.place.aiNote,
       source_type: fixture.platform,
-      source_url: save.sourceUrl,
+      source_url: fixture.provenance.sourceUrl,
       notifications_enabled: false,
       last_notified_at: null,
       notification_count: 0,
@@ -697,6 +699,12 @@ export default function MapScreen() {
     let cancelled = false;
     setSelectedImageUri(null);
     if (!selected) return () => { cancelled = true; };
+    const localFixture = offlineFixtureByPlaceId(selected.place.id);
+    if (localFixture) {
+      const primary = offlineOnboardingMedia(localFixture.assetKey).placePhotoAssets[0];
+      setSelectedImageUri(Image.resolveAssetSource(primary).uri);
+      return () => { cancelled = true; };
+    }
     void hydrateSavedPlace({
       userId: selected.user_id,
       saved: selected,

@@ -1,9 +1,9 @@
 /**
  * Durable, account-scoped image storage for saved-place presentation.
  *
- * The database keeps the provider identity. This store keeps only the first
- * successfully acquired presentation image on this device so normal saved
- * opens are both visual and provider-call free.
+ * The database keeps the provider identity. This store keeps up to five
+ * acquired presentation images on this device so normal saved opens are both
+ * visual and provider-call free.
  */
 
 export type SavedPlaceImageFileInfo = {
@@ -60,8 +60,10 @@ export function savedPlaceImageUri(
   documentDirectory: string,
   userId: string,
   savedPlaceId: string,
+  index = 0,
 ): string {
-  return `${savedPlaceImageDirectory(documentDirectory, userId, savedPlaceId)}hero.jpg`;
+  const filename = index === 0 ? 'hero.jpg' : `photo-${index + 1}.jpg`;
+  return `${savedPlaceImageDirectory(documentDirectory, userId, savedPlaceId)}${filename}`;
 }
 
 const inFlight = new Map<string, Promise<string | null>>();
@@ -138,14 +140,15 @@ export async function isUsableSavedPlaceImage(
  * non-fatal: the durable save has already succeeded and must remain usable.
  */
 export async function persistSavedPlaceImage(
-  args: { userId: string; savedPlaceId: string; sourceUri: string | null | undefined },
+  args: { userId: string; savedPlaceId: string; sourceUri: string | null | undefined; index?: number },
   dependencies: SavedPlaceImageStoreDependencies = productionDependencies(),
 ): Promise<string | null> {
   const sourceUri = args.sourceUri?.trim();
   const documentDirectory = dependencies.documentDirectory;
   if (!sourceUri || !documentDirectory) return null;
 
-  const destination = savedPlaceImageUri(documentDirectory, args.userId, args.savedPlaceId);
+  const index = Math.max(0, Math.min(4, Math.floor(args.index ?? 0)));
+  const destination = savedPlaceImageUri(documentDirectory, args.userId, args.savedPlaceId, index);
   if (sourceUri === destination && await isUsableSavedPlaceImage(destination, dependencies)) {
     return destination;
   }
@@ -154,7 +157,7 @@ export async function persistSavedPlaceImage(
 
   const request = (async () => {
     const directory = savedPlaceImageDirectory(documentDirectory, args.userId, args.savedPlaceId);
-    const temporary = `${directory}hero.pending`;
+    const temporary = `${directory}${index === 0 ? 'hero' : `photo-${index + 1}`}.pending`;
     try {
       await dependencies.makeDirectory(directory);
       await dependencies.remove(temporary).catch(() => undefined);

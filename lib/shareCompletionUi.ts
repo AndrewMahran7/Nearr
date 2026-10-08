@@ -48,7 +48,7 @@ export const SHARE_COMPLETION_COPY = {
   submittingTitle: 'Finding the place…',
   submittingBody: 'You can close this — Nearr keeps working.',
   acceptedTitle: 'Sent to Nearr',
-  acceptedBody: "We'll find the place and add it to your map.",
+  acceptedBody: "We'll add it to your map in the background. You can close this.",
   duplicateBody: "You already shared this one — we're still on it.",
   primary: 'Done',
   secondary: 'Open Nearr',

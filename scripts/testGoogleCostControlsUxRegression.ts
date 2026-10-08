@@ -12,6 +12,7 @@ import {
   hydrateSavedPlace,
   persistSavedPlaceSnapshotAfterSave,
   resetSavedPlaceHydrationMemoryForTests,
+  waitForProgressiveSavedPlacePhotosForTests,
   type SavedPlaceHydrationDependencies,
 } from '../lib/savedPlaceHydration';
 import {
@@ -61,6 +62,8 @@ async function run() {
   const localUri = 'file://nearr/saved-place-images/owner-a/saved-visual/hero.jpg';
   let googleDetailsCalls = 0;
   let persistedDownloads = 0;
+  let releaseSecondary!: () => void;
+  const secondaryGate = new Promise<void>((resolve) => { releaseSecondary = resolve; });
   const googleDetails: SavedPlaceGoogleDisplayDetails = {
     googlePlaceId: 'google-visual',
     photoUrls: ['https://photos.test/recovered/first', 'https://photos.test/recovered/second'],
@@ -73,8 +76,9 @@ async function run() {
     fetchGoogle: async () => { googleDetailsCalls += 1; return googleDetails; },
     record: () => undefined,
     peekRichDetails: () => null,
-    persistImage: async ({ sourceUri }) => {
+    persistImage: async ({ sourceUri, index = 0 }) => {
       if (!sourceUri) return null;
+      if (index > 0) await secondaryGate;
       persistedDownloads += 1;
       files.add(localUri);
       return localUri;
@@ -92,6 +96,8 @@ async function run() {
   assert.equal(first.source, 'snapshot');
   assert.deepEqual(first.details.photoUrls, [localUri]);
   assert.equal(googleDetailsCalls, 0);
+  releaseSecondary();
+  await waitForProgressiveSavedPlacePhotosForTests();
 
   // 2 and 15: a simulated process restart still uses the local hero and makes
   // zero provider calls across repeated list/detail/map consumers.
