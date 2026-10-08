@@ -1,6 +1,7 @@
 import { callSolParity, type SolCallResult } from '../solParity/model.js';
 import type { ModelArm, SolAlternative, SolDestination } from '../solParity/types.js';
-import { canonicalizePremiumHypothesis } from './premiumCanonicalization.js';
+import { canonicalizePremiumHypothesis, searchGooglePlacesText } from './premiumCanonicalization.js';
+import { createPlacesQuerySession, mapPlacesInOrder } from './placesQuerySession.js';
 import { evaluatePremiumRecognitionSafety, inferPremiumEvidenceBasis } from './premiumRecognitionSafety.js';
 import {
   PREMIUM_ENGINE_VERSION,
@@ -227,23 +228,24 @@ export async function completePremiumRecognition(args: {
   }
 
   const canonicalizationStartedAt = new Date();
-  const destinations: PremiumLogicalDestination[] = [];
-  for (let destinationIndex = 0; destinationIndex < call.payload.results.length; destinationIndex += 1) {
-    const result = call.payload.results[destinationIndex]!;
+  const destinationCount = call.payload.results.length;
+  const placesMode = input.placesExecutionMode ?? 'bounded';
+  const placesSession = createPlacesQuerySession({ search: input.placesSearch ?? searchGooglePlacesText, mode: placesMode });
+  const concurrency = placesMode === 'bounded' ? 3 : 1;
+  const destinations: PremiumLogicalDestination[] = await mapPlacesInOrder(call.payload.results, concurrency, async (result, destinationIndex) => {
     // Runtime contract is at most three total hypotheses per logical place:
     // one primary plus two genuine alternatives. Real destination count is uncapped.
     const modelHypotheses = [result, ...result.alternatives.slice(0, 2).map((item) => asDestination(item, result))];
-    const runtimeHypotheses: PremiumRuntimeHypothesis[] = [];
-    for (const modelHypothesis of modelHypotheses) {
+    const runtimeHypotheses: PremiumRuntimeHypothesis[] = await mapPlacesInOrder(modelHypotheses, concurrency, async (modelHypothesis) => {
       const canonical = await canonicalizePremiumHypothesis({
         hypothesis: modelHypothesis,
         apiKey: input.googlePlacesApiKey,
-        search: input.placesSearch,
+        search: placesSession.search,
         signal: input.signal,
         maxCalls: modelHypotheses.length > 1 ? 1 : 2,
       });
       const evidenceBasis = inferPremiumEvidenceBasis(modelHypothesis, input.evidence);
-      runtimeHypotheses.push({
+      return {
         name: modelHypothesis.name,
         entityType: modelHypothesis.entity_type,
         city: modelHypothesis.city,
@@ -259,8 +261,8 @@ export async function completePremiumRecognition(args: {
         providerParent: canonical.providerParent,
         canonicalAlternatives: canonical.alternatives,
         canonicalizationCalls: canonical.calls,
-      });
-    }
+      };
+    });
     const primary = runtimeHypotheses[0]!;
     const safety = evaluatePremiumRecognitionSafety({
       hypothesis: result,
@@ -268,17 +270,17 @@ export async function completePremiumRecognition(args: {
       canonicalStatus: primary.canonicalStatus,
       canonical: primary.canonical,
       hypothesisCount: runtimeHypotheses.length,
-      destinationCount: call.payload.results.length,
+      destinationCount,
       allowDistinctiveVisualAutoSave: input.allowDistinctiveVisualAutoSave,
     });
-    destinations.push({
+    return {
       logicalDestinationId: `premium-destination-${destinationIndex + 1}`,
       hypotheses: runtimeHypotheses,
       decision: safety.decision,
       permissiveWouldAutoSave: safety.permissiveWouldAutoSave,
       safetyReasons: safety.reasons,
-    });
-  }
+    };
+  });
   const canonicalizationCompletedAt = new Date();
   const actionable = destinations.some((destination) => destination.decision !== 'REJECT');
   const terminal = new Date();
@@ -321,7 +323,8 @@ export async function completePremiumRecognition(args: {
       },
       usage: call.usage,
       knownModelCostUsd: call.estimated_model_cost_usd,
-      placesRequests: calls.length,
+      placesRequests: placesSession.telemetry().actualRequests,
+      placesQuerySession: placesSession.telemetry(),
       placesRequestTypes: calls.map((item) => item.reason),
       timingsMs: {
         evidencePrep: input.evidencePrepMs ?? 0,

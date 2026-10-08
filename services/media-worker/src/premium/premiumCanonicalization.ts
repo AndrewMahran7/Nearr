@@ -1,4 +1,5 @@
 import type { SolAlternative, SolDestination } from '../solParity/types.js';
+import { PREMIUM_PLACES_FIELD_MASK } from './placesQuerySession.js';
 import {
   canonicalIdentityTokens,
   classifyCanonicalizationRelation,
@@ -97,7 +98,7 @@ export const searchGooglePlacesText: PremiumPlacesSearch = async (query, apiKey,
       headers: {
         'content-type': 'application/json',
         'x-goog-api-key': apiKey,
-        'x-goog-fieldmask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types',
+        'x-goog-fieldmask': PREMIUM_PLACES_FIELD_MASK,
       },
       body: JSON.stringify({ textQuery: query, maxResultCount: 8 }),
       signal,

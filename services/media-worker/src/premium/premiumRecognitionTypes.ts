@@ -1,4 +1,5 @@
 import type { SolCallResult } from '../solParity/model.js';
+import type { createPlacesQuerySession, PlacesExecutionMode } from './placesQuerySession.js';
 import type { FrameSet, SourceEvidence } from '../solParity/types.js';
 import type {
   PremiumEvidenceReuseState,
@@ -143,6 +144,7 @@ export type PremiumRecognitionTelemetry = {
   usage: SolCallResult['usage'];
   knownModelCostUsd: number | null;
   placesRequests: number;
+  placesQuerySession?: ReturnType<ReturnType<typeof createPlacesQuerySession>['telemetry']>;
   placesRequestTypes: string[];
   timingsMs: {
     evidencePrep: number;
@@ -203,6 +205,8 @@ export type PremiumRecognitionInput = {
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
   placesSearch?: PremiumPlacesSearch;
+  /** Internal evaluation/rollback seam; never supplied by a client. */
+  placesExecutionMode?: PlacesExecutionMode;
   env?: NodeJS.ProcessEnv;
 };
 
