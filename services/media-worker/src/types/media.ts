@@ -221,6 +221,8 @@ export type MediaTask = {
   progress_stage: string | null;
   attempts: number;
   max_attempts: number;
+  /** Server-issued lease identity; changes on every claim, even reset retry cycles. */
+  locked_at?: string | null;
   created_at?: string | null;
 };
 

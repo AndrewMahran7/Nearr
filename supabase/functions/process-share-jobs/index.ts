@@ -1,3 +1,4 @@
+import { evaluateMediaClaimFence } from './mediaClaimFence.ts';
 // supabase/functions/process-share-jobs/index.ts
 //
 // Durable, retry-safe worker for the async share flow.
@@ -2369,6 +2370,12 @@ async function finalizeMediaTask(
   const { data: task } = await admin
     .from('share_media_tasks').select('*').eq('id', taskId).maybeSingle();
   if (!task) return json({ error: 'task_not_found' }, 404);
+
+  const claimFence = evaluateMediaClaimFence(task, body.claim);
+  if (!claimFence.allowed) {
+    console.log(JSON.stringify({ event: 'media_claim_fenced', task_id: taskId, reason: claimFence.reason }));
+    return json({ ok: true, idempotent: true, reason: claimFence.reason, route: 'obsolete_claim' });
+  }
 
   // Parent derived from the task's FK (never from the body).
   const { data: job } = task.share_job_id
