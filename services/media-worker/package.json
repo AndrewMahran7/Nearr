@@ -48,6 +48,8 @@
     "vayrin:verification-v3:compile": "node --import tsx src/cli/compileVerificationBenchmarkV3.ts",
     "eval:ai-note-voice": "node --import tsx src/cli/evaluateAiNoteVoice.ts",
     "fixtures:generate": "node --import tsx tests/support/generateSyntheticMedia.ts",
+    "benchmark:media-parity": "node --import tsx tests/support/mediaParityBenchmark.ts",
+    "benchmark:media-preparation": "node --import tsx tests/support/mediaPreparationBenchmark.ts",
     "benchmark:concurrency": "node --import tsx tests/support/concurrencyBenchmark.ts"
   },
   "dependencies": {

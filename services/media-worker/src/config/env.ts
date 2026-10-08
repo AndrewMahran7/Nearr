@@ -121,6 +121,8 @@ export type WorkerConfig = {
   frameIntervalSeconds: number; // 1s baseline sampling cadence
   /** Batched JPEG hashing preserves selected image bytes; legacy is the replay arm. */
   frameExtractionStrategy?: 'legacy' | 'batched_hash';
+  /** Evidence branches join before analysis; no speculative model/provider call. */
+  parallelMediaPreparation?: boolean;
   redirectLimit: number; // 3: public CDN rarely needs more; limits SSRF surface
 
   // ---- Host allowlist (HTTPS only) ----
@@ -288,6 +290,7 @@ export function loadConfig(): WorkerConfig {
     maxSelectedFrames: int('MEDIA_MAX_SELECTED_FRAMES', 24, 1),
     frameIntervalSeconds: int('MEDIA_FRAME_INTERVAL_SECONDS', 1, 1),
     frameExtractionStrategy: str('MEDIA_FRAME_EXTRACTION_STRATEGY', 'batched_hash') === 'legacy' ? 'legacy' : 'batched_hash',
+    parallelMediaPreparation: bool('MEDIA_PARALLEL_PREPARATION_ENABLED', false),
     redirectLimit: int('MEDIA_REDIRECT_LIMIT', 3, 0),
 
     allowedMediaHosts: list('MEDIA_ALLOWED_HOSTS', DEFAULT_ALLOWED_HOSTS),

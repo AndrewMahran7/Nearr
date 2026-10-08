@@ -1,0 +1,497 @@
+{
+  "scope": "Synthetic causal scheduling controls, no recognition ground truth and no provider latency measurement",
+  "rows": [
+    {
+      "variant": "baseline_repaired",
+      "repeat": 0,
+      "wallMs": 2394.6268,
+      "spans": {
+        "audio_extraction_and_transcription": 1088.0331,
+        "frame_extraction": 1305.4061000000002
+      },
+      "fingerprint": {
+        "audioSha256": "01ab6876e09afc37f707c87e2e52c5af0cc72fd14d2433650fb834fffbd895e8",
+        "transcript": {
+          "provider": "local_scheduling_control",
+          "segments": [
+            {
+              "startSeconds": 0,
+              "endSeconds": 1,
+              "text": "CONTROL ASR RESULT"
+            }
+          ],
+          "language": "en",
+          "status": "success"
+        },
+        "frames": [
+          {
+            "time": 0,
+            "hash": "3373333133333333",
+            "sha256": "27f88f759b956926740d0f5cfabc1fa11e85170576d4b03daeb443757c42f880",
+            "reason": "first"
+          },
+          {
+            "time": 3.9,
+            "hash": "3333333333333333",
+            "sha256": "997a4a4ab0d91b02a7ba055f9216d54ac05c2a55ee4fd44c5d12b5fa85447e32",
+            "reason": "last"
+          }
+        ]
+      },
+      "providerCalls": 0,
+      "simulatedAsrDelayMs": 1000,
+      "evidenceParity": true
+    },
+    {
+      "variant": "batched_hash",
+      "repeat": 0,
+      "wallMs": 1802.3932,
+      "spans": {
+        "audio_extraction_and_transcription": 1086.7278000000001,
+        "frame_extraction": 715.4170999999997
+      },
+      "fingerprint": {
+        "audioSha256": "01ab6876e09afc37f707c87e2e52c5af0cc72fd14d2433650fb834fffbd895e8",
+        "transcript": {
+          "provider": "local_scheduling_control",
+          "segments": [
+            {
+              "startSeconds": 0,
+              "endSeconds": 1,
+              "text": "CONTROL ASR RESULT"
+            }
+          ],
+          "language": "en",
+          "status": "success"
+        },
+        "frames": [
+          {
+            "time": 0,
+            "hash": "3373333133333333",
+            "sha256": "27f88f759b956926740d0f5cfabc1fa11e85170576d4b03daeb443757c42f880",
+            "reason": "first"
+          },
+          {
+            "time": 3.9,
+            "hash": "3333333333333333",
+            "sha256": "997a4a4ab0d91b02a7ba055f9216d54ac05c2a55ee4fd44c5d12b5fa85447e32",
+            "reason": "last"
+          }
+        ]
+      },
+      "providerCalls": 0,
+      "simulatedAsrDelayMs": 1000,
+      "evidenceParity": true
+    },
+    {
+      "variant": "parallel_media",
+      "repeat": 0,
+      "wallMs": 1085.7762999999995,
+      "spans": {
+        "frame_extraction": 927.9583000000002,
+        "audio_extraction_and_transcription": 1085.0441
+      },
+      "fingerprint": {
+        "audioSha256": "01ab6876e09afc37f707c87e2e52c5af0cc72fd14d2433650fb834fffbd895e8",
+        "transcript": {
+          "provider": "local_scheduling_control",
+          "segments": [
+            {
+              "startSeconds": 0,
+              "endSeconds": 1,
+              "text": "CONTROL ASR RESULT"
+            }
+          ],
+          "language": "en",
+          "status": "success"
+        },
+        "frames": [
+          {
+            "time": 0,
+            "hash": "3373333133333333",
+            "sha256": "27f88f759b956926740d0f5cfabc1fa11e85170576d4b03daeb443757c42f880",
+            "reason": "first"
+          },
+          {
+            "time": 3.9,
+            "hash": "3333333333333333",
+            "sha256": "997a4a4ab0d91b02a7ba055f9216d54ac05c2a55ee4fd44c5d12b5fa85447e32",
+            "reason": "last"
+          }
+        ]
+      },
+      "providerCalls": 0,
+      "simulatedAsrDelayMs": 1000,
+      "evidenceParity": true
+    },
+    {
+      "variant": "batch_parallel",
+      "repeat": 0,
+      "wallMs": 1108.3998000000001,
+      "spans": {
+        "frame_extraction": 684.6569,
+        "audio_extraction_and_transcription": 1108.2275
+      },
+      "fingerprint": {
+        "audioSha256": "01ab6876e09afc37f707c87e2e52c5af0cc72fd14d2433650fb834fffbd895e8",
+        "transcript": {
+          "provider": "local_scheduling_control",
+          "segments": [
+            {
+              "startSeconds": 0,
+              "endSeconds": 1,
+              "text": "CONTROL ASR RESULT"
+            }
+          ],
+          "language": "en",
+          "status": "success"
+        },
+        "frames": [
+          {
+            "time": 0,
+            "hash": "3373333133333333",
+            "sha256": "27f88f759b956926740d0f5cfabc1fa11e85170576d4b03daeb443757c42f880",
+            "reason": "first"
+          },
+          {
+            "time": 3.9,
+            "hash": "3333333333333333",
+            "sha256": "997a4a4ab0d91b02a7ba055f9216d54ac05c2a55ee4fd44c5d12b5fa85447e32",
+            "reason": "last"
+          }
+        ]
+      },
+      "providerCalls": 0,
+      "simulatedAsrDelayMs": 1000,
+      "evidenceParity": true
+    },
+    {
+      "variant": "batch_parallel",
+      "repeat": 1,
+      "wallMs": 1082.6653999999999,
+      "spans": {
+        "frame_extraction": 746.3787999999995,
+        "audio_extraction_and_transcription": 1082.4484000000002
+      },
+      "fingerprint": {
+        "audioSha256": "01ab6876e09afc37f707c87e2e52c5af0cc72fd14d2433650fb834fffbd895e8",
+        "transcript": {
+          "provider": "local_scheduling_control",
+          "segments": [
+            {
+              "startSeconds": 0,
+              "endSeconds": 1,
+              "text": "CONTROL ASR RESULT"
+            }
+          ],
+          "language": "en",
+          "status": "success"
+        },
+        "frames": [
+          {
+            "time": 0,
+            "hash": "3373333133333333",
+            "sha256": "27f88f759b956926740d0f5cfabc1fa11e85170576d4b03daeb443757c42f880",
+            "reason": "first"
+          },
+          {
+            "time": 3.9,
+            "hash": "3333333333333333",
+            "sha256": "997a4a4ab0d91b02a7ba055f9216d54ac05c2a55ee4fd44c5d12b5fa85447e32",
+            "reason": "last"
+          }
+        ]
+      },
+      "providerCalls": 0,
+      "simulatedAsrDelayMs": 1000,
+      "evidenceParity": true
+    },
+    {
+      "variant": "parallel_media",
+      "repeat": 1,
+      "wallMs": 1316.716199999999,
+      "spans": {
+        "audio_extraction_and_transcription": 1189.4556000000011,
+        "frame_extraction": 1303.5948000000008
+      },
+      "fingerprint": {
+        "audioSha256": "01ab6876e09afc37f707c87e2e52c5af0cc72fd14d2433650fb834fffbd895e8",
+        "transcript": {
+          "provider": "local_scheduling_control",
+          "segments": [
+            {
+              "startSeconds": 0,
+              "endSeconds": 1,
+              "text": "CONTROL ASR RESULT"
+            }
+          ],
+          "language": "en",
+          "status": "success"
+        },
+        "frames": [
+          {
+            "time": 0,
+            "hash": "3373333133333333",
+            "sha256": "27f88f759b956926740d0f5cfabc1fa11e85170576d4b03daeb443757c42f880",
+            "reason": "first"
+          },
+          {
+            "time": 3.9,
+            "hash": "3333333333333333",
+            "sha256": "997a4a4ab0d91b02a7ba055f9216d54ac05c2a55ee4fd44c5d12b5fa85447e32",
+            "reason": "last"
+          }
+        ]
+      },
+      "providerCalls": 0,
+      "simulatedAsrDelayMs": 1000,
+      "evidenceParity": true
+    },
+    {
+      "variant": "batched_hash",
+      "repeat": 1,
+      "wallMs": 1655.4435000000012,
+      "spans": {
+        "audio_extraction_and_transcription": 1088.0146999999997,
+        "frame_extraction": 567.2560000000012
+      },
+      "fingerprint": {
+        "audioSha256": "01ab6876e09afc37f707c87e2e52c5af0cc72fd14d2433650fb834fffbd895e8",
+        "transcript": {
+          "provider": "local_scheduling_control",
+          "segments": [
+            {
+              "startSeconds": 0,
+              "endSeconds": 1,
+              "text": "CONTROL ASR RESULT"
+            }
+          ],
+          "language": "en",
+          "status": "success"
+        },
+        "frames": [
+          {
+            "time": 0,
+            "hash": "3373333133333333",
+            "sha256": "27f88f759b956926740d0f5cfabc1fa11e85170576d4b03daeb443757c42f880",
+            "reason": "first"
+          },
+          {
+            "time": 3.9,
+            "hash": "3333333333333333",
+            "sha256": "997a4a4ab0d91b02a7ba055f9216d54ac05c2a55ee4fd44c5d12b5fa85447e32",
+            "reason": "last"
+          }
+        ]
+      },
+      "providerCalls": 0,
+      "simulatedAsrDelayMs": 1000,
+      "evidenceParity": true
+    },
+    {
+      "variant": "baseline_repaired",
+      "repeat": 1,
+      "wallMs": 3394.2816000000003,
+      "spans": {
+        "audio_extraction_and_transcription": 1094.1705000000002,
+        "frame_extraction": 2299.765800000001
+      },
+      "fingerprint": {
+        "audioSha256": "01ab6876e09afc37f707c87e2e52c5af0cc72fd14d2433650fb834fffbd895e8",
+        "transcript": {
+          "provider": "local_scheduling_control",
+          "segments": [
+            {
+              "startSeconds": 0,
+              "endSeconds": 1,
+              "text": "CONTROL ASR RESULT"
+            }
+          ],
+          "language": "en",
+          "status": "success"
+        },
+        "frames": [
+          {
+            "time": 0,
+            "hash": "3373333133333333",
+            "sha256": "27f88f759b956926740d0f5cfabc1fa11e85170576d4b03daeb443757c42f880",
+            "reason": "first"
+          },
+          {
+            "time": 3.9,
+            "hash": "3333333333333333",
+            "sha256": "997a4a4ab0d91b02a7ba055f9216d54ac05c2a55ee4fd44c5d12b5fa85447e32",
+            "reason": "last"
+          }
+        ]
+      },
+      "providerCalls": 0,
+      "simulatedAsrDelayMs": 1000,
+      "evidenceParity": true
+    },
+    {
+      "variant": "baseline_repaired",
+      "repeat": 2,
+      "wallMs": 2396.865700000002,
+      "spans": {
+        "audio_extraction_and_transcription": 1110.2507999999998,
+        "frame_extraction": 1286.4332000000013
+      },
+      "fingerprint": {
+        "audioSha256": "01ab6876e09afc37f707c87e2e52c5af0cc72fd14d2433650fb834fffbd895e8",
+        "transcript": {
+          "provider": "local_scheduling_control",
+          "segments": [
+            {
+              "startSeconds": 0,
+              "endSeconds": 1,
+              "text": "CONTROL ASR RESULT"
+            }
+          ],
+          "language": "en",
+          "status": "success"
+        },
+        "frames": [
+          {
+            "time": 0,
+            "hash": "3373333133333333",
+            "sha256": "27f88f759b956926740d0f5cfabc1fa11e85170576d4b03daeb443757c42f880",
+            "reason": "first"
+          },
+          {
+            "time": 3.9,
+            "hash": "3333333333333333",
+            "sha256": "997a4a4ab0d91b02a7ba055f9216d54ac05c2a55ee4fd44c5d12b5fa85447e32",
+            "reason": "last"
+          }
+        ]
+      },
+      "providerCalls": 0,
+      "simulatedAsrDelayMs": 1000,
+      "evidenceParity": true
+    },
+    {
+      "variant": "batched_hash",
+      "repeat": 2,
+      "wallMs": 2083.0822000000007,
+      "spans": {
+        "audio_extraction_and_transcription": 1245.664499999999,
+        "frame_extraction": 837.1402000000016
+      },
+      "fingerprint": {
+        "audioSha256": "01ab6876e09afc37f707c87e2e52c5af0cc72fd14d2433650fb834fffbd895e8",
+        "transcript": {
+          "provider": "local_scheduling_control",
+          "segments": [
+            {
+              "startSeconds": 0,
+              "endSeconds": 1,
+              "text": "CONTROL ASR RESULT"
+            }
+          ],
+          "language": "en",
+          "status": "success"
+        },
+        "frames": [
+          {
+            "time": 0,
+            "hash": "3373333133333333",
+            "sha256": "27f88f759b956926740d0f5cfabc1fa11e85170576d4b03daeb443757c42f880",
+            "reason": "first"
+          },
+          {
+            "time": 3.9,
+            "hash": "3333333333333333",
+            "sha256": "997a4a4ab0d91b02a7ba055f9216d54ac05c2a55ee4fd44c5d12b5fa85447e32",
+            "reason": "last"
+          }
+        ]
+      },
+      "providerCalls": 0,
+      "simulatedAsrDelayMs": 1000,
+      "evidenceParity": true
+    },
+    {
+      "variant": "parallel_media",
+      "repeat": 2,
+      "wallMs": 1496.9413999999997,
+      "spans": {
+        "audio_extraction_and_transcription": 1096.722700000002,
+        "frame_extraction": 1486.7246999999988
+      },
+      "fingerprint": {
+        "audioSha256": "01ab6876e09afc37f707c87e2e52c5af0cc72fd14d2433650fb834fffbd895e8",
+        "transcript": {
+          "provider": "local_scheduling_control",
+          "segments": [
+            {
+              "startSeconds": 0,
+              "endSeconds": 1,
+              "text": "CONTROL ASR RESULT"
+            }
+          ],
+          "language": "en",
+          "status": "success"
+        },
+        "frames": [
+          {
+            "time": 0,
+            "hash": "3373333133333333",
+            "sha256": "27f88f759b956926740d0f5cfabc1fa11e85170576d4b03daeb443757c42f880",
+            "reason": "first"
+          },
+          {
+            "time": 3.9,
+            "hash": "3333333333333333",
+            "sha256": "997a4a4ab0d91b02a7ba055f9216d54ac05c2a55ee4fd44c5d12b5fa85447e32",
+            "reason": "last"
+          }
+        ]
+      },
+      "providerCalls": 0,
+      "simulatedAsrDelayMs": 1000,
+      "evidenceParity": true
+    },
+    {
+      "variant": "batch_parallel",
+      "repeat": 2,
+      "wallMs": 1096.4465999999993,
+      "spans": {
+        "frame_extraction": 795.1695,
+        "audio_extraction_and_transcription": 1096.2006000000001
+      },
+      "fingerprint": {
+        "audioSha256": "01ab6876e09afc37f707c87e2e52c5af0cc72fd14d2433650fb834fffbd895e8",
+        "transcript": {
+          "provider": "local_scheduling_control",
+          "segments": [
+            {
+              "startSeconds": 0,
+              "endSeconds": 1,
+              "text": "CONTROL ASR RESULT"
+            }
+          ],
+          "language": "en",
+          "status": "success"
+        },
+        "frames": [
+          {
+            "time": 0,
+            "hash": "3373333133333333",
+            "sha256": "27f88f759b956926740d0f5cfabc1fa11e85170576d4b03daeb443757c42f880",
+            "reason": "first"
+          },
+          {
+            "time": 3.9,
+            "hash": "3333333333333333",
+            "sha256": "997a4a4ab0d91b02a7ba055f9216d54ac05c2a55ee4fd44c5d12b5fa85447e32",
+            "reason": "last"
+          }
+        ]
+      },
+      "providerCalls": 0,
+      "simulatedAsrDelayMs": 1000,
+      "evidenceParity": true
+    }
+  ]
+}

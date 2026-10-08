@@ -8,7 +8,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { WorkerConfig } from '../config/env.js';
-import { MediaError, isMediaError, type MediaTask, type TranscriptResult } from '../types/media.js';
+import { MediaError, isMediaError, type MediaTask } from '../types/media.js';
 import { createJobTemp } from '../util/tempDir.js';
 import { sha256File } from '../util/hash.js';
 import { log } from '../util/logger.js';
@@ -16,9 +16,7 @@ import { computeRetryDelaySeconds } from '../util/backoff.js';
 import { selectResolver, type MediaResolver } from '../resolvers/MediaResolver.js';
 import { inspectMedia } from './inspectMedia.js';
 import { normalizeMedia } from './normalizeMedia.js';
-import { extractAudio } from './extractAudio.js';
-import { extractFrames } from './extractFrames.js';
-import { deduplicateFrames } from './deduplicateFrames.js';
+import { prepareMediaEvidence } from './prepareMediaEvidence.js';
 import {
   verifyPlaceEvidence,
   type FinalizeOutcome,
@@ -539,45 +537,23 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       .update({ media_duration_seconds: probe.durationSeconds })
       .eq('id', task.id);
 
-    // 3. Transcript hierarchy: (1) platform captions when the resolver
-    //    already obtained them — skip paying for audio + speech-to-text
-    //    entirely; (2) otherwise extract audio and use the transcription
-    //    provider (non-fatal if it fails or there is no audio); (3) no usable
-    //    speech is a normal evidence-limited outcome, not a failure — visual
-    //    frames still carry the analysis forward.
-    await setProgress(client, task, 'extracting_audio');
-    let transcript: TranscriptResult;
-    if (media.captionsTranscript && media.captionsTranscript.length > 0) {
-      transcript = {
-        provider: media.captionsSource ?? 'platform_captions',
-        segments: media.captionsTranscript,
-        language: media.captionsLanguage ?? null,
-        status: 'success',
-      };
-      await setProgress(client, task, 'transcribing_audio');
-    } else {
-      transcript = await measuredRecognitionStage(task, 'audio_extraction_and_transcription', cfg.transcriptionProvider, async () => {
-        const audioPath = await extractAudio(cfg, playable, probe, jobTemp.dir, controller.signal);
-        await setProgress(client, task, 'transcribing_audio');
-        return deps.transcription.transcribe({
-          audioPath,
-          hasAudio: probe.hasAudio,
-          signal: controller.signal,
-          sourceUrl: media.canonicalUrl,
-          platform: task.platform,
-        });
-      });
-    }
+    // 3–4. Independent audio/transcription and frames join before analysis.
+    // Platform captions retain priority; expected ASR failure is non-fatal.
+    const prepared = await prepareMediaEvidence({
+      cfg, media, probe, playable, workDir: jobTemp.dir, platform: task.platform,
+      signal: controller.signal, transcription: deps.transcription,
+      progress: (stage) => setProgress(client, task, stage),
+      measure: (stage, provider, run) => measuredRecognitionStage(task, stage, provider, run),
+    });
+    const { transcript, rawFrames, frames } = prepared;
+    diagnostics.mediaPreparationWallMs = Math.round(prepared.wallMs);
+    diagnostics.mediaPreparationParallel = cfg.parallelMediaPreparation === true;
+    diagnostics.frameExtractionStrategy = cfg.frameExtractionStrategy ?? 'batched_hash';
     diagnostics.transcriptionProvider = transcript.provider;
     diagnostics.transcriptSegmentCount = transcript.segments.length;
     diagnostics.metadataTextPresent = !!media.metadataTitle || !!media.metadataDescription;
     if (transcript.status === 'failed') warnings.push('transcription_failed');
 
-    // 4. Frames + perceptual dedup.
-    await setProgress(client, task, 'extracting_frames');
-    const rawFrames = await measuredRecognitionStage(task, 'frame_extraction', 'ffmpeg', () =>
-      extractFrames(cfg, probe, playable, jobTemp.dir, controller.signal));
-    const frames = deduplicateFrames(rawFrames);
     diagnostics.framesExtracted = rawFrames.length;
     diagnostics.framesConsidered = frames.length;
     diagnostics.frameCount = frames.length;
