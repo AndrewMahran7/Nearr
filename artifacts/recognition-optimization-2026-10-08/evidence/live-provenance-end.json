@@ -1,0 +1,120 @@
+{
+  "capturedAt": "2026-10-08T22:49:19.960Z",
+  "note": "Read-only final integration check; no deployments or database mutations.",
+  "developmentEdge": [
+    {
+      "name": "create-share-job",
+      "version": 73,
+      "status": "ACTIVE",
+      "ezbr_sha256": "f59013c4c9332755ff217805a0c4ad0f6077148c6cc47b3a4f98ed3e5003ae60",
+      "updated_at": 1789093904363
+    },
+    {
+      "name": "process-share-jobs",
+      "version": 142,
+      "status": "ACTIVE",
+      "ezbr_sha256": "14a14902b8251e5c567d8fb7793692089a55a96821e40867e06ffbd67289195a",
+      "updated_at": 1791496130788
+    },
+    {
+      "name": "process-share-link",
+      "version": 86,
+      "status": "ACTIVE",
+      "ezbr_sha256": "bd87696a4f850bf1f573f7b6f63ac2abe804c1990131984fb92da0a5245871fe",
+      "updated_at": 1789500944209
+    }
+  ],
+  "productionEdge": [
+    {
+      "name": "process-share-link",
+      "version": 153,
+      "status": "ACTIVE",
+      "ezbr_sha256": "5925fde1868010306fa5fbcf1b10d399bf65fed38737a1606b96e9e07f7a6290",
+      "updated_at": 1788909039059
+    },
+    {
+      "name": "create-share-job",
+      "version": 45,
+      "status": "ACTIVE",
+      "ezbr_sha256": "d8f2e4a35d8a5c9f9dbcfc0795343a586c319042eb0c9df3fac96c7b801e0451",
+      "updated_at": 1788734561488
+    },
+    {
+      "name": "process-share-jobs",
+      "version": 123,
+      "status": "ACTIVE",
+      "ezbr_sha256": "578f81df4c87b54ec178ee0ce32aadd35be527d6d6f30c0760a0bb8add925339",
+      "updated_at": 1788910065140
+    }
+  ],
+  "developmentRailway": [
+    {
+      "id": "11acd95c-90f3-407e-aefa-2f1d66fc05a9",
+      "status": "SUCCESS",
+      "meta": {
+        "reason": "deploy"
+      },
+      "createdAt": "2026-09-15T19:36:39.266Z",
+      "serviceId": "3c8cd190-b118-4ee4-9338-407843ef4e1f",
+      "environmentId": "57d055b7-5326-4f96-a7a9-70523ee0d3f0"
+    },
+    {
+      "id": "0b9776ae-d9df-4fad-8ff3-9e8b34153a93",
+      "status": "REMOVED",
+      "meta": {
+        "reason": "deploy"
+      },
+      "createdAt": "2026-09-14T23:37:08.476Z",
+      "serviceId": "3c8cd190-b118-4ee4-9338-407843ef4e1f",
+      "environmentId": "57d055b7-5326-4f96-a7a9-70523ee0d3f0"
+    },
+    {
+      "id": "4d9ab527-8f1a-4837-964b-3fef598ecf87",
+      "status": "REMOVED",
+      "meta": {
+        "reason": "deploy"
+      },
+      "createdAt": "2026-09-08T23:05:04.013Z",
+      "serviceId": "3c8cd190-b118-4ee4-9338-407843ef4e1f",
+      "environmentId": "57d055b7-5326-4f96-a7a9-70523ee0d3f0"
+    }
+  ],
+  "productionRailway": [
+    {
+      "id": "fee82c18-6652-449b-8f54-9868ad54dcc0",
+      "status": "SKIPPED",
+      "meta": {
+        "branch": "main",
+        "commitHash": "ded040465176a193bba8c6921b179b07ef6a9a64",
+        "commitMessage": "fix: make fallback place save one tap",
+        "reason": "deploy"
+      },
+      "createdAt": "2026-09-09T05:13:01.421Z",
+      "serviceId": "59234570-e2ec-4a7e-86de-22826da86c66",
+      "environmentId": "49650a9c-4744-4649-8cd1-4ff38473d22f"
+    },
+    {
+      "id": "6e78ebe9-58f7-4799-a90e-86238a1b14e9",
+      "status": "SUCCESS",
+      "meta": {
+        "branch": "main",
+        "commitHash": "e9daf499cfb276ea7072b651642a04218b90ccf9",
+        "commitMessage": "chore: align source conflict metrics",
+        "reason": "deploy"
+      },
+      "createdAt": "2026-09-08T23:27:26.675Z",
+      "serviceId": "59234570-e2ec-4a7e-86de-22826da86c66",
+      "environmentId": "49650a9c-4744-4649-8cd1-4ff38473d22f"
+    },
+    {
+      "id": "8d809893-3c89-47fa-9cf8-1ea22484dafb",
+      "status": "REMOVED",
+      "meta": {
+        "reason": "deploy"
+      },
+      "createdAt": "2026-09-08T23:11:16.450Z",
+      "serviceId": "59234570-e2ec-4a7e-86de-22826da86c66",
+      "environmentId": "49650a9c-4744-4649-8cd1-4ff38473d22f"
+    }
+  ]
+}

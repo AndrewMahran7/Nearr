@@ -1,0 +1,81 @@
+{
+  "caseId": "P02",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJvUH-h0Eh3YARm3aq4RiI5Sc",
+      "name": "BLK Earth Sea Spirits",
+      "locality": "Huntington Beach",
+      "region": "California",
+      "country": "United States",
+      "address": "300 Pacific Coast Hwy Ste 202, Huntington Beach, CA 92648, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJvUH-h0Eh3YARm3aq4RiI5Sc",
+      "name": "BLK Earth Sea Spirits",
+      "locality": "Huntington Beach",
+      "region": "California",
+      "country": "United States",
+      "address": "300 Pacific Coast Hwy Ste 202, Huntington Beach, CA 92648, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.3166999999999689,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.12599999999997635,
+      "endMs": 0.2863999999999578
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.28759999999999764,
+      "endMs": 0.2907999999999902
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.29740000000003874,
+      "endMs": 0.3129000000000133
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "BLK Earth Sea Spirits",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.03484,
+    "modelLatencyMs": 6628,
+    "totalLatencyMs": 16516
+  }
+}

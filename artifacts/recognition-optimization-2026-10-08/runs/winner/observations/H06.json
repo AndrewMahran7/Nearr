@@ -1,0 +1,99 @@
+{
+  "caseId": "H06",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJdysZKQBNw4ARQHpLGNWirqc",
+      "name": "Baqba Mexican Grill – Rialto",
+      "locality": "Rialto",
+      "region": "California",
+      "country": "United States",
+      "address": "1165 Renaissance Pkwy #410, Rialto, CA 92376, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJdysZKQBNw4ARQHpLGNWirqc",
+      "name": "Baqba Mexican Grill – Rialto",
+      "locality": "Rialto",
+      "region": "California",
+      "country": "United States",
+      "address": "1165 Renaissance Pkwy #410, Rialto, CA 92376, USA"
+    },
+    {
+      "id": "ChIJoV_1bwAzw4ARgnSzpaTeQLQ",
+      "name": "Baqba Mexican Grill – Montclair",
+      "locality": "Montclair",
+      "region": "California",
+      "country": "United States",
+      "address": "4288 Holt Blvd unit J, Montclair, CA 91763, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "MEDIUM",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 2.5009999999999764,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.5453999999999724,
+      "endMs": 1.9323000000000548
+    },
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 1.951599999999985,
+      "endMs": 2.3614000000000033
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 2.3640000000000327,
+      "endMs": 2.3781999999999925
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 2.408300000000054,
+      "endMs": 2.489900000000034
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 2,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Baqba Mexican Grill – Rialto",
+      "replayed": true,
+      "calls": 1
+    },
+    {
+      "name": "Baqba Mexican Grill – Montclair",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.040856,
+    "modelLatencyMs": 10044,
+    "totalLatencyMs": 29133
+  }
+}

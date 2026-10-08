@@ -24,7 +24,7 @@ Geometric overlap supported 11/14 same-locality comparisons but also **3/22 diff
 | Local operation | n | p50 ms | p75 ms | p90 ms | p95 ms |
 |---|---:|---:|---:|---:|---:|
 | EigenPlaces descriptor, includes first inference | 44 | 10.19 | 14.93 | 24.23 | 41.25 |
-| DISK feature extraction | See raw cached-feature timings | 53.34 | 61.97 | 70.12 | 92.51 |
+| DISK feature extraction | 31 cached frames | 53.34 | 61.97 | 70.12 | 92.51 |
 | LightGlue pair matching | 36 | 49.07 | 60.14 | 72.94 | 129.97 |
 
 Homography estimation, image decoding and model startup/download are separate from those timings. Total descriptor storage for 44 frames is 90,112 bytes; the 30-reference gallery itself needs 61,440 bytes. Peak CUDA allocation for the combined pilot was 877,640,704 bytes. These single-machine measurements do not forecast Railway latency or hosted GPU costs.

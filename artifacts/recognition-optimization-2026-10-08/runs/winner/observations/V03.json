@@ -1,0 +1,81 @@
+{
+  "caseId": "V03",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJmTMMbfBUUCERzikg7fC87Aw",
+      "name": "Brooklyn City Pizzeria & Market",
+      "locality": "Laguna Niguel",
+      "region": "California",
+      "country": "United States",
+      "address": "30012 Crown Valley Pkwy Ste l, Laguna Niguel, CA 92677, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJmTMMbfBUUCERzikg7fC87Aw",
+      "name": "Brooklyn City Pizzeria & Market",
+      "locality": "Laguna Niguel",
+      "region": "California",
+      "country": "United States",
+      "address": "30012 Crown Valley Pkwy Ste l, Laguna Niguel, CA 92677, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.22940000000005512,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.09410000000002583,
+      "endMs": 0.20510000000001583
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.20590000000004238,
+      "endMs": 0.20870000000002165
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.21330000000000382,
+      "endMs": 0.22649999999998727
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "AUTO_SAVE"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Brooklyn City Pizzeria & Market",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.035668,
+    "modelLatencyMs": 5885,
+    "totalLatencyMs": 24384
+  }
+}

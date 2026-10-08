@@ -1,0 +1,166 @@
+{
+  "submittedReal": 31,
+  "observedReal": 31,
+  "unavailableObservations": 0,
+  "exactLabeledCases": 15,
+  "exactEligible": 15,
+  "unverifiedExcluded": 16,
+  "correctAutonomousResolution": {
+    "numerator": 0,
+    "denominator": 15,
+    "rate": 0,
+    "wilson95": [
+      0,
+      0.20388330103583963
+    ]
+  },
+  "autonomousCoverage": {
+    "numerator": 0,
+    "denominator": 15,
+    "rate": 0,
+    "wilson95": [
+      0,
+      0.20388330103583963
+    ]
+  },
+  "autonomousResultPrecision": {
+    "numerator": 0,
+    "denominator": 0,
+    "rate": null,
+    "wilson95": null
+  },
+  "autonomousPlacePrecision": {
+    "numerator": 0,
+    "denominator": 0,
+    "rate": null,
+    "wilson95": null
+  },
+  "single": {
+    "exactTop1": {
+      "numerator": 9,
+      "denominator": 15,
+      "rate": 0.6,
+      "wilson95": [
+        0.35746830120625167,
+        0.8017550385865801
+      ]
+    },
+    "correctAutonomous": {
+      "numerator": 0,
+      "denominator": 15,
+      "rate": 0,
+      "wilson95": [
+        0,
+        0.20388330103583963
+      ]
+    }
+  },
+  "multi": {
+    "cases": 0,
+    "detection": {
+      "numerator": 30,
+      "denominator": 31,
+      "rate": 0.967741935483871,
+      "wilson95": [
+        0.8380589483527563,
+        0.9942827784745831
+      ]
+    },
+    "placePrecision": {
+      "numerator": 0,
+      "denominator": 0,
+      "rate": null,
+      "wilson95": null
+    },
+    "placeRecall": {
+      "numerator": 0,
+      "denominator": 0,
+      "rate": null,
+      "wilson95": null
+    },
+    "f1": null,
+    "exactSet": {
+      "numerator": 0,
+      "denominator": 0,
+      "rate": null,
+      "wilson95": null
+    },
+    "correctAutonomous": {
+      "numerator": 0,
+      "denominator": 0,
+      "rate": null,
+      "wilson95": null
+    }
+  },
+  "safety": {
+    "wrongCountry": {
+      "numerator": 0,
+      "denominator": 0,
+      "rate": null,
+      "wilson95": null
+    },
+    "wrongRegion": {
+      "numerator": 0,
+      "denominator": 0,
+      "rate": null,
+      "wilson95": null
+    },
+    "unsupportedAutosave": {
+      "numerator": 0,
+      "denominator": 31,
+      "rate": 0,
+      "wilson95": [
+        0,
+        0.11025539546043056
+      ]
+    },
+    "negativeAutosave": {
+      "numerator": 0,
+      "denominator": 0,
+      "rate": null,
+      "wilson95": null
+    },
+    "failedConfidentResults": 0,
+    "invalidObservations": 0
+  },
+  "latency": {
+    "all": {
+      "n": 31,
+      "p50": 0.49059999999997217,
+      "p75": 0.7093000000000416,
+      "p90": 1.2424000000000888,
+      "p95": 2.096400000000017
+    },
+    "correctUsable": {
+      "n": 9,
+      "p50": 0.43860000000006494,
+      "p75": 1.012899999999945,
+      "p90": 1.1524399999999333,
+      "p95": 1.4221199999999952
+    },
+    "correctAutonomous": {
+      "n": 0,
+      "p50": null,
+      "p75": null,
+      "p90": null,
+      "p95": null
+    },
+    "review": {
+      "n": 31,
+      "p50": 0.49059999999997217,
+      "p75": 0.7093000000000416,
+      "p90": 1.2424000000000888,
+      "p95": 2.096400000000017
+    }
+  },
+  "cost": {
+    "totalUsd": 0,
+    "knownSubmissions": 31,
+    "costPerSubmission": 0,
+    "costPerCorrectResult": 0,
+    "costPerCorrectAutonomousResult": null
+  },
+  "boundaries": [
+    "deterministic_policy_replay"
+  ]
+}

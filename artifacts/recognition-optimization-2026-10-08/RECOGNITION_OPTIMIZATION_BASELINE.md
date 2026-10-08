@@ -50,3 +50,11 @@ The committed baseline already exists, so the second command intentionally rejec
 The scorer computes numerator/denominator and Wilson intervals; paired source-group bootstrap; single exact matching and candidate recall; complete-set multi metrics; wrong-region/country errors only for adjudicated labels; coverage/precision separately; missing timing and cost as null; and incomparable-boundary rejection in Pareto comparisons. Unit tests cover wrong branches, negatives lowering precision, complete multi sets, failed confidence, leakage, immutable output, missing costs, alias assignment and unknown geography.
 
 The higher-level winner must also preserve the executable safety controls and media/Places parity experiments. Those stage measurements can select a safe local implementation without pretending this policy replay measures all-user recognition accuracy.
+
+## Final paired source-policy check
+
+The final `winner` run at implementation SHA `7aa09f0f1bc6a738a3b83dd42c696ce40ce5d4a3` executed all 31 cases with no unavailable or invalid observations. All remained review; exact-label eligible cases stayed 15, strict top1 stayed 9/15, correct autonomous results stayed 0/15, and no decision changed. The paired correct-autonomous delta was zero across 13 independent eligible source groups. That describes this conditional cohort only; the degenerate bootstrap interval does not establish population equivalence.
+
+Winner local policy timing was p50/p75/p90/p95 **0.491/0.709/1.242/2.096 ms**, versus baseline **0.188/0.364/0.864/1.604 ms** (n31 each). The winner check ran alongside integration verification. These sub-millisecond CPU differences are not a performance ablation; no speedup is claimed or hidden. Real queue, acquisition, ASR, model, Places transport, database and client durations remain outside this replay. No correct autonomous latency exists in either arm.
+
+The aggregate `RECOGNITION_PER_CASE_RESULTS.csv` contains both arms (62 rows), including confidence, candidates, per-stage observations, usage availability and failure classes. The top-level `baseline_results.csv` is a byte-identical immutable convenience copy of the original. Evaluation hardening and the final run did not overwrite any original baseline artifact.

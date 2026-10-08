@@ -1,0 +1,81 @@
+{
+  "caseId": "H05",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJa-286P5BjoARx03hogk54cw",
+      "name": "Mad Yolks",
+      "locality": "Santa Cruz",
+      "region": "California",
+      "country": "United States",
+      "address": "1411 Pacific Ave, Santa Cruz, CA 95060, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJa-286P5BjoARx03hogk54cw",
+      "name": "Mad Yolks",
+      "locality": "Santa Cruz",
+      "region": "California",
+      "country": "United States",
+      "address": "1411 Pacific Ave, Santa Cruz, CA 95060, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 1.0175999999999021,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.3594999999999118,
+      "endMs": 0.8368999999999005
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.856899999999996,
+      "endMs": 0.8860999999999422
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.9180000000000064,
+      "endMs": 0.9972999999999956
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "AUTO_SAVE"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Mad Yolks",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.032556,
+    "modelLatencyMs": 3300,
+    "totalLatencyMs": 14873
+  }
+}

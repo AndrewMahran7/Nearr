@@ -1,0 +1,81 @@
+{
+  "caseId": "H09",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJ2R9lbmYqw4ARNY62k_90y4Y",
+      "name": "Pho Bamboo Restaurant",
+      "locality": "City of Industry",
+      "region": "California",
+      "country": "United States",
+      "address": "18209 Gale Ave, City of Industry, CA 91748, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJ2R9lbmYqw4ARNY62k_90y4Y",
+      "name": "Pho Bamboo Restaurant",
+      "locality": "City of Industry",
+      "region": "California",
+      "country": "United States",
+      "address": "18209 Gale Ave, City of Industry, CA 91748, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 1.2424000000000888,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.25310000000001764,
+      "endMs": 0.7096000000000231
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.7113000000000511,
+      "endMs": 1.1136000000000195
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 1.154800000000023,
+      "endMs": 1.2305000000000064
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Pho Bamboo Restaurant",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.035032,
+    "modelLatencyMs": 6056,
+    "totalLatencyMs": 24929
+  }
+}

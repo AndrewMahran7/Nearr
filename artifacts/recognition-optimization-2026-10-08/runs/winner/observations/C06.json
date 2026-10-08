@@ -1,0 +1,81 @@
+{
+  "caseId": "C06",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJCYhMeztnXIYRmhgTIsz4azA",
+      "name": "Tuxedo Cat's Coffee",
+      "locality": "San Antonio",
+      "region": "Texas",
+      "country": "United States",
+      "address": "6075 Heath Rd, San Antonio, TX 78250, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJCYhMeztnXIYRmhgTIsz4azA",
+      "name": "Tuxedo Cat's Coffee",
+      "locality": "San Antonio",
+      "region": "Texas",
+      "country": "United States",
+      "address": "6075 Heath Rd, San Antonio, TX 78250, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 6.190500000000043,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.6848999999999705,
+      "endMs": 3.3841999999999643
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 3.3920000000000528,
+      "endMs": 3.5270000000000437
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 3.648400000000038,
+      "endMs": 6.031500000000051
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "AUTO_SAVE"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Tuxedo Cat's Coffee",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.036388,
+    "modelLatencyMs": 4538,
+    "totalLatencyMs": 19626
+  }
+}

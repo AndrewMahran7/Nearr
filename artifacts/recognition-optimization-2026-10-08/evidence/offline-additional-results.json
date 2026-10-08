@@ -1,0 +1,685 @@
+{
+  "results": [
+    {
+      "suite": "test:recognition-evaluation",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 588,
+      "log": ".tmp\\offline-remaining\\test-recognition-evaluation.log",
+      "logSha256": "f1096c096b1fc6975de52a68c033206c1049afdfa60abacc01289e8a392040b1"
+    },
+    {
+      "suite": "test:monetization-token-ux",
+      "status": "failed",
+      "exitCode": 1,
+      "elapsedMs": 850,
+      "log": ".tmp\\offline-remaining\\test-monetization-token-ux.log",
+      "logSha256": "4f1206c32065ff6e929c7e380bda26457a13873f7c168431b28d68b4a64512ed"
+    },
+    {
+      "suite": "test:monetization-integration",
+      "status": "failed",
+      "exitCode": 1,
+      "elapsedMs": 1244,
+      "log": ".tmp\\offline-remaining\\test-monetization-integration.log",
+      "logSha256": "e9a6cf1a886c83130f9395815072d76698e4fc1c926e75f9a752eebc0bd0f0c3"
+    },
+    {
+      "suite": "test:monetization-suspension-contract",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1051,
+      "log": ".tmp\\offline-remaining\\test-monetization-suspension-contract.log",
+      "logSha256": "fdf9d216d7d813bf03a606dac5aef8055d2172a72e9b2e70d77f5129ec7d293a"
+    },
+    {
+      "suite": "test:premium-request-monetization",
+      "status": "failed",
+      "exitCode": 1,
+      "elapsedMs": 1424,
+      "log": ".tmp\\offline-remaining\\test-premium-request-monetization.log",
+      "logSha256": "1c932e448c9221bc5c1fcc418ac571d3a0924c985d8125e50bd89bc447d70adc"
+    },
+    {
+      "suite": "test:premium-suspension",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1568,
+      "log": ".tmp\\offline-remaining\\test-premium-suspension.log",
+      "logSha256": "d563cdaef990e18531a60958970a669d41364dbc87799559699ad23be7409b6c"
+    },
+    {
+      "suite": "test:area-match-premium",
+      "status": "failed",
+      "exitCode": 1,
+      "elapsedMs": 1728,
+      "log": ".tmp\\offline-remaining\\test-area-match-premium.log",
+      "logSha256": "7f47fc880235a565db4e8e1c55ba4239bb42387d6428111a9d25d8bd8b84aba2"
+    },
+    {
+      "suite": "test:tutorial-recognition-corpus",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 758,
+      "log": ".tmp\\offline-remaining\\test-tutorial-recognition-corpus.log",
+      "logSha256": "b4d52070b67823cb72afee9988e9fe73fe5e80182426ee959d9b1e71daedfb97"
+    },
+    {
+      "suite": "test:tutorial-fixtures",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1743,
+      "log": ".tmp\\offline-remaining\\test-tutorial-fixtures.log",
+      "logSha256": "2b9372f361c1f8b0ba9956846d2840ad0af30720b1c19b756016c9b99f412b3b"
+    },
+    {
+      "suite": "test:recognition-dedupe-contract",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 784,
+      "log": ".tmp\\offline-remaining\\test-recognition-dedupe-contract.log",
+      "logSha256": "924cf278d173eae779daf5c3d5faea47a9c428ea26e2a0a865ac4d46fbe96071"
+    },
+    {
+      "suite": "test:explicit-source-place",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1532,
+      "log": ".tmp\\offline-remaining\\test-explicit-source-place.log",
+      "logSha256": "970f20bd3b673eca12f07520f94b059c3006098104506143e24368994ea510bf"
+    },
+    {
+      "suite": "test:one-tap-fallback-save",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1688,
+      "log": ".tmp\\offline-remaining\\test-one-tap-fallback-save.log",
+      "logSha256": "1e6ef045c878fe73f5cf708859ff5133e511a36ba79c8d7a1a35d87d0a20de25"
+    },
+    {
+      "suite": "test:address-verification",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1799,
+      "log": ".tmp\\offline-remaining\\test-address-verification.log",
+      "logSha256": "0bb89d62d6f6c81dbd2f0d29e8550503b3429db53122048a24e99e137cf8b6e2"
+    },
+    {
+      "suite": "test:media-source-evidence",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 2435,
+      "log": ".tmp\\offline-remaining\\test-media-source-evidence.log",
+      "logSha256": "9e386dc9272443dc74b9bbaa040eb5bcd3496011fb51d972d67fd0241448a27d"
+    },
+    {
+      "suite": "test:venue-handle-match",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1586,
+      "log": ".tmp\\offline-remaining\\test-venue-handle-match.log",
+      "logSha256": "a8808450b3f1d88b2531acdc12dd8c86673fb7b4c40b8582ab9e40152e04847e"
+    },
+    {
+      "suite": "test:failure-logging",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 794,
+      "log": ".tmp\\offline-remaining\\test-failure-logging.log",
+      "logSha256": "3f2d1b6ed0b61d5158bf489734e4b33d6b6f12e1fe92e088dcc94d28a25eb8ef"
+    },
+    {
+      "suite": "test:opportunity-ui",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 788,
+      "log": ".tmp\\offline-remaining\\test-opportunity-ui.log",
+      "logSha256": "0071ead7a2c2b6ee71d1d7eae28967d6b247a6504dabb235d6f674882462aa38"
+    },
+    {
+      "suite": "test:nearby-group",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 786,
+      "log": ".tmp\\offline-remaining\\test-nearby-group.log",
+      "logSha256": "a129b14a9128d20a6585059d9348715928eb35ee9bb2668f512d12978f1f574f"
+    },
+    {
+      "suite": "test:nearby-category-contract",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1291,
+      "log": ".tmp\\offline-remaining\\test-nearby-category-contract.log",
+      "logSha256": "48df9ea24a7ad3ec090bd26a2428dd91a165b5c41aa70cb5d7c00ccafb209011"
+    },
+    {
+      "suite": "test:oct8-product-consistency",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1178,
+      "log": ".tmp\\offline-remaining\\test-oct8-product-consistency.log",
+      "logSha256": "4c65cf58ddef845d15e6fae130558a5bdd8a8fcee4319896b7a20b20fa66fed2"
+    },
+    {
+      "suite": "test:oct8-founder-journey",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1874,
+      "log": ".tmp\\offline-remaining\\test-oct8-founder-journey.log",
+      "logSha256": "b532345bfec12716810875e5c561691ca505a7a7aeb03ee380037cfc666ab5dd"
+    },
+    {
+      "suite": "test:share-job-detail-state",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 989,
+      "log": ".tmp\\offline-remaining\\test-share-job-detail-state.log",
+      "logSha256": "2abf0d4cea19c7523987ec80939f2ac2b7c78a19b3293294675d9a58f1b754dd"
+    },
+    {
+      "suite": "test:saved-place-result-ui",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1461,
+      "log": ".tmp\\offline-remaining\\test-saved-place-result-ui.log",
+      "logSha256": "63b14c11a995973af1b78509f280710fc34ccc249715af6e20ee7b8a45f66f46"
+    },
+    {
+      "suite": "test:public-place-sharing",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 786,
+      "log": ".tmp\\offline-remaining\\test-public-place-sharing.log",
+      "logSha256": "81af6e142080fd6e7b2765965c6eb4bf42e306030b0d67859d7bdf5ad0548a9b"
+    },
+    {
+      "suite": "test:shared-place-context",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 762,
+      "log": ".tmp\\offline-remaining\\test-shared-place-context.log",
+      "logSha256": "388783b708cd3f2a1f4db95ae1b30a28dd0f13985799d1378845eb7168059747"
+    },
+    {
+      "suite": "test:provider-retry",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 755,
+      "log": ".tmp\\offline-remaining\\test-provider-retry.log",
+      "logSha256": "8da60991e6de5c9c8c5200f7838b1cf467ccc6628eba4c5436740b1818b7c43f"
+    },
+    {
+      "suite": "test:place-detail-ui",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 667,
+      "log": ".tmp\\offline-remaining\\test-place-detail-ui.log",
+      "logSha256": "c224a22b3126109d8bd1868bb63d2a66a4b1258331a24c570cf8230e4440a99d"
+    },
+    {
+      "suite": "test:photo-carousel",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 642,
+      "log": ".tmp\\offline-remaining\\test-photo-carousel.log",
+      "logSha256": "1d3206bb635b04f3c79d344fbccfa8556a1b69247f172217c19a9f7dc16ee5a2"
+    },
+    {
+      "suite": "test:place-video-gallery",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1005,
+      "log": ".tmp\\offline-remaining\\test-place-video-gallery.log",
+      "logSha256": "3941ecc6650fc2e96f636bde6726af305f553d7d716dc4c1fd1791fc80c538ca"
+    },
+    {
+      "suite": "test:map-visibility",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1030,
+      "log": ".tmp\\offline-remaining\\test-map-visibility.log",
+      "logSha256": "4bcd24a68b85fbe167b2d9625ab0035079b0899c036ccb48192df3a93ebf803f"
+    },
+    {
+      "suite": "test:map-markers",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1011,
+      "log": ".tmp\\offline-remaining\\test-map-markers.log",
+      "logSha256": "3724348fd46eac582483bce0038a06f0a0bbb38c2116ccf9bc76ba81607b6bed"
+    },
+    {
+      "suite": "test:map-camera",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1189,
+      "log": ".tmp\\offline-remaining\\test-map-camera.log",
+      "logSha256": "0f36501e74f2b8da99b713c9c3f850797fb2ce9133fa278596fb412b6b5e2d0d"
+    },
+    {
+      "suite": "test:map-clustering",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1008,
+      "log": ".tmp\\offline-remaining\\test-map-clustering.log",
+      "logSha256": "14a7b3f4cf20586140c017c676d8622ee9555e274a5a22353d7143f28ca41dd2"
+    },
+    {
+      "suite": "test:map-reliability",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 2795,
+      "log": ".tmp\\offline-remaining\\test-map-reliability.log",
+      "logSha256": "b774f8f8fc4ea667bf69a8ca902f69df65669e1ed9e22d3660414032e695f18e"
+    },
+    {
+      "suite": "test:candidate-presentation-cost",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 980,
+      "log": ".tmp\\offline-remaining\\test-candidate-presentation-cost.log",
+      "logSha256": "b838b2b497fda6a03a0130388cdeb1ca9c07f3367bb8c79ac81b6a16002ac49f"
+    },
+    {
+      "suite": "test:onboarding-1259-regressions",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1160,
+      "log": ".tmp\\offline-remaining\\test-onboarding-1259-regressions.log",
+      "logSha256": "957057ee988a912bc101eab8b694dc6deb918f78eb09d8f870a6de1a0ee64e57"
+    },
+    {
+      "suite": "test:onboarding-phase2-auth-map-hardening",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1222,
+      "log": ".tmp\\offline-remaining\\test-onboarding-phase2-auth-map-hardening.log",
+      "logSha256": "a12c19f6473dbbf94ea2549de6f29d61e152e966985f424c754659a81f77e5e3"
+    },
+    {
+      "suite": "test:context-aware-places-resolution",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1197,
+      "log": ".tmp\\offline-remaining\\test-context-aware-places-resolution.log",
+      "logSha256": "c862434202e8407e81f87e368498143e769b691fab15d8f30b994dae70f51753"
+    },
+    {
+      "suite": "test:context-aware-cache-reranking",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1304,
+      "log": ".tmp\\offline-remaining\\test-context-aware-cache-reranking.log",
+      "logSha256": "5528f35ddaec968aa8720bc6629773228936d00e65274aefae6e5d3bd06b5ee1"
+    },
+    {
+      "suite": "test:queue-persistence",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1016,
+      "log": ".tmp\\offline-remaining\\test-queue-persistence.log",
+      "logSha256": "251b0c9e894997c498794e6fb23eb4970f1ae6655e8bd61686486f582744aae5"
+    },
+    {
+      "suite": "test:empty-queue",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 11031,
+      "log": ".tmp\\offline-remaining\\test-empty-queue.log",
+      "logSha256": "7c08c9ad5435490ecdc7fe16219ad83d7b926225c907e43034a265646f7bfb83"
+    },
+    {
+      "suite": "test:queue-swipe",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 715,
+      "log": ".tmp\\offline-remaining\\test-queue-swipe.log",
+      "logSha256": "22b119bf1e15c0413a824da4ceb210bc3f1fc0a60a3e7511040cb3a3e0722630"
+    },
+    {
+      "suite": "test:queue-save",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 738,
+      "log": ".tmp\\offline-remaining\\test-queue-save.log",
+      "logSha256": "dc67d6e7ef15671694b576989a720ab7e9c5e75d8980a3bf94abb75470b84615"
+    },
+    {
+      "suite": "test:queue-interactions",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 647,
+      "log": ".tmp\\offline-remaining\\test-queue-interactions.log",
+      "logSha256": "917975476cd023e4dcea1eac48b97c0e68e5656e3f7cc6b7d538277a65b72b00"
+    },
+    {
+      "suite": "test:queue-place-nav",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 747,
+      "log": ".tmp\\offline-remaining\\test-queue-place-nav.log",
+      "logSha256": "46c2a906b87c0ad6bd801a54e55e782ec242c26098dcbaae2001fb78da341bec"
+    },
+    {
+      "suite": "test:queue-place-focus",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 966,
+      "log": ".tmp\\offline-remaining\\test-queue-place-focus.log",
+      "logSha256": "9a57de3d327fe348c5e92577e8f7fb5cb2b8676a8b186e2aeb93389ec5936a88"
+    },
+    {
+      "suite": "test:long-caption-preservation",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1434,
+      "log": ".tmp\\offline-remaining\\test-long-caption-preservation.log",
+      "logSha256": "7e429227a331f65faa485b0aac19d66a2116a265aeeac2cfbb3308442a598ff0"
+    },
+    {
+      "suite": "test:source-place-group",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 977,
+      "log": ".tmp\\offline-remaining\\test-source-place-group.log",
+      "logSha256": "cfb9a6fbf60c98ce220387e8fbc6f7b6720de0bc11844019fea2117a5828a1b7"
+    },
+    {
+      "suite": "test:source-media-integration",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 860,
+      "log": ".tmp\\offline-remaining\\test-source-media-integration.log",
+      "logSha256": "e8fdc81bcad5c82a175a2b4d151dc9beb6aafbae294a73d47290d4a156bcec02"
+    },
+    {
+      "suite": "test:share-extension-completion",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 871,
+      "log": ".tmp\\offline-remaining\\test-share-extension-completion.log",
+      "logSha256": "042f55e7a6bc0e6a17d9bf7c83b4b0c74aac1c01c810caf86a8e042ff53fb589"
+    },
+    {
+      "suite": "test:vayrin-core",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 915,
+      "log": ".tmp\\offline-remaining\\test-vayrin-core.log",
+      "logSha256": "8cb2ceec6b97aed950e24321a8bcdf4d57e04db8bcae4c7c6b04e12deefd6c6d"
+    },
+    {
+      "suite": "test:vayrin-same-place-moment-consolidation",
+      "status": "failed",
+      "exitCode": 1,
+      "elapsedMs": 2415,
+      "log": ".tmp\\offline-remaining\\test-vayrin-same-place-moment-consolidation.log",
+      "logSha256": "6a711df8d1d7a35b145888ae0d2fbe959eb187d49e396776b69cb4443c477b6d"
+    },
+    {
+      "suite": "test:vayrin-recognition-truth",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 2166,
+      "log": ".tmp\\offline-remaining\\test-vayrin-recognition-truth.log",
+      "logSha256": "61807224e769d9505b8fafa1df4c08de8fa844472301760156b774dda094e6a9"
+    },
+    {
+      "suite": "test:vayrin-singleton-autosave",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 2866,
+      "log": ".tmp\\offline-remaining\\test-vayrin-singleton-autosave.log",
+      "logSha256": "038f9771d8540a3ea73c600f0cb9faa8e804ea0555c2b8ff8233b9a871827140"
+    },
+    {
+      "suite": "test:vayrin-never-dead-end",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 2253,
+      "log": ".tmp\\offline-remaining\\test-vayrin-never-dead-end.log",
+      "logSha256": "463387c1ef1035ec613bd3a8e8d9c225f014cddd432ae251cffa94a0605a7346"
+    },
+    {
+      "suite": "test:vayrin-generic-place-type-guard",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 2371,
+      "log": ".tmp\\offline-remaining\\test-vayrin-generic-place-type-guard.log",
+      "logSha256": "2c4cf76e9f40b16a83ea7fdf88c3705cff686a5b65ea099153be6dc1dec1ed63"
+    },
+    {
+      "suite": "test:metadata-failure-fallback",
+      "status": "failed",
+      "exitCode": 1,
+      "elapsedMs": 796,
+      "log": ".tmp\\offline-remaining\\test-metadata-failure-fallback.log",
+      "logSha256": "ceda28357f0f2608258639705bc15e9772051e19a7d82ae9f8390c9102ac6e61"
+    },
+    {
+      "suite": "test:onb2-01e-regressions",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1326,
+      "log": ".tmp\\offline-remaining\\test-onb2-01e-regressions.log",
+      "logSha256": "48cc478fe6f99c5290fe1307960efe7b59049938ec2ca0b48265077dacd50654"
+    },
+    {
+      "suite": "test:metadata-autosave",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1297,
+      "log": ".tmp\\offline-remaining\\test-metadata-autosave.log",
+      "logSha256": "578c8a6a83a160505415f5d36f1f33b19bf4f462fd9d8f6f1bf6e4c3b7b0728f"
+    },
+    {
+      "suite": "test:source-entity-semantic-consistency",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1458,
+      "log": ".tmp\\offline-remaining\\test-source-entity-semantic-consistency.log",
+      "logSha256": "e48a6227d4863c94ab25e52b56b791c28828d0850496329bce2825b2e52411ab"
+    },
+    {
+      "suite": "test:audit-preflight",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1251,
+      "log": ".tmp\\offline-remaining\\test-audit-preflight.log",
+      "logSha256": "36f59de5abbc25091b6016368d7b747801e7d85d3c8ae4abb1eedfa4ee094219"
+    },
+    {
+      "suite": "test:ambiguity-review",
+      "status": "failed",
+      "exitCode": 1,
+      "elapsedMs": 1238,
+      "log": ".tmp\\offline-remaining\\test-ambiguity-review.log",
+      "logSha256": "e5b89fd14c84653fbf4a1a80d72c24cf506cae2002feb2bc374f35f0488a15c1"
+    },
+    {
+      "suite": "test:onboarding-v2-phase2",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 5907,
+      "log": ".tmp\\offline-remaining\\test-onboarding-v2-phase2.log",
+      "logSha256": "d56bf068857182ac0dad9a60a49d3aa324b7f9f57d5ea891f14914b589465e91"
+    },
+    {
+      "suite": "test:onboarding-v2-physical-runtime",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 4428,
+      "log": ".tmp\\offline-remaining\\test-onboarding-v2-physical-runtime.log",
+      "logSha256": "96245474809a16f06313e26b0b3f39d1d533700bc8ddacce0007898849a326dc"
+    },
+    {
+      "suite": "test:onboarding-physical-qa-regressions",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1460,
+      "log": ".tmp\\offline-remaining\\test-onboarding-physical-qa-regressions.log",
+      "logSha256": "37e467303959b88ba53811fb7d54af00488a29c957406671ec63e4f9c89acd2a"
+    },
+    {
+      "suite": "test:onboarding-v2-hands-on-activation",
+      "status": "failed",
+      "exitCode": 1,
+      "elapsedMs": 1283,
+      "log": ".tmp\\offline-remaining\\test-onboarding-v2-hands-on-activation.log",
+      "logSha256": "f7fc942b919b7ce9b020a6d5bb17c8899501d10b5ef2b543796a9a5b22abf2c1"
+    },
+    {
+      "suite": "test:onboarding-clean-baseline",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 687,
+      "log": ".tmp\\offline-remaining\\test-onboarding-clean-baseline.log",
+      "logSha256": "eed11cd22b750df0ee456a69768e0c94075015b7da16c45e02273dc9eeae8088"
+    },
+    {
+      "suite": "test:onboarding-v2-phase1-production",
+      "status": "failed",
+      "exitCode": 1,
+      "elapsedMs": 1040,
+      "log": ".tmp\\offline-remaining\\test-onboarding-v2-phase1-production.log",
+      "logSha256": "f7c95804ac730f026bd4cf00bc7b2f45291ce2fc0b77db45bccf759c53b61deb"
+    },
+    {
+      "suite": "test:onboarding-v2-visual",
+      "status": "failed",
+      "exitCode": 1,
+      "elapsedMs": 680,
+      "log": ".tmp\\offline-remaining\\test-onboarding-v2-visual.log",
+      "logSha256": "fb8716e9f96400c90bf512def9e3a22c151e481a286e090508c0e4e5a89aa54c"
+    },
+    {
+      "suite": "test:transient-message",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 802,
+      "log": ".tmp\\offline-remaining\\test-transient-message.log",
+      "logSha256": "8a48143c445f8ad388c7e820b110676a629d7c42c6a9ba9b01f68812c150438d"
+    },
+    {
+      "suite": "test:save-completion-contracts",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 825,
+      "log": ".tmp\\offline-remaining\\test-save-completion-contracts.log",
+      "logSha256": "9476f854bbd7c7baad0170cf1477ff2d2513e5155759a05c875292b3cbda94f5"
+    },
+    {
+      "suite": "test:ai-note-authenticity",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 721,
+      "log": ".tmp\\offline-remaining\\test-ai-note-authenticity.log",
+      "logSha256": "158d5a998be583159f6f2284eda27de60d012efaa13f410dae6e41c32308e21e"
+    },
+    {
+      "suite": "test:ai-save-notes",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 542,
+      "log": ".tmp\\offline-remaining\\test-ai-save-notes.log",
+      "logSha256": "fbec96bb6eed0c81ae9e382690c3bcd278368c0f29264494eadedb1ca606ba40"
+    },
+    {
+      "suite": "test:source-group-nearby-wheel",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1157,
+      "log": ".tmp\\offline-remaining\\test-source-group-nearby-wheel.log",
+      "logSha256": "b985bb5650df34d4e0e03ab2dc8ed00fd7fb67a60d43b2bdd0b3c034e2d1685c"
+    },
+    {
+      "suite": "test:saved-browse-contracts",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 706,
+      "log": ".tmp\\offline-remaining\\test-saved-browse-contracts.log",
+      "logSha256": "cc8d97ab9783947b5f165506171bf2e76d06f5c7ce6ccc5bb9b2ce70bfba24d7"
+    },
+    {
+      "suite": "test:place-detail",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 634,
+      "log": ".tmp\\offline-remaining\\test-place-detail.log",
+      "logSha256": "23c0b0981dea0610956cf26f7a9b591a45e2a5b014c6a9d8f29905f8838c161e"
+    },
+    {
+      "suite": "test:saved-place-images",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 725,
+      "log": ".tmp\\offline-remaining\\test-saved-place-images.log",
+      "logSha256": "aa90b01fcfb38517be058dc2851e9f8cdb8596b33b8ccdccaa7e5d3712b61dfe"
+    },
+    {
+      "suite": "test:place-detail-v2",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 824,
+      "log": ".tmp\\offline-remaining\\test-place-detail-v2.log",
+      "logSha256": "adc54e382be99316ddd3064d119b2ad36ef92d74649c43d1a54ccf2fba89b94d"
+    },
+    {
+      "suite": "test:place-detail-convergence",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 732,
+      "log": ".tmp\\offline-remaining\\test-place-detail-convergence.log",
+      "logSha256": "264fab335ba95611eaba3892b09e3089c1e364fb1b97414c853d591c22e68dc5"
+    },
+    {
+      "suite": "test:place-hours",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 879,
+      "log": ".tmp\\offline-remaining\\test-place-hours.log",
+      "logSha256": "2163fc44430475a94a13e1b714f2eb84bf70aecab575c58c9d187fa5dd50932b"
+    },
+    {
+      "suite": "test:map-queue-entry",
+      "status": "failed",
+      "exitCode": 1,
+      "elapsedMs": 1250,
+      "log": ".tmp\\offline-remaining\\test-map-queue-entry.log",
+      "logSha256": "ba1261aa680d310abda2cf69e8f4198293134540e406ce6e468b7384cb538a32"
+    },
+    {
+      "suite": "test:related-places",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1053,
+      "log": ".tmp\\offline-remaining\\test-related-places.log",
+      "logSha256": "fa3f92c86bfef18c5e17f665230cdc89794113d1e120f5fb972449a452fac0c6"
+    },
+    {
+      "suite": "test:recommendation-detail",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 959,
+      "log": ".tmp\\offline-remaining\\test-recommendation-detail.log",
+      "logSha256": "2a5b6228dfe25a9617c3fdfd1e89c56edb611361c1bb781ec26c0908bf25a1e0"
+    },
+    {
+      "suite": "test:pin-state",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 603,
+      "log": ".tmp\\offline-remaining\\test-pin-state.log",
+      "logSha256": "2f195f0802f00c04e0f328456734b49b2b51b78998b01f704675e105e645111c"
+    },
+    {
+      "suite": "test:vayrin-candidate-confirmation",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1365,
+      "log": ".tmp\\offline-remaining\\test-vayrin-candidate-confirmation.log",
+      "logSha256": "afe1662694208d69d3af78ee1772b3610c84ec8043e1c886ffcb6c90cd720104"
+    }
+  ],
+  "sourceCommit": "7aa09f0f1bc6a738a3b83dd42c696ce40ce5d4a3"
+}

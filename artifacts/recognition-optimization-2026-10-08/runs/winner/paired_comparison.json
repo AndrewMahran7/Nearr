@@ -1,0 +1,18 @@
+{
+  "comparisonScope": "current_source_policy_parity_only",
+  "performanceAblation": false,
+  "submittedPairs": 31,
+  "unavailablePairs": 0,
+  "pairedCases": 15,
+  "independentGroups": 13,
+  "iterations": 2000,
+  "correctAutonomousDelta95": [
+    0,
+    0
+  ],
+  "p90WallClockDelta95": [
+    -2.286200000000008,
+    1.6367999999999938
+  ],
+  "changedCases": []
+}

@@ -1,0 +1,38 @@
+{
+  "prebuild-verified": {
+    "path": ".tmp\\prebuild-verified.log",
+    "sha256": "b7cdd94f6c62078cab6097e1a85a4ee879c21ff1b3fddf4ea7d4152434820342"
+  },
+  "worker-verified": {
+    "path": ".tmp\\worker-verified.log",
+    "sha256": "1a6be8cf686c07afd399c6bce48de9c19aaca4d61851c3e77787750f56b461ce"
+  },
+  "worker-typecheck-verified": {
+    "path": ".tmp\\worker-typecheck-verified.log",
+    "sha256": "a9e19354142f65c7a2c1a345fc712134cf15cbd4d362efd455e9da4721bc85d7"
+  },
+  "worker-build-verified": {
+    "path": ".tmp\\worker-build-verified.log",
+    "sha256": "4e063f93840829cbbbc1b8890f7c72f0f557a3e197d15806e00f26d0d2f6c8ee"
+  },
+  "atomic-db-verified": {
+    "path": ".tmp\\atomic-db-verified.log",
+    "sha256": "4408c41d9a9f8fabe5b95bdb6277ddf876b0c2af77ecd6c261de893131066b71"
+  },
+  "terminal-fence-db": {
+    "path": ".tmp\\terminal-fence-db.log",
+    "sha256": "40df74d62bb635c561904f346d7cd90d9f9c424564fb8b1ffccb64b409173d6d"
+  },
+  "gallery-verified": {
+    "path": ".tmp\\gallery-verified.log",
+    "sha256": "6940d0a1fb166bf2599229ef576b2eaf18453fb232a04f228b5f30fb468a0516"
+  },
+  "onboarding-magic-leaf": {
+    "path": ".tmp\\onboarding-magic-leaf.log",
+    "sha256": "1328bdbcd2b6ee9b20ab165d41c4a54d79a76bbc69cba7b9d0e54ee4cde82f6c"
+  },
+  "eval-final": {
+    "path": ".tmp\\eval-final.log",
+    "sha256": "7cc0451f4d192715b9d64c585bdf2354c92e4cbdaa0e840b7c6b1fb43125cc52"
+  }
+}

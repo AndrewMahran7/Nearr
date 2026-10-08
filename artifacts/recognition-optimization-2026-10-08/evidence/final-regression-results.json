@@ -1,0 +1,189 @@
+{
+  "results": [
+    {
+      "suite": "test:recognition-geography-state",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 879,
+      "log": ".tmp\\regression-final\\test-recognition-geography-state.log",
+      "logSha256": "b2ba3a066c1a99031755d17c45e9e903a0f46b3217a211dd9bc57980019ebb38"
+    },
+    {
+      "suite": "test:recognition-entity-role-latency-state",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1513,
+      "log": ".tmp\\regression-final\\test-recognition-entity-role-latency-state.log",
+      "logSha256": "f885df59c72607b3e394d4f403fe04ca43f6ec122799029f102892701496076a"
+    },
+    {
+      "suite": "test:exact-identity-safety",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 696,
+      "log": ".tmp\\regression-final\\test-exact-identity-safety.log",
+      "logSha256": "bbae0e1239d7cf3e41d0e1bd8ea19ddc93d215d081d01c8e38a8720d5bc4e120"
+    },
+    {
+      "suite": "test:recognition-cache",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 927,
+      "log": ".tmp\\regression-final\\test-recognition-cache.log",
+      "logSha256": "30e3493ce1731a28fada4cad55ee6a1615822587a4a330ec7919ae8030a8697e"
+    },
+    {
+      "suite": "test:recognition-cache-v2",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 17490,
+      "log": ".tmp\\regression-final\\test-recognition-cache-v2.log",
+      "logSha256": "cfcfec08d1de228788d6fcbfd3e534bd9333fc7c8b0cd932233cf810d920c27f"
+    },
+    {
+      "suite": "test:recognition-cache-suspension",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 963,
+      "log": ".tmp\\regression-final\\test-recognition-cache-suspension.log",
+      "logSha256": "c851c6d850b5beb440ce34199a58b635e40fd8d9bdb25e78c5bb68c8a4c50926"
+    },
+    {
+      "suite": "test:recognition-migrations",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 11856,
+      "log": ".tmp\\regression-final\\test-recognition-migrations.log",
+      "logSha256": "0de2a4ac8810e4534eaf1fbb2781911cd81470a46554c5adffb6674ca9abeb1a"
+    },
+    {
+      "suite": "test:wrong-place-confirm-replacement",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 882,
+      "log": ".tmp\\regression-final\\test-wrong-place-confirm-replacement.log",
+      "logSha256": "4147285473746e9d7604f3df005246efca163c0db20cb9f02655ae92cdc507ae"
+    },
+    {
+      "suite": "test:wrong-place-mutation",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 934,
+      "log": ".tmp\\regression-final\\test-wrong-place-mutation.log",
+      "logSha256": "723cfed20357a1a1731066e2213b99ffdfc444b1e1f929d80161bcaab75150eb"
+    },
+    {
+      "suite": "test:google-cost-controls-integration",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1149,
+      "log": ".tmp\\regression-final\\test-google-cost-controls-integration.log",
+      "logSha256": "ccb4579b3deb77ec946a64115e71c6669c42a74ebe5f06e8c85d6c6ceb534701"
+    },
+    {
+      "suite": "test:google-cost-controls-ux",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 914,
+      "log": ".tmp\\regression-final\\test-google-cost-controls-ux.log",
+      "logSha256": "958ec4552ea485faca36a35dd9f77d915bf445e6322f1015409ea35705bc7ba5"
+    },
+    {
+      "suite": "test:named-lead-auto-completion",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1545,
+      "log": ".tmp\\regression-final\\test-named-lead-auto-completion.log",
+      "logSha256": "391e1a83f39fdf717be3b2bae64ea25fbdc56f1ef3dca0d65d30ec5f41e1a165"
+    },
+    {
+      "suite": "test:auto-completion",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 5758,
+      "log": ".tmp\\regression-final\\test-auto-completion.log",
+      "logSha256": "fb9908406ede2f854a168314f50835e10ba994d9f9b22ae30a5743eed6a8fe69"
+    },
+    {
+      "suite": "test:multi-place-review",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 716,
+      "log": ".tmp\\regression-final\\test-multi-place-review.log",
+      "logSha256": "06ccaca3783765d0f7b586b3ce338a8fa56fcb2c4a7bb6fc39d3488147365db5"
+    },
+    {
+      "suite": "test:multi-place-progressive-disclosure",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 933,
+      "log": ".tmp\\regression-final\\test-multi-place-progressive-disclosure.log",
+      "logSha256": "c578e2d423201f2aa000a8e59014c197e62e8219084a3a150bbf013138335b9d"
+    },
+    {
+      "suite": "test:multi-place-browse-v2",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 1331,
+      "log": ".tmp\\regression-final\\test-multi-place-browse-v2.log",
+      "logSha256": "da0482d7b280bbea0295dcea2e120fd9db5915d1bb6c764914052bdd4c8bdcf1"
+    },
+    {
+      "suite": "test:recognition-regression",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 2161,
+      "log": ".tmp\\regression-final\\test-recognition-regression.log",
+      "logSha256": "27d7224e49135fa047286b1a329113c52cdf22760b6afdd16f40761c873ff3ea"
+    },
+    {
+      "suite": "test:dev-migration-history",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 645,
+      "log": ".tmp\\regression-final\\test-dev-migration-history.log",
+      "logSha256": "7f7c9b6f46de25c7d339cd2fe34fcb38c1351fde8b70245a1f10b6a4d44470f0"
+    },
+    {
+      "suite": "test:deployment-guards",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 2435,
+      "log": ".tmp\\regression-final\\test-deployment-guards.log",
+      "logSha256": "4957631d46cf58aaa388d2003457130e6a0cc48d6516d6b747c5d35d7792d221"
+    },
+    {
+      "suite": "test:worktree-workflow",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 816,
+      "log": ".tmp\\regression-final\\test-worktree-workflow.log",
+      "logSha256": "e04a761ad1c521d3417bac5123408805a18417d9bcc9efb13090e43d0f5a92e2"
+    },
+    {
+      "suite": "test:place-capabilities",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 690,
+      "log": ".tmp\\regression-final\\test-place-capabilities.log",
+      "logSha256": "121ebe2692b3a3edc08727b15fa87c4de711b6cb69acd5235d3b9b0cf0b47155"
+    },
+    {
+      "suite": "test:place-photo-contract",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 649,
+      "log": ".tmp\\regression-final\\test-place-photo-contract.log",
+      "logSha256": "d370be6bd47980cf93c8e6839f926daf64fe7f00b3101aab2e7f03788b42ee46"
+    },
+    {
+      "suite": "test:notification-delivery-policy",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedMs": 601,
+      "log": ".tmp\\regression-final\\test-notification-delivery-policy.log",
+      "logSha256": "393e8724c601ddfe918a949c572da15dc213d3386962e358556761b551d5e509"
+    }
+  ],
+  "sourceCommit": "7aa09f0f1bc6a738a3b83dd42c696ce40ce5d4a3"
+}

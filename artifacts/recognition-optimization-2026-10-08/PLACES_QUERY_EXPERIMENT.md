@@ -27,3 +27,9 @@ Dedicated tests cover identical concurrent coalescing, different region/country/
 ## Selection
 
 The implementation retains the internal `serial`, `memoized` and `bounded` seams for reproducible evaluation and rollback. `bounded` is the selected source default; it has no save authority. No fuzzy dedupe, extra candidate expansion, changed country parser, or supplementary POI provider was accepted without correctness evidence. See [raw scheduling output](evidence/places/places-session-benchmark.json).
+
+## Candidate recall boundary
+
+The 15 exact-label eligible retained post-deep cases have strict accepted-alias/locality candidate recall@1, @3, @5 and @N of **9/15 in both source arms**. Twelve have N=1 and three N=2. Five mismatches remain naming-inconclusive, and one established wrong-branch candidate is kept in review. The complete 31-case cohort has 25 lists of one candidate, four of two and two of three. These counts describe retained canonical hypotheses, not a new Places quality experiment. Complete pre-canonicalization candidate identity truth is unavailable, so a before/after canonicalization recall delta cannot be measured. No supplementary POI source was justified by a demonstrated absence gap.
+
+Finite-integer concurrency normalization additionally handles NaN, infinities, zero, negative and fractional values without creating an unbounded session or sparse result array. Runtime uses the constant three. Cancellation suppresses queued dispatch, but an active provider must release its permit; provider transport behavior bounds cancellation completion.
