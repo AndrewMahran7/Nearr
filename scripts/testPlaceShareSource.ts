@@ -140,7 +140,13 @@ assert.match(detail, /createPublicPlaceShare\(saved\.place\.id/);
 assert.match(detail, /buildSavedPlaceShareContent\([\s\S]{0,160}referralId/);
 assert.match(detail, /buildNativePlaceSharePayload\(content, Platform\.OS\)/);
 assert.doesNotMatch(detail.slice(detail.indexOf('async function sharePlace'), detail.indexOf('async function handleSave')), /getShareJob|source_url/);
-assert.match(worker, /p_source_url: canonicalUrl/, 'Phase 2 auto-save persists its original public source');
+const mediaClaimMigration = readFileSync(join(process.cwd(), 'supabase/migrations/20261008000002_media_claim_atomic_writes.sql'), 'utf8');
+assert.match(worker, /saveForClaimedMedia\(admin, job, task, \{[\s\S]{0,300}source, sourceUrl: canonicalUrl/,
+  'Phase 2 auto-save forwards its original public source through the claim boundary');
+assert.match(worker, /source: args\.source, sourceUrl: args\.sourceUrl/,
+  'claim payload retains the exact selected source');
+assert.match(mediaClaimMigration, /public\.auto_save_share_job_place_result\([\s\S]{0,500}p_payload->>'source',p_payload->>'sourceUrl'/,
+  'guarded persistence passes the original source pair into canonical save');
 
 const content = buildSavedPlaceShareContent({
   ...saved('https://www.instagram.com/p/Public/'),

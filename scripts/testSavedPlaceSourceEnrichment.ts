@@ -788,11 +788,22 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
   // 14. The media/RPC path: the note is written only while the row still names
   // THIS post, so a reused row carrying a different post is never captioned.
   const worker = read('supabase/functions/process-share-jobs/index.ts');
-  assert.match(
-    worker,
-    /\.update\(\{ ai_note: note \}\)[\s\S]{0,400}\.eq\('source_url', canonicalUrl\)\s*\n\s*\.is\('ai_note', null\)/,
-    'media auto-save ai_note is guarded by source provenance',
+  const claimMigration = read('supabase/migrations/20261008000002_media_claim_atomic_writes.sql');
+  const claimSave = claimMigration.slice(
+    claimMigration.indexOf('create or replace function public.commit_media_claim_candidate('),
+    claimMigration.indexOf('create or replace function public.write_media_claim_results('),
   );
+  assert.match(worker, /admin\.rpc\('commit_media_claim_candidate',[\s\S]{0,900}autoNote: args\.autoNote \?\? null/,
+    'media auto-save forwards only its incoming note to the guarded transaction');
+  assert.match(
+    claimSave,
+    /update public\.saved_places sp set ai_note=p_payload->>'autoNote'\s*where sp\.id=r\.saved_place_id and sp\.source_url=p_payload->>'sourceUrl' and sp\.ai_note is null\s*and nullif\(p_payload->>'autoNote',''\) is not null;/,
+    'media auto-save ai_note is guarded by source provenance, empty destination and nonempty input inside the transaction',
+  );
+  assert.ok(claimSave.indexOf('perform public.assert_media_claim_write(') < claimSave.indexOf('set ai_note='),
+    'generation and parent locks precede the note write');
+  assert.doesNotMatch(claimSave, /\bset\s+notes\s*=|[,\s]notes\s*=/i,
+    'guarded media persistence never writes user-authored notes');
   assert.match(
     worker,
     /\.update\(\{ ai_note: note \}\)[\s\S]{0,400}\.eq\('source_url', task\.canonical_url \|\| task\.source_url\)/,
