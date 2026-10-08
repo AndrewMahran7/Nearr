@@ -176,6 +176,9 @@ const lifecyclePayload = {
   ],
 };
 assert.deepEqual(evidenceFrameStoragePaths(lifecyclePayload, 'job-1'), ['user-1/job-1/task-1/00-1000.jpg']);
+const claimPath = 'user-1/job-1/task-1--claim-2-0123456789abcdef01234567/00-1000.jpg';
+assert.deepEqual(evidenceFrameStoragePaths({ evidenceFrames: [{ storagePath: claimPath }] }, 'job-1'), [claimPath]);
+assert.equal(normalizeEvidenceFrames([{ id: 'claim-frame', storagePath: claimPath, timestampSeconds: 1 }])[0]?.storagePath, claimPath);
 async function verifyLifecycleCleanup(): Promise<void> {
   const cleanupSuccess = await cleanupShareEvidenceFrames(lifecyclePayload, 'job-1', async () => ({ data: [] }));
   assert.equal(cleanupSuccess.status, 'success');

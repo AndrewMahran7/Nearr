@@ -1,4 +1,5 @@
 import { readFile, stat } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { MediaPlaceEvidence } from '../types/evidence.js';
@@ -17,6 +18,17 @@ export type PersistedEvidenceFrame = {
   height: number;
   relevance: 'vayrin_selected' | 'candidate_evidence' | 'analysis_coverage';
 };
+
+/** Storage access policies still use the first user/job path components.
+ * A lease-specific suffix prevents an obsolete attempt from deleting or
+ * overwriting frames referenced by a newer attempt's accepted result. */
+export function evidenceFrameClaimPrefix(task: MediaTask): string | null {
+  if (!task.share_job_id || !Number.isSafeInteger(task.attempts) || task.attempts < 1 ||
+      typeof task.locked_at !== 'string' || !Number.isFinite(Date.parse(task.locked_at))) return null;
+  const lease = createHash('sha256').update(`${task.attempts}:${new Date(task.locked_at).toISOString()}`).digest('hex').slice(0, 24);
+  // Keep the four-segment object-path contract used by mobile/server cleanup.
+  return `${task.user_id}/${task.share_job_id}/${task.id}--claim-${task.attempts}-${lease}`;
+}
 
 function finiteTimestamps(input: unknown): number[] {
   if (!Array.isArray(input)) return [];
@@ -86,7 +98,11 @@ export async function persistEvidenceFrames(
   selected: readonly { frame: SelectedFrame; relevance: PersistedEvidenceFrame['relevance'] }[],
 ): Promise<PersistedEvidenceFrame[]> {
   if (!task.share_job_id || selected.length === 0) return [];
-  const prefix = `${task.user_id}/${task.share_job_id}/${task.id}`;
+  const prefix = evidenceFrameClaimPrefix(task);
+  if (!prefix) {
+    log.warn('evidence_frame_missing_claim', { taskId: task.id, jobId: task.share_job_id });
+    return [];
+  }
   const bounded: Array<{ frame: SelectedFrame; relevance: PersistedEvidenceFrame['relevance'] }> = [];
   for (const item of selected.slice(0, MAX_RETAINED_EVIDENCE_FRAMES)) {
     try {
@@ -108,6 +124,8 @@ export async function persistEvidenceFrames(
         message: listError.message.slice(0, 120),
       });
     }
+    // Cleanup is deliberately confined to this exact claim. Cross-generation
+    // retention cleanup needs a separate reader-aware lifecycle policy.
     const stale = (previous ?? []).map((object) => `${prefix}/${object.name}`);
     if (stale.length > 0) {
       const { error: removeError } = await bucket.remove(stale);
@@ -140,7 +158,7 @@ export async function persistEvidenceFrames(
         return null;
       }
       return {
-        id: `${task.id}:${timestampKey}`,
+        id: `${prefix.split('/').at(-1)}:${timestampKey}`,
         storagePath,
         timestampSeconds: frame.timestampSeconds,
         width: frame.width,
