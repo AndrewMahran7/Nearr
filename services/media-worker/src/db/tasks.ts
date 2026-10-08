@@ -8,6 +8,7 @@ import type { WorkerConfig } from '../config/env.js';
 import { MediaError, type MediaTask, type ProgressStage } from '../types/media.js';
 import type { EvidenceItem } from '../types/evidence.js';
 import type { RetainedFrameSnapshot } from '../pipeline/retainedFrameSnapshot.js';
+import { guardTaskClaim, ObsoleteTaskClaimError } from './taskClaim.js';
 import { log } from '../util/logger.js';
 
 /**
@@ -65,7 +66,11 @@ export async function setProgress(
   task: MediaTask,
   stage: ProgressStage,
 ): Promise<void> {
-  await client.from('share_media_tasks').update({ progress_stage: stage }).eq('id', task.id);
+  const { data, error } = await guardTaskClaim(
+    client.from('share_media_tasks').update({ progress_stage: stage }), task,
+  ).select('id').maybeSingle();
+  if (error) throw new MediaError('provider_unavailable', 'task_progress_write_failed');
+  if (!data) throw new ObsoleteTaskClaimError('progress_claim_superseded');
   if (task.share_job_id) {
     await client
       .from('share_jobs')
@@ -77,37 +82,30 @@ export async function setProgress(
 
 export async function setTaskStatus(
   client: SupabaseClient,
-  taskId: string,
+  task: MediaTask,
   status: string,
   patch: Record<string, unknown> = {},
 ): Promise<void> {
-  await client.from('share_media_tasks').update({ status, ...patch }).eq('id', taskId);
+  const { error } = await guardTaskClaim(client.from('share_media_tasks').update({ status, ...patch }), task);
+  if (error) throw new MediaError('provider_unavailable', 'task_status_write_failed');
 }
 
-/** Requeue for retry with a bounded backoff (atomic via requeue_media_task).
- *  The claim RPC skips tasks whose next_attempt_at is still in the future, so
- *  pg_cron never hot-loops on a failing task. Attempts are NOT incremented here
- *  (that happens exactly once per claim). */
+/** Requeue only the claimed generation. The old RPC accepts just a task ID
+ * and could requeue a newer attempt after the previous lease expired. */
 export async function requeueTask(
   client: SupabaseClient,
-  taskId: string,
+  task: MediaTask,
   backoffSeconds: number,
   failureCode: string,
 ): Promise<void> {
-  const { error } = await client.rpc('requeue_media_task', {
-    p_task_id: taskId,
-    p_backoff_seconds: backoffSeconds,
-    p_failure_code: failureCode,
-  });
-  if (error) {
-    log.warn('requeue_failed', { taskId, msg: error.message });
-    // Best-effort fallback so a transient RPC error can't strand the task in
-    // 'processing' (it becomes reclaimable once its lease expires).
-    await client
-      .from('share_media_tasks')
-      .update({ status: 'queued', locked_until: null, failure_code: failureCode })
-      .eq('id', taskId);
-  }
+  const { error } = await guardTaskClaim(client.from('share_media_tasks').update({
+    status: 'queued',
+    locked_at: null,
+    locked_until: null,
+    next_attempt_at: new Date(Date.now() + Math.max(1, backoffSeconds) * 1000).toISOString(),
+    failure_code: failureCode,
+  }), task);
+  if (error) log.warn('requeue_failed', { taskId: task.id, msg: error.message });
 }
 
 /** Requeue only if the reusable AI-note row still represents this worker's
@@ -127,6 +125,9 @@ export async function requeueAiNoteTask(
       failure_code: failureCode,
     })
     .eq('id', task.id)
+    .eq('status', 'processing')
+    .eq('attempts', task.attempts)
+    .eq('locked_at', task.locked_at)
     .eq('task_kind', 'ai_note_enrichment')
     .eq('saved_place_id', task.saved_place_id)
     .eq('target_place_id', task.target_place_id)
@@ -152,7 +153,7 @@ export async function renewAiNoteRetryCycle(
   client: SupabaseClient,
   task: Pick<
     MediaTask,
-    'id' | 'retry_cycles' | 'saved_place_id' | 'target_place_id' | 'source_url' | 'canonical_url'
+    'id' | 'retry_cycles' | 'saved_place_id' | 'target_place_id' | 'source_url' | 'canonical_url' | 'attempts' | 'locked_at'
   >,
   failureCode: string,
 ): Promise<void> {
@@ -174,6 +175,9 @@ export async function renewAiNoteRetryCycle(
       ai_note_outcome: 'retry_after_outage',
     })
     .eq('id', task.id)
+    .eq('status', 'processing')
+    .eq('attempts', task.attempts)
+    .eq('locked_at', task.locked_at)
     .eq('task_kind', 'ai_note_enrichment')
     .eq('saved_place_id', task.saved_place_id)
     .eq('target_place_id', task.target_place_id)
@@ -202,6 +206,9 @@ export async function recordAiNoteEvidenceSnapshot(
       media_acquired_once: mediaAcquired || task.media_acquired_once === true,
     })
     .eq('id', task.id)
+    .eq('status', 'processing')
+    .eq('attempts', task.attempts)
+    .eq('locked_at', task.locked_at)
     .eq('task_kind', 'ai_note_enrichment')
     .eq('saved_place_id', task.saved_place_id)
     .eq('target_place_id', task.target_place_id)
@@ -228,6 +235,9 @@ export async function recordAiNoteFrameSnapshot(
       media_acquired_once: true,
     })
     .eq('id', task.id)
+    .eq('status', 'processing')
+    .eq('attempts', task.attempts)
+    .eq('locked_at', task.locked_at)
     .eq('task_kind', 'ai_note_enrichment')
     .eq('saved_place_id', task.saved_place_id)
     .eq('target_place_id', task.target_place_id)

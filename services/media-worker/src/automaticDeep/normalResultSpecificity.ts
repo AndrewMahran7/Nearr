@@ -2,7 +2,7 @@ import type { AnalyzeOutput } from '../providers/model.js';
 import type { PlaceCandidateEvidence, SceneEnvironmentType } from '../types/evidence.js';
 import { isCategoryOnlyPlaceName } from '../vayrin/placeIdentityGuard.js';
 
-export const NORMAL_RESULT_SPECIFICITY_VERSION = 'normal-result-specificity.v3';
+export const NORMAL_RESULT_SPECIFICITY_VERSION = 'normal-result-specificity.v4-multi-completeness';
 
 export type NormalResultRejectionReason =
   | 'GENERIC_DESCRIPTOR'
@@ -11,7 +11,8 @@ export type NormalResultRejectionReason =
   | 'NO_IDENTITY'
   | 'IDENTITY_DIVERGENCE'
   | 'NO_ACTIONABLE_CANDIDATE'
-  | 'TECHNICAL_RECOVERY';
+  | 'TECHNICAL_RECOVERY'
+  | 'INCOMPLETE_MULTI_PLACE';
 
 export type NormalResultSpecificity = {
   specific: boolean;
@@ -146,10 +147,17 @@ export function evaluateNormalResultSpecificity(input: Pick<
     };
   }
 
+  // An explicit multi-place result is not complete while any source segment
+  // remains a partial hypothesis. Preserve its evidence and let the established
+  // deep/review path handle the uncertainty; one good stop cannot hide another.
+  if (input.evidence.multipleIntentionalPlaces && (input.evidence.partialPlaces?.length ?? 0) > 0) {
+    return { ...base, specific: false, rejectionReason: 'INCOMPLETE_MULTI_PLACE' };
+  }
+
   if (places.some((place) => isCategoryOnlyPlaceName(place.name))) {
     return { ...base, specific: false, rejectionReason: 'GENERIC_DESCRIPTOR' };
   }
-  if (places.length > 0 && places.every(isBroadParentIdentity)) {
+  if (places.some(isBroadParentIdentity)) {
     return { ...base, specific: false, rejectionReason: 'BROAD_PARENT' };
   }
   if (places.some(hasIdentityDivergence)) {

@@ -1,3 +1,4 @@
+import { guardTaskClaim, monitorTaskClaim, ObsoleteTaskClaimError, taskClaim } from '../db/taskClaim.js';
 // services/media-worker/src/pipeline/runMediaTask.ts
 //
 // Orchestrates the full media pipeline for ONE claimed task and finalizes it
@@ -8,7 +9,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { WorkerConfig } from '../config/env.js';
-import { MediaError, isMediaError, type MediaTask, type TranscriptResult } from '../types/media.js';
+import { MediaError, isMediaError, type MediaTask, type ProgressStage, type TranscriptResult } from '../types/media.js';
 import { createJobTemp } from '../util/tempDir.js';
 import { sha256File } from '../util/hash.js';
 import { log } from '../util/logger.js';
@@ -144,7 +145,7 @@ async function loadAiNoteTarget(
 ): Promise<AiNoteTarget | null> {
   if (task.task_kind !== 'ai_note_enrichment') return null;
   if (!task.saved_place_id) {
-    await setTaskStatus(client, task.id, 'failed', {
+    await setTaskStatus(client, task, 'failed', {
       failure_code: 'ai_note_target_missing',
       ai_note_outcome: 'target_missing',
       frame_snapshot: null,
@@ -164,7 +165,7 @@ async function loadAiNoteTarget(
 
   const place = Array.isArray(data?.place) ? data.place[0] : data?.place;
   if (!data?.id || !place?.name) {
-    await setTaskStatus(client, task.id, 'failed', {
+    await setTaskStatus(client, task, 'failed', {
       failure_code: 'ai_note_target_missing',
       ai_note_outcome: 'target_missing',
       frame_snapshot: null,
@@ -179,7 +180,7 @@ async function loadAiNoteTarget(
     return null;
   }
   if (typeof data.ai_note === 'string' && data.ai_note.trim()) {
-    await setTaskStatus(client, task.id, 'completed', {
+    await setTaskStatus(client, task, 'completed', {
       progress_stage: 'cleanup',
       failure_code: null,
       ai_note_outcome: 'already_present',
@@ -355,6 +356,11 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
   const timer = setTimeout(() => controller.abort(), cfg.jobTimeoutMs);
   const jobTemp = await createJobTemp(cfg.tempDir, task.id);
   const startedAt = Date.now();
+  const claimMonitor = monitorTaskClaim({ client, task, controller });
+  const updateProgress = async (stage: ProgressStage) => {
+    await claimMonitor.check();
+    await setProgress(client, task, stage);
+  };
   const diagnostics: Record<string, unknown> = {};
   diagnostics.sourceGeographyRetained = !!retainedMetadataLocation;
   let analysisAttempted = false;
@@ -362,6 +368,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
   const errors: string[] = [];
 
   try {
+    await claimMonitor.check();
     const aiNoteTarget = await loadAiNoteTarget(client, task);
     if (task.task_kind === 'ai_note_enrichment' && !aiNoteTarget) return;
     if (task.task_kind === 'ai_note_enrichment') {
@@ -409,7 +416,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         aiNoteAttempt: attempt,
         signal: controller.signal,
       });
-      await setProgress(client, task, 'analyzing_evidence');
+      await updateProgress('analyzing_evidence');
       analysisAttempted = true;
       const generation = await generateAiSaveNoteWithRetry(
         () => deps.model.analyze(makeInput('initial')),
@@ -434,6 +441,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         : generation.outcome === 'omitted_provider_failure' ? 'failed' : 'insufficient_evidence';
       const fin = await finalizeWithRetry(() => verifyPlaceEvidence(cfg, {
         taskId: task.id,
+        claim: taskClaim(task),
         targetPlaceId: task.target_place_id ?? null,
         targetSourceUrl: task.canonical_url || task.source_url,
         outcome,
@@ -449,7 +457,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     }
 
     // 1. Retrieve public media to the isolated temp dir.
-    await setProgress(client, task, 'retrieving_media');
+    await updateProgress('retrieving_media');
     const rawUrl = task.canonical_url || task.source_url;
     let parsedUrl: URL;
     try {
@@ -520,13 +528,12 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       ? `${task.platform}/scrapecreators`
       : selectedResolver.name;
     diagnostics.resolverName = persistedResolverName;
-    await client
+    await guardTaskClaim(client
       .from('share_media_tasks')
-      .update({ resolver_name: persistedResolverName, media_size_bytes: media.sizeBytes, media_sha256: sha })
-      .eq('id', task.id);
+      .update({ resolver_name: persistedResolverName, media_size_bytes: media.sizeBytes, media_sha256: sha }), task);
 
     // 2. Inspect (ffprobe) + normalize only if required.
-    await setProgress(client, task, 'inspecting_media');
+    await updateProgress('inspecting_media');
     const inspected = await measuredRecognitionStage(task, 'media_inspection_and_normalization', 'ffmpeg', async () => {
       const probe = await inspectMedia(cfg, media.localFilePath, controller.signal);
       const playable = await normalizeMedia(cfg, media.localFilePath, probe, jobTemp.dir, controller.signal);
@@ -545,7 +552,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     //    provider (non-fatal if it fails or there is no audio); (3) no usable
     //    speech is a normal evidence-limited outcome, not a failure — visual
     //    frames still carry the analysis forward.
-    await setProgress(client, task, 'extracting_audio');
+    await updateProgress('extracting_audio');
     let transcript: TranscriptResult;
     if (media.captionsTranscript && media.captionsTranscript.length > 0) {
       transcript = {
@@ -554,11 +561,11 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         language: media.captionsLanguage ?? null,
         status: 'success',
       };
-      await setProgress(client, task, 'transcribing_audio');
+      await updateProgress('transcribing_audio');
     } else {
       transcript = await measuredRecognitionStage(task, 'audio_extraction_and_transcription', cfg.transcriptionProvider, async () => {
         const audioPath = await extractAudio(cfg, playable, probe, jobTemp.dir, controller.signal);
-        await setProgress(client, task, 'transcribing_audio');
+        await updateProgress('transcribing_audio');
         return deps.transcription.transcribe({
           audioPath,
           hasAudio: probe.hasAudio,
@@ -574,7 +581,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     if (transcript.status === 'failed') warnings.push('transcription_failed');
 
     // 4. Frames + perceptual dedup.
-    await setProgress(client, task, 'extracting_frames');
+    await updateProgress('extracting_frames');
     const rawFrames = await measuredRecognitionStage(task, 'frame_extraction', 'ffmpeg', () =>
       extractFrames(cfg, probe, playable, jobTemp.dir, controller.signal));
     const frames = deduplicateFrames(rawFrames);
@@ -583,13 +590,13 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     diagnostics.frameCount = frames.length;
 
     // 5. Visible text (OCR provider; default noop → model reads frames).
-    await setProgress(client, task, 'extracting_visible_text');
+    await updateProgress('extracting_visible_text');
     const ocr = deduplicateOcrSegments(await measuredRecognitionStage(task, 'visible_text_extraction', cfg.ocrProvider, () =>
       deps.ocr.extract({ frames, signal: controller.signal })));
     diagnostics.ocrSegmentCount = ocr.length;
 
     // 6. Analyze → propose structured place evidence.
-    await setProgress(client, task, 'analyzing_evidence');
+    await updateProgress('analyzing_evidence');
     analysisAttempted = true;
     diagnostics.analysisAttempted = true;
     if (media.acquisition?.provider === 'scrapecreators') {
@@ -737,12 +744,13 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         diagnostics.durationMs = Date.now() - startedAt;
         diagnostics.warnings = warnings.slice(0, 24);
         diagnostics.errors = errors.slice(0, 24);
-        await setProgress(client, task, 'verifying_place');
+        await updateProgress('verifying_place');
         const failureOutcome: FinalizeOutcome = generation.outcome === 'omitted_provider_failure'
           ? 'failed'
           : 'insufficient_evidence';
         const fin = await finalizeWithRetry(() => verifyPlaceEvidence(cfg, {
           taskId: task.id,
+          claim: taskClaim(task),
           targetPlaceId: task.target_place_id ?? null,
           targetSourceUrl: task.canonical_url || task.source_url,
           outcome: failureOutcome,
@@ -849,7 +857,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     diagnostics.errors = errors.slice(0, 24);
 
     // 7. Verify through Nearr's EXISTING resolver + safeToAutoSave + save path.
-    await setProgress(client, task, 'verifying_place');
+    await updateProgress('verifying_place');
     const noteHasEvidence = analysis.evidence.places.some(
       (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
     );
@@ -895,6 +903,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     const fin = await finalizeWithRetry(() =>
       verifyPlaceEvidence(cfg, {
         taskId: task.id,
+        claim: taskClaim(task),
         targetPlaceId: task.target_place_id ?? null,
         targetSourceUrl: task.canonical_url || task.source_url,
         outcome,
@@ -945,12 +954,17 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       durationMs: diagnostics.durationMs,
     });
   } catch (err) {
+    if (err instanceof ObsoleteTaskClaimError || claimMonitor.obsoleteReason()) {
+      log.info('task_work_cancelled', { taskId: task.id, reason: claimMonitor.obsoleteReason() ?? 'obsolete_claim' });
+      return;
+    }
     errors.push(isMediaError(err) ? err.code : 'unknown_error');
     diagnostics.warnings = warnings.slice(0, 24);
     diagnostics.errors = errors.slice(0, 24);
     await handleTaskError(deps, task, err, diagnostics, analysisAttempted);
   } finally {
     clearTimeout(timer);
+    await claimMonitor.stop();
     await cleanupMedia(jobTemp, task.id);
   }
 }
@@ -998,7 +1012,7 @@ async function handleTaskError(
     if (task.task_kind === 'ai_note_enrichment') {
       await requeueAiNoteTask(client, task, plan.delaySeconds, media.code);
     } else {
-      await requeueTask(client, task.id, plan.delaySeconds, media.code);
+      await requeueTask(client, task, plan.delaySeconds, media.code);
     }
     return;
   }
@@ -1021,6 +1035,7 @@ async function safeFinalize(
   try {
     const fin = await verifyPlaceEvidence(cfg, {
       taskId: task.id,
+      claim: taskClaim(task),
       targetPlaceId: task.target_place_id ?? null,
       targetSourceUrl: task.canonical_url || task.source_url,
       outcome,
@@ -1036,7 +1051,7 @@ async function safeFinalize(
     if (task.task_kind === 'ai_note_enrichment') {
       await renewAiNoteRetryCycle(client, task, code);
     } else {
-      await setTaskStatus(client, task.id, outcome === 'unavailable' ? 'needs_help' : 'failed', {
+      await setTaskStatus(client, task, outcome === 'unavailable' ? 'needs_help' : 'failed', {
         failure_code: code,
         completed_at: new Date().toISOString(),
       });

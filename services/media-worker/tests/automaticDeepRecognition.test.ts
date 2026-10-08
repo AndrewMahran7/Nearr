@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { withAutomaticDeepRecognition } from '../src/automaticDeep/automaticDeepRecognitionProvider.js';
+import { withAutomaticDeepRecognition, applyAutomaticDeepReviewPolicy } from '../src/automaticDeep/automaticDeepRecognitionProvider.js';
 import { evaluateNormalResultSpecificity } from '../src/automaticDeep/normalResultSpecificity.js';
 import { buildSpecificPlacesQuery } from '../src/premium/premiumCanonicalization.js';
 import type { PremiumRecognitionExecution } from '../src/premium/premiumRecognitionTypes.js';
@@ -58,6 +58,31 @@ const input: AnalyzeInput = {
 };
 const cfg = { automaticDeepRecognitionEnabled: true, vayrinFrameBudget: 6, maxSelectedFrames: 24,
   vayrinFrameStrategy: 'diverse', googlePlacesServerApiKey: '' } as any;
+
+test('the actual deep boundary preserves rejection and requires review for model autosave', () => {
+  const auto = execution();
+  assert.equal(applyAutomaticDeepReviewPolicy(auto).destinations[0]?.decision, 'REVIEW');
+  assert.equal(auto.destinations[0]?.decision, 'AUTO_SAVE', 'input remains immutable');
+  auto.destinations[0]!.decision = 'REJECT';
+  assert.equal(applyAutomaticDeepReviewPolicy(auto).destinations[0]?.decision, 'REJECT');
+});
+test('a specific first stop cannot hide a broad parent second stop', () => {
+  const result = output([place('Example Cafe', { category: 'cafe' }), place('Example National Park', { category: 'park' })]);
+  result.evidence.multipleIntentionalPlaces = true;
+  assert.equal(evaluateNormalResultSpecificity(result).rejectionReason, 'BROAD_PARENT');
+});
+test('explicit multi-place partials remain incomplete even with an exact first stop', () => {
+  const result = output([place('Example Cafe', { category: 'cafe' })]);
+  result.evidence.multipleIntentionalPlaces = true;
+  result.evidence.partialPlaces = [{ nameHint: 'unresolved second stop' }] as any;
+  assert.equal(evaluateNormalResultSpecificity(result).rejectionReason, 'INCOMPLETE_MULTI_PLACE');
+});
+test('two specific stops preserve the existing normal route', () => {
+  const result = output([place('Example Cafe', { category: 'cafe' }), place('Example Museum', { category: 'museum' })]);
+  result.evidence.multipleIntentionalPlaces = true;
+  assert.equal(evaluateNormalResultSpecificity(result).specific, true);
+  assert.equal(evaluateNormalResultSpecificity(result).actionableCandidateCount, 2);
+});
 
 const escalateNames = ['waterfall', 'scenic spot', 'cliff jumping spot', 'beach', 'hiking trail', 'restaurant', 'viewpoint', 'park'];
 for (const [index, name] of escalateNames.entries()) {

@@ -25,11 +25,7 @@ import { selectOcrProvider } from '../src/providers/ocr.js';
 import { loadConfig } from '../src/config/env.js';
 import { generateSyntheticMedia, ffmpegAvailable } from './support/generateSyntheticMedia.js';
 
-function fakeSupabaseClient(): any {
-  const resolved = Promise.resolve({ data: null, error: null });
-  const chain: any = { eq: () => chain, then: resolved.then.bind(resolved), catch: resolved.catch.bind(resolved) };
-  return { from: () => ({ update: () => chain, select: () => chain }) };
-}
+import { claimedTaskClient } from './support/claimedTaskClient.js';
 
 class NoopTranscription implements TranscriptionProvider {
   readonly name = 'noop';
@@ -117,6 +113,7 @@ function fakeTask(id: string, platform: string): MediaTask {
     status: 'processing',
     progress_stage: 'queued',
     attempts: 1,
+    locked_at: '2026-10-08T18:00:00Z',
     max_attempts: 3,
   };
 }
@@ -146,7 +143,7 @@ for (const platform of PLATFORMS) {
       const model = new CapturingModel();
       const deps: TaskDeps = {
         cfg,
-        client: fakeSupabaseClient(),
+        client: claimedTaskClient(fakeTask(`${platform}-case`, platform)),
         resolvers: [resolverFor(platform, media.videoWithAudio, `${platform} test title`, `${platform} test caption text`)],
         transcription: new NoopTranscription(),
         model,
@@ -194,7 +191,7 @@ for (const fixture of [
       const source = fixture.withAudio ? media.videoWithAudio : media.videoNoAudio;
       await withMockedFetch(() => runMediaTask({
         cfg,
-        client: fakeSupabaseClient(),
+        client: claimedTaskClient(fakeTask(`tiktok-${fixture.name.replace(/\W+/g, '-')}`, 'tiktok')),
         resolvers: [resolverFor('tiktok', source, 'TikTok fixture', 'Full #place caption')],
         transcription,
         model,

@@ -9,6 +9,7 @@
 // silently break this callback. It is used INTERNALLY only and is never
 // logged, returned to clients, or sent via pg_net.
 
+import type { TaskClaim } from '../db/taskClaim.js';
 import type { WorkerConfig } from '../config/env.js';
 import type { MediaPlaceEvidence } from '../types/evidence.js';
 import type { PersistedEvidenceFrame } from './persistEvidenceFrames.js';
@@ -46,6 +47,7 @@ export type MediaSourceMetadata = {
 
 export type FinalizeArgs = {
   taskId: string;
+  claim?: TaskClaim;
   /** Internal places.id used to generate targeted evidence. */
   targetPlaceId?: string | null;
   /** Canonical source URL used for this generation snapshot. */
@@ -90,6 +92,7 @@ export async function verifyPlaceEvidence(
     body: JSON.stringify({
       mode: 'finalize_media_task',
       taskId: args.taskId,
+      claim: args.claim,
       targetPlaceId: args.targetPlaceId ?? undefined,
       targetSourceUrl: args.targetSourceUrl ?? undefined,
       outcome: args.outcome,
