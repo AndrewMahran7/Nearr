@@ -1,0 +1,81 @@
+{
+  "caseId": "V02",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJ3dEbnTMh3YARhAvz8VeCxJg",
+      "name": "Capone's Cucina",
+      "locality": "Huntington Beach",
+      "region": "California",
+      "country": "United States",
+      "address": "19688 Beach Blvd #10, Huntington Beach, CA 92648, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJ3dEbnTMh3YARhAvz8VeCxJg",
+      "name": "Capone's Cucina",
+      "locality": "Huntington Beach",
+      "region": "California",
+      "country": "United States",
+      "address": "19688 Beach Blvd #10, Huntington Beach, CA 92648, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.450300000000027,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.1682999999999879,
+      "endMs": 0.40800000000001546
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.40989999999999327,
+      "endMs": 0.41689999999999827
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.42480000000000473,
+      "endMs": 0.44429999999999836
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Capone's Cucina",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.03724,
+    "modelLatencyMs": 6213,
+    "totalLatencyMs": 21820
+  }
+}

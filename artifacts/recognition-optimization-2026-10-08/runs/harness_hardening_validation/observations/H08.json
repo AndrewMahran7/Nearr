@@ -1,0 +1,81 @@
+{
+  "caseId": "H08",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJG1xM7EHX3IARfRat2N2mU84",
+      "name": "Loaded Cafe – Orange",
+      "locality": "Orange",
+      "region": "California",
+      "country": "United States",
+      "address": "1834 N Tustin St, Orange, CA 92865, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJG1xM7EHX3IARfRat2N2mU84",
+      "name": "Loaded Cafe – Orange",
+      "locality": "Orange",
+      "region": "California",
+      "country": "United States",
+      "address": "1834 N Tustin St, Orange, CA 92865, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.37639999999998963,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.10030000000000427,
+      "endMs": 0.2710999999999899
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.27240000000000464,
+      "endMs": 0.32269999999999754
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.3328999999999951,
+      "endMs": 0.3725000000000023
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Loaded Cafe – Orange",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.0354,
+    "modelLatencyMs": 5142,
+    "totalLatencyMs": 20879
+  }
+}

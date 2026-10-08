@@ -1,0 +1,81 @@
+{
+  "caseId": "H01",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJE5pV1UMh3YARIhsItpUt0K8",
+      "name": "2nd Floor Gallery Bar & Grill",
+      "locality": "Huntington Beach",
+      "region": "California",
+      "country": "United States",
+      "address": "126 Main St, Huntington Beach, CA 92648, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJE5pV1UMh3YARIhsItpUt0K8",
+      "name": "2nd Floor Gallery Bar & Grill",
+      "locality": "Huntington Beach",
+      "region": "California",
+      "country": "United States",
+      "address": "126 Main St, Huntington Beach, CA 92648, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 1.3118000000000052,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.10060000000004266,
+      "endMs": 0.6314000000000419
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.6340000000000146,
+      "endMs": 1.2362000000000535
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 1.2625000000000455,
+      "endMs": 1.2989000000000033
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "2nd Floor Gallery Bar & Grill",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.032712,
+    "modelLatencyMs": 3209,
+    "totalLatencyMs": 15032
+  }
+}

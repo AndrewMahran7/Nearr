@@ -1,0 +1,81 @@
+{
+  "caseId": "H03",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJB7PfHJtqjoARSxWPsJUMYQA",
+      "name": "Las Palmas Taco Bar",
+      "locality": "Santa Cruz",
+      "region": "California",
+      "country": "United States",
+      "address": "55 Front St, Santa Cruz, CA 95060, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJB7PfHJtqjoARSxWPsJUMYQA",
+      "name": "Las Palmas Taco Bar",
+      "locality": "Santa Cruz",
+      "region": "California",
+      "country": "United States",
+      "address": "55 Front St, Santa Cruz, CA 95060, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.42329999999998336,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.13449999999994589,
+      "endMs": 0.30539999999996326
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.3225999999999658,
+      "endMs": 0.33579999999994925
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.363399999999956,
+      "endMs": 0.397199999999998
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "AUTO_SAVE"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Las Palmas Taco Bar",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.028512,
+    "modelLatencyMs": 4449,
+    "totalLatencyMs": 30766
+  }
+}

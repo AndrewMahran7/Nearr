@@ -1,0 +1,113 @@
+{
+  "caseId": "R05",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJTQwskQWEbm0RMTFAiStkGl8",
+      "name": "Okere Falls Scenic Reserve (Kaituna River)",
+      "locality": "Okere Falls",
+      "region": "Bay of Plenty",
+      "country": "New Zealand",
+      "address": "9 Trout Pool Road, Okere Falls 3074, New Zealand"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJTQwskQWEbm0RMTFAiStkGl8",
+      "name": "Okere Falls Scenic Reserve (Kaituna River)",
+      "locality": "Okere Falls",
+      "region": "Bay of Plenty",
+      "country": "New Zealand",
+      "address": "9 Trout Pool Road, Okere Falls 3074, New Zealand"
+    },
+    {
+      "id": "ChIJ-S7PTQKEbm0RYIRljW37IeA",
+      "name": "Tutea Falls",
+      "locality": "Okere Falls",
+      "region": "Bay of Plenty",
+      "country": "New Zealand",
+      "address": "103 Trout Pool Road, Okere Falls 3074, New Zealand"
+    },
+    {
+      "id": "ChIJnaR98wGEbm0RDKp82Kq1-6c",
+      "name": "Trout Pool Falls",
+      "locality": "Okere Falls",
+      "region": "Bay of Plenty",
+      "country": "New Zealand",
+      "address": "Okere Falls 3074, New Zealand"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.28050000000001774,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.1488000000000511,
+      "endMs": 0.2270000000000323
+    },
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.22900000000004184,
+      "endMs": 0.25950000000000273
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.26000000000004775,
+      "endMs": 0.26410000000004175
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.2676000000000158,
+      "endMs": 0.27810000000005175
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 2,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Okere Falls Scenic Reserve (Kaituna River)",
+      "replayed": false,
+      "reason": "full_provider_response_not_retained",
+      "calls": 1
+    },
+    {
+      "name": "Tutea Falls",
+      "replayed": true,
+      "calls": 1
+    },
+    {
+      "name": "Trout Pool Falls",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.042836,
+    "modelLatencyMs": 14331,
+    "totalLatencyMs": 28289
+  }
+}
