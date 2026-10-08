@@ -1,0 +1,870 @@
+{
+  "schema_version": 1,
+  "generated_from": "dataset_manifest.jsonl",
+  "group_count": 123,
+  "policy": "Source groups and accepted place groups form connected split components. Two Instagram posts in one Mallorca creator series are grouped conservatively. Unreviewed repost/mirror relationships may require later merges before a seal.",
+  "groups": {
+    "sg_0099ee2b5f1d002f": {
+      "case_ids": [
+        "g_0099ee2b5f1d002f"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_034cb50e1bbecc5b": {
+      "case_ids": [
+        "g_034cb50e1bbecc5b"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_056c4c21a0a6119c": {
+      "case_ids": [
+        "g_056c4c21a0a6119c"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_0643eb2722b3867e": {
+      "case_ids": [
+        "g_0643eb2722b3867e"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_078765cd5f6b6227": {
+      "case_ids": [
+        "g_078765cd5f6b6227"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_0a8acffefa317e15": {
+      "case_ids": [
+        "g_0a8acffefa317e15"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_117b5a555bbfb817": {
+      "case_ids": [
+        "g_117b5a555bbfb817"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_132d43702d7313c8": {
+      "case_ids": [
+        "g_132d43702d7313c8"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_17699991231e6f90": {
+      "case_ids": [
+        "g_17699991231e6f90"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_186726593bd4f608": {
+      "case_ids": [
+        "g_186726593bd4f608"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_1c334195cd3c77f0": {
+      "case_ids": [
+        "g_1c334195cd3c77f0"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_1f1c08e3ef8fb80c": {
+      "case_ids": [
+        "g_1f1c08e3ef8fb80c"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_2075033f2571dee3": {
+      "case_ids": [
+        "g_2075033f2571dee3"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_20cb6121db7c4ac3": {
+      "case_ids": [
+        "g_20cb6121db7c4ac3"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_22b3580348790252": {
+      "case_ids": [
+        "g_22b3580348790252"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_235742774cc04d9e": {
+      "case_ids": [
+        "g_235742774cc04d9e"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_2a9b88a0eeae110a": {
+      "case_ids": [
+        "g_2a9b88a0eeae110a"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_319565ccd17d67d3": {
+      "case_ids": [
+        "g_319565ccd17d67d3"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_3390fd41fb6a2976": {
+      "case_ids": [
+        "g_3390fd41fb6a2976"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_35646a862b01f85c": {
+      "case_ids": [
+        "g_35646a862b01f85c"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_365e72058d9a5901": {
+      "case_ids": [
+        "g_365e72058d9a5901"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_389a82cbf37d8de3": {
+      "case_ids": [
+        "g_389a82cbf37d8de3"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_38b71ce06ea21826": {
+      "case_ids": [
+        "g_38b71ce06ea21826"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_397c756fd5b9c198": {
+      "case_ids": [
+        "g_397c756fd5b9c198"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_3fad429ba804a289": {
+      "case_ids": [
+        "g_3fad429ba804a289"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_40cf5351fbd38963": {
+      "case_ids": [
+        "g_40cf5351fbd38963"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_40e5e8b6775b8256": {
+      "case_ids": [
+        "g_40e5e8b6775b8256"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_442a62dbf7067a5e": {
+      "case_ids": [
+        "g_442a62dbf7067a5e"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_444930e5711013fa": {
+      "case_ids": [
+        "g_444930e5711013fa"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_474d9c4f65de1ef9": {
+      "case_ids": [
+        "g_474d9c4f65de1ef9"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_4799609640f8fe03": {
+      "case_ids": [
+        "g_4799609640f8fe03"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_47b3de911a302323": {
+      "case_ids": [
+        "g_47b3de911a302323"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_4888578f7ecdde13": {
+      "case_ids": [
+        "g_40cf51fadd60e0cb"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_4a83d0e7ecc312a7": {
+      "case_ids": [
+        "g_4a83d0e7ecc312a7"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_4b39c1f847cb2a30": {
+      "case_ids": [
+        "g_4b39c1f847cb2a30"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_4bb92b7c50cf3bcf": {
+      "case_ids": [
+        "g_4bb92b7c50cf3bcf"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_4bdc337579e5a19d": {
+      "case_ids": [
+        "g_4bdc337579e5a19d"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_4e8e8cfd81542d66": {
+      "case_ids": [
+        "g_4e8e8cfd81542d66"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_4f9f1979a74a238e": {
+      "case_ids": [
+        "g_4f9f1979a74a238e"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_5261c8b834c2e0c0": {
+      "case_ids": [
+        "g_5261c8b834c2e0c0"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_539aa1012992ccf1": {
+      "case_ids": [
+        "g_539aa1012992ccf1"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_57b183e939907870": {
+      "case_ids": [
+        "g_57b183e939907870"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_58328d06626228e0": {
+      "case_ids": [
+        "g_58328d06626228e0"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_5a68216650309e8b": {
+      "case_ids": [
+        "g_5a68216650309e8b"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_621580fb6d88e7a3": {
+      "case_ids": [
+        "g_e1d4c496cb137360"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_628816436644d330": {
+      "case_ids": [
+        "g_628816436644d330"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_65ab0ed6c9fa0f60": {
+      "case_ids": [
+        "g_65ab0ed6c9fa0f60"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_663a496f4f63c6bb": {
+      "case_ids": [
+        "g_663a496f4f63c6bb"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_68cc3d99cca3cb95": {
+      "case_ids": [
+        "g_68cc3d99cca3cb95"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_69a340c407e377bb": {
+      "case_ids": [
+        "g_69a340c407e377bb"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_6e22d1ab25cb77ae": {
+      "case_ids": [
+        "g_6e22d1ab25cb77ae"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_721a00d5e9882dc3": {
+      "case_ids": [
+        "g_721a00d5e9882dc3"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_72bdc7d7bca57cfd": {
+      "case_ids": [
+        "g_72bdc7d7bca57cfd"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_73b60b55d34d3611": {
+      "case_ids": [
+        "g_73b60b55d34d3611"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_75c2acbb24aea095": {
+      "case_ids": [
+        "g_75c2acbb24aea095"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_7cb8c0f0393d7be4": {
+      "case_ids": [
+        "g_152ef0bec90360bc"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_7cbd2ab8eca847a5": {
+      "case_ids": [
+        "g_7cbd2ab8eca847a5"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_7d6c5c674f33ccc4": {
+      "case_ids": [
+        "g_14f48dbd890a0bb5"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_7ed1d91c4c07fff4": {
+      "case_ids": [
+        "g_7ed1d91c4c07fff4"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_7eda74930acd7214": {
+      "case_ids": [
+        "g_7eda74930acd7214"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_802089e92a946732": {
+      "case_ids": [
+        "g_802089e92a946732"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_8068627a5e7aedd8": {
+      "case_ids": [
+        "g_8068627a5e7aedd8"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_8390ef601db2f5b0": {
+      "case_ids": [
+        "g_8390ef601db2f5b0"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_858d20262d1689dc": {
+      "case_ids": [
+        "g_858d20262d1689dc"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_871c0010a28dc826": {
+      "case_ids": [
+        "g_871c0010a28dc826"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_8817a2c51b73cc1d": {
+      "case_ids": [
+        "g_8817a2c51b73cc1d"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_8a7c557963f748c2": {
+      "case_ids": [
+        "g_8a7c557963f748c2"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_8c81a2995b818304": {
+      "case_ids": [
+        "g_8c81a2995b818304"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_8f77f60c6cd2698d": {
+      "case_ids": [
+        "g_8f77f60c6cd2698d"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_8fa7686afb4197aa": {
+      "case_ids": [
+        "g_8fa7686afb4197aa"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_8ff92266c08cfa91": {
+      "case_ids": [
+        "g_8ff92266c08cfa91"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_9757b1e96992116a": {
+      "case_ids": [
+        "g_9757b1e96992116a"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_9dc9c68f6d1303ba": {
+      "case_ids": [
+        "g_9dc9c68f6d1303ba"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_a598b63e7937280b": {
+      "case_ids": [
+        "g_a598b63e7937280b"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_a5e2f98474083b2b": {
+      "case_ids": [
+        "g_a5e2f98474083b2b"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_a77492cf13bdef50": {
+      "case_ids": [
+        "g_a77492cf13bdef50"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_a7d0dd811cf7da55": {
+      "case_ids": [
+        "g_a7d0dd811cf7da55"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_a942e403ebec9e72": {
+      "case_ids": [
+        "g_a942e403ebec9e72"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_abbd0e4f6fcf1f6b": {
+      "case_ids": [
+        "g_abbd0e4f6fcf1f6b"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_abe06315806a69b8": {
+      "case_ids": [
+        "g_abe06315806a69b8"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_afe486a57b97dc6f": {
+      "case_ids": [
+        "g_afe486a57b97dc6f"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_b02ce36a56b361c9": {
+      "case_ids": [
+        "g_b02ce36a56b361c9"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_b07d64753aa44bb9": {
+      "case_ids": [
+        "g_b07d64753aa44bb9"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_b09aaa5713ee1775": {
+      "case_ids": [
+        "g_b09aaa5713ee1775"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_b5043553f7f33c37": {
+      "case_ids": [
+        "g_b5043553f7f33c37"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_b5b42b5a3416bdd0": {
+      "case_ids": [
+        "g_b5b42b5a3416bdd0"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_bcc58d5417a85c67": {
+      "case_ids": [
+        "g_bcc58d5417a85c67"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_c126d20fb288b951": {
+      "case_ids": [
+        "g_c126d20fb288b951"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_c4dc99e076dc478d": {
+      "case_ids": [
+        "g_c4dc99e076dc478d"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_c4f1fa7603deeb17": {
+      "case_ids": [
+        "g_c4f1fa7603deeb17"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_c4f474cfecf7c939": {
+      "case_ids": [
+        "g_c4f474cfecf7c939"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_ca1464cc99eb6cdf": {
+      "case_ids": [
+        "g_ca1464cc99eb6cdf"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_cc59b712fa5dc475": {
+      "case_ids": [
+        "g_cc59b712fa5dc475"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_cca6b0df4d244bec": {
+      "case_ids": [
+        "g_cca6b0df4d244bec"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_d13a981a46c07e50": {
+      "case_ids": [
+        "g_d13a981a46c07e50"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_d165de6b3810e469": {
+      "case_ids": [
+        "g_d165de6b3810e469"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_d2bb55987b8eb87f": {
+      "case_ids": [
+        "g_d2bb55987b8eb87f"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_d46ab9413102c7ea": {
+      "case_ids": [
+        "g_d46ab9413102c7ea"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_d4f1b2eaa72cd967": {
+      "case_ids": [
+        "g_d4f1b2eaa72cd967"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_d6389b475f799530": {
+      "case_ids": [
+        "g_d6389b475f799530"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_db84cb5b03895cfb": {
+      "case_ids": [
+        "g_db84cb5b03895cfb"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_dc2b21301ac26d1f": {
+      "case_ids": [
+        "g_dc2b21301ac26d1f"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_dc9f174e9dd1e976": {
+      "case_ids": [
+        "g_dc9f174e9dd1e976"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_dd16ecdfa075dbf0": {
+      "case_ids": [
+        "g_dd16ecdfa075dbf0"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_dd983adcf6024c71": {
+      "case_ids": [
+        "g_dd983adcf6024c71"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_e5503b5436130c81": {
+      "case_ids": [
+        "g_e5503b5436130c81"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_e65f55e7c2e75d1d": {
+      "case_ids": [
+        "g_e65f55e7c2e75d1d"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_e7087f9e01c85afb": {
+      "case_ids": [
+        "g_e7087f9e01c85afb"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_e8734b3a7e7495f9": {
+      "case_ids": [
+        "g_e8734b3a7e7495f9"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_e8b937eeb9a1f96a": {
+      "case_ids": [
+        "g_e8b937eeb9a1f96a"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_eacc312a97b2ab09": {
+      "case_ids": [
+        "g_eacc312a97b2ab09"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_ec4bb2c950561a68": {
+      "case_ids": [
+        "g_ec4bb2c950561a68"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_ee6eb70bd01cd678": {
+      "case_ids": [
+        "g_40ba77bd8e064268"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_eec46119908edc07": {
+      "case_ids": [
+        "g_eec46119908edc07"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_f1e5ce2a7ada801c": {
+      "case_ids": [
+        "g_f1e5ce2a7ada801c"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_f26bce2d6f45a6cb": {
+      "case_ids": [
+        "g_f26bce2d6f45a6cb"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_f29eacfabf6b5302": {
+      "case_ids": [
+        "g_f29eacfabf6b5302"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_f407903115f6caf7": {
+      "case_ids": [
+        "g_f407903115f6caf7"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_f46007cc2006ad0a": {
+      "case_ids": [
+        "g_2320d780ebe5251c",
+        "g_497e2831b71a54c4"
+      ],
+      "grouping_basis": "same_creator_related_mallorca_series",
+      "manual_review_status": "conservatively_grouped"
+    },
+    "sg_f5058eb5a2202106": {
+      "case_ids": [
+        "g_f5058eb5a2202106"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_fb48a3460c0f16e9": {
+      "case_ids": [
+        "g_fb48a3460c0f16e9"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_ff764456340dfa2e": {
+      "case_ids": [
+        "g_ff764456340dfa2e"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    },
+    "sg_ff7b94b7e96a3bd8": {
+      "case_ids": [
+        "g_ff7b94b7e96a3bd8"
+      ],
+      "grouping_basis": "distinct_public_post_identity",
+      "manual_review_status": "pending_near_duplicate_review"
+    }
+  }
+}

@@ -1,0 +1,2 @@
+split,status,reason,source_candidates,ready_full_cases,observations,correct_autonomous_rate,cost_per_correct_usd
+calibration,not_run,no_calibration_cases_or_recognition_observations,0,0,0,,
