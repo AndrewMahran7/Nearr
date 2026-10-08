@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "main": "./index.js",
   "scripts": {
+    "eval:recognition": "node --import ./services/media-worker/node_modules/tsx/dist/loader.mjs scripts/recognition-eval/runner.mjs",
+    "test:recognition-evaluation": "node --test scripts/recognition-eval/metrics.test.mjs",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",

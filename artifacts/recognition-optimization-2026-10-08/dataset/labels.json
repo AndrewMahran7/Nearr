@@ -1,0 +1,2826 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "label": "KNOWN_NEGATIVE",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "UNSCORED",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "C01"
+    },
+    {
+      "label": "KNOWN_NEGATIVE",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "UNSCORED",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "C02"
+    },
+    {
+      "label": "KNOWN_NEGATIVE",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "UNSCORED",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "C03"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Carbone"
+      ],
+      "previousQuality": "PROVISIONAL",
+      "multiPlaceExpected": true,
+      "completeSetEstablished": false,
+      "provenance": [],
+      "acceptedGranularity": "unestablished",
+      "notes": "Carbone is known but the multi-place post lacks complete destination labels.",
+      "caseId": "C04"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "PROVISIONAL",
+      "multiPlaceExpected": true,
+      "completeSetEstablished": false,
+      "provenance": [],
+      "acceptedGranularity": "unestablished",
+      "notes": "Multi-place post lacks destination-level exact labels.",
+      "caseId": "C05"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Tuxedo Cat's Coffee",
+        "Tuxedo Cat Coffee"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#C06",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "C06"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "PROVISIONAL_BEST_GUESS",
+      "proposedPlacesNotGroundTruth": [
+        "Lac de Vouglans"
+      ],
+      "country": "France",
+      "region": "Bourgogne-Franche-Comte",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Da2Rb92NKGw/",
+          "shortFinding": "Creator caption reports a 22.5 m double gainer; no location is named."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "A 22.5 m jump and wooded, horizontally bedded limestone reservoir fit Vouglans, but no public post or independent same-clip source names it.",
+      "caseId": "CJ001"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "UNRESOLVED",
+      "proposedPlacesNotGroundTruth": [
+        "Marseille multi-location montage (individual clips unresolved)"
+      ],
+      "country": "France",
+      "region": "Provence-Alpes-Cote d’Azur",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DZIXov9tVu7/",
+          "shortFinding": "Creator hashtags identify Marseille; the post is a multi-location montage."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source supplies Marseille only; the five exact clip identities proposed by Sol could not be independently tied to the individual montage segments.",
+      "caseId": "CJ002"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Sooke Potholes"
+      ],
+      "country": "Canada",
+      "region": "British Columbia",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DbB3ZOUya93/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.youtube.com/watch?v=PYUoA19ZXcs",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "Distinctive river potholes and cliff geometry match public cliff-jumping media from Sooke; no same-clip naming source was found.",
+      "caseId": "CJ003"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Ponta da Piedade sea-cave complex"
+      ],
+      "country": "Portugal",
+      "region": "Algarve",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Dbh90croV4d/",
+          "shortFinding": "Caption identifies Portugal but not the exact formation."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.cm-lagos.pt/images/site/cliente/AF_LAGOS_PRAIAS_E_COSTA.pdf",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source identifies Portugal; golden limestone stacks, arches and grottos match the Ponta da Piedade complex.",
+      "caseId": "CJ005"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Lido Galomar"
+      ],
+      "country": "Portugal",
+      "region": "Madeira",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DcekCtbStlP/",
+          "shortFinding": "Caption hashtags identify Madeira (misspelled in source)."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.visitmadeira.com/en/where-to-go/madeira/east-coast/santa-cruz/lido-galomar-bathing-complex/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source tags Madeira; the built volcanic-rock lido, platforms and pool geometry match Galomar.",
+      "caseId": "CJ006"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Cala Varques"
+      ],
+      "country": "Spain",
+      "region": "Mallorca",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DcVUFxntIKW/",
+          "shortFinding": "Caption identifies Mallorca and describes 13.5 m jumps."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.youtube.com/watch?v=YC2NywBTsQ4",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source says Mallorca and 13.5 m; independent cliff-jumping media documents the natural arch/ledge at Cala Varques.",
+      "caseId": "CJ007"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Cenote Zaci"
+      ],
+      "country": "Mexico",
+      "region": "Yucatan",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DWrKNRujq4X/",
+          "shortFinding": "Caption identifies Mexico and a cenote, without naming the cenote."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://en.wikipedia.org/wiki/Cenote_Zac%C3%AD",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source says Mexico and cenote; the large open urban cenote, walls and established jump platform match Zaci.",
+      "caseId": "CJ008"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Waimea Bay Jump Rock"
+      ],
+      "country": "United States",
+      "region": "Hawaii",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C6pIphxy4qr/",
+          "shortFinding": "Hashtags identify Hawaii and Oahu, without naming the rock."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://cliffscout.com/spots/hawaii",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source tags Hawaii and Oahu; the isolated beach boulder and shore profile match Waimea Bay’s named Jump Rock.",
+      "caseId": "CJ009"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "UNRESOLVED",
+      "proposedPlacesNotGroundTruth": [
+        "Unidentified Mallorca coastal sea hole"
+      ],
+      "country": "Spain",
+      "region": "Mallorca",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DAvJrtQIGVU/",
+          "shortFinding": "Caption says “Secret hole in Mallorca” and gives no formal feature name."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source calls it a secret hole in Mallorca. No public same-clip match or responsibly named exact feature was found.",
+      "caseId": "CJ010"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Makapipi Falls"
+      ],
+      "country": "United States",
+      "region": "Hawaii",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DCfD1bFIsuE/",
+          "shortFinding": "Hashtags identify Maui, Hana and Road to Hana and state an 80 ft waterfall jump."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://files.hawaii.gov/dlnr/cwrm/cch/cchma1301/CCHMA1301-20180620-CWRM.pdf",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source tags Maui, Hana and Road to Hana; the bridge-above-waterfall geometry matches Makapipi Falls below Hana Highway.",
+      "caseId": "CJ011"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Tamolitch Blue Pool"
+      ],
+      "country": "United States",
+      "region": "Oregon",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DBW35nppVUS/",
+          "shortFinding": "Caption identifies the Pacific Northwest only."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.linnsheriff.org/2026/06/linn-county-sheriffs-office-investigates-drowning/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source says PNW; the exceptionally clear blue pool, forested basalt rim and documented jump height match Tamolitch.",
+      "caseId": "CJ012"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Ching’s Pond (Blue Sapphire Pool)"
+      ],
+      "country": "United States",
+      "region": "Hawaii",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DFyZwBJT_Xy/",
+          "shortFinding": "Hashtags identify Hawaii, waterfall and bridge jumping."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://mauiguidebook.com/road-to-hana-maui/chings-pond/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source tags Hawaii, waterfall and bridge jumping; Ching’s has the matching highway bridge, concrete platform and turquoise pool.",
+      "caseId": "CJ013"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Spitting Cave"
+      ],
+      "country": "United States",
+      "region": "Hawaii",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DB6yxXwSgU7/",
+          "shortFinding": "Caption calls it an iconic spot but gives no geography."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.lonelyplanet.com/points-of-interest/spitting-cave/1632563",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source calls the spot iconic; the cave mouth, surge and high ledges match extensive public Spitting Cave cliff-jumping imagery.",
+      "caseId": "CJ014"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Pont d’en Gil"
+      ],
+      "country": "Spain",
+      "region": "Balearic Islands",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DbtjWEKIjn9/",
+          "shortFinding": "Caption is generic and gives no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.padi.com/dive-site/spain/pont-den-gil/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The limestone sea arch, cavern opening and ledges match Pont d’en Gil across independent dive and travel imagery.",
+      "caseId": "CJ015"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "The Arch at Pappy’s Point"
+      ],
+      "country": "United States",
+      "region": "California",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DaW06-bujG_/",
+          "shortFinding": "Caption identifies San Diego but not the ledge."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.kpbs.org/news/public-safety/2026/08/05/san-diego-police-increase-enforcement-at-sunset-cliffs-following-cliff-jumper-injuries",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source says San Diego; independent local reporting identifies Pappy’s Point and The Arch as the active Sunset Cliffs jump feature, matching the sea-arch scene.",
+      "caseId": "CJ016"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "The Crack at Wet Beaver Creek"
+      ],
+      "country": "United States",
+      "region": "Arizona",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CJUBgodgdUV/",
+          "shortFinding": "Caption identifies Arizona but not the swimming hole."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://wildpathsaz.com/the-crack-on-bell-trail/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source says Arizona; the narrow red-rock swimming cleft and jumping ledges match The Crack.",
+      "caseId": "CJ017"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "PROVISIONAL_BEST_GUESS",
+      "proposedPlacesNotGroundTruth": [
+        "Embalse de La Toba"
+      ],
+      "country": "Spain",
+      "region": "Castilla-La Mancha",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CvsmEqhKIeO/",
+          "shortFinding": "Caption is generic Spanish-language content with no exact location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://jucaraventura.es/embalse-toba/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The reservoir setting is visually consistent, but the source is generic and no same-clip or creator evidence tied it to La Toba.",
+      "caseId": "CJ018"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Potem Falls"
+      ],
+      "country": "United States",
+      "region": "California",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DbzakoPumeL/",
+          "shortFinding": "Caption describes a 72 ft waterfall but gives no region."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.world-of-waterfalls.com/waterfalls/california-potem-falls/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source states a 72 ft waterfall; public sources describe Potem as a roughly 70 ft single plunge into a broad teal pool matching the scene.",
+      "caseId": "CJ019"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Cenote Maya Native Park"
+      ],
+      "country": "Mexico",
+      "region": "Yucatan",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CV8GaG8LHbK/",
+          "shortFinding": "Hashtags identify Mexico and a cenote and describe an 80 ft jump."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.chichenitza.com/cenotes/cenote-maya",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source tags Mexico and cenote and states 80 ft; the immense enclosed vault, wooden access and jumping setup match Cenote Maya.",
+      "caseId": "CJ020"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "UNRESOLVED",
+      "proposedPlacesNotGroundTruth": [
+        "Unnamed waterfall on Nahua Expeditions’ Tzotzil route"
+      ],
+      "country": "Mexico",
+      "region": "Chiapas",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C_voKVguTuR/",
+          "shortFinding": "Nahua Expeditions identifies its Tzotzil route in the Mexican jungle but does not name the waterfall."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://nahuaexpeditions.com/tzotzil/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The creator and official itinerary establish the Tzotzil expedition route, but neither publishes a canonical name or coordinates for this waterfall.",
+      "caseId": "CJ021"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "PROVISIONAL_BEST_GUESS",
+      "proposedPlacesNotGroundTruth": [
+        "Area Recreativa El Chantre (Rio Jucar)"
+      ],
+      "country": "Spain",
+      "region": "Castilla-La Mancha",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DNKwgA6MQ9m/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://caminosnaturales.es/es/red-de-caminos-naturales/poi-detalle/ID.06.33.05.09/72cf72e6-0ad9-4787-8440-ec137ae318bc",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The cliff-lined river recreation area is consistent with the footage, but the source is generic and no same-clip proof was found.",
+      "caseId": "CJ022"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Bassin la Paix",
+          "aliases": [
+            "Bassin la Paix",
+            "Bassin La Paix"
+          ],
+          "country": "France"
+        }
+      ],
+      "previousQuality": "VERIFIED_EXACT",
+      "proposedPlacesNotGroundTruth": [],
+      "country": "France",
+      "region": "La Reunion",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DCtiKTyIkxN/",
+          "shortFinding": "Caption explicitly names Bassin la Paix on La Reunion."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://fr.wikipedia.org/wiki/Bassin_la_Paix",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "named_physical_feature",
+      "notes": "The original caption explicitly names Bassin la Paix and Reunion; public mapping and waterfall descriptions match.",
+      "caseId": "CJ023"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Es Pontas",
+          "aliases": [
+            "Es Pontas",
+            "Es Pontàs"
+          ],
+          "country": "Spain"
+        }
+      ],
+      "previousQuality": "VERIFIED_EXACT",
+      "proposedPlacesNotGroundTruth": [],
+      "country": "Spain",
+      "region": "Mallorca",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Db3bZ_-Nz3R/",
+          "shortFinding": "Caption explicitly hashtags Es Pontas and Mallorca and states 24 m."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://intranet.caib.es/geoturfront/es/puntos_interes/23/general.html",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "named_physical_feature",
+      "notes": "The original caption explicitly names #espontas and Mallorca and states 24 m; government geology mapping identifies the same 20 m sea arch.",
+      "caseId": "CJ024"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Fort Lauderdale Aquatic Center",
+          "aliases": [
+            "Fort Lauderdale Aquatic Center"
+          ],
+          "country": "United States"
+        }
+      ],
+      "previousQuality": "VERIFIED_EXACT",
+      "proposedPlacesNotGroundTruth": [],
+      "country": "United States",
+      "region": "Florida",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C-VuDm0PmCH/",
+          "shortFinding": "Caption identifies a 27 m High Dive Global competition, first place, and 2024 timing."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://ishof.org/inaugural-high-dive-live-show-who-will-becrowned-the-first-champion/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "named_physical_feature",
+      "notes": "The source identifies a High Dive Global 27 m competition and timing; the documented 2024 event used the permanent 27 m Fort Lauderdale tower.",
+      "caseId": "CJ025"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "PROVISIONAL_BEST_GUESS",
+      "proposedPlacesNotGroundTruth": [
+        "Marble River Provincial Park"
+      ],
+      "country": "Canada",
+      "region": "British Columbia",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Davq4ZDvO7f/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://bcparks.ca/marble-river-park/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The limestone canyon is plausible, but BC Parks says river swimming is not designated and no same-clip or creator location evidence was found.",
+      "caseId": "CJ026"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Koosah Falls",
+          "aliases": [
+            "Koosah Falls"
+          ],
+          "country": "United States"
+        }
+      ],
+      "previousQuality": "VERIFIED_EXACT",
+      "proposedPlacesNotGroundTruth": [],
+      "country": "United States",
+      "region": "Oregon",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C9NorfaPN3T/",
+          "shortFinding": "Caption explicitly names Koosah Falls and Oregon."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.youtube.com/watch?v=uVrXc6k80Xc",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "named_physical_feature",
+      "notes": "The original caption explicitly says Koosah Falls and Oregon; public waterfall measurements and imagery match.",
+      "caseId": "CJ027"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "PROVISIONAL_BEST_GUESS",
+      "proposedPlacesNotGroundTruth": [
+        "Koosah Falls"
+      ],
+      "country": "United States",
+      "region": "Oregon",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C87QU_LJNCK/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.waterfallsnorthwest.com/waterfall/Koosah-Falls-4270",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The broad undercut basalt waterfall strongly resembles Koosah, but the source supplies no geographic clue and no same-clip match was found.",
+      "caseId": "CJ028"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Tamolitch Blue Pool"
+      ],
+      "country": "United States",
+      "region": "Oregon",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DGRIr0SvMMX/",
+          "shortFinding": "Caption describes exceptionally blue water and a 57 ft jump but gives no geography."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://visitmckenzieriver.com/places/tamolitch-blue-pool/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source states a 57 ft jump into exceptionally blue water; independent cliff-jumping media reports about 54 ft at Tamolitch and imagery matches.",
+      "caseId": "CJ029"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Honeymoon Beach cliff-jumping ledge"
+      ],
+      "country": "Indonesia",
+      "region": "Bali",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DWTZd0IEZSA/",
+          "shortFinding": "Caption identifies Bali but not the beach."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://bali.live/p/cliff-jumping-in-bali-where-can-you-go-cliff-jumping-in-bali",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source says Bali; independent Bali cliff-jumping guides identify and map this distinctive ledge at Honeymoon Beach/Jimbaran Panorama Point.",
+      "caseId": "CJ030"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Dorset Marble Quarry"
+      ],
+      "country": "United States",
+      "region": "Vermont",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C9sIk72u5PM/",
+          "shortFinding": "Caption identifies Vermont and an 81 ft/25 m jump."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.nhpr.org/national/2015-08-07/vermonts-marble-mecca-a-worthy-swimming-hole-for-cliff-jumping-pilgrims",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source says Vermont and 81 ft/25 m; the flooded white-marble quarry walls match Dorset, which is independently documented for cliff jumping.",
+      "caseId": "CJ031"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Torre Incina at Cala Incina"
+      ],
+      "country": "Italy",
+      "region": "Apulia",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CvQED2QtBZe/",
+          "shortFinding": "Hashtags identify Italy and Polignano a Mare."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.comune.monopoli.ba.it/Vivere-il-comune/Luoghi/Torre-Incina",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source tags Italy and Polignano a Mare; public local sources document high-rock diving beside Torre Incina and the coastal tower/ledge morphology matches.",
+      "caseId": "CJ032"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "PROVISIONAL_BEST_GUESS",
+      "proposedPlacesNotGroundTruth": [
+        "Waimea Bay Jump Rock"
+      ],
+      "country": "United States",
+      "region": "Hawaii",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CaB4Ve1NIW_/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://cliffscout.com/spots/hawaii",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The boulder and shore geometry match Waimea Jump Rock, but the source contains no geographic clue and no same-clip naming source was found.",
+      "caseId": "CJ033"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "New River Gorge Bridge",
+          "aliases": [
+            "New River Gorge Bridge"
+          ],
+          "country": "United States"
+        }
+      ],
+      "previousQuality": "VERIFIED_EXACT",
+      "proposedPlacesNotGroundTruth": [],
+      "country": "United States",
+      "region": "West Virginia",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Cj80H_jAXkm/",
+          "shortFinding": "Hashtags explicitly identify Bridge Day, New River Gorge and West Virginia."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://officialbridgeday.com/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "named_physical_feature",
+      "notes": "The source explicitly tags Bridge Day, New River Gorge and West Virginia; the bridge is unmistakable. This is BASE jumping, not a water cliff jump.",
+      "caseId": "CJ034"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "PROVISIONAL_BEST_GUESS",
+      "proposedPlacesNotGroundTruth": [
+        "The Toilet Bowl at Lake Powell"
+      ],
+      "country": "United States",
+      "region": "Utah/Arizona",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CxVz9cQxiGW/",
+          "shortFinding": "Caption says Powell and hashtags identify Lake Powell."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.reddit.com/r/LakePowell/comments/1eo5llm",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source identifies Lake Powell and the enclosed slickrock hole is plausible, but public sources use Toilet Bowl/Hole in the Roof inconsistently and publish competing coordinates.",
+      "caseId": "CJ035"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Balangan Beach cliffs",
+          "aliases": [
+            "Balangan Beach cliffs",
+            "Balangan Beach",
+            "Balangan cliffs"
+          ],
+          "country": "Indonesia"
+        }
+      ],
+      "previousQuality": "VERIFIED_EXACT",
+      "proposedPlacesNotGroundTruth": [],
+      "country": "Indonesia",
+      "region": "Bali",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DUppjPgEngm/",
+          "shortFinding": "Hashtags explicitly identify Bali, Balangan and Balangan Beach."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://finnsbeachclub.com/guides/best-cliff-jumping-spots-bali/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "named_physical_feature",
+      "notes": "The original source explicitly tags Bali, Balangan and Balangan Beach; public cliff-jumping guides describe the same cliffs.",
+      "caseId": "CJ036"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Cascade des Baumes"
+      ],
+      "country": "France",
+      "region": "Occitanie",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DKPf-PjI1Rq/",
+          "shortFinding": "Caption describes a 20 m competition spot near Millau."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.tourisme-muse-raspes.com/diffusio/fr/visiter/sites-naturels/st-rome-de-tarn/cascade-des-baumes_TFO392116792284.php",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source says a 20 m championship spot near Millau; the tourism office describes the 18 m Cascade des Baumes dropping into the Tarn and public imagery matches.",
+      "caseId": "CJ037"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "PROVISIONAL_BEST_GUESS",
+      "proposedPlacesNotGroundTruth": [
+        "Gunlock Falls"
+      ],
+      "country": "United States",
+      "region": "Utah",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CsjqggyA2qu/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://stateparks.utah.gov/parks/gunlock/gunlock-falls/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The stepped red-rock seasonal falls are consistent and independently documented as a cliff-jumping site, but the source supplies no location clue.",
+      "caseId": "CJ038"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "PROVISIONAL_BEST_GUESS",
+      "proposedPlacesNotGroundTruth": [
+        "Escalante Potholes Recreation Site"
+      ],
+      "country": "United States",
+      "region": "Colorado",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C9cvc9Xveub/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.blm.gov/press-release/heavy-snowpack-increases-safety-concerns-blm-uncompahgre-recreational-users",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The carved granite pools fit the BLM-described Escalante Potholes cliff-jumping site, but the source has no location clue and no same-clip match.",
+      "caseId": "CJ039"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "HIGH_CONFIDENCE_EXACT",
+      "proposedPlacesNotGroundTruth": [
+        "Koosah Falls"
+      ],
+      "country": "United States",
+      "region": "Oregon",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Cty5hdxA-dx/",
+          "shortFinding": "Hashtags identify Oregon and the Pacific Northwest."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.youtube.com/watch?v=7YPT9bs7JIY",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source tags Oregon/PNW; the 74 ft broad undercut basalt drop and pool match Koosah across multiple public cliff-jumping videos.",
+      "caseId": "CJ040"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "PROVISIONAL_BEST_GUESS",
+      "proposedPlacesNotGroundTruth": [
+        "Cenote Zaci"
+      ],
+      "country": "Mexico",
+      "region": "Yucatan",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CoDBylYjjTH/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://en.wikipedia.org/wiki/Cenote_Zac%C3%AD",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The large open cenote and urban masonry are consistent with Zaci, but the source provides no location clue and no same-clip match was found.",
+      "caseId": "CJ041"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "previousQuality": "UNRESOLVED",
+      "proposedPlacesNotGroundTruth": [
+        "Three-location montage (individual clips unresolved)"
+      ],
+      "country": null,
+      "region": null,
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Dc1-OPBBGEP/",
+          "shortFinding": "Caption identifies a montage and asks which jump was favorite; no locations are named."
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "The source asks which jump was favorite but names none. Sol proposed Lake Atitlan, Fiordo di Furore and Ho’opi’i Falls; none was independently tied to a specific segment.",
+      "caseId": "CJ042"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "2nd Floor",
+          "aliases": [
+            "2nd Floor",
+            "2nd Floor Restaurant Bar Gallery Nightclub",
+            "2nd Floor Gallery Bar & Grill"
+          ],
+          "locality": "Huntington Beach"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "VERIFIED",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "PINNED_BACKEND_FIXTURE",
+          "reference": "scripts/shareRegressionFixtures.ts#instagram-2nd-floor-post",
+          "supports": "venue and Huntington Beach address"
+        }
+      ],
+      "acceptedGranularity": "exact_physical_place",
+      "notes": null,
+      "caseId": "H01"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Mad Yolks",
+          "aliases": [
+            "Mad Yolks"
+          ],
+          "locality": "Santa Cruz"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Mad Yolks"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-1cab4fbf2251"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "H02"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Las Palmas Taco Bar",
+        "Las Palmas"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#H03",
+          "supports": "venue identity"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "H03"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Seabright Deli",
+          "aliases": [
+            "Seabright Deli"
+          ],
+          "locality": null
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Seabright Deli"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-393a255347ae"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "H04"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Mad Yolks",
+          "aliases": [
+            "Mad Yolks"
+          ],
+          "locality": "Santa Cruz"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Mad Yolks"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-9a0fa6a97d27"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "H05"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Baqba Mexican Grill",
+          "aliases": [
+            "Baqba Mexican Grill"
+          ],
+          "locality": "Montclair"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Baqba Mexican Grill",
+        "Baqba"
+      ],
+      "previousQuality": "PROVISIONAL",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-64a2fefb9fc4"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "H06"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Famous Dave's Bar-B-Que",
+          "aliases": [
+            "Famous Dave's Bar-B-Que"
+          ],
+          "locality": "Long Beach"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Famous Dave's Bar-B-Que",
+        "Famous Dave's"
+      ],
+      "previousQuality": "PROVISIONAL",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-5a081ff6e83a"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "H07"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Loaded Cafe - Orange",
+          "aliases": [
+            "Loaded Cafe - Orange"
+          ],
+          "locality": "Orange"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Loaded Cafe - Orange",
+        "Loaded Cafe"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-7741047607ba"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "H08"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Pho Bamboo Vietnamese Restaurant",
+          "aliases": [
+            "Pho Bamboo Vietnamese Restaurant"
+          ],
+          "locality": "City Of Industry"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Pho Bamboo Vietnamese Restaurant",
+        "Pho Bamboo",
+        "Pho Bamboo Restaurant"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-971421f1c594"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "H09"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Baja Sharkeez",
+        "Baja Sharkeez Huntington Beach"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#H10",
+          "supports": "Huntington Beach branch"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "H10"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "No Good Burger Joint",
+        "No Good Burger Joint NY"
+      ],
+      "previousQuality": "PROVISIONAL",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#H11",
+          "supports": "venue family only; branch unresolved"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "Multiple New York-area branches exist and the legacy fixture does not establish the exact physical branch.",
+      "caseId": "H11"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Old Fisherman's Grotto",
+        "Fisherman's Grotto"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#H12",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "H12"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Aptos St. BBQ",
+          "aliases": [
+            "Aptos St. BBQ"
+          ],
+          "locality": null
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Aptos St. BBQ",
+        "Aptos Street BBQ"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-8c385ce29164"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "P01"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "BLK Earth Sea Spirits",
+        "BLK"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#P02",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "P02"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Chocolat",
+        "Chocolate the Restaurant",
+        "Chocolat Restaurant",
+        "Chocolate (Chocolate the Restaurant)"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#P03",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "P03"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Mesa Verde Farmers' Market",
+        "Mesa Verde Farmers Market",
+        "Mesa Verde Farmers Market by Farm Habit",
+        "Mesa Verde Farmers Market (Farm Habit Mesa Verde)"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#P04",
+          "supports": "market identity"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "P04"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "OC Greek Fest",
+          "aliases": [
+            "OC Greek Fest"
+          ],
+          "locality": "Anaheim"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "OC Greek Fest",
+        "Orange County Greek Festival",
+        "Orange County Greek Festival at St. John the Baptist Greek Orthodox Church",
+        "Orange County Greek Festival (OC Greek Fest) at St. John the Baptist Greek Orthodox Church"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-b37450ca8f08"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "P05"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Old World Biergarten Festival Hall & Concert Venue",
+          "aliases": [
+            "Old World Biergarten Festival Hall & Concert Venue"
+          ],
+          "locality": "Huntington Beach"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Old World Biergarten Festival Hall & Concert Venue",
+        "Old World Biergarten",
+        "Old World Huntington Beach",
+        "Biergarten at Old World Huntington Beach (Old World Village)",
+        "Old World German Restaurant & Biergarten at Old World Village"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-fd77e0119e08"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "P06"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Point Market",
+        "The Point Market & Cafe",
+        "The Point Market"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#P07",
+          "supports": "market identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "P07"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Seabright Deli"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#P08",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "P08"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Tacos El Chuy",
+        "Tacos El Chuy Food Truck"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#P09",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "P09"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Taqueria Los Pericos",
+        "Los Pericos"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#P10",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "P10"
+    },
+    {
+      "label": "VERIFIED_REGION_ONLY",
+      "expectedPlaces": [],
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "acceptedGranularity": "region_or_parent_feature_only",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#aiglun_rope_jump",
+          "basis": "Uploader identifies the natural rope-jump cliff at Aiglun, France."
+        }
+      ],
+      "notes": "Original accepted labels include region/parent or component alternatives; excluded from exact-place denominator.",
+      "caseId": "public-aiglun_rope_jump"
+    },
+    {
+      "label": "VERIFIED_REGION_ONLY",
+      "expectedPlaces": [],
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "acceptedGranularity": "region_or_parent_feature_only",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#al_jahlieh_informal_waterfall",
+          "basis": "Uploader locates the informal waterfall at Al-Jahlieh, Al-Chouf District, Lebanon."
+        }
+      ],
+      "notes": "Original accepted labels include region/parent or component alternatives; excluded from exact-place denominator.",
+      "caseId": "public-al_jahlieh_informal_waterfall"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Cavitt Creek Falls Recreation Site",
+          "aliases": [
+            "Cavitt Creek Falls Recreation Site",
+            "Cavitt Creek Falls"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#cavitt_creek_a",
+          "basis": "BLM/uploader-authored Commons description."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-cavitt_creek_a"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Cavitt Creek Falls Recreation Site",
+          "aliases": [
+            "Cavitt Creek Falls Recreation Site",
+            "Cavitt Creek Falls"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#cavitt_creek_b",
+          "basis": "Second BLM/uploader-authored Commons clip."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-cavitt_creek_b"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Cocoa Beach Pier",
+          "aliases": [
+            "Cocoa Beach Pier",
+            "Westgate Cocoa Beach Pier"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#cocoa_beach_pier",
+          "basis": "Uploader-authored Commons description and visible pier context."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-cocoa_beach_pier"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Copacabana Beach",
+          "aliases": [
+            "Copacabana Beach",
+            "Praia de Copacabana"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#copacabana_beach",
+          "basis": "Uploader-authored Commons description."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-copacabana_beach"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Dettifoss",
+          "aliases": [
+            "Dettifoss",
+            "Dettifoss Waterfall"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#dettifoss_hidden_natural",
+          "basis": "Uploader-authored Commons description."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-dettifoss_hidden_natural"
+    },
+    {
+      "label": "KNOWN_NEGATIVE",
+      "expectedPlaces": [],
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#dinas_emrys_stream_hard_negative",
+          "basis": "Provenance is near Dinas Emrys, but the supplied generic stream pixels cannot responsibly establish exact identity."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-dinas_emrys_stream_hard_negative"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Eiffel Tower",
+          "aliases": [
+            "Eiffel Tower",
+            "Tour Eiffel"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#eiffel_tower_aerial",
+          "basis": "Uploader-authored Commons description."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-eiffel_tower_aerial"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Es Pontàs",
+          "aliases": [
+            "Es Pontàs",
+            "Es Pontas"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#es_pontas_pre_comment",
+          "basis": "Uploader's own-work Commons description identifies Es Pontàs at Cala Santanyí, Mallorca; no comment evidence is supplied."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-es_pontas_pre_comment"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Porte d'Amont",
+          "aliases": [
+            "Porte d'Amont",
+            "Falaise d'Amont",
+            "Étretat Cliffs"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#etretat_porte_damont",
+          "basis": "Uploader-authored Commons description identifies Porte d'Amont near Étretat/Le Havre."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-etretat_porte_damont"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Golden Gate Bridge",
+          "aliases": [
+            "Golden Gate Bridge"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#golden_gate_bridge",
+          "basis": "Uploader-authored Commons description."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-golden_gate_bridge"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Griffith Observatory",
+          "aliases": [
+            "Griffith Observatory",
+            "Foucault Pendulum at Griffith Observatory"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#griffith_observatory_rotunda",
+          "basis": "Uploader-authored Commons description."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-griffith_observatory_rotunda"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Gullfoss",
+          "aliases": [
+            "Gullfoss",
+            "Gullfoss Waterfall"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#gullfoss_lookalike_waterfall",
+          "basis": "Uploader-authored Commons description."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-gullfoss_lookalike_waterfall"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Colosseum",
+          "aliases": [
+            "Colosseum",
+            "Roman Colosseum",
+            "Flavian Amphitheatre"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#inside_colosseum_prior_trap",
+          "basis": "Uploader-authored Commons description identifies the interior."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-inside_colosseum_prior_trap"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Kozjak Waterfall",
+          "aliases": [
+            "Kozjak Waterfall",
+            "Veliki Kozjak",
+            "Kozjak Falls"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#kozjak_waterfall_canyoning",
+          "basis": "Uploader title and description identify Kozjak Waterfall, Slovenia."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-kozjak_waterfall_canyoning"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "La Jolla Cove",
+          "aliases": [
+            "La Jolla Cove"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#la_jolla_cove_a",
+          "basis": "Uploader-authored Commons description."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-la_jolla_cove_a"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "La Jolla Cove",
+          "aliases": [
+            "La Jolla Cove"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#la_jolla_cove_b",
+          "basis": "Second independently dated uploader clip."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-la_jolla_cove_b"
+    },
+    {
+      "label": "VERIFIED_MULTI",
+      "expectedPlaces": [
+        {
+          "name": "Dettifoss",
+          "aliases": [
+            "Dettifoss",
+            "Dettifoss Waterfall"
+          ],
+          "timestampsSeconds": [
+            0,
+            2,
+            4
+          ]
+        },
+        {
+          "name": "Griffith Observatory",
+          "aliases": [
+            "Griffith Observatory",
+            "Foucault Pendulum at Griffith Observatory"
+          ],
+          "timestampsSeconds": [
+            8,
+            10,
+            12
+          ]
+        }
+      ],
+      "multiPlaceExpected": true,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "two_named_places_in_constructed_frame_composite",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#multi_dettifoss_griffith",
+          "basis": "Deterministic frame composite from two independently labelled Commons sources."
+        }
+      ],
+      "notes": "Constructed montage, not an independently submitted real multi-place post.",
+      "caseId": "public-multi_dettifoss_griffith"
+    },
+    {
+      "label": "VERIFIED_MULTI",
+      "expectedPlaces": [
+        {
+          "name": "La Jolla Cove",
+          "aliases": [
+            "La Jolla Cove"
+          ],
+          "timestampsSeconds": [
+            0,
+            2,
+            4
+          ]
+        },
+        {
+          "name": "Golden Gate Bridge",
+          "aliases": [
+            "Golden Gate Bridge"
+          ],
+          "timestampsSeconds": [
+            8,
+            10,
+            12
+          ]
+        }
+      ],
+      "multiPlaceExpected": true,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "two_named_places_in_constructed_frame_composite",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#multi_la_jolla_golden_gate",
+          "basis": "Deterministic frame composite from two independently labelled Commons sources."
+        }
+      ],
+      "notes": "Constructed montage, not an independently submitted real multi-place post.",
+      "caseId": "public-multi_la_jolla_golden_gate"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Multnomah Falls",
+          "aliases": [
+            "Multnomah Falls"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#multnomah_falls",
+          "basis": "Uploader-authored Commons file identity and description."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-multnomah_falls"
+    },
+    {
+      "label": "VERIFIED_REGION_ONLY",
+      "expectedPlaces": [],
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "acceptedGranularity": "region_or_parent_feature_only",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#niagara_falls",
+          "basis": "Uploader-authored Commons description; an accepted set covers the visible component falls."
+        }
+      ],
+      "notes": "Original accepted labels include region/parent or component alternatives; excluded from exact-place denominator.",
+      "caseId": "public-niagara_falls"
+    },
+    {
+      "label": "KNOWN_NEGATIVE",
+      "expectedPlaces": [],
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#saint_malo_ocean_hard_negative",
+          "basis": "Uploader coordinates place the capture near Saint-Malo, but generic wave/rock pixels do not justify an exact named place."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-saint_malo_ocean_hard_negative"
+    },
+    {
+      "label": "KNOWN_NEGATIVE",
+      "expectedPlaces": [],
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#small_waterfall_hard_negative",
+          "basis": "Source establishes only an unnamed small waterfall in a park; exact identity is not defensible."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-small_waterfall_hard_negative"
+    },
+    {
+      "label": "VERIFIED_REGION_ONLY",
+      "expectedPlaces": [],
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "acceptedGranularity": "region_or_parent_feature_only",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#summersville_lake_cliff_jump",
+          "basis": "Uploader explicitly states Summersville Lake, West Virginia."
+        }
+      ],
+      "notes": "Original accepted labels include region/parent or component alternatives; excluded from exact-place denominator.",
+      "caseId": "public-summersville_lake_cliff_jump"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Sydney Opera House",
+          "aliases": [
+            "Sydney Opera House"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#sydney_opera_house",
+          "basis": "Uploader-authored Commons description."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-sydney_opera_house"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Taj Mahal",
+          "aliases": [
+            "Taj Mahal"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#taj_mahal_parallax",
+          "basis": "Commons description and linked original identify the monument."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-taj_mahal_parallax"
+    },
+    {
+      "label": "VERIFIED_REGION_ONLY",
+      "expectedPlaces": [],
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "acceptedGranularity": "region_or_parent_feature_only",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#twelve_apostles",
+          "basis": "Uploader-authored Commons description; accepted set reflects the depicted protected area and landmark."
+        }
+      ],
+      "notes": "Original accepted labels include region/parent or component alternatives; excluded from exact-place denominator.",
+      "caseId": "public-twelve_apostles"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Waimea Bay",
+          "aliases": [
+            "Waimea Bay",
+            "Waimea Bay Beach",
+            "Waimea Bay Beach Park"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#waimea_bay_pre_comment",
+          "basis": "Uploader title/category plus capture coordinates independently identify Waimea Bay, Oahu; no comment evidence is supplied."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-waimea_bay_pre_comment"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Upper Yosemite Fall",
+          "aliases": [
+            "Upper Yosemite Fall",
+            "Yosemite Falls",
+            "Upper Yosemite Falls"
+          ]
+        }
+      ],
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "acceptedGranularity": "named_physical_feature",
+      "provenance": [
+        {
+          "kind": "retained_public_source_adjudication",
+          "reference": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json#yosemite_upper_falls",
+          "basis": "Uploader-authored Commons description."
+        }
+      ],
+      "notes": null,
+      "caseId": "public-yosemite_upper_falls"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "UNSCORED",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [],
+      "acceptedGranularity": "unestablished",
+      "notes": "Legacy label contains only Southern France; not exact enough for cliff scoring.",
+      "caseId": "R01"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "UNSCORED",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [],
+      "acceptedGranularity": "unestablished",
+      "notes": "Legacy label contains only Maui/Hawaii; not exact enough for cliff scoring.",
+      "caseId": "R02"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Tamolitch Blue Pool",
+        "Tamolitch Falls",
+        "Blue Pool",
+        "Tamolitch Blue Pool (Tamolitch Falls)"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#R03",
+          "supports": "Tamolitch Blue Pool alias family"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "R03"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Dorset Marble Quarry",
+        "Dorset Quarry",
+        "Dorset Marble Quarry (Norcross-West Marble Quarry)"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#R04",
+          "supports": "Dorset Marble Quarry identity"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "R04"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Okere Falls Scenic Reserve",
+        "Okere Falls",
+        "Okere Falls Track",
+        "Okere Falls Scenic Reserve (Kaituna River)"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#R05",
+          "supports": "Okere Falls identity"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "R05"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Lake Havasu",
+        "Lake Havasu City"
+      ],
+      "previousQuality": "PROVISIONAL",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [],
+      "acceptedGranularity": "unestablished",
+      "notes": "Lake Havasu is broader than the filmed cliff; exact jump spot remains unresolved.",
+      "caseId": "R06"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "UNSCORED",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [],
+      "acceptedGranularity": "unestablished",
+      "notes": "Legacy label contains only Norway; exact cliff remains unresolved.",
+      "caseId": "R07"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Moku Nui",
+          "aliases": [
+            "Moku Nui",
+            "Mokulua Moku Nui"
+          ],
+          "country": "United States"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "VERIFIED_EXACT",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CqJo6QHJqPo/",
+          "shortFinding": "Caption says Hawaii and hashtags identify Kailua and the Mokes."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://dlnr.hawaii.gov/wp-content/uploads/2024/07/C-1.pdf",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "named_physical_feature",
+      "notes": "The source says Hawaii and tags Kailua and the Mokes; the shortcode is the historical R08 duplicate, and public sources distinguish larger Moku Nui from Moku Iki.",
+      "caseId": "R08",
+      "country": "United States",
+      "region": "Hawaii"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Seabright Deli",
+          "aliases": [
+            "Seabright Deli"
+          ],
+          "locality": "Santa Cruz"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Seabright Deli"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-3516b72187e5"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "S01"
+    },
+    {
+      "label": "KNOWN_NEGATIVE",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "UNSCORED",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "S02"
+    },
+    {
+      "label": "KNOWN_NEGATIVE",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "PROVISIONAL",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-bbc3eb8e11f6"
+        }
+      ],
+      "acceptedGranularity": "no_identifiable_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "S03"
+    },
+    {
+      "label": "KNOWN_NEGATIVE",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "PROVISIONAL",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-0b9e9e71c80e"
+        }
+      ],
+      "acceptedGranularity": "no_identifiable_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "S04"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "PROVISIONAL",
+      "multiPlaceExpected": true,
+      "completeSetEstablished": false,
+      "provenance": [],
+      "acceptedGranularity": "unestablished",
+      "notes": "Multi-place post lacks destination-level exact labels.",
+      "caseId": "S05"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Seabright Deli"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#S06",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "S06"
+    },
+    {
+      "label": "KNOWN_NEGATIVE",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "UNSCORED",
+      "multiPlaceExpected": null,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-483ce0bd5797"
+        }
+      ],
+      "acceptedGranularity": "no_identifiable_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "S07"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Capone's Italian Cucina",
+          "aliases": [
+            "Capone's Italian Cucina",
+            "Capone's Cucina"
+          ],
+          "locality": "Huntington Beach"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "VERIFIED",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "PINNED_BACKEND_FIXTURE",
+          "reference": "scripts/shareRegressionFixtures.ts#instagram-capones-cucina-reel",
+          "supports": "venue and branch address"
+        }
+      ],
+      "acceptedGranularity": "exact_physical_place",
+      "notes": null,
+      "caseId": "V02"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Brooklyn City Pizzeria & Market",
+          "aliases": [
+            "Brooklyn City Pizzeria & Market",
+            "Brooklyn City Pizzeria",
+            "Brooklyn City Market"
+          ],
+          "locality": "Laguna Niguel"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "VERIFIED",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "PINNED_BACKEND_FIXTURE",
+          "reference": "scripts/shareRegressionFixtures.ts#instagram-brooklyn-city-pizzeria-reel",
+          "supports": "venue and branch address"
+        }
+      ],
+      "acceptedGranularity": "exact_physical_place",
+      "notes": null,
+      "caseId": "V03"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Hellfire Bay"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#V04",
+          "supports": "Hellfire Bay identity"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "V04"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Paradise Dynasty",
+          "aliases": [
+            "Paradise Dynasty",
+            "Paradise Dynasty at South Coast Plaza",
+            "Paradise Dynasty Costa Mesa"
+          ],
+          "locality": "South Coast Plaza"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "VERIFIED",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "PINNED_BACKEND_FIXTURE",
+          "reference": "scripts/shareRegressionFixtures.ts#instagram-paradise-dynasty-post",
+          "supports": "restaurant tenant and Costa Mesa branch"
+        }
+      ],
+      "acceptedGranularity": "exact_physical_place",
+      "notes": null,
+      "caseId": "V05"
+    }
+  ]
+}

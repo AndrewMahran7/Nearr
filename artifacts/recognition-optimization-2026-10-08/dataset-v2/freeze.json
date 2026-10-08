@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "experimentGeneration": 1,
+  "frozenAt": "2026-10-08T22:35:05.449Z",
+  "inputSha256": "71dbd1c4ab6cf8ef1d4bd14c2e9b0258e95f8c32b31609ac85e5741f46e1b56a",
+  "labelSha256": "14a1690ad5a5d3942b504a873f9ed7e9edd47b21776b69d9615bf9dc3102c6e1",
+  "counts": {
+    "total": 118,
+    "kind": {
+      "real": 116,
+      "composite_control": 2
+    },
+    "label": {
+      "KNOWN_NEGATIVE": 10,
+      "UNVERIFIED": 61,
+      "VERIFIED_EXACT_SINGLE": 40,
+      "VERIFIED_REGION_ONLY": 5,
+      "VERIFIED_MULTI": 2
+    },
+    "split": {
+      "TRAIN_DEVELOPMENT": 118,
+      "CALIBRATION": 0,
+      "HELD_OUT_TEST": 0
+    },
+    "groups": 100
+  },
+  "policy": "All discovered historical outcomes are exposed. Empty calibration and held-out partitions are deliberate; new independently adjudicated media must create a new generation before tuning.",
+  "leakageLimits": [
+    "Unknown creator/repost relationships not inferable from retained manifests.",
+    "All current cases share the development partition; no generalization claim.",
+    "Source frame SHA manifests exist historically but not complete perceptual cross-source dedup."
+  ],
+  "sources": [
+    {
+      "path": "artifacts/sol-parity/inference-corpus.json",
+      "sha256": "7bc6a98b580815cff2047db245b915315c96acf0d96ba270c21f6434118ea717",
+      "bytes": 11796
+    },
+    {
+      "path": "artifacts/sol-parity/ground-truth.json",
+      "sha256": "d79c05eac0b72e15be9faba54b8301aa5c732d24a71b41c615b6d77662a62820",
+      "bytes": 14288
+    },
+    {
+      "path": "artifacts/recognition-regression/ground-truth.json",
+      "sha256": "9b72feeda50d209afa554241ad4adbb98e3c0494c5b3c9ad8b47227d28e50790",
+      "bytes": 25394
+    },
+    {
+      "path": "artifacts/cliff-jumping/ground-truth.json",
+      "sha256": "d56e2597cc9602b33457451b8dffbe11ad5faf6874e17f692313ab5784694bbb",
+      "bytes": 62683
+    },
+    {
+      "path": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl",
+      "sha256": "42329d9e112d6ce529c68d1a89272fd4a4a4ce5043998106bffc7f67c11e40c8",
+      "bytes": 37735
+    },
+    {
+      "path": "artifacts/share-gold-labeling-labeled.json",
+      "sha256": "f218103017b9adb3d3448c02da9f09838c37b3536e2e54f0b3151eb5d3ddec0f",
+      "bytes": 77725
+    },
+    {
+      "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+      "sha256": "7f0d57249b46e44e5d5ea892e6560f696d860526b91e0f4eaf49f6b72144a043",
+      "bytes": 24694
+    }
+  ],
+  "labelRevision": 2,
+  "supersedesInputSha256": "71dbd1c4ab6cf8ef1d4bd14c2e9b0258e95f8c32b31609ac85e5741f46e1b56a",
+  "supersedesLabelSha256": "a96d70e9ffb8802e0bd01d107117349466523752dd58cbb04522ec39d4651d1b",
+  "labelQuarantine": [
+    "public-la_jolla_cove_a",
+    "public-la_jolla_cove_b"
+  ]
+}

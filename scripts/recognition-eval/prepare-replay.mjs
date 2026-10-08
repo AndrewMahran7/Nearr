@@ -1,0 +1,30 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { hash, writeOnce } from './runner.mjs';
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const base = path.join(root, 'artifacts/recognition-optimization-2026-10-08');
+const original = JSON.parse(fs.readFileSync(path.join(base, 'dataset/inputs.json'), 'utf8'));
+const labels = JSON.parse(fs.readFileSync(path.join(base, 'dataset/labels.json'), 'utf8'));
+const freeze = JSON.parse(fs.readFileSync(path.join(base, 'dataset/freeze.json'), 'utf8'));
+const quarantine = ['public-la_jolla_cove_a', 'public-la_jolla_cove_b'];
+for (const label of labels.cases) if (quarantine.includes(label.caseId)) {
+  label.previousLabel = label.label; label.previousExpectedPlaces = label.expectedPlaces;
+  label.label = 'UNVERIFIED'; label.expectedPlaces = []; label.multiPlaceExpected = null; label.completeSetEstablished = false;
+  label.notes = 'Quarantined before any optimization evaluation: source uploader location and Commons location category may disagree (La Jolla Cove versus Children\'s Pool). Requires independent adjudication. No model outcome caused this change.';
+}
+const inputBytes = JSON.stringify(original, null, 2) + '\n', labelBytes = JSON.stringify(labels, null, 2) + '\n';
+const rev = { ...freeze, labelRevision: 2, supersedesInputSha256: freeze.inputSha256, supersedesLabelSha256: freeze.labelSha256, frozenAt: new Date().toISOString(), inputSha256: hash(inputBytes), labelSha256: hash(labelBytes), labelQuarantine: quarantine, counts: { ...freeze.counts, label: Object.fromEntries([...new Set(labels.cases.map((x) => x.label))].map((v) => [v, labels.cases.filter((x) => x.label === v).length])) } };
+writeOnce(path.join(base, 'dataset-v2/inputs.json'), inputBytes); writeOnce(path.join(base, 'dataset-v2/labels.json'), labelBytes); writeOnce(path.join(base, 'dataset-v2/freeze.json'), JSON.stringify(rev, null, 2) + '\n');
+const rawRelative = 'artifacts/recognition-regression/runs/current-live-baseline/backend';
+const attemptsBytes = fs.readFileSync(path.join(root, rawRelative, 'model-attempts.jsonl'));
+const runtimeBytes = fs.readFileSync(path.join(root, rawRelative, 'local-runtime.jsonl'));
+const attempts = attemptsBytes.toString('utf8').trim().split(/\r?\n/).map(JSON.parse);
+const caseIds = new Set(attempts.map((x) => x.case_id));
+const replayInputs = original.cases.filter((x) => caseIds.has(x.caseId)).map((x) => ({ ...x, evidenceRefs: [{ path: `${rawRelative}/model-attempts.jsonl`, caseId: x.caseId, sha256: hash(attemptsBytes) }, { path: `${rawRelative}/local-runtime.jsonl`, caseId: x.caseId, sha256: hash(runtimeBytes) }] }));
+const replayLabels = labels.cases.filter((x) => caseIds.has(x.caseId));
+const replayInputBytes = JSON.stringify({ schemaVersion: 1, cases: replayInputs }, null, 2) + '\n', replayLabelBytes = JSON.stringify({ schemaVersion: 1, cases: replayLabels }, null, 2) + '\n';
+writeOnce(path.join(base, 'policy-replay-dataset/inputs.json'), replayInputBytes);
+writeOnce(path.join(base, 'policy-replay-dataset/labels.json'), replayLabelBytes);
+writeOnce(path.join(base, 'policy-replay-dataset/freeze.json'), JSON.stringify({ schemaVersion: 1, experimentGeneration: 1, frozenAt: new Date().toISOString(), inputSha256: hash(replayInputBytes), labelSha256: hash(replayLabelBytes), parentInputSha256: rev.inputSha256, parentLabelSha256: rev.labelSha256, sourceHashes: { modelAttempts: hash(attemptsBytes), localRuntime: hash(runtimeBytes) }, selectedBeforeExecution: 'All cases with persisted raw model call; selected by data availability, never by correctness.', cases: replayInputs.length, boundary: 'retained model call -> current canonicalization where complete provider response retained -> current safety -> automatic deep REVIEW -> pure finalization; no acquisition, model, source-evidence inference, database or client execution' }, null, 2) + '\n');
+console.log(JSON.stringify({ fullCases: original.cases.length, quarantined: quarantine, replayCases: replayInputs.length, exactReplayLabels: replayLabels.filter((x) => x.label === 'VERIFIED_EXACT_SINGLE').length }));
