@@ -15,8 +15,12 @@ function readChecked(ref) {
   if (!file.startsWith(root + path.sep)) throw new Error('evidence_path_outside_repo');
   if (!loaded.has(file)) {
     const bytes = fs.readFileSync(file), digest = crypto.createHash('sha256').update(bytes).digest('hex');
-    if (digest !== ref.sha256) throw new Error('evidence_hash_mismatch');
-    loaded.set(file, { digest, rows: bytes.toString('utf8').trim().split(/\r?\n/).map(JSON.parse) });
+    // Legacy JSONL was captured with Windows CRLF. Git may check it out with LF.
+    // Accept only the exact capture or its deterministic newline-only equivalent.
+    const normalizedText = bytes.toString('utf8').replace(/\r\n/g, '\n');
+    const newlineDigests = [digest, ...[normalizedText, normalizedText.replace(/\n/g, '\r\n')].map((s) => crypto.createHash('sha256').update(s).digest('hex'))];
+    if (!newlineDigests.includes(ref.sha256)) throw new Error('evidence_hash_mismatch');
+    loaded.set(file, { digest: ref.sha256, actualDigest: digest, rows: bytes.toString('utf8').trim().split(/\r?\n/).map(JSON.parse) });
   }
   if (loaded.get(file).digest !== ref.sha256) throw new Error('evidence_hash_mismatch');
   return loaded.get(file).rows.find((row) => row.case_id === ref.caseId);

@@ -1,0 +1,81 @@
+{
+  "caseId": "P01",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJPxBh-XgWjoARZlz1iflbMsE",
+      "name": "Aptos Street BBQ",
+      "locality": "Aptos",
+      "region": "California",
+      "country": "United States",
+      "address": "8059 Aptos St, Aptos, CA 95003, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJPxBh-XgWjoARZlz1iflbMsE",
+      "name": "Aptos Street BBQ",
+      "locality": "Aptos",
+      "region": "California",
+      "country": "United States",
+      "address": "8059 Aptos St, Aptos, CA 95003, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.1874000000000251,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.06899999999995998,
+      "endMs": 0.14650000000006003
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.1471999999998843,
+      "endMs": 0.17210000000000036
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.17570000000000618,
+      "endMs": 0.18499999999994543
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Aptos Street BBQ",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.033568,
+    "modelLatencyMs": 3980,
+    "totalLatencyMs": 14779
+  }
+}

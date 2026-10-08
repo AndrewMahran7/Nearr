@@ -1,0 +1,81 @@
+{
+  "caseId": "R04",
+  "status": "review",
+  "places": [
+    {
+      "id": null,
+      "name": "Dorset Marble Quarry (Norcross-West Marble Quarry)",
+      "locality": "Dorset",
+      "region": "Vermont",
+      "country": "United States",
+      "address": null
+    }
+  ],
+  "candidates": [
+    {
+      "id": null,
+      "name": "Dorset Marble Quarry (Norcross-West Marble Quarry)",
+      "locality": "Dorset",
+      "region": "Vermont",
+      "country": "United States",
+      "address": null
+    }
+  ],
+  "autonomous": false,
+  "confidence": "MEDIUM",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.26510000000007494,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.055700000000115324,
+      "endMs": 0.25680000000011205
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.25749999999993634,
+      "endMs": 0.25929999999993925
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.261600000000044,
+      "endMs": 0.2626000000000204
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "no_defensible_specific_place",
+  "providerReplay": [
+    {
+      "name": "Dorset Marble Quarry (Norcross-West Marble Quarry)",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.04094,
+    "modelLatencyMs": 12987,
+    "totalLatencyMs": 23035
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "caseId": "H12",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJB8TeZRjkjYAR4UJK4fNQ8-M",
+      "name": "Old Fisherman's Grotto",
+      "locality": "Monterey",
+      "region": "California",
+      "country": "United States",
+      "address": "39 Fishermans Wharf, Monterey, CA 93940, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJB8TeZRjkjYAR4UJK4fNQ8-M",
+      "name": "Old Fisherman's Grotto",
+      "locality": "Monterey",
+      "region": "California",
+      "country": "United States",
+      "address": "39 Fishermans Wharf, Monterey, CA 93940, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.14899999999988722,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.057900000000017826,
+      "endMs": 0.12750000000005457
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.12819999999987886,
+      "endMs": 0.13249999999993634
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.13560000000006767,
+      "endMs": 0.14660000000003492
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Old Fisherman's Grotto",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.039264,
+    "modelLatencyMs": 5725,
+    "totalLatencyMs": 27900
+  }
+}

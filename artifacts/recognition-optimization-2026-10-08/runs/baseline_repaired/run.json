@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "variant": "baseline_repaired",
+  "split": "TRAIN_DEVELOPMENT",
+  "startedAt": "2026-10-08T22:38:06.674Z",
+  "inputSha256": "3afc6a6dd2ef6429a879658487859429c653dfa46634a57281aa40ddd5f35008",
+  "labelSha256": "b28267964d0c4d7c256250c244dd2850bc3ad76459e9d43e73cc1aabf6699800",
+  "adapterProvenance": {
+    "path": "scripts\\recognition-eval\\adapters\\retained-policy.mjs",
+    "sha256": "07ab72e0c982149fa0a2b105d032d8ce734127863330a2f95cf0c4a226e33309"
+  },
+  "sourceProvenance": {
+    "commit": "ca81374bb0eaf9bd3a106f71ddf4d85d19439de2",
+    "files": [
+      {
+        "path": "services/media-worker/src/premium/premiumCanonicalization.ts",
+        "sha256": "500bdc81072b26eb5a64d3955b9ff08a4c528f153f5cfecd788fb6cbdb66fa29"
+      },
+      {
+        "path": "services/media-worker/src/premium/premiumRecognitionSafety.ts",
+        "sha256": "0a8bc093c24a380812ec2c311b1df95af716293f7669b0ce063ba79b2ba70cd9"
+      },
+      {
+        "path": "services/media-worker/src/automaticDeep/automaticDeepRecognitionProvider.ts",
+        "sha256": "13ae4efb329fb954c2e6fd4a00a49cea5505be0980d73eb2b3e62856b4b3d459"
+      },
+      {
+        "path": "lib/automaticCompletion.ts",
+        "sha256": "2456fbeec4945f5e0bc64146c741a5dc4c53b3b5fa684642d07cb2e0d9df9458"
+      },
+      {
+        "path": "lib/exactIdentitySafety.ts",
+        "sha256": "d4c1c48abf4a2b299ab61b34bf7ae9ced91fb0e369ba404f6c2213e692b9440e"
+      }
+    ]
+  },
+  "paidSpendUsd": 0,
+  "observationCount": 31
+}

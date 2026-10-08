@@ -1,0 +1,2 @@
+# Frozen evaluation evidence uses byte-level hashes; never rewrite its newlines.
+/artifacts/recognition-optimization-2026-10-08/** text eol=lf

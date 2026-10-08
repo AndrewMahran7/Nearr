@@ -1,0 +1,99 @@
+{
+  "caseId": "V05",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJl25h7GXf3IAR6OBs3e4cxrM",
+      "name": "Paradise Dynasty at South Coast Plaza",
+      "locality": "Costa Mesa",
+      "region": "California",
+      "country": "United States",
+      "address": "3333 Bristol Street, BLM, 1 Bloomingdale's, Costa Mesa, CA 92626, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJl25h7GXf3IAR6OBs3e4cxrM",
+      "name": "Paradise Dynasty at South Coast Plaza",
+      "locality": "Costa Mesa",
+      "region": "California",
+      "country": "United States",
+      "address": "3333 Bristol Street, BLM, 1 Bloomingdale's, Costa Mesa, CA 92626, USA"
+    },
+    {
+      "id": "ChIJ__9LYP7AwoARbUN-XY5iVDs",
+      "name": "Paradise Dynasty at The Americana at Brand",
+      "locality": "Glendale",
+      "region": "California",
+      "country": "United States",
+      "address": "177 Caruso Ave, Glendale, CA 91210, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.2197000000001026,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.06970000000001164,
+      "endMs": 0.1489000000001397
+    },
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.1508000000001175,
+      "endMs": 0.20100000000002183
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.20139999999992142,
+      "endMs": 0.20299999999997453
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.2057999999999538,
+      "endMs": 0.21730000000002292
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 2,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Paradise Dynasty at South Coast Plaza",
+      "replayed": true,
+      "calls": 1
+    },
+    {
+      "name": "Paradise Dynasty at The Americana at Brand",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.04362,
+    "modelLatencyMs": 10804,
+    "totalLatencyMs": 26049
+  }
+}

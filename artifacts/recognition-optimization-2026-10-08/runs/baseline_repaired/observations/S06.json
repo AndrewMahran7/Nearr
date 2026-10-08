@@ -1,0 +1,81 @@
+{
+  "caseId": "S06",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJnRX-2FJrjoARoeQkm8tJ08E",
+      "name": "Seabright Deli",
+      "locality": "Santa Cruz",
+      "region": "California",
+      "country": "United States",
+      "address": "415 Seabright Ave, Santa Cruz, CA 95062, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJnRX-2FJrjoARoeQkm8tJ08E",
+      "name": "Seabright Deli",
+      "locality": "Santa Cruz",
+      "region": "California",
+      "country": "United States",
+      "address": "415 Seabright Ave, Santa Cruz, CA 95062, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.1414999999999509,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.05089999999995598,
+      "endMs": 0.10329999999999018
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.10379999999986467,
+      "endMs": 0.12879999999995562
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.13210000000003674,
+      "endMs": 0.13930000000004839
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Seabright Deli",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.03174,
+    "modelLatencyMs": 3870,
+    "totalLatencyMs": 18388
+  }
+}
