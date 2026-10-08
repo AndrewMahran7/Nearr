@@ -17,7 +17,8 @@ export function deduplicateFrames(
   const kept: SelectedFrame[] = [];
   for (const f of frames) {
     const isEndpoint = f.reason === 'first' || f.reason === 'last';
-    const isDup = kept.some((k) => hammingDistanceHex(k.aHash, f.aHash) <= threshold);
+    const isDup = /^[a-f\d]{16}$/i.test(f.aHash) && kept.some((k) =>
+      /^[a-f\d]{16}$/i.test(k.aHash) && hammingDistanceHex(k.aHash, f.aHash) <= threshold);
     if (isEndpoint || !isDup) kept.push(f);
   }
   return kept;

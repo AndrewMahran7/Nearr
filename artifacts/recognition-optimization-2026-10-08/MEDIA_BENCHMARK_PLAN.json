@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "frozenBeforeImplementation": "2026-10-08",
+  "purpose": "Frame evidence preservation and local CPU latency, not recognition accuracy",
+  "sourceCatalog": "sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+  "eligibility": "Existing cached public video bytes, <=180 seconds and <=150 MiB; no downloads or provider calls",
+  "split": "Group Cavitt A/B and La Jolla A/B; otherwise source ID. Sort groups by SHA256(media-parity-v1:group), first 60% development, next 20% calibration, remainder held_out. Freeze byte hashes before runs.",
+  "variants": ["baseline_repaired", "batched_hash", "single_decode_eval"],
+  "hardGates": [
+    "Same temporal plan and complete JPEG SHA256 sequence as baseline on every accepted clip",
+    "Same perceptual hashes and dedup survivor timestamps as baseline when hashing succeeds",
+    "Any absent or malformed hash retains its frame",
+    "No smaller frame budget becomes runtime default without downstream exact-place and multi-place evidence",
+    "No paid inference; local timing cannot establish time to correct result"
+  ],
+  "winnerRule": "Among exact-parity strategies, retain materially faster local preparation with bounded resources; otherwise retain baseline extraction",
+  "parallelRule": "Join identical transcript and frames before analysis, settle all started work before cleanup, propagate cancellation; report real local audio preparation separately from simulated ASR network delay",
+  "heldOutRule": "Choose extraction strategy after development/calibration only, then run frozen held-out once. Serious flaw starts new generation, not tuning against held-out."
+}
