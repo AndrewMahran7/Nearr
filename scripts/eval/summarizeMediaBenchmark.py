@@ -60,6 +60,11 @@ if prep.exists():
 with (artifacts / 'MEDIA_METRICS.json').open('w') as file:
     json.dump(report, file, indent=2); file.write('\n')
 with (artifacts / 'media_latency_results.csv').open('w', newline='') as file:
-    writer = csv.DictWriter(file, fieldnames=list(csv_rows[0]))
+    # Format the derived CSV without FFmpeg progress-line trailing spaces.
+    # The original stderr, including whitespace, remains in immutable run JSON.
+    for row in csv_rows:
+        if isinstance(row.get('failure'), str):
+            row['failure'] = '\n'.join(line.rstrip() for line in row['failure'].split('\n'))
+    writer = csv.DictWriter(file, fieldnames=list(csv_rows[0]), lineterminator='\n')
     writer.writeheader(); writer.writerows(csv_rows)
 print(json.dumps(report, indent=2))
