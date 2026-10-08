@@ -1,0 +1,805 @@
+{
+  "schemaVersion": 1,
+  "status": "inventory_only_not_a_pass_report",
+  "inventoryDate": "2026-10-08",
+  "sourceWorktree": "recognition-pareto-optimization",
+  "rootPackageSha256": "f304db803ec5e8487ab2f663bc89d8c74eec2993cbaf8bbdd303c8188aea26f4",
+  "coverageMethod": "Expand npm run dependencies and automatic pre/post npm hooks; full worker npm test separately covers all tests/**/*.test.ts; pure wrapper aliases are covered by their expanded leaves. This inventory is not evidence that the commands passed.",
+  "counts": {
+    "rootTestKeys": 288,
+    "prebuildExpandedTestKeys": 140,
+    "prebuildAnd23ExtrasExpandedTestKeys": 163,
+    "additionalWorkerOnlyAliases": 14,
+    "remainingOfflineLaunchCommands": 85,
+    "remainingRedundantAliases": 9,
+    "excludedRemoteLive": 12
+  },
+  "coveredByPrebuild": [
+    "test:account",
+    "test:address-first",
+    "test:address-match",
+    "test:ai-note-integration",
+    "test:ai-place-note",
+    "test:app-environment",
+    "test:auth-account-state",
+    "test:auth-deeplink",
+    "test:auth-errors",
+    "test:auth-recovery",
+    "test:auth-screen-contracts",
+    "test:auto-save-undo",
+    "test:breadcrumbs",
+    "test:canonical-save-return-contract",
+    "test:category-pipeline",
+    "test:dev-db-guard",
+    "test:dev-login-gating",
+    "test:e2e:harness",
+    "test:evidence-provenance",
+    "test:facebook-metadata",
+    "test:facebook-url",
+    "test:failure-messaging",
+    "test:feature-flags",
+    "test:generic-caption-guard",
+    "test:geographic-context",
+    "test:geographic-context-source",
+    "test:geographic-destinations",
+    "test:google-places-config",
+    "test:google-places-fields",
+    "test:live-location",
+    "test:manual-fallback",
+    "test:map-atomic-representation-stability",
+    "test:map-camera-transaction-hotfix",
+    "test:map-cluster-expansion",
+    "test:map-conservation",
+    "test:map-group-focus",
+    "test:media-adversarial",
+    "test:media-autosave",
+    "test:media-evidence",
+    "test:media-fallback",
+    "test:media-finalize",
+    "test:media-mentions",
+    "test:media-reliability",
+    "test:media-run-diagnostics",
+    "test:multi-address",
+    "test:multi-place-batch",
+    "test:multi-place-review-interactions",
+    "test:multi-save-tray-dismiss",
+    "test:multi-select-places",
+    "test:name-driven",
+    "test:nearby-arbitration",
+    "test:nearby-eligibility",
+    "test:nearby-map-explorer",
+    "test:no-match-diagnostics",
+    "test:no-user-facing-vayrin",
+    "test:note-editor",
+    "test:notification-dedupe",
+    "test:notification-tap-routing",
+    "test:offline-mode",
+    "test:offline-reminders",
+    "test:onboarding-anonymous",
+    "test:onboarding-authentic-phase2-auth",
+    "test:onboarding-demo",
+    "test:onboarding-fully-offline",
+    "test:onboarding-google-integration",
+    "test:onboarding-install-lifecycle",
+    "test:onboarding-no-live-services",
+    "test:onboarding-routing",
+    "test:onboarding-v2",
+    "test:onboarding-v2-deleted-account",
+    "test:onboarding-v2-dev-reset",
+    "test:onboarding-v2-post-delete",
+    "test:once-latch",
+    "test:open-original-post",
+    "test:open-saved-place",
+    "test:phase2-ui-render",
+    "test:place-category",
+    "test:place-category-migration",
+    "test:place-image",
+    "test:place-note",
+    "test:place-recommendations",
+    "test:place-share",
+    "test:place-share-source",
+    "test:platform-noise",
+    "test:platform-url-classification",
+    "test:post-save-enrichment",
+    "test:prebuild",
+    "test:provider-api-path",
+    "test:queue-inbox",
+    "test:quick-check",
+    "test:quick-check-density",
+    "test:quick-check-rolodex-ux",
+    "test:recovery-hints",
+    "test:release-gate",
+    "test:reminder-distance-cleanup",
+    "test:result-notifications",
+    "test:root-layout-loop",
+    "test:safety-description-only",
+    "test:sanitize-error",
+    "test:save-navigation",
+    "test:saved-browse",
+    "test:saved-place-edits",
+    "test:saved-place-snapshots",
+    "test:share-completion",
+    "test:share-evidence-lifecycle",
+    "test:share-extension-compact",
+    "test:share-extension-env",
+    "test:share-failure-presentation",
+    "test:share-job-client",
+    "test:share-job-mapping",
+    "test:share-job-result",
+    "test:share-job-routing",
+    "test:share-jobs-dedupe",
+    "test:share-jobs-realtime",
+    "test:share-jobs-ui",
+    "test:share-phase1-render",
+    "test:share-phase1-ui",
+    "test:share-routes",
+    "test:share-submission",
+    "test:share-url-validation",
+    "test:share-worker-boot",
+    "test:shared-auth-session",
+    "test:shared-auth-sync",
+    "test:shared-city-context",
+    "test:shared-geo-context",
+    "test:source-enrichment",
+    "test:source-location-tag",
+    "test:source-thumbnails",
+    "test:startup-smoke",
+    "test:tiktok-ingestion-parity",
+    "test:tiktok-url",
+    "test:update-args",
+    "test:vayrin-candidate-confirmation-v2",
+    "test:vayrin-multi-place-review-redesign",
+    "test:vayrin-presentation",
+    "test:vayrin-quick-check-evidence-ui",
+    "test:vayrin-ui",
+    "test:video-ai-note-guarantee",
+    "test:video-ai-note-product-claim",
+    "test:wrong-place"
+  ],
+  "coveredBy23Extras": [
+    "test:recognition-geography-state",
+    "test:recognition-entity-role-latency-state",
+    "test:exact-identity-safety",
+    "test:recognition-cache",
+    "test:recognition-cache-v2",
+    "test:recognition-cache-suspension",
+    "test:recognition-migrations",
+    "test:wrong-place-confirm-replacement",
+    "test:wrong-place-mutation",
+    "test:google-cost-controls-integration",
+    "test:google-cost-controls-ux",
+    "test:named-lead-auto-completion",
+    "test:auto-completion",
+    "test:multi-place-review",
+    "test:multi-place-progressive-disclosure",
+    "test:multi-place-browse-v2",
+    "test:recognition-regression",
+    "test:dev-migration-history",
+    "test:deployment-guards",
+    "test:worktree-workflow",
+    "test:place-capabilities",
+    "test:place-photo-contract",
+    "test:notification-delivery-policy"
+  ],
+  "coveredByFullWorkerNpmTest": [
+    "test:auto-deep-recognition",
+    "test:sol-parity-harness",
+    "test:premium-sol-recognition",
+    "test:premium-live-parity",
+    "test:instagram-ingestion-parity",
+    "test:instagram-acquisition-dcgng4hd83",
+    "test:scrapecreators-tiktok-fallback",
+    "test:scrapecreators-instagram-fallback",
+    "test:scrapecreators-facebook-fallback",
+    "test:vayrin-visual-retrieval",
+    "test:vayrin-visual-retrieval-v2",
+    "test:vayrin-verification-v3",
+    "test:vayrin-never-dead-end-research",
+    "test:ai-note-voice"
+  ],
+  "remainingOfflineSuites": [
+    {
+      "suite": "test:recognition-evaluation",
+      "command": "node --test scripts/recognition-eval/metrics.test.mjs",
+      "commandSha256": "be8f6bf5eacd9c851c078aa3c9a5f0b4349836c6b1a409c1eae0c6c2ce71deb3",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:monetization-token-ux",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testMonetizationTokenUx.ts",
+      "commandSha256": "c2e7d1672de927598b62492e31d5714f991b3414415f84affa19b4737c570676",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:monetization-integration",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testMonetizationIntegration.ts",
+      "commandSha256": "4a2b27f19bf416184be494e378beacb7dc86a5d4fcda4ecf91c788c131ad3904",
+      "notes": "In-memory ledger and source contract checks only; no live token mutation."
+    },
+    {
+      "suite": "test:monetization-suspension-contract",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testMonetizationSuspensionContract.ts",
+      "commandSha256": "2680ad9d68e7deb371be66daa99c4dbe0ba5d6c79a321771118162db275e2d67",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:premium-request-monetization",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testPremiumRequestMonetization.ts",
+      "commandSha256": "a0e4cf0c1a876630d6bc8df62b7dec73c5d3baa7d184487988f7a5887729c977",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:premium-suspension",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testPremiumSuspension.ts",
+      "commandSha256": "4c85e1ef8a881ec2f40efd187eefa4a41a4500205a9efb161e34334ce21c4e38",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:area-match-premium",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testAreaMatchPremium.ts",
+      "commandSha256": "783429f1795255c7be9ef2e20355d91b684d979e120bf4feda814d8375a286a4",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:tutorial-recognition-corpus",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testTutorialRecognitionCorpus.ts",
+      "commandSha256": "5ffa9349189a0e9f1ceb23729644f012a7900a003ed2f4faadaa90429581604d",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:tutorial-fixtures",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testTutorialFixtures.ts",
+      "commandSha256": "ab3e9da5d147e55c810f6e00a249613f58a785d5fe72fe7a8fbb04d1e3530661",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:recognition-dedupe-contract",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testRecognitionDedupeContract.ts",
+      "commandSha256": "e976d00c22b4904a2b15fef42b06dd081b284fd15f85ffd8a1eed315841781f7",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:explicit-source-place",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testExplicitSourcePlaceEvidence.ts",
+      "commandSha256": "d06918db7b4cbe46dc855ceccb1ae448a32a26f73cbc395ba88041b904820c8a",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:one-tap-fallback-save",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testOneTapFallbackSave.ts",
+      "commandSha256": "d36e9f7a524fd23e4f6090ef0cba1e0919959355d3dbbcfd542b6ac1e55d7f37",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:address-verification",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testAddressVerification.ts",
+      "commandSha256": "547d8356b61b5818654081c236908259ae6d311d43702af390d02d656ce1b6dd",
+      "notes": "Provider fetch implementation replaced with a deterministic test double."
+    },
+    {
+      "suite": "test:media-source-evidence",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testMediaSourceEvidence.ts",
+      "commandSha256": "b3e7e8980d16e5edc5da71eea041375dfdbb38458d19a61358862c192223b816",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:venue-handle-match",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testVenueHandleMatch.ts",
+      "commandSha256": "b82a8a9ad807f1fe575c79d0742a74a57add511f96af42fbade0653b066318b2",
+      "notes": "Provider fetch implementation replaced with a deterministic test double."
+    },
+    {
+      "suite": "test:failure-logging",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testFailureLogging.ts",
+      "commandSha256": "cc1b510fb7066047b00162c046cfe2df021e72aaed6b54282e445feeb33e0469",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:opportunity-ui",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testOpportunityUi.ts",
+      "commandSha256": "59e06b6dd0fd7a82fb1a7a1c3e71c6b6e1a1a3471317f349fa8b8a576ee0f3a7",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:nearby-group",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testNearbyGroupRouting.ts",
+      "commandSha256": "ef27ee16cc499e7b3609adbb7095d2527af43161e21b71bffea032477b20037d",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:nearby-category-contract",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testNearbyCategoryContract.ts",
+      "commandSha256": "6152808995f77909df4d315f30527aeae30c875188f6a2f928bc80a3a80bced2",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:oct8-product-consistency",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testOct8ProductConsistency.ts",
+      "commandSha256": "5002aceda47e6f5874a91c1c28e2e7315733216ef644339d92b6a86a12c07853",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:oct8-founder-journey",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testOct8FounderJourney.ts",
+      "commandSha256": "587e6d5e0fb510cf246ba4cfea8ef7dd899728705c1dd364d291a9cc3698ce14",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:share-job-detail-state",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testShareJobDetailState.ts",
+      "commandSha256": "fbae1cf06824c7d0cbcb247667ed88ea334d75c1c5e21f921b8bf26db685b01e",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:saved-place-result-ui",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testSavedPlaceResultUi.ts",
+      "commandSha256": "a027e692167ec4b93222f460633203c0fa6426aedc89957b1b49411d1e623ccd",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:public-place-sharing",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testPublicPlaceSharing.ts",
+      "commandSha256": "a63c36ed2b5acd5140d57a1973ee358945ecb32bebf9420e97887053bd667d99",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:shared-place-context",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testSharedPlaceContext.ts",
+      "commandSha256": "498e0b610bbd89a827ce2a015ddb35487dd209217d9bb92d3915051b8386ad1a",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:provider-retry",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testProviderRetry.ts",
+      "commandSha256": "7ce1e22347345f4fc4f249e87cf7261492789a161efbd788831eb360ed3d801b",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:place-detail-ui",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testSavedPlaceDetailUi.ts",
+      "commandSha256": "13124652d4881c9dc64b99503c55f6f7ace91c95826c424eae5cc2ab181f822d",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:photo-carousel",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testPhotoCarousel.ts",
+      "commandSha256": "5fe3183e436596521610db6372cf255120502bd1fb0c069f870f1d2037d551c2",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:place-video-gallery",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testPlaceVideoGallery.ts",
+      "commandSha256": "ac4064e9a8004085032aaf3d41d08045da86ec17cd6319fa5b56e9d30432fe66",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:map-visibility",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testMapVisibility.ts",
+      "commandSha256": "e526f8d6349f0489b06c89692563fe1f4fa0445cb97c853d5ea1f51b84e3cd5b",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:map-markers",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testMapMarkerPresentation.ts",
+      "commandSha256": "6436b7e4f87b5e5f4d2d4a32d45396ab5405d478b989d6070132a9afe5fb83e2",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:map-camera",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testMapCameraOwnership.ts",
+      "commandSha256": "b2c1ad2274b07047431c04daf2563692ad4983c2d77cb285a113417ad4015c9a",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:map-clustering",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testMapClustering.ts",
+      "commandSha256": "74097eb83f5b397b51b100bb8b4d34437cf701d9eece41879d6e1a8d89883e62",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:map-reliability",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testMapReliability.ts",
+      "commandSha256": "1b8536506167369da5f66ba7f18991f185f9e8318c028599788cb26e36c7f881",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:candidate-presentation-cost",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testCandidatePresentationCostControl.ts",
+      "commandSha256": "f3fe18e6101595cf185af9e217cfbd155204ac9f24240caa6bdd63eb06b94553",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:onboarding-1259-regressions",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testOnboarding1259Regressions.ts",
+      "commandSha256": "a60648056df6fb81d306c82f9510f42604426ede20a43d3f6adefa48d2b5666b",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:onboarding-phase2-auth-map-hardening",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testOnboardingPhase2AuthMapHardening.ts",
+      "commandSha256": "6af15ada57ee5e256a48838a8981042ff1da0214af2cbf7f9135b1ffe00075a0",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:context-aware-places-resolution",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testContextAwarePlacesResolution.ts --write-artifact",
+      "commandSha256": "cb40e40032f67a6213e556a9078b23e13e5f3380753806758c70835898cbf2f7",
+      "notes": "Writes only the local --write-artifact report path."
+    },
+    {
+      "suite": "test:context-aware-cache-reranking",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testContextAwareCacheReranking.ts",
+      "commandSha256": "06f6cf2884b5799f0e7c8a6dd5c79c5dd861d7d9ca6550b6c8fd8f8b0ff1217a",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:queue-persistence",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testQueuePersistence.ts",
+      "commandSha256": "f32aed8a06e45d832006dcfe7ae521680103123838e8f6e9e0c2524941502e8c",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:empty-queue",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testEmptyQueue.ts && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/testEmptyQueueMigration.ps1",
+      "commandSha256": "246d1348c61ce32363cccbfd71866a7bd295be98bf26fac6633b5aae22514c41",
+      "notes": "Starts a new GUID-named temporary PostgreSQL18 cluster on127.0.0.1, fixture data only; guarded cleanup. Requires local PostgreSQL18 binaries. No hosted database access."
+    },
+    {
+      "suite": "test:queue-swipe",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testQueueSwipeCoordinator.ts",
+      "commandSha256": "1c2fabb8e854695ed2ef61fa5692ebd019c96459952e086d225b7b5c2e39d792",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:queue-save",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testQueueSaveResolution.ts",
+      "commandSha256": "6886ca664ca78f0b54ae0c21fc639c10675199142ebdf1dce75d9818459bdf2f",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:queue-interactions",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testQueueInteractionContracts.ts",
+      "commandSha256": "59f53dced7c001cac761e79bec70d4e8cbb3271b6cc7707753f7ea4af33500de",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:queue-place-nav",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testQueuePlaceNavigation.ts",
+      "commandSha256": "9bf1a9080b924655fb60cac306ae684c2f04bf32d15842cfae9f803fe1077ea2",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:queue-place-focus",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testQueueSavedPlaceFocus.ts",
+      "commandSha256": "487b71e6a463aeb4bd6198362d4ac06ef3e46f31b289f5d0e628b2407bff05d8",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:long-caption-preservation",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testLongCaptionPreservation.ts",
+      "commandSha256": "5966bbae0f6f39c378351c89c7fb48eddc81b81bc166652bee3cf2cdecd75243",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:source-place-group",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testSourcePlaceGroup.ts",
+      "commandSha256": "60953622c30ddef807a99a05fcba44d4505f1213b97d2bc1d738102af02cabc6",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:source-media-integration",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testSourceMediaIntegration.ts",
+      "commandSha256": "cc0198d7b3bb32253e1732d19b5bfd3ac767384d6e80a1046a859b8af26845ca",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:share-extension-completion",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testShareExtensionCompletion.ts",
+      "commandSha256": "4a11e280f794639c07fbe80948b3ea700b51f895ce0c1143e7dd9be376cad3af",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:vayrin-core",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testVayrinCore.ts",
+      "commandSha256": "2e703cf13de03ebaca08d94115d1640f89ad8c5f050814d552a2a17c1a3d2331",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:vayrin-same-place-moment-consolidation",
+      "command": "npm --prefix services/media-worker run test:same-place-moments && ts-node -P scripts/tsconfig.json scripts/testVayrinSamePlaceMomentConsolidation.ts",
+      "commandSha256": "5e11bbb4d16a106912e180ab93bdbd64b80dc5104fc4b904028e5ee33ce722e1",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:vayrin-recognition-truth",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testVayrinRecognitionTruth.ts",
+      "commandSha256": "31d1a99396f22ded4043a7ee736b5a76c30c5849de39db74fff06164906bcd1e",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:vayrin-singleton-autosave",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testVayrinSingletonAutoSave.ts && npm --prefix services/media-worker run test:vayrin-verification-v3",
+      "commandSha256": "80a811d8bc42a904d13a128ee67dc747b4bcaf06944c28fe6a419a4838529bf6",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:vayrin-never-dead-end",
+      "command": "npm --prefix services/media-worker run test:never-dead-end && ts-node -P scripts/tsconfig.json scripts/testVayrinNeverDeadEnd.ts",
+      "commandSha256": "c087a61350985adb6528b6227c3ed9f3a4de4c812cab5c4d2d5062bec042e197",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:vayrin-generic-place-type-guard",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testVayrinGenericPlaceTypeGuard.ts && cd services/media-worker && node --import tsx --test tests/vayrin.test.ts",
+      "commandSha256": "9c0e98edc416f385db7e377b713990f1d32ce67c81625faed4abea189357e7a8",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:metadata-failure-fallback",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testMetadataFailureMediaFallback.ts",
+      "commandSha256": "bf558227b3582d2fdede66be46dd50b1801c2dde136ff071627ae404600babea",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:onb2-01e-regressions",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testOnb201eQualificationRegressions.ts",
+      "commandSha256": "d9c37b9b2195ba6690887781538857ea95768214656b2ec7fdb447fb05821e26",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:metadata-autosave",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testMetadataAutoSaveGate.ts",
+      "commandSha256": "d5cad39561d59a9c2c59f09a7f9e5030e6484c8235eb0f72d2019541d6173ef2",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:source-entity-semantic-consistency",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testSourceEntitySemanticConsistency.ts",
+      "commandSha256": "85878b818508862de53c324957532798046fcb3876751e560d58624f8f8e24da",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:audit-preflight",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testRecognitionAuditPreflight.ts",
+      "commandSha256": "ff131f53243ae242d6584ca1fcd341803dace255683ce6e297f169554a371b63",
+      "notes": "Calls preflight with explicit fake keys and injected provider responses."
+    },
+    {
+      "suite": "test:ambiguity-review",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testAmbiguityReviewFlow.ts",
+      "commandSha256": "ee1e69cf20db3097fc1a47d65e203c8a4dbb1a941539b40c037ffcb6e0fb0a5d",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:onboarding-v2-phase2",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2Phase2Practice.ts && npm run test:onboarding-v2-try-another && npm run test:onboarding-v2-phase2-map && npm run test:onboarding-v2-p0-production",
+      "commandSha256": "d6afbc9d242fee632a0a9bd65a3ce078fb7ae073af5a64de8ecf854ae3ee814f",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:onboarding-v2-physical-runtime",
+      "command": "npm run test:onboarding-v2-map-settings && ts-node -P scripts/tsconfig.json scripts/testShareExtensionSubmission.ts && npm run test:onboarding-final-journey",
+      "commandSha256": "a4ea7aac9af95daabbc7009956dcf1dd542e55563a692bdd99c844d63d93a21b",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:onboarding-physical-qa-regressions",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testOnboardingPhysicalQaRegressions.ts",
+      "commandSha256": "a07057363f8b335e723a6e70b115a717a49404f19d260f4742b00e80eaa3bc91",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:onboarding-v2-hands-on-activation",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2HandsOnActivation.ts",
+      "commandSha256": "adcf707a6f5d6ee7755ab60d5b24f7bb106283255d345045a58ec5e248127b8e",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:onboarding-clean-baseline",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testOnboardingCleanBaseline.ts",
+      "commandSha256": "07a137ecfc63c5b0b724478bdede1e5b005d6628fc6d7d998d2959d329da2adc",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:onboarding-v2-phase1-production",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2Phase1Production.ts",
+      "commandSha256": "b1bd0c19e6d41d1f97dd3710e33289e3b676e32b539acff5bd3d06eb2bfbb7c3",
+      "notes": "The name describes a fixture regression; it does not deploy or request Production."
+    },
+    {
+      "suite": "test:onboarding-v2-visual",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2Phase1Visual.ts && ts-node -P scripts/tsconfig.json scripts/testOnboardingV2MagicRender.ts",
+      "commandSha256": "518ef9d5e14f2f7d3b67a70f7cd4715636fb9927c5ae7555170f909da9a82b3b",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:transient-message",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testTransientMessage.ts",
+      "commandSha256": "32bbcf618f1e8d1b327a002614dcb3a090f2a0edd3b465ab37206058686b80a6",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:save-completion-contracts",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testSaveCompletionContracts.ts",
+      "commandSha256": "b503be957e9f103ae52f2c588ea7ad4fa9f5a28dffde763b5bcd77fe9e4ac829",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:ai-note-authenticity",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testAiNoteAuthenticity.ts",
+      "commandSha256": "368b5cb714545969a532c147c50631ae895a84bcaa0291e8350a4e8c2741978e",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:ai-save-notes",
+      "command": "node --import ./services/media-worker/node_modules/tsx/dist/loader.mjs scripts/testAiSaveNotes.ts",
+      "commandSha256": "c38a5af3127f80c068692365ea9ac01e661e8d3c7fe31000639d172908f24b58",
+      "notes": "Calls note generation with an injected ModelProvider test double."
+    },
+    {
+      "suite": "test:source-group-nearby-wheel",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testSourceGroupNearbyWheel.ts",
+      "commandSha256": "0f505f54bb19433ff9976faab32a507c0f493439b56d7d0734b6bff06a76ad4b",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:saved-browse-contracts",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testSavedPlacesBrowseContracts.ts",
+      "commandSha256": "26fae3c7a0eac26544667dff4aa6aab75dd9ab06687b4a5ab757a047514821be",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:place-detail",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testPlaceDetailExperience.ts",
+      "commandSha256": "d32e3377b60d15eda4f3cd466a5e1529083cbac6779e4fd3b1000c837cd6dd6f",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:saved-place-images",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testSavedPlaceImageStore.ts",
+      "commandSha256": "e9a0ec20e514cf29a7d161a188fc5680f33fe8650a78103379cfc3cfba6cf64f",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:place-detail-v2",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testPlaceDetailV2.ts",
+      "commandSha256": "96fc73f9a50fadff9789a23f2ee4cba2cb96d73ac16efebd4acf8b7ffd4939b7",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:place-detail-convergence",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testPlaceDetailConvergence.ts",
+      "commandSha256": "da88e4657c621d9213924de0ef2f246bddf6e4895c585e0e24ed909b0ac64cd2",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:place-hours",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testPlaceHours.ts",
+      "commandSha256": "cf10cf4a3089281b66beb684c2947715cd55b03d12085359fd63f83228150472",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:map-queue-entry",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testMapQueueEntryPoint.ts",
+      "commandSha256": "c66163149c95ec1d757ed6023d88f9012d7b42a41e9028407354e0c13a040936",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:related-places",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testRelatedPlaces.ts",
+      "commandSha256": "240808e04fa91caa560a2c76901474ea791f51ca8f317912fbc1506631a0812c",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:recommendation-detail",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testRecommendedPlaceDetailRedesign.ts",
+      "commandSha256": "56e6a452f920945757a223bd6053efa61ed3b6edb64e72f1c072ed0a6b540675",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:pin-state",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testSavedPlacePinState.ts",
+      "commandSha256": "ca379249998597ecf041197baf8d742aa93084b45874b34eab16cd03b34718ed",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    },
+    {
+      "suite": "test:vayrin-candidate-confirmation",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testVayrinCandidateConfirmation.ts",
+      "commandSha256": "4a8b6c49794bfe638f5b106c82669ec95e70e5108ddba2964545f5a341d5eb65",
+      "notes": "Local fixture, pure helper, UI contract, or source contract regression."
+    }
+  ],
+  "coveredByOtherSelectedSuites": [
+    "test:onboarding-final-journey",
+    "test:onboarding-v2-map-settings",
+    "test:onboarding-v2-p0-production",
+    "test:onboarding-v2-phase2-map",
+    "test:onboarding-v2-try-another"
+  ],
+  "redundantAliasKeys": [
+    "test:oct8-product-consistency-suite",
+    "test:place-share-message",
+    "test:map-post-save-reliability",
+    "test:map-pin-cluster-reliability",
+    "test:context-aware-cache",
+    "test:onboarding-v2-albo-parity",
+    "test:safe-development",
+    "test:notification-navigation",
+    "test:vayrin-product-ui"
+  ],
+  "excludedRemoteLive": [
+    {
+      "suite": "test:e2e:dev",
+      "command": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite all",
+      "reason": "Live acquisition, remote Development/Production service interaction, or remote state/proof dependency; not included in offline regression scope."
+    },
+    {
+      "suite": "test:e2e:dev:config",
+      "command": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite config",
+      "reason": "Live acquisition, remote Development/Production service interaction, or remote state/proof dependency; not included in offline regression scope."
+    },
+    {
+      "suite": "test:e2e:dev:dispatch",
+      "command": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite dispatch",
+      "reason": "Live acquisition, remote Development/Production service interaction, or remote state/proof dependency; not included in offline regression scope."
+    },
+    {
+      "suite": "test:e2e:dev:pipeline",
+      "command": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite pipeline",
+      "reason": "Live acquisition, remote Development/Production service interaction, or remote state/proof dependency; not included in offline regression scope."
+    },
+    {
+      "suite": "test:e2e:dev:safety",
+      "command": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite safety",
+      "reason": "Live acquisition, remote Development/Production service interaction, or remote state/proof dependency; not included in offline regression scope."
+    },
+    {
+      "suite": "test:e2e:dev:creator-live",
+      "command": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite creator-live",
+      "reason": "Live acquisition, remote Development/Production service interaction, or remote state/proof dependency; not included in offline regression scope."
+    },
+    {
+      "suite": "test:e2e:dev:vayrin-live",
+      "command": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite vayrin-live",
+      "reason": "Live acquisition, remote Development/Production service interaction, or remote state/proof dependency; not included in offline regression scope."
+    },
+    {
+      "suite": "test:e2e:dev:vayrin-never-dead-end",
+      "command": "ts-node -P scripts/tsconfig.json scripts/e2e/runNeverDeadEndLiveProof.ts",
+      "reason": "Live acquisition, remote Development/Production service interaction, or remote state/proof dependency; not included in offline regression scope."
+    },
+    {
+      "suite": "test:media-live-regression",
+      "command": "ts-node -P scripts/tsconfig.json scripts/mediaLiveRegression.ts",
+      "reason": "Live acquisition, remote Development/Production service interaction, or remote state/proof dependency; not included in offline regression scope."
+    },
+    {
+      "suite": "test:place-video-gallery:dev",
+      "command": "ts-node -P scripts/tsconfig.json scripts/e2e/verifyPlaceVideoGalleryDev.ts",
+      "reason": "Live acquisition, remote Development/Production service interaction, or remote state/proof dependency; not included in offline regression scope."
+    },
+    {
+      "suite": "test:share-remote",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testProcessShareLinkRemote.ts",
+      "reason": "Live acquisition, remote Development/Production service interaction, or remote state/proof dependency; not included in offline regression scope."
+    },
+    {
+      "suite": "test:share-regression",
+      "command": "ts-node -P scripts/tsconfig.json scripts/testShareRegression.ts",
+      "reason": "Live acquisition, remote Development/Production service interaction, or remote state/proof dependency; not included in offline regression scope."
+    }
+  ],
+  "prerequisites": [
+    "Root npm dependencies installed",
+    "Worker npm dependencies installed",
+    "PostgreSQL18 local binaries for test:empty-queue"
+  ],
+  "executionInstructions": "Run each remainingOfflineSuites[].suite using npm run in the integration worktree after comparing its package command with this manifest. Keep raw logs and actual results; do not label the inventory as passed. Existing prebuild,23-extra-suite, full worker and typecheck results remain separately reported.",
+  "workerOfflineEnvironment": {
+    "MEDIA_E2E_TESTS": "0",
+    "MEDIA_LIVE_TESTS": "0",
+    "INSTAGRAM_LIVE_TESTS": "0",
+    "NATIVE_VIDEO_LIVE_TESTS": "0"
+  },
+  "workerCoverageNote": "The full npm test glob includes gated live and integration files. Set all workerOfflineEnvironment flags to0 before running; those cases must remain skipped and are not passed end-to-end evidence."
+}
