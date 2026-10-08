@@ -14,4 +14,11 @@ const source = readFileSync('supabase/functions/process-share-jobs/index.ts', 'u
 const start = source.indexOf('async function finalizeMediaTask(');
 assert.ok(source.indexOf('evaluateMediaClaimFence(task, body.claim)', start) < source.indexOf('// Parent derived', start));
 assert.ok(source.indexOf('evaluateMediaClaimFence(task, body.claim)', start) < source.indexOf('parseMediaEvidence(body.evidence)', start));
+const mediaBody = source.slice(start, source.indexOf('async function ', start + 30));
+assert.doesNotMatch(mediaBody, /saveForUser\(/, 'ordinary media save must use transactional claim boundary');
+assert.match(source, /rpc\('commit_media_claim_candidate'/);
+assert.match(source, /rpc\('write_media_claim_results'/);
+assert.match(source, /rpc\('finalize_media_claim_parent'/);
+assert.match(source, /committed\.error && !String\(committed\.error\.message\)\.includes\('obsolete_media_claim'\)/,
+  'lost terminal commit response must retain authoritative settlement reconciliation');
 console.log('PASS media claim callback fence: valid, missing, stale, invalid, terminal; before side effects');
