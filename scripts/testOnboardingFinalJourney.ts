@@ -203,7 +203,7 @@ assert.doesNotMatch(secondHalf, /router\.replace\('\/\(tabs\)\/map'\)/, 'AuthGat
 assert.match(secondHalf, /realResultHero/);
 
 const appConfig = JSON.parse(readFileSync(join(root, 'app.json'), 'utf8'));
-assert.equal(appConfig.expo.version, '1.4.57');
+assert.equal(appConfig.expo.version, '1.5.58');
 assert.equal(appConfig.expo.icon, './assets/icon.png');
 assert.equal(appConfig.expo.ios.icon, './assets/icon.png');
 assert.equal(appConfig.expo.android.adaptiveIcon.foregroundImage, './assets/icon.png');
