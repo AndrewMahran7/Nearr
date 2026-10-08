@@ -28,6 +28,8 @@ export async function promotePlaceVideoMedia(args: {
   placeTimestamps?: readonly number[];
   publicAccessVerified: boolean;
   isSynthetic?: boolean;
+  /** Optional transactional ownership boundary for ordinary recognition. */
+  persist?: (row: Record<string, unknown>) => Promise<{ error: any }>;
 }): Promise<boolean> {
   const identity = canonicalContentIdentity(args.sourceUrl, args.resolvedUrl);
   if (!identity || !args.placeId) return false;
@@ -52,7 +54,7 @@ export async function promotePlaceVideoMedia(args: {
   const explicitlyRestricted = existing?.community_visibility === 'PRIVATE_SOURCE' ||
     existing?.community_visibility === 'OWNER_ONLY' ||
     existing?.community_visibility === 'PUBLIC_SOURCE_UNAVAILABLE';
-  const { error } = await args.admin.from('place_video_media').upsert({
+  const row = {
     place_id: args.placeId,
     identity_key: identity.key,
     identity_version: identity.identityVersion,
@@ -69,7 +71,10 @@ export async function promotePlaceVideoMedia(args: {
     public_access_verified_at: explicitlyRestricted ? existing.public_access_verified_at : publicEligible ? new Date().toISOString() : existing?.public_access_verified_at ?? null,
     is_synthetic: args.isSynthetic === true,
     last_seen_at: new Date().toISOString(),
-  }, { onConflict: 'place_id,identity_key', ignoreDuplicates: false });
+  };
+  const { error } = args.persist
+    ? await args.persist(row)
+    : await args.admin.from('place_video_media').upsert(row, { onConflict: 'place_id,identity_key', ignoreDuplicates: false });
   if (error) {
     console.warn('[place-video-media] promotion_failed', error.message);
     return false;

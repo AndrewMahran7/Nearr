@@ -277,7 +277,10 @@ check('14 multi-place applies singleton logic per mention without cross-slot cor
 
 check('15 singleton auto-save retains current canonical save/source/cache semantics', () => {
   const worker = readFileSync(resolve(process.cwd(), 'supabase/functions/process-share-jobs/index.ts'), 'utf8');
-  assert.match(worker, /auto_save_share_job_place_result/);
+  assert.match(worker, /commit_media_claim_candidate/);
+  const atomicSave = readFileSync(resolve(process.cwd(), 'supabase/migrations/20261008000002_media_claim_atomic_writes.sql'), 'utf8');
+  assert.match(atomicSave, /public\.auto_save_share_job_place_result\(/);
+  assert.match(atomicSave, /public\.attach_saved_place_source\(/);
   assert.match(worker, /saveForUser\(\{/);
   assert.match(worker, /attachSavedPlaceSource\(\{/);
   assert.match(worker, /trust:\s*'VERIFIED_AUTO_SAVE'/);

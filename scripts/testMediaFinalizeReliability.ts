@@ -114,7 +114,8 @@ check('Edge callback schedules durable retry and never explicitly returns 503', 
     process.cwd(),
     'supabase/functions/process-share-jobs/index.ts',
   ), 'utf8');
-  assert.match(source, /admin\.rpc\('requeue_media_task'/);
+  assert.match(source, /status: 'queued', locked_at: null, locked_until: null/);
+  assert.match(source, /\.eq\('id', taskId\)\.eq\('attempts', task\.attempts\)\.eq\('locked_at', task\.locked_at\)/);
   assert.match(source, /route: 'retry_scheduled'/);
   assert.doesNotMatch(source, /places_provider_unavailable'[\s\S]{0,200}\b503\b/);
 });

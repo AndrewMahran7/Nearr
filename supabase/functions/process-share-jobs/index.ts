@@ -1,4 +1,3 @@
-import { evaluateMediaClaimFence } from './mediaClaimFence.ts';
 // supabase/functions/process-share-jobs/index.ts
 //
 // Durable, retry-safe worker for the async share flow.
@@ -19,6 +18,7 @@ import { evaluateMediaClaimFence } from './mediaClaimFence.ts';
 // @ts-nocheck — Deno runtime.
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { evaluateMediaClaimFence } from './mediaClaimFence.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
 
 import { readEnv, validateEnv } from '../process-share-link/env.ts';
@@ -917,13 +917,16 @@ async function finalize(
     updatePatch.premium_eligibility_reason = eligibility.reason;
   }
 
-  const { data: updated } = await admin
-    .from('share_jobs')
-    .update(updatePatch)
-    .eq('id', job.id)
-    .eq('status', 'processing_metadata')
-    .select('id')
-    .maybeSingle();
+  const committed = job.__mediaClaim
+    ? await admin.rpc('finalize_media_claim_parent', { ...mediaClaimRpcArgs(job, job.__mediaClaim), p_patch: updatePatch })
+    : await admin.from('share_jobs').update(updatePatch).eq('id', job.id)
+        .eq('status', 'processing_metadata').select('id').maybeSingle();
+  // A correction may win after the candidate transaction. Preserve the old
+  // terminal billing reconciliation using authoritative terminal facts below.
+  if (committed.error && !String(committed.error.message).includes('obsolete_media_claim')) {
+    throw new Error(`media_claim_finalize_failed: ${committed.error.message}`);
+  }
+  const updated = Array.isArray(committed.data) ? committed.data[0] : committed.data;
 
   if (!updated) {
     console.log(`[share-job] finalize_skipped job_id=${job.id} already_terminal=true`);
@@ -1257,11 +1260,12 @@ async function enqueueMediaTask(
 
 async function markMediaTask(
   admin: any,
-  taskId: string,
+  task: any,
   status: string,
   patch: Record<string, unknown>,
 ): Promise<void> {
-  await admin.from('share_media_tasks').update({ status, ...patch }).eq('id', taskId);
+  await admin.from('share_media_tasks').update({ status, ...patch }).eq('id', task.id)
+    .eq('attempts', task.attempts).eq('locked_at', task.locked_at).eq('status', 'processing');
 }
 
 /** Guard supplemental task state by the generation snapshot. The row is
@@ -1276,6 +1280,8 @@ async function markVideoAiNoteTask(
     .from('share_media_tasks')
     .update({ status, ...patch })
     .eq('id', task.id)
+    .eq('attempts', task.attempts)
+    .eq('locked_at', task.locked_at)
     .eq('task_kind', 'ai_note_enrichment')
     .eq('saved_place_id', task.saved_place_id)
     .eq('target_place_id', task.target_place_id)
@@ -1356,6 +1362,42 @@ async function insertMediaRun(
   }
 }
 
+function mediaClaimRpcArgs(job: any, task: any) {
+  return { p_job_id: job.id, p_task_id: task.id, p_attempt: task.attempts, p_locked_at: task.locked_at };
+}
+
+async function saveForClaimedMedia(admin: any, job: any, task: any, args: any): Promise<any> {
+  const categoryResolution = args.categoryResolution ?? resolvePlaceCategory({
+    placeName: args.candidate.name, googlePrimaryType: args.candidate.primaryType, googleTypes: args.candidate.types,
+  });
+  const { data, error } = await admin.rpc('commit_media_claim_candidate', {
+    ...mediaClaimRpcArgs(job, task),
+    p_payload: {
+      candidate: safeCandidate(args.candidate), categoryResolution,
+      logicalResultId: args.logicalResultId, mediaRunId: args.mediaRunId ?? null,
+      source: args.source, sourceUrl: args.sourceUrl, sourceMetadata: args.sourceMetadata ?? null,
+      identity: canonicalContentIdentity(args.sourceUrl, args.sourceMetadata?.resolvedUrl ?? args.sourceUrl),
+      autoNote: args.autoNote ?? null,
+      confidenceScore: args.confidenceScore ?? args.candidate.matchScore ?? args.candidate.confidenceScore ?? 0.5,
+      ruleVersion: args.ruleVersion ?? AUTOMATIC_COMPLETION_RULE_VERSION,
+      reasonCodes: args.reasonCodes ?? ['exact_identity_supported'],
+    },
+  });
+  if (error) throw new Error(`media_claim_save_failed: ${error.message}`);
+  const saved = Array.isArray(data) ? data[0] : data;
+  if (!saved?.saved_place_id) throw new Error('media_claim_save_missing_result');
+  return { savedPlaceId: saved.saved_place_id, placeId: saved.place_id, reused: saved.reused === true };
+}
+
+async function writeClaimedMediaResults(admin: any, job: any, task: any, rows: any[]) {
+  // Supplemental enrichment cannot reopen its completed parent or create a save.
+  // Its existing provider/target-specific contract remains separate.
+  if (job.status === 'completed') {
+    return admin.from('share_job_place_results').upsert(rows, { onConflict: 'share_job_id,logical_result_id' });
+  }
+  return admin.rpc('write_media_claim_results', { ...mediaClaimRpcArgs(job, task), p_rows: rows });
+}
+
 async function persistBlockedPlaceResult(
   admin: any,
   args: {
@@ -1369,7 +1411,7 @@ async function persistBlockedPlaceResult(
   },
 ): Promise<void> {
   const candidate = args.mentionResult.candidates?.[0] ?? null;
-  const { error } = await admin.from('share_job_place_results').upsert({
+  const { error } = await writeClaimedMediaResults(admin, args.job, args.task, [{
     share_job_id: args.job.id,
     share_media_task_id: args.task.id,
     share_media_run_id: args.mediaRunId,
@@ -1382,7 +1424,7 @@ async function persistBlockedPlaceResult(
     rule_version: MEDIA_AUTO_SAVE_RULE_VERSION,
     reason_codes: args.reasonCodes,
     finalized_at: nowIso(),
-  }, { onConflict: 'share_job_id,logical_result_id' });
+  }]);
   if (error) throw new Error(`place_result_upsert_failed: ${error.message}`);
 }
 
@@ -1446,9 +1488,9 @@ async function persistAutomaticCompletionResults(
       finalized_at: now,
     });
   }
-  const { error } = await admin.from('share_job_place_results').upsert(rows, {
-    onConflict: 'share_job_id,logical_result_id',
-  });
+  const { error } = args.task
+    ? await writeClaimedMediaResults(admin, args.job, args.task, rows)
+    : await admin.from('share_job_place_results').upsert(rows, { onConflict: 'share_job_id,logical_result_id' });
   if (error) throw new Error(`automatic_completion_ledger_failed: ${error.message}`);
   const events = [
     ['automatic_completion', { share_job_id: args.job.id, alternative_count: args.alternatives.length }],
@@ -1909,7 +1951,7 @@ async function finalizePostSaveEnrichment(
   const targetPlace = Array.isArray(saved?.place) ? saved.place[0] : saved?.place;
   const targetProviderId = targetPlace?.google_place_id ?? null;
   if (!saved?.id || !saved?.place_id || !targetProviderId) {
-    await markMediaTask(admin, taskId, 'failed', {
+    await markMediaTask(admin, task, 'failed', {
       failure_code: 'post_save_target_missing_provider',
       progress_stage: 'cleanup',
       completed_at: nowIso(),
@@ -2078,7 +2120,7 @@ async function finalizePostSaveEnrichment(
     if (resultError) throw new Error(`post_save_result_upsert_failed: ${resultError.message}`);
   }
 
-  await markMediaTask(admin, taskId, 'completed', {
+  await markMediaTask(admin, task, 'completed', {
     resolver_name: 'media-post-save-enrichment',
     progress_stage: 'cleanup',
     completed_at: nowIso(),
@@ -2382,6 +2424,7 @@ async function finalizeMediaTask(
     ? await admin.from('share_jobs').select('*').eq('id', task.share_job_id).maybeSingle()
     : { data: null };
   policy = recognitionCachePolicyForRun(policy, job?.recognition_run_mode);
+  if (job) job.__mediaClaim = task;
 
   const logFinalStatus = (finalStatus: string, errorClass: string | null = null) => {
     console.log(formatFinalizeReliabilityLog({
@@ -2441,7 +2484,7 @@ async function finalizeMediaTask(
   }
 
   if (!job) {
-    await markMediaTask(admin, taskId, 'failed', { failure_code: 'parent_job_missing', completed_at: nowIso() });
+    await markMediaTask(admin, task, 'failed', { failure_code: 'parent_job_missing', completed_at: nowIso() });
     logFinalStatus('parent_job_missing', 'permanent_processing_error');
     return json({ error: 'parent_job_missing' }, 404);
   }
@@ -2561,7 +2604,7 @@ async function finalizeMediaTask(
     // rendered zero old-style places. Acquisition/transport failures still
     // arrive without a Premium payload and retain the established release path.
     if (!premium && pre.action !== 'manual_fallback') {
-      await markMediaTask(admin, taskId, 'failed', {
+      await markMediaTask(admin, task, 'failed', {
         failure_code: 'premium_model_failure', progress_stage: 'cleanup', completed_at: nowIso(),
       });
       logFinalStatus('premium_payload_invalid', 'permanent_processing_error');
@@ -2596,10 +2639,12 @@ async function finalizeMediaTask(
         typeof premium.autoSaveCandidate.latitude === 'number' &&
         typeof premium.autoSaveCandidate.longitude === 'number';
       if (canSave) {
-        const saved = await saveForUser({
+        const saved = await saveForClaimedMedia(admin, job, task, {
           client: admin,
           userId: job.user_id,
           candidate: premium.autoSaveCandidate,
+          logicalResultId: mentionSlots[0]?.mentionId ?? 'premium-primary',
+          mediaRunId,
           sourceUrl: taskCanonicalUrl,
           source: legacySourceFor(task.platform),
           sourceMetadata: {
@@ -2630,7 +2675,7 @@ async function finalizeMediaTask(
           savedPlaceId: saved.savedPlaceId, googlePlaceId: premium.autoSaveCandidate.googlePlaceId,
           alreadySaved: saved.reused,
         }));
-        await markMediaTask(admin, taskId, 'completed', {
+        await markMediaTask(admin, task, 'completed', {
           resolver_name: 'premium-sol', progress_stage: 'cleanup', completed_at: nowIso(),
         });
         logFinalStatus('premium_auto_save');
@@ -2656,7 +2701,7 @@ async function finalizeMediaTask(
         __skipRecognitionCachePersist: true,
         progress_stage: mode,
       }, reviewNotification({ jobId: job.id, mode, candidates, mentionResults: mentionSlots }));
-      await markMediaTask(admin, taskId, 'completed', {
+      await markMediaTask(admin, task, 'completed', {
         resolver_name: 'premium-sol', progress_stage: 'cleanup', completed_at: nowIso(),
       });
       logFinalStatus('premium_review');
@@ -2677,7 +2722,7 @@ async function finalizeMediaTask(
   const automaticDeep = automaticDeepPayload ? premiumRuntimePlan(automaticDeepPayload) : null;
   if (automaticDeepPayload && pre.action !== 'parent_already_terminal') {
     if (!automaticDeep) {
-      await markMediaTask(admin, taskId, 'failed', {
+      await markMediaTask(admin, task, 'failed', {
         failure_code: 'premium_model_failure', progress_stage: 'cleanup', completed_at: nowIso(),
       });
       logFinalStatus('automatic_deep_payload_invalid', 'permanent_processing_error');
@@ -2702,10 +2747,12 @@ async function finalizeMediaTask(
         : null;
       if (completion.action === 'save' && mentionSlots.length <= 1 &&
           automaticDeepGeography?.autoSaveEligible !== false) {
-        const saved = await saveForUser({
+        const saved = await saveForClaimedMedia(admin, job, task, {
           client: admin,
           userId: job.user_id,
           candidate: completion.primary,
+          logicalResultId: mentionSlots[0]?.mentionId ?? 'automatic-deep-primary',
+          mediaRunId,
           sourceUrl: taskCanonicalUrl,
           source: legacySourceFor(task.platform),
           sourceMetadata: {
@@ -2772,7 +2819,7 @@ async function finalizeMediaTask(
           alreadySaved: saved.reused,
           alternativeCount: completion.alternatives.length,
         }));
-        await markMediaTask(admin, taskId, 'completed', {
+        await markMediaTask(admin, task, 'completed', {
           resolver_name: 'automatic-deep-simple-sol', progress_stage: 'cleanup', completed_at: nowIso(),
         });
         logFinalStatus('automatic_deep_auto_completion');
@@ -2801,7 +2848,7 @@ async function finalizeMediaTask(
         progress_stage: mode,
         analysis_attempted: true,
       }, reviewNotification({ jobId: job.id, mode, candidates, mentionResults: mentionSlots }));
-      await markMediaTask(admin, taskId, 'completed', {
+      await markMediaTask(admin, task, 'completed', {
         resolver_name: 'automatic-deep-simple-sol', progress_stage: 'cleanup', completed_at: nowIso(),
       });
       logFinalStatus('automatic_deep_review');
@@ -2829,7 +2876,7 @@ async function finalizeMediaTask(
       failureCategory: 'technical_failure',
       failureCode: 'recognition_recovery_exhausted',
     }));
-    await markMediaTask(admin, taskId, 'failed', {
+    await markMediaTask(admin, task, 'failed', {
       resolver_name: 'automatic-deep-simple-sol',
       failure_code: 'recognition_recovery_exhausted',
       progress_stage: 'cleanup',
@@ -2840,7 +2887,7 @@ async function finalizeMediaTask(
   }
 
   if (pre.action === 'parent_already_terminal') {
-    await markMediaTask(admin, taskId, 'completed', { progress_stage: 'cleanup', completed_at: nowIso() });
+    await markMediaTask(admin, task, 'completed', { progress_stage: 'cleanup', completed_at: nowIso() });
     logFinalStatus('parent_already_terminal');
     return json({ ok: true, parentAlreadyTerminal: true, jobStatus: job.status });
   }
@@ -2861,7 +2908,7 @@ async function finalizeMediaTask(
         skipRecognitionCachePersist: task.task_kind === 'premium_recognition',
       }, sourceMetadata);
     }
-    await markMediaTask(admin, taskId, pre.taskTerminalStatus, {
+    await markMediaTask(admin, task, pre.taskTerminalStatus, {
       failure_code: pre.failureCode,
       progress_stage: 'cleanup',
       completed_at: nowIso(),
@@ -2964,11 +3011,13 @@ async function finalizeMediaTask(
       failures: mentionResults,
     });
     if (retryPlan.action === 'requeue') {
-      const { data: requeued, error: requeueError } = await admin.rpc('requeue_media_task', {
-        p_task_id: taskId,
-        p_backoff_seconds: retryPlan.delaySeconds,
-        p_failure_code: 'places_provider_unavailable',
-      });
+      const { data: requeuedRows, error: requeueError } = await admin.from('share_media_tasks').update({
+        status: 'queued', locked_at: null, locked_until: null,
+        next_attempt_at: new Date(Date.now() + retryPlan.delaySeconds * 1000).toISOString(),
+        failure_code: 'places_provider_unavailable',
+      }).eq('id', taskId).eq('attempts', task.attempts).eq('locked_at', task.locked_at)
+        .eq('status', 'processing').select('id');
+      const requeued = Array.isArray(requeuedRows) && requeuedRows.length === 1;
       if (requeueError) throw new Error(`media_retry_schedule_failed: ${requeueError.message}`);
       if (!requeued) {
         const { data: current } = await admin
@@ -3003,7 +3052,7 @@ async function finalizeMediaTask(
         evidenceFrames,
       });
     }
-    await markMediaTask(admin, taskId, 'failed', {
+    await markMediaTask(admin, task, 'failed', {
       failure_code: 'places_provider_unavailable_exhausted',
       progress_stage: 'cleanup',
       completed_at: nowIso(),
@@ -3173,29 +3222,14 @@ async function finalizeMediaTask(
               }
             : null,
         });
-        const { data: savedRows, error: saveError } = await admin.rpc(
-          'auto_save_share_job_place_result',
-          {
-            p_share_job_id: job.id,
-            p_share_media_task_id: task.id,
-            p_share_media_run_id: mediaRunId,
-            p_logical_result_id: mentionResult.mentionId,
-            p_google_place_id: candidate.googlePlaceId,
-            p_name: candidate.name,
-            p_formatted_address: candidate.formattedAddress,
-            p_latitude: candidate.latitude,
-            p_longitude: candidate.longitude,
-            p_category: categoryResolution.category,
-            p_source_type: source,
-            p_source_url: canonicalUrl,
-            p_confidence_score: gate.confidenceScore,
-            p_rule_version: gate.ruleVersion,
-            p_reason_codes: gate.reasonCodes,
-          },
-        );
-        if (saveError) throw new Error(`media_auto_save_failed: ${saveError.message}`);
-        const saved = Array.isArray(savedRows) ? savedRows[0] : savedRows;
-        if (!saved?.saved_place_id) throw new Error('media_auto_save_missing_saved_place_id');
+        const committed = await saveForClaimedMedia(admin, job, task, {
+          candidate, logicalResultId: mentionResult.mentionId, mediaRunId, categoryResolution,
+          source, sourceUrl: canonicalUrl, confidenceScore: gate.confidenceScore,
+          ruleVersion: gate.ruleVersion, reasonCodes: gate.reasonCodes, autoNote: aiNote,
+          sourceMetadata: { resolvedUrl: canonicalUrl, creatorHandle: sourceMetadata?.creatorHandle ?? null,
+            creatorName: sourceMetadata?.creatorName ?? null, caption: sourceMetadata?.description ?? null },
+        });
+        const saved = { saved_place_id: committed.savedPlaceId, place_id: committed.placeId, reused: committed.reused };
         const softAlternatives = (gate.plausibleProviderIds ?? [])
           .filter((providerId: string) => providerId !== candidate.googlePlaceId)
           .flatMap((providerId: string) => {
@@ -3222,20 +3256,11 @@ async function finalizeMediaTask(
           reasonCodes: gate.reasonCodes,
         });
         softAlternativeCount += softAlternatives.length;
-        await attachSavedPlaceSource({
-          admin,
-          userId: job.user_id,
-          savedPlaceId: saved.saved_place_id,
-          sourceUrl: canonicalUrl,
-          sourceType: source,
-          resolvedUrl: canonicalUrl,
-          creatorHandle: sourceMetadata?.creatorHandle ?? null,
-          creatorName: sourceMetadata?.creatorName ?? null,
-          caption: sourceMetadata?.description ?? null,
-          aiNote: aiNoteByMentionId.get(mention.mentionId) ?? null,
-        });
         await promotePlaceVideoMedia({
           admin,
+          persist: (row) => admin.rpc('promote_media_claim_video', {
+            ...mediaClaimRpcArgs(job, task), p_row: row,
+          }),
           placeId: saved.place_id,
           sourceUrl: canonicalUrl,
           resolvedUrl: canonicalUrl,
@@ -3246,47 +3271,6 @@ async function finalizeMediaTask(
           placeTimestamps: mentionResult.sourceTimestamps ?? mention?.timestamps ?? [],
           publicAccessVerified: sourceMetadata?.publicAccessVerified === true,
         });
-        if (aiNote) {
-          const aiNoteSave = await persistAiNoteSupplementally(aiNote, async (note) => {
-            // PROVENANCE: the cue describes THIS post, and the place page shows
-            // it beside whichever source is attached. `saved.reused` rows may
-            // already carry a different post (the RPC preserves it), and a
-            // racing job may have won the empty slot — so the note is written
-            // only while the row still names this exact source.
-            const { error } = await admin
-              .from('saved_places')
-              .update({ ai_note: note })
-              .eq('id', saved.saved_place_id)
-              .eq('user_id', job.user_id)
-              .eq('source_url', canonicalUrl)
-              .is('ai_note', null);
-            if (error) throw error;
-          });
-          if (aiNoteSave === 'failed') {
-            console.warn(`[media-task] supplemental ai note save failed task_id=${taskId}`);
-          }
-        }
-        const { error: categoryError } = await admin
-          .from('saved_places')
-          .update({
-            category: categoryResolution.category,
-            category_source: categoryResolution.source,
-            category_confidence: categoryResolution.confidence,
-            category_model_version: categoryResolution.modelVersion,
-            category_user_overridden: false,
-            categorized_at: nowIso(),
-          })
-          .eq('id', saved.saved_place_id)
-          .eq('user_id', job.user_id)
-          .eq('category_user_overridden', false);
-        if (categoryError) throw new Error(`media_category_save_failed: ${categoryError.message}`);
-        await admin.from('places').update({
-          short_formatted_address: candidate.shortFormattedAddress ?? null,
-          google_primary_type: candidate.primaryType ?? null,
-          google_types: candidate.types ?? null,
-          google_type_label: candidate.googleMapsTypeLabel ?? candidate.primaryTypeDisplayName ?? null,
-          business_status: candidate.businessStatus ?? null,
-        }).eq('id', saved.place_id);
         if (saved.reused) alreadySavedPlaceIds.push(saved.saved_place_id);
         else createdSavedPlaceIds.push(saved.saved_place_id);
         savedResultByMentionId.set(mentionResult.mentionId, {
@@ -3457,7 +3441,7 @@ async function finalizeMediaTask(
         },
         notification,
       );
-      await markMediaTask(admin, taskId, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
+      await markMediaTask(admin, task, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
       return json({ ok: true, route: 'auto_save', ...mediaResultSummary });
     }
 
@@ -3493,7 +3477,7 @@ async function finalizeMediaTask(
       },
       notification,
     );
-    await markMediaTask(admin, taskId, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
+    await markMediaTask(admin, task, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
     return json({ ok: true, route: 'needs_help', mode: 'mixed', ...mediaResultSummary });
   }
 
@@ -3561,10 +3545,12 @@ async function finalizeMediaTask(
   if (post.action === 'auto_save') {
     const candidate = legacyCandidate;
     const source = legacySourceFor(task.platform);
-    const saved = await saveForUser({
+    const saved = await saveForClaimedMedia(admin, job, task, {
       client: admin,
       userId: job.user_id,
       candidate,
+      logicalResultId: 'media-primary',
+      mediaRunId,
       sourceUrl: canonicalUrl,
       source,
       sourceMetadata: {
@@ -3624,7 +3610,7 @@ async function finalizeMediaTask(
         alternativeCount: mediaAlternatives.length,
       }),
     );
-    await markMediaTask(admin, taskId, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
+    await markMediaTask(admin, task, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
     console.log(`[media-task] finalize route=auto_save task_id=${taskId} job_id=${job.id}`);
     return json({ ok: true, route: 'auto_save' });
   }
@@ -3709,7 +3695,7 @@ async function finalizeMediaTask(
     },
     note,
   );
-  await markMediaTask(admin, taskId, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
+  await markMediaTask(admin, task, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
   console.log(`[media-task] finalize route=needs_help mode=${mode} downgraded=${post.downgraded} task_id=${taskId} job_id=${job.id}`);
   return json({ ok: true, route: 'needs_help', mode });
 }
@@ -5333,6 +5319,9 @@ serve(async (req) => {
       }));
       return response;
     } catch (err) {
+      if (String((err as Error)?.message ?? err).includes('obsolete_media_claim')) {
+        return json({ ok: true, route: 'obsolete_claim', reason: 'obsolete_media_claim' });
+      }
       console.log(JSON.stringify({
         marker: 'phase2_reliability',
         invocationId: invocation.id,
