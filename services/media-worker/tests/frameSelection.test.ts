@@ -53,6 +53,12 @@ test('deduplicateFrames always keeps endpoints even if identical', () => {
   assert.equal(deduplicateFrames(frames, 6).length, 2);
 });
 
+test('unavailable or malformed hashes never suppress independent interior evidence', () => {
+  const frames = [frame('', 'first'), frame('', 'interval'), frame('invalid', 'interval'),
+    frame('0000000000000000', 'interval'), frame('', 'last')];
+  assert.deepEqual(deduplicateFrames(frames), frames);
+});
+
 test('averageHashFromGray8x8 + hamming distance', () => {
   const half = new Uint8Array(64).map((_, i) => (i < 32 ? 0 : 255));
   const a = averageHashFromGray8x8(half);

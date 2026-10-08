@@ -101,7 +101,9 @@ export async function extractFrames(
       continue;
     }
 
-    let aHash = '0000000000000000';
+    // An unavailable hash is not an observed all-black image. Keep the frame
+    // when hashing fails so unrelated scenes cannot disappear through dedup.
+    let aHash = '';
     const grayRes = await execBinary(
       cfg.ffmpegPath,
       ['-y', '-i', jpg, '-vf', 'scale=8:8,format=gray', '-f', 'rawvideo', gray],
@@ -110,7 +112,7 @@ export async function extractFrames(
     if (grayRes.code === 0) {
       try {
         const bytes = await readFile(gray);
-        aHash = averageHashFromGray8x8(new Uint8Array(bytes));
+        if (bytes.length === 64) aHash = averageHashFromGray8x8(new Uint8Array(bytes));
       } catch {
         /* keep default hash */
       }
