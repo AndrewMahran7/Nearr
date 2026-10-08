@@ -182,10 +182,10 @@ export async function hashExtractedFrames(
   await writeFile(manifest, `ffconcat version 1.0\n${names.map((name) => `file ${name}\nduration 1`).join('\n')}\n`);
   const result = await runFrameCommand(cfg,
     ['-y', '-f', 'concat', '-safe', '1', '-i', manifest, '-vf', 'scale=8:8,format=gray',
-      '-vsync', '0', '-f', 'rawvideo', output],
+      '-fps_mode', 'passthrough', '-f', 'rawvideo', output],
     { timeoutMs: 10_000, signal }, metrics);
   if (result.code !== 0) {
-    log.warn('frame_hash_batch_failed', { count: frames.length });
+    log.warn('frame_hash_batch_failed', { count: frames.length, exitCode: result.code, timedOut: result.timedOut });
     return frames;
   }
   try {

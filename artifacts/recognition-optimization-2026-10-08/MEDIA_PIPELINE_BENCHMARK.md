@@ -60,3 +60,11 @@ npm run benchmark:media-preparation
 ```
 
 Result files use exclusive creation and cannot silently overwrite a baseline. Use a new `--name` for a new generation, preserving the original manifest/split. Run `python scripts/eval/summarizeMediaBenchmark.py` from the worktree to regenerate [MEDIA_METRICS.json](MEDIA_METRICS.json) and [media_latency_results.csv](media_latency_results.csv). Raw JSON retains per-frame hashes and failures; no frames/video are committed. Exact paid spend: **$0.00**.
+
+## Additional FFmpeg compatibility qualification
+
+The integrated worker suite exposed a version compatibility failure after selection: local Scoop FFmpeg **9.0.1** rejects the removed `-vsync` option, so batch hashing returned unknown hashes and correctly retained duplicate frames. The benchmark used local Anaconda FFmpeg **7.1**, where that option succeeds. This was not CPU contention. The command now uses the equivalent output option `-fps_mode passthrough`, which passes each frame with its timestamp, as specified by the [FFmpeg documentation](https://ffmpeg.org/ffmpeg.html#Advanced-options).
+
+Both installed versions passed the unchanged static-video dedup assertion and the CFR/VFR/duplicate-scene parity integration test after the fix (**2/2 tests per binary**). That parity test now also requires every synthetic frame to have a valid hash, preventing two failed hash paths from appearing equal. JPEG SHA256, timestamps, hashes, and selected survivors match between the legacy and batch arms **within each binary**; cross-version JPEG equality is not claimed. These are additional synthetic engineering controls, not fresh held-out recognition observations or a new model/strategy selection. Original corpus results and latency measurements remain intact.
+
+The Dockerfile installs distribution FFmpeg through an unpinned `node:22-slim` apt repository. The local Docker Linux daemon was unavailable, so the exact container FFmpeg binary and deployed image were not exercised. A build/runtime parity check remains required before deployment. Failure logs now include bounded exit-code/timeout metadata without media paths or raw stderr.
