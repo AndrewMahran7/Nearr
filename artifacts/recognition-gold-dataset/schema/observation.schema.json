@@ -15,7 +15,8 @@
     "geography": { "type": ["object", "null"] },
     "elapsed_ms": { "type": ["number", "null"], "minimum": 0 },
     "first_usable_result_ms": { "type": ["number", "null"], "minimum": 0 },
-    "cost_usd": { "type": ["number", "null"], "minimum": 0 }
+    "cost_usd": { "type": ["number", "null"], "minimum": 0 },
+    "wrong_confident_cache": { "type": "boolean", "description": "Adapter-observed wrong confident cache answer, even if final status is review or failed." }
   },
   "$defs": {
     "place": {
