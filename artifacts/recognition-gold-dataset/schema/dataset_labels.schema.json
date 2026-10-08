@@ -14,6 +14,7 @@
         "required": ["name", "aliases", "role"],
         "properties": {
           "place_id": { "type": ["string", "null"] },
+          "place_group_id": { "type": "string", "pattern": "^pg_[a-f0-9]{16}$", "description": "Required for each ready depicted exact place and included in place_group_ids." },
           "name": { "type": "string" },
           "aliases": { "type": "array", "items": { "type": "string" } },
           "role": { "enum": ["depicted", "mentioned_only"] },
@@ -30,6 +31,7 @@
         "additionalProperties": true
       }
     },
+    "proposed_places": { "type": "array", "description": "Review-only hypotheses for ambiguous/unverified cases; never strict ground truth or inference input.", "items": { "type": "object" } },
     "complete_set_established": { "type": "boolean" },
     "reasonable_autonomous_expected": { "type": "boolean" },
     "geography": { "type": ["object", "null"] },

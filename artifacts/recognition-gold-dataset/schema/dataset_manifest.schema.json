@@ -23,9 +23,10 @@
         "hashtags": { "type": "array", "items": { "type": "string" } },
         "tagged_accounts": { "type": "array", "items": { "type": "string" } },
         "location_tag": { "type": ["string", "null"] },
-        "source_geography": { "type": ["object", "null"] },
+        "source_geography": { "type": ["object", "null"], "properties": { "country": { "type": ["string", "null"] }, "region": { "type": ["string", "null"] }, "city": { "type": ["string", "null"] } }, "additionalProperties": false },
         "transcript": { "type": ["string", "null"] },
-        "frame_paths": { "type": "array", "items": { "type": "string" }, "description": "Local temporary paths; materializer re-encodes into neutral names. Do not commit media." }
+        "frame_paths": { "type": "array", "items": { "type": "string" }, "description": "Local temporary paths; materializer re-encodes into neutral names. Do not commit media." },
+        "frame_sha256": { "type": "array", "items": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "description": "Required for each held-out frame; seal verifies bytes exist and match." }
       },
       "additionalProperties": true
     },
@@ -57,6 +58,7 @@
       "additionalProperties": false
     },
     "visual_answer_overlay": { "type": "boolean" },
+    "mask_review": { "type": "object", "properties": { "answer_fields_checked": { "type": "boolean" }, "permitted_media_derivative": { "type": "boolean" }, "reviewer": { "type": "string" }, "reviewed_at": { "type": "string", "format": "date-time" } }, "additionalProperties": true },
     "state": { "enum": ["candidate", "ready"] },
     "exposure": { "enum": ["new_unscored", "historical_outcomes_already_exposed"] }
   },

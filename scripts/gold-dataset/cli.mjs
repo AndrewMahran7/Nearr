@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { holdoutEligibility, inferencePayload, proposeSplits, renderReview, scoreOne, sha256, summarizeScores, validateLabels, validateManifest, validateSplits, VIEWS } from './core.mjs';
+import { heldoutRunKey, holdoutEligibility, inferencePayload, proposeSplits, renderReview, scoreOne, sha256, summarizeScores, validateLabels, validateManifest, validateSplits, VIEWS } from './core.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const dataset = path.join(repo, 'artifacts/recognition-gold-dataset');
@@ -65,6 +65,11 @@ function materialize(opts) {
   const record = manifest.find((r) => r.case_id === opts.case);
   if (!record) throw new Error('unknown_case');
   if (!VIEWS.includes(opts.view)) throw new Error('unknown_view');
+  const splits = splitsFile(opts, manifest, labels);
+  if (splits.assignments[record.case_id] === 'held_out') {
+    if (!opts.explicit_heldout || opts.milestone !== 'baseline_v1') throw new Error('heldout_materialization_requires_explicit_baseline');
+    checkedSeal(opts);
+  }
   const label = labels.find((l) => l.case_id === opts.case);
   const input = inferencePayload(record, label, opts.view);
   const root = path.join(local, 'materialized');
@@ -78,6 +83,8 @@ function materialize(opts) {
     for (let i = 0; i < frameSources.length; i++) {
       const from = path.resolve(repo, frameSources[i]);
       if (!fs.statSync(from).isFile()) throw new Error('invalid_frame');
+      const expectedHash = record.evidence.frame_sha256?.[i];
+      if (expectedHash && sha256(fs.readFileSync(from)) !== expectedHash) throw new Error('frame_hash_mismatch');
       const to = path.join(dir, input.media.frames[i]);
       const child = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-nostdin', '-i', from, '-frames:v', '1', '-map_metadata', '-1', '-map_chapters', '-1', '-an', '-q:v', '2', to], { stdio: 'ignore', windowsHide: true });
       if (child.status !== 0) throw new Error('frame_sanitization_failed');
@@ -94,30 +101,55 @@ function materialize(opts) {
     throw error;
   }
 }
-function seal(opts) {
-  const manifestFile = path.resolve(opts.manifest ?? defaults.manifest);
-  const privateRoot = path.resolve(local) + path.sep;
+function requirePrivateHoldoutManifest(opts) {
+  const manifestFile = fs.realpathSync(opts.manifest ?? defaults.manifest);
+  const privateRoot = fs.realpathSync(local) + path.sep;
   if (!manifestFile.startsWith(privateRoot)) throw new Error('holdout_requires_private_combined_manifest');
-  const { manifest, labels } = read(opts);
-  const splits = splitsFile(opts, manifest, labels);
+}
+function ensureHoldoutQuality(manifest, labels, splits) {
   const held = manifest.filter((r) => splits.assignments[r.case_id] === 'held_out');
   const groups = new Set(held.map((r) => r.source_group_id));
   if (manifest.length < 250 || groups.size < 60 || held.length < 60 || held.length > 80) throw new Error('holdout_quality_size_gate');
   const byId = new Map(labels.map((l) => [l.case_id, l]));
   for (const r of held) if (!holdoutEligibility(r, byId.get(r.case_id)).eligible) throw new Error(`holdout_review_gate:${r.case_id}`);
+  for (const r of held) for (let i = 0; i < r.evidence.frame_paths.length; i++) {
+    const frame = path.resolve(repo, r.evidence.frame_paths[i]);
+    if (!fs.existsSync(frame) || !fs.statSync(frame).isFile() || sha256(fs.readFileSync(frame)) !== r.evidence.frame_sha256[i]) throw new Error(`holdout_frame_hash_mismatch:${r.case_id}`);
+  }
   const classes = new Set(held.map((r) => byId.get(r.case_id).label_class));
-  if (!['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI', 'KNOWN_NEGATIVE'].every((x) => classes.has(x))) throw new Error('holdout_missing_label_slice');
-  if (!['description_hidden', 'location_hidden', 'visual_only', 'text_only'].every((view) => held.some((r) => r.view_eligibility[view]))) throw new Error('holdout_missing_ablation_slice');
-  if (!held.some((r) => r.misleading_metadata === true || (Array.isArray(r.misleading_metadata) && r.misleading_metadata.length))) throw new Error('holdout_missing_misleading_metadata');
-  if (new Set(held.map((r) => r.platform)).size < 2 || new Set(held.flatMap((r) => r.categories)).size < 5) throw new Error('holdout_platform_or_category_imbalance');
+  const byClass = (x) => held.filter((r) => byId.get(r.case_id).label_class === x).length;
+  if (!classes.has('VERIFIED_EXACT_SINGLE') || byClass('VERIFIED_MULTI') < 8 || byClass('KNOWN_NEGATIVE') < 6) throw new Error('holdout_missing_label_slice');
+  if (held.filter((r) => r.view_eligibility.description_hidden).length < 15 || held.filter((r) => r.view_eligibility.visual_only).length < 15 || !['location_hidden', 'text_only'].every((view) => held.some((r) => r.view_eligibility[view]))) throw new Error('holdout_missing_ablation_slice');
+  if (held.filter((r) => r.misleading_metadata === true || (Array.isArray(r.misleading_metadata) && r.misleading_metadata.length)).length < 6) throw new Error('holdout_missing_misleading_metadata');
+  if (held.filter((r) => r.categories.some((c) => /beach|cliff|hike|trail|waterfall|outdoor|viewpoint/i.test(c))).length < 10 || held.filter((r) => r.categories.includes('branch_disambiguation')).length < 6) throw new Error('holdout_missing_hard_slices');
+  const platformCounts = held.reduce((map, r) => map.set(r.platform, (map.get(r.platform) ?? 0) + 1), new Map());
+  if ([...platformCounts.values()].filter((n) => n >= 5).length < 2 || new Set(held.flatMap((r) => r.categories)).size < 5) throw new Error('holdout_platform_or_category_imbalance');
   const countries = new Set(held.map((r) => r.geography?.country ?? byId.get(r.case_id)?.geography?.country ?? byId.get(r.case_id)?.expected_places?.[0]?.country).filter(Boolean));
   if (countries.size < 3) throw new Error('holdout_geography_imbalance');
+  return { held, groups };
+}
+function checkedSeal(opts) {
+  requirePrivateHoldoutManifest(opts);
+  const sealDoc = JSON.parse(fs.readFileSync(opts.seal ?? defaults.seal, 'utf8'));
+  for (const [key, file] of [['manifest_sha256', opts.manifest ?? defaults.manifest], ['labels_sha256', opts.labels ?? defaults.labels], ['splits_sha256', opts.splits ?? defaults.splits]]) if (sealDoc[key] !== sha256(fs.readFileSync(file))) throw new Error(`holdout_seal_mismatch:${key}`);
+  const { manifest, labels } = read(opts);
+  const splits = splitsFile(opts, manifest, labels);
+  const { held, groups } = ensureHoldoutQuality(manifest, labels, splits);
+  if (held.length !== sealDoc.heldout_cases || groups.size !== sealDoc.heldout_source_groups) throw new Error('invalid_holdout_seal_counts');
+  if (!sealDoc.allowed_milestones?.includes('baseline_v1')) throw new Error('invalid_holdout_seal_milestones');
+  return sealDoc;
+}
+function seal(opts) {
+  requirePrivateHoldoutManifest(opts);
+  const { manifest, labels } = read(opts);
+  const splits = splitsFile(opts, manifest, labels);
+  const { held, groups } = ensureHoldoutQuality(manifest, labels, splits);
   const sealDoc = {
     schema_version: 1, created_at: new Date().toISOString(), heldout_cases: held.length, heldout_source_groups: groups.size,
     manifest_sha256: sha256(fs.readFileSync(opts.manifest ?? defaults.manifest)),
     labels_sha256: sha256(fs.readFileSync(opts.labels ?? defaults.labels)),
     splits_sha256: sha256(fs.readFileSync(opts.splits ?? defaults.splits)),
-    source_group_ids: [...groups].sort(),
+    source_group_ids: [...groups].sort(), allowed_milestones: ['baseline_v1'],
   };
   writeOnce(opts.seal ?? defaults.seal, JSON.stringify(sealDoc, null, 2) + '\n');
   return { heldout_cases: held.length, heldout_source_groups: groups.size, seal_path: opts.seal ?? defaults.seal };
@@ -128,9 +160,11 @@ function score(opts) {
   const { manifest, labels } = read(opts);
   const splits = splitsFile(opts, manifest, labels);
   if (opts.split === 'held_out') {
-    if (!opts.explicit_heldout) throw new Error('heldout_requires_explicit_flag');
-    const sealDoc = JSON.parse(fs.readFileSync(opts.seal ?? defaults.seal, 'utf8'));
-    for (const [key, file] of [['manifest_sha256', opts.manifest ?? defaults.manifest], ['labels_sha256', opts.labels ?? defaults.labels], ['splits_sha256', opts.splits ?? defaults.splits]]) if (sealDoc[key] !== sha256(fs.readFileSync(file))) throw new Error(`holdout_seal_mismatch:${key}`);
+    if (!opts.explicit_heldout || opts.milestone !== 'baseline_v1') throw new Error('heldout_requires_explicit_baseline_milestone');
+    const sealDoc = checkedSeal(opts);
+    if (!sealDoc.allowed_milestones?.includes(opts.milestone)) throw new Error('heldout_milestone_not_frozen');
+    const runMarker = path.join(local, 'heldout_runs', `${heldoutRunKey(sealDoc, opts.milestone, opts.view)}.json`);
+    if (fs.existsSync(runMarker)) throw new Error('heldout_milestone_already_scored');
   }
   const selected = manifest.filter((r) => splits.assignments[r.case_id] === opts.split && r.view_eligibility[opts.view]);
   if (!selected.length) throw new Error('empty_score_slice');
@@ -148,6 +182,11 @@ function score(opts) {
   const summary = summarizeScores(rows);
   const out = opts.out ?? path.join(dataset, `baseline_results_${opts.split}_${opts.view}.json`);
   const privateOut = path.join(local, 'scores', `${path.basename(out, path.extname(out))}_per_case_private.csv`);
+  if (fs.existsSync(out) || fs.existsSync(privateOut)) throw new Error('immutable_score_output_exists');
+  if (opts.split === 'held_out') {
+    const runMarker = path.join(local, 'heldout_runs', `${heldoutRunKey(checkedSeal(opts), opts.milestone, opts.view)}.json`);
+    writeOnce(runMarker, JSON.stringify({ milestone: opts.milestone, view: opts.view, output: path.relative(repo, out), observation_sha256: sha256(fs.readFileSync(opts.observations)), reserved_at: new Date().toISOString() }, null, 2) + '\n');
+  }
   writeOnce(privateOut, csv(rows));
   writeOnce(out, JSON.stringify({ schema_version: 1, split: opts.split, view: opts.view, observation_count: rows.length, summary, per_case_private_path: path.relative(repo, privateOut) }, null, 2) + '\n');
   return { output: out, private_per_case: privateOut, summary };

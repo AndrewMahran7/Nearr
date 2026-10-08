@@ -6,7 +6,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { holdoutEligibility, inferencePayload, opaqueCaseId, opaquePlaceGroupId, opaqueSourceGroupId, placeMatches, proposeSplits, renderReview, scoreOne, summarizeScores, validateLabels, validateManifest, validateSplits } from './core.mjs';
+import { heldoutRunKey, holdoutEligibility, inferencePayload, opaqueCaseId, opaquePlaceGroupId, opaqueSourceGroupId, placeMatches, proposeSplits, renderReview, scoreOne, sha256, summarizeScores, validateLabels, validateManifest, validateSplits } from './core.mjs';
 
 const cid = opaqueCaseId('instagram', 'example-123');
 const gid = opaqueSourceGroupId('instagram:example-123');
@@ -15,7 +15,7 @@ const manifest = (overrides = {}) => ({
   case_id: cid, source_group_id: gid, platform: 'instagram', source_public_id: 'example-123',
   source_url_reference: 'https://instagram.com/reel/example-123', retrieval_date: '2026-10-08',
   categories: ['beach'], state: 'ready', exposure: 'new_unscored',
-  evidence: { caption: 'At Cala Varques today', description: 'Cala Varques, Mallorca', hashtags: ['#CalaVarques'], tagged_accounts: ['cala.varques'], location_tag: 'Cala Varques', source_geography: { city: 'Mallorca' }, transcript: 'Welcome to Cala Varques', frame_paths: ['C:/private/Cala Varques/frame.jpg'] },
+  evidence: { caption: 'At Cala Varques today', description: 'Cala Varques, Mallorca', hashtags: ['#CalaVarques'], tagged_accounts: ['cala.varques'], location_tag: 'Cala Varques', source_geography: { city: 'Mallorca' }, transcript: 'Welcome to Cala Varques', frame_paths: ['C:/private/Cala Varques/frame.jpg'], frame_sha256: ['a'.repeat(64)] },
   answer_spans: [
     { field: 'caption', start: 3, end: 15, kind: 'exact_place' },
     { field: 'description', start: 0, end: 12, kind: 'exact_place' },
@@ -25,11 +25,12 @@ const manifest = (overrides = {}) => ({
     { field: 'source_geography', start: 0, end: 8, kind: 'geography' },
   ],
   view_eligibility: { full: true, description_hidden: true, location_hidden: true, visual_only: true, text_only: true },
+  visual_answer_overlay: false, mask_review: { answer_fields_checked: true, permitted_media_derivative: true, reviewer: 'reviewer-b', reviewed_at: '2026-10-08T00:00:00Z' },
   ...overrides,
 });
 const label = (overrides = {}) => ({
   case_id: cid, label_class: 'VERIFIED_EXACT_SINGLE',
-  expected_places: [{ place_id: 'google:123', name: 'Cala Varques', aliases: ['Cala Varques'], role: 'depicted', country: 'Spain', region: 'Balearic Islands', coordinates: { lat: 39.5, lng: 3.3 }, accepted_radius_meters: 100 }],
+  expected_places: [{ place_id: 'google:123', place_group_id: pg, name: 'Cala Varques', aliases: ['Cala Varques'], role: 'depicted', country: 'Spain', region: 'Balearic Islands', coordinates: { lat: 39.5, lng: 3.3 }, accepted_radius_meters: 100 }],
   complete_set_established: true, place_group_ids: [pg], reasonable_autonomous_expected: true,
   provenance: [{ kind: 'source_caption', reference: 'https://instagram.com/reel/example-123' }, { kind: 'official_tourism', reference: 'https://example.org/cala', independent: true }],
   review: { decision: 'accept', reviewer: 'reviewer-b', reviewed_at: '2026-10-08T00:00:00Z', independent: true }, ...overrides,
@@ -51,6 +52,9 @@ test('opaque IDs have no answer text and source group duplicates are caught', ()
   const watchB = manifest({ case_id: opaqueCaseId('youtube', 'b'), source_group_id: opaqueSourceGroupId('watch-b'), platform: 'youtube', source_public_id: null, source_url_reference: 'https://youtube.com/watch?v=b' });
   assert.equal(validateManifest([watchA, watchB]).sourceGroups, 2);
   assert.throws(() => validateManifest([watchA, { ...watchB, source_url_reference: watchA.source_url_reference }]), /duplicate_post_across_groups/);
+  const idAndUrl = manifest({ case_id: opaqueCaseId('youtube', 'same-id'), platform: 'youtube', source_public_id: 'same-id', source_url_reference: 'https://youtube.com/watch?v=same-id' });
+  const urlOnly = manifest({ case_id: opaqueCaseId('youtube', 'url-only-duplicate'), source_group_id: opaqueSourceGroupId('wrong-group'), platform: 'youtube', source_public_id: null, source_url_reference: 'https://youtube.com/watch?v=same-id&utm_source=tracking' });
+  assert.throws(() => validateManifest([idAndUrl, urlOnly]), /duplicate_post_across_groups/);
 });
 
 test('answer spans contain offsets, not duplicated text', () => {
@@ -71,6 +75,8 @@ test('masked payloads exclude answer-bearing source metadata, path names, labels
   const descUnannotated = inferencePayload(unannotated, l, 'description_hidden');
   assert.equal(descUnannotated.evidence.transcript, null);
   assert.equal(descUnannotated.evidence.location_tag, null);
+  const compactHandle = manifest({ answer_spans: [], evidence: { ...r.evidence, tagged_accounts: ['@CalaVarques'], location_tag: null, transcript: null } });
+  assert.equal(inferencePayload(compactHandle, l, 'description_hidden').evidence.tagged_accounts, null);
   const loc = inferencePayload(r, l, 'location_hidden');
   assert.equal(loc.evidence.location_tag, null);
   assert.equal(loc.evidence.source_geography, null);
@@ -86,10 +92,17 @@ test('masked payloads exclude answer-bearing source metadata, path names, labels
   assert.match(text.evidence.caption, /Cala Varques/);
 });
 
+test('nested source geography cannot carry debug truth or cache into inference', () => {
+  const attack = manifest({ evidence: { ...manifest().evidence, source_geography: { country: 'Spain', debug_context: { ground_truth: 'Cala Varques', candidate_cache: 'Cala Varques' } } } });
+  assert.throws(() => validateManifest([attack]), /invalid_source_geography/);
+  const raw = JSON.stringify(inferencePayload(attack, label(), 'text_only'));
+  assert.doesNotMatch(raw, /debug_context|ground_truth|candidate_cache/);
+});
+
 test('visual only cannot be claimed for missing frames or answer overlays', () => {
   assert.throws(() => validateManifest([manifest({ evidence: { caption: 'Answer' } })]), /missing_visual_evidence_for_view/);
-  assert.throws(() => inferencePayload(manifest({ visual_answer_overlay: true }), label(), 'visual_only'), /visual_only_not_clean/);
-  assert.throws(() => validateManifest([manifest({ visual_answer_overlay: true })]), /description_hidden_overlay_leak/);
+  assert.throws(() => inferencePayload(manifest({ visual_answer_overlay: true }), label(), 'visual_only'), /masked_view_review_missing/);
+  assert.throws(() => validateManifest([manifest({ visual_answer_overlay: true })]), /masked_view_review_missing/);
 });
 
 test('historical, unreviewed and weakly verified cases cannot enter holdout', () => {
@@ -100,6 +113,17 @@ test('historical, unreviewed and weakly verified cases cannot enter holdout', ()
   assert.ok(holdoutEligibility(manifest(), label({ review: { decision: 'negative', reviewer: 'reviewer-b', reviewed_at: '2026-10-08T00:00:00Z', independent: true } })).reasons.includes('review_label_mismatch'));
   assert.ok(holdoutEligibility(manifest(), label({ collected_by: 'reviewer-b' })).reasons.includes('reviewer_not_independent'));
   assert.ok(holdoutEligibility(manifest({ evidence: { caption: 'Cala Varques' }, view_eligibility: { full: false, description_hidden: false, location_hidden: false, visual_only: false, text_only: true } }), label()).reasons.includes('full_visual_evidence_missing'));
+  assert.ok(holdoutEligibility(manifest({ evidence: { ...manifest().evidence, frame_sha256: [] } }), label()).reasons.includes('frame_hashes_missing'));
+  assert.ok(holdoutEligibility(manifest({ mask_review: { answer_fields_checked: true, reviewer: 'reviewer-b' } }), label()).reasons.includes('visual_mask_review_missing'));
+});
+
+test('each ready depicted exact place needs a distinct shared place group', () => {
+  assert.throws(() => validateLabels([manifest()], [label({ expected_places: [{ ...label().expected_places[0], place_group_id: undefined }] })]), /incomplete_place_group_mapping/);
+  assert.equal(validateLabels([manifest({ state: 'candidate' })], [label({ expected_places: [{ ...label().expected_places[0], place_group_id: undefined }] })]).labeled, 1);
+  const multi = label({ label_class: 'VERIFIED_MULTI', expected_places: [
+    { ...label().expected_places[0], name: 'One' }, { ...label().expected_places[0], name: 'Two' },
+  ] });
+  assert.throws(() => validateLabels([manifest()], [multi]), /incomplete_place_group_mapping/);
 });
 
 test('source and place connected groups cannot cross splits', () => {
@@ -154,7 +178,14 @@ test('multi scores maximum distinct place assignment, extra and missed places', 
   assert.equal(m.place_precision.rate, 2 / 3);
   assert.equal(m.place_recall.rate, 1);
   assert.equal(m.f1, 0.8);
-  assert.equal(summarizeScores([scoreOne(r, l, { ...o, multi_place_detected: null }, 'development', 'full')]).multi.detection.rate, null);
+  assert.throws(() => scoreOne(r, l, { ...o, multi_place_detected: null }, 'development', 'full'), /missing_multi_detection/);
+  const failed = scoreOne(r, l, { ...o, status: 'failed', autonomous: false }, 'development', 'full');
+  assert.equal(summarizeScores([failed]).multi.place_precision.rate, null);
+  assert.equal(summarizeScores([failed]).multi.place_recall.rate, 0);
+  assert.equal(summarizeScores([failed]).multi.exact_set.rate, 0);
+  const review = scoreOne(r, l, { ...o, status: 'review', autonomous: false, places: o.places.slice(0, 2) }, 'development', 'full');
+  assert.equal(summarizeScores([review]).multi.place_precision.rate, null);
+  assert.equal(summarizeScores([review]).multi.review_proposal_exact_set.rate, 1);
 });
 
 test('negative and region only cases count unsupported exact output', () => {
@@ -177,6 +208,25 @@ test('negative and region only cases count unsupported exact output', () => {
   const cachedNegative = scoreOne(r, negative, observation(r, 'full', { status: 'review', autonomous: false, places: [], wrong_confident_cache: true }), 'development', 'full');
   assert.equal(cachedNegative.negative_correct_abstention, false);
   assert.equal(cachedNegative.wrong_confident, true);
+  const reviewWithSuggestion = scoreOne(r, negative, observation(r, 'full', { status: 'review', autonomous: false }), 'development', 'full');
+  assert.equal(reviewWithSuggestion.negative_correct_abstention, false);
+});
+
+test('cost requires an explicit complete measured provider ledger', () => {
+  const r = manifest(), l = label();
+  const unknown = scoreOne(r, l, observation(r, 'full'), 'development', 'full');
+  assert.equal(summarizeScores([unknown]).cost.total_usd, null);
+  const paid = scoreOne(r, l, observation(r, 'full', { cost_usd: 0.01, cost_basis: 'measured_provider_ledger', provider_ledger_complete: true, provider_usage: [{ provider: 'Places', measurement: 'measured', calls: 1, cost_usd: 0.01 }] }), 'development', 'full');
+  assert.equal(summarizeScores([paid]).cost.total_usd, 0.01);
+  const free = scoreOne(r, l, observation(r, 'full', { cost_usd: 0, cost_basis: 'no_paid_calls', provider_ledger_complete: true, provider_usage: [] }), 'development', 'full');
+  assert.equal(free.cost_usd, 0);
+  assert.throws(() => scoreOne(r, l, observation(r, 'full', { cost_usd: 0, cost_basis: 'measured_provider_ledger', provider_ledger_complete: true, provider_usage: [{ provider: 'Places', measurement: 'measured', calls: 1, cost_usd: 0.01 }] }), 'development', 'full'), /provider_cost_mismatch/);
+});
+
+test('held-out run identity survives resealing and permits each view only once', () => {
+  const frozen = { manifest_sha256: 'a'.repeat(64), labels_sha256: 'b'.repeat(64), splits_sha256: 'c'.repeat(64) };
+  assert.equal(heldoutRunKey({ ...frozen, created_at: 'first' }, 'baseline_v1', 'full'), heldoutRunKey({ ...frozen, created_at: 'second' }, 'baseline_v1', 'full'));
+  assert.notEqual(heldoutRunKey(frozen, 'baseline_v1', 'full'), heldoutRunKey(frozen, 'baseline_v1', 'visual_only'));
 });
 
 test('scorer rejects noncompleted autonomous observations and missing arrays', () => {
@@ -186,10 +236,11 @@ test('scorer rejects noncompleted autonomous observations and missing arrays', (
 });
 
 test('review HTML escapes source and proposed label content', () => {
-  const html = renderReview(manifest({ evidence: { caption: '<script>alert(1)</script>' } }), label());
+  const html = renderReview(manifest({ evidence: { caption: '<script>alert(1)</script>' } }), label({ label_class: 'UNVERIFIED', expected_places: [], proposed_places: [{ name: 'Cala Varques', aliases: [] }] }));
   assert.doesNotMatch(html, /<script>/);
   assert.match(html, /&lt;script&gt;/);
   assert.match(html, /independent/);
+  assert.match(html, /proposed_places/);
 });
 
 const ffmpegAvailable = spawnSync('ffmpeg', ['-version'], { stdio: 'ignore', windowsHide: true }).status === 0;
@@ -206,10 +257,12 @@ test('materialization re-encodes source metadata and hides source names, paths, 
     fs.mkdirSync(frameDir);
     const generated = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=red:s=16x16:d=0.1', '-metadata', 'title=CalaVarquesSecret', '-frames:v', '1', frame], { stdio: 'ignore', windowsHide: true });
     assert.equal(generated.status, 0);
-    const manifestFile = path.join(scratch, 'manifest.jsonl'), labelsFile = path.join(scratch, 'labels.jsonl');
+    r.evidence.frame_sha256 = [sha256(fs.readFileSync(frame))];
+    const manifestFile = path.join(scratch, 'manifest.jsonl'), labelsFile = path.join(scratch, 'labels.jsonl'), splitFile = path.join(scratch, 'splits.json');
     fs.writeFileSync(manifestFile, JSON.stringify(r) + '\n');
     fs.writeFileSync(labelsFile, JSON.stringify(l) + '\n');
-    const run = spawnSync(process.execPath, ['scripts/gold-dataset/cli.mjs', 'materialize', '--manifest', manifestFile, '--labels', labelsFile, '--case', caseId, '--view', 'visual_only'], { cwd: root, encoding: 'utf8', windowsHide: true });
+    fs.writeFileSync(splitFile, JSON.stringify({ schema_version: 1, assignments: { [caseId]: 'development' } }));
+    const run = spawnSync(process.execPath, ['scripts/gold-dataset/cli.mjs', 'materialize', '--manifest', manifestFile, '--labels', labelsFile, '--splits', splitFile, '--case', caseId, '--view', 'visual_only'], { cwd: root, encoding: 'utf8', windowsHide: true });
     assert.equal(run.status, 0, run.stderr);
     output = JSON.parse(run.stdout);
     const inputBytes = fs.readFileSync(output.input, 'utf8');
@@ -244,7 +297,7 @@ test('CLI scores a development observation and rejects an unsealed held-out atte
   const manifestFile = path.join(scratch, 'manifest.jsonl'), labelsFile = path.join(scratch, 'labels.jsonl');
   const splitFile = path.join(scratch, 'splits.json'), observationsFile = path.join(scratch, 'observations.jsonl');
   const resultFile = path.join(scratch, `score-${randomUUID()}.json`);
-  let privateResult;
+  let privateResult, privateScratch;
   try {
     fs.writeFileSync(manifestFile, JSON.stringify(r) + '\n');
     fs.writeFileSync(labelsFile, JSON.stringify(l) + '\n');
@@ -260,11 +313,35 @@ test('CLI scores a development observation and rejects an unsealed held-out atte
     assert.doesNotMatch(fs.readFileSync(resultFile, 'utf8'), /Cala Varques|google:123/);
     const held = spawnSync(process.execPath, [...command.slice(0, command.indexOf('--split')), '--split', 'held_out', ...command.slice(command.indexOf('--view'))], { cwd: root, encoding: 'utf8', windowsHide: true });
     assert.notEqual(held.status, 0);
-    assert.match(held.stderr, /heldout_requires_explicit_flag|ineligible_holdout/);
+    assert.match(held.stderr, /heldout_requires_explicit_baseline_milestone|ineligible_holdout/);
+    const heldSplitFile = path.join(scratch, 'held-splits.json'), fakeSealFile = path.join(scratch, 'fake-seal.json');
+    fs.writeFileSync(heldSplitFile, JSON.stringify({ schema_version: 1, assignments: { [caseId]: 'held_out' } }));
+    fs.writeFileSync(fakeSealFile, JSON.stringify({ heldout_cases: 1, heldout_source_groups: 1, manifest_sha256: sha256(fs.readFileSync(manifestFile)), labels_sha256: sha256(fs.readFileSync(labelsFile)), splits_sha256: sha256(fs.readFileSync(heldSplitFile)), allowed_milestones: ['baseline_v1'] }));
+    const forged = spawnSync(process.execPath, ['scripts/gold-dataset/cli.mjs', 'score', '--manifest', manifestFile, '--labels', labelsFile, '--splits', heldSplitFile, '--seal', fakeSealFile, '--split', 'held_out', '--view', 'full', '--observations', observationsFile, '--out', path.join(scratch, 'forged-score.json'), '--explicit-heldout', '--milestone', 'baseline_v1'], { cwd: root, encoding: 'utf8', windowsHide: true });
+    assert.notEqual(forged.status, 0);
+    assert.match(forged.stderr, /holdout_requires_private_combined_manifest/);
+    const localRoot = path.join(root, '.local/recognition-gold-dataset');
+    fs.mkdirSync(localRoot, { recursive: true });
+    privateScratch = fs.mkdtempSync(path.join(localRoot, 'forged-seal-'));
+    const privateManifest = path.join(privateScratch, 'manifest.jsonl'), privateLabels = path.join(privateScratch, 'labels.jsonl');
+    const privateSplits = path.join(privateScratch, 'splits.json'), privateSeal = path.join(privateScratch, 'seal.json');
+    fs.copyFileSync(manifestFile, privateManifest); fs.copyFileSync(labelsFile, privateLabels); fs.copyFileSync(heldSplitFile, privateSplits);
+    fs.writeFileSync(privateSeal, JSON.stringify({ heldout_cases: 1, heldout_source_groups: 1, manifest_sha256: sha256(fs.readFileSync(privateManifest)), labels_sha256: sha256(fs.readFileSync(privateLabels)), splits_sha256: sha256(fs.readFileSync(privateSplits)), allowed_milestones: ['baseline_v1'] }));
+    const undersized = spawnSync(process.execPath, ['scripts/gold-dataset/cli.mjs', 'score', '--manifest', privateManifest, '--labels', privateLabels, '--splits', privateSplits, '--seal', privateSeal, '--split', 'held_out', '--view', 'full', '--observations', observationsFile, '--out', path.join(scratch, 'undersized-score.json'), '--explicit-heldout', '--milestone', 'baseline_v1'], { cwd: root, encoding: 'utf8', windowsHide: true });
+    assert.notEqual(undersized.status, 0);
+    assert.match(undersized.stderr, /holdout_quality_size_gate/);
+    const publicSeal = spawnSync(process.execPath, ['scripts/gold-dataset/cli.mjs', 'seal', '--manifest', manifestFile, '--labels', labelsFile, '--splits', heldSplitFile, '--seal', fakeSealFile], { cwd: root, encoding: 'utf8', windowsHide: true });
+    assert.notEqual(publicSeal.status, 0);
+    assert.match(publicSeal.stderr, /holdout_requires_private_combined_manifest/);
   } finally {
     const tempRoot = path.resolve(os.tmpdir()) + path.sep;
     assert.ok(path.resolve(scratch).startsWith(tempRoot));
     fs.rmSync(scratch, { recursive: true, force: true });
+    if (privateScratch) {
+      const localRoot = path.resolve(root, '.local/recognition-gold-dataset') + path.sep;
+      assert.ok(path.resolve(privateScratch).startsWith(localRoot));
+      fs.rmSync(privateScratch, { recursive: true, force: true });
+    }
     if (privateResult) {
       const localRoot = path.resolve(root, '.local/recognition-gold-dataset') + path.sep;
       assert.ok(privateResult.startsWith(localRoot));

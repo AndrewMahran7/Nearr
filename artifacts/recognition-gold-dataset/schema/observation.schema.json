@@ -16,7 +16,10 @@
     "elapsed_ms": { "type": ["number", "null"], "minimum": 0 },
     "first_usable_result_ms": { "type": ["number", "null"], "minimum": 0 },
     "cost_usd": { "type": ["number", "null"], "minimum": 0 },
-    "wrong_confident_cache": { "type": "boolean", "description": "Adapter-observed wrong confident cache answer, even if final status is review or failed." }
+    "wrong_confident_cache": { "type": "boolean", "description": "Adapter-observed wrong confident cache answer, even if final status is review or failed." },
+    "provider_ledger_complete": { "type": "boolean" },
+    "cost_basis": { "enum": ["no_paid_calls", "measured_provider_ledger"] },
+    "provider_usage": { "type": "array", "items": { "type": "object", "required": ["provider", "measurement", "calls", "cost_usd"], "properties": { "provider": { "type": "string" }, "measurement": { "enum": ["measured", "retained"] }, "calls": { "type": "integer", "minimum": 0 }, "cost_usd": { "type": "number", "minimum": 0 } } } }
   },
   "$defs": {
     "place": {
