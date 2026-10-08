@@ -174,7 +174,7 @@ export type SelectedFrame = {
   timestampSeconds: number;
   width: number;
   height: number;
-  /** 64-bit average-hash as a hex string, for dedup + diagnostics. */
+  /** 64-bit average-hash as a hex string; empty means hashing unavailable. */
   aHash: string;
   reason: 'first' | 'last' | 'interval' | 'scene_change';
 };
