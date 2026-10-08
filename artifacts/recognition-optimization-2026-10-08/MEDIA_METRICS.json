@@ -1,0 +1,160 @@
+{
+  "calibration": {
+    "arms": {
+      "baseline_repaired": {
+        "runs": 8,
+        "uniqueSources": 4,
+        "failures": 0,
+        "exactParity": 8,
+        "p50Ms": 5546.884900000001,
+        "p75Ms": 7951.322949999996,
+        "p90Ms": 9408.85414,
+        "p95Ms": 9522.709769999998,
+        "meanCpuMs": 5522.375,
+        "peakChildRssKiB": 104116,
+        "processCount": 288
+      },
+      "batched_hash": {
+        "runs": 8,
+        "uniqueSources": 4,
+        "failures": 0,
+        "exactParity": 8,
+        "p50Ms": 3897.181900000003,
+        "p75Ms": 5477.378999999999,
+        "p90Ms": 8359.709879999997,
+        "p95Ms": 10248.048289999995,
+        "meanCpuMs": 5429.25,
+        "peakChildRssKiB": 103976,
+        "processCount": 152
+      }
+    },
+    "medianPairedSourceReduction": 0.23147926850696332,
+    "medianPairedSourceReductionBootstrap95": [
+      0.0037106203565590024,
+      0.35946833002809064
+    ],
+    "independentSourceGroups": 4,
+    "bootstrapCaution": "Related source clips grouped together; small group counts and hardware jitter limit population inference."
+  },
+  "development": {
+    "arms": {
+      "baseline_repaired": {
+        "runs": 16,
+        "uniqueSources": 16,
+        "failures": 0,
+        "exactParity": 16,
+        "p50Ms": 6469.050150000003,
+        "p75Ms": 7668.863824999999,
+        "p90Ms": 8711.462849999996,
+        "p95Ms": 8949.77689999999,
+        "meanCpuMs": null,
+        "peakChildRssKiB": null,
+        "processCount": null
+      },
+      "batched_hash": {
+        "runs": 16,
+        "uniqueSources": 16,
+        "failures": 0,
+        "exactParity": 16,
+        "p50Ms": 4874.977949999993,
+        "p75Ms": 5426.068700000003,
+        "p90Ms": 6063.304399999995,
+        "p95Ms": 6966.170674999994,
+        "meanCpuMs": null,
+        "peakChildRssKiB": null,
+        "processCount": null
+      },
+      "single_decode_eval": {
+        "runs": 16,
+        "uniqueSources": 16,
+        "failures": 3,
+        "exactParity": 13,
+        "p50Ms": 6623.079700000002,
+        "p75Ms": 8069.068100000004,
+        "p90Ms": 11587.340260000015,
+        "p95Ms": 15316.268979999997,
+        "meanCpuMs": null,
+        "peakChildRssKiB": null,
+        "processCount": null
+      }
+    },
+    "medianPairedSourceReduction": 0.28437537072451247,
+    "medianPairedSourceReductionBootstrap95": [
+      0.2734521881945525,
+      0.3003669948098402
+    ],
+    "independentSourceGroups": 14,
+    "bootstrapCaution": "Related source clips grouped together; small group counts and hardware jitter limit population inference."
+  },
+  "held_out": {
+    "arms": {
+      "baseline_repaired": {
+        "runs": 4,
+        "uniqueSources": 4,
+        "failures": 0,
+        "exactParity": 4,
+        "p50Ms": 6056.3907,
+        "p75Ms": 6916.909525,
+        "p90Ms": 7076.20453,
+        "p95Ms": 7129.302865,
+        "meanCpuMs": 4848.25,
+        "peakChildRssKiB": 104068,
+        "processCount": 162
+      },
+      "batched_hash": {
+        "runs": 4,
+        "uniqueSources": 4,
+        "failures": 0,
+        "exactParity": 4,
+        "p50Ms": 4032.363450000002,
+        "p75Ms": 5001.119850000004,
+        "p90Ms": 5079.102960000002,
+        "p95Ms": 5105.097330000001,
+        "meanCpuMs": 4216.75,
+        "peakChildRssKiB": 104096,
+        "processCount": 85
+      }
+    },
+    "medianPairedSourceReduction": 0.3598961008613085,
+    "medianPairedSourceReductionBootstrap95": [
+      0.2485673865943917,
+      0.41205261381155234
+    ],
+    "independentSourceGroups": 4,
+    "bootstrapCaution": "Related source clips grouped together; small group counts and hardware jitter limit population inference."
+  },
+  "syntheticSchedulingControls": {
+    "baseline_repaired": {
+      "n": 3,
+      "p50Ms": 2396.865700000002,
+      "p75Ms": 2895.573650000001,
+      "p90Ms": 3194.7984200000005,
+      "p95Ms": 3294.5400100000006,
+      "allEvidenceIdentical": true
+    },
+    "batch_parallel": {
+      "n": 3,
+      "p50Ms": 1096.4465999999993,
+      "p75Ms": 1102.4231999999997,
+      "p90Ms": 1106.00916,
+      "p95Ms": 1107.20448,
+      "allEvidenceIdentical": true
+    },
+    "batched_hash": {
+      "n": 3,
+      "p50Ms": 1802.3932,
+      "p75Ms": 1942.7377000000004,
+      "p90Ms": 2026.9444000000005,
+      "p95Ms": 2055.0133000000005,
+      "allEvidenceIdentical": true
+    },
+    "parallel_media": {
+      "n": 3,
+      "p50Ms": 1316.716199999999,
+      "p75Ms": 1406.8287999999993,
+      "p90Ms": 1460.8963599999995,
+      "p95Ms": 1478.9188799999997,
+      "allEvidenceIdentical": true
+    }
+  }
+}

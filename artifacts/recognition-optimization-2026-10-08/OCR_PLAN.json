@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "frozenBeforeInference": true,
+  "engine": "EasyOCR 1.7.2 English, standard detector/recognizer, GPU if locally available",
+  "scope": "Development OCR feasibility; no held-out recognition claims and no provider calls",
+  "controls": [
+    {"id":"storefront","expectedText":"HARBOUR CAFE","role":"depicted_sign"},
+    {"id":"street_sign","expectedText":"WILLOW STREET","role":"street_sign"},
+    {"id":"menu","expectedText":"SOUP SALAD COFFEE","role":"menu_not_identity"},
+    {"id":"social_overlay","expectedText":"BEST CAFE IN TOWN","role":"overlay_not_identity"},
+    {"id":"brand_clothing","expectedText":"PRADA","role":"brand_not_venue"},
+    {"id":"blank","expectedText":"","role":"negative"}
+  ],
+  "realInputs": [
+    {"id":"mad_yolks_0","kind":"existing_user_authorized_local_fixture","timestampSeconds":0,"expectedText":null},
+    {"id":"mad_yolks_4","kind":"existing_user_authorized_local_fixture","timestampSeconds":4,"expectedText":null},
+    {"id":"griffith_4","kind":"cached_public_CC0_video","timestampSeconds":4,"expectedText":null},
+    {"id":"dettifoss_4","kind":"cached_public_CC_BY_2.0_video","timestampSeconds":4,"expectedText":null}
+  ],
+  "metrics": ["latency_ms", "text", "confidence", "frame_sha256", "normalized_bounding_polygon", "synthetic_exact_text_match", "real_outputs_unadjudicated"],
+  "gate": "Never classify OCR text as identity by recognition confidence. Preserve raw region provenance. No runtime enablement without paired downstream exact-place and multi-place evaluation.",
+  "licensing": "No media binaries committed or permanent reference index; existing local evidence use only. Model/code licenses recorded separately."
+}

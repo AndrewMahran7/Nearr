@@ -1,0 +1,612 @@
+{
+  "schemaVersion": 1,
+  "planSha256": "4a6667e48c3538e9ba0ff2df1c606e22fd66619beb9b5f2e46677dd47d65e4b5",
+  "engine": "1.7.2",
+  "torch": "2.5.1+cu121",
+  "device": "NVIDIA GeForce RTX 3050 6GB Laptop GPU",
+  "loadAndDownloadMs": 4892.37809999031,
+  "fontSha256": "e8f4e3baf6cc35fed6fcce3a540e8b39e8f6cda1d22a28f2ec8f526fef7a43f5",
+  "weights": [
+    {
+      "filename": "craft_mlt_25k.pth",
+      "sha256": "4a5efbfb48b4081100544e75e1e2b57f8de3d84f213004b14b85fd4b3748db17",
+      "bytes": 83152330
+    },
+    {
+      "filename": "english_g2.pth",
+      "sha256": "e2272681d9d67a04e2dff396b6e95077bc19001f8f6d3593c307b9852e1c29e8",
+      "bytes": 15143997
+    }
+  ],
+  "peakGpuAllocatedBytes": 518467072,
+  "scope": "OCR reading feasibility; no venue-identity recognition, no held-out recognition accuracy",
+  "rows": [
+    {
+      "id": "storefront",
+      "expectedText": "HARBOUR CAFE",
+      "role": "depicted_sign",
+      "kind": "synthetic_reading_control",
+      "timestampSeconds": null,
+      "sourceSha256": null,
+      "frameSha256": "a9bc730a94d4c07ac85f843e3689952d4b2d4f1f36e95ba88de3219d0f374671",
+      "width": 768,
+      "height": 512,
+      "latencyMs": 1084.616799998912,
+      "regions": [
+        {
+          "text": "HARBOUR CAFE",
+          "confidence": 0.9801506216241258,
+          "polygonNormalized": [
+            [
+              0.055989583333333336,
+              0.396484375
+            ],
+            [
+              0.50390625,
+              0.396484375
+            ],
+            [
+              0.50390625,
+              0.478515625
+            ],
+            [
+              0.055989583333333336,
+              0.478515625
+            ]
+          ]
+        }
+      ],
+      "exactTextMatch": true
+    },
+    {
+      "id": "street_sign",
+      "expectedText": "WILLOW STREET",
+      "role": "street_sign",
+      "kind": "synthetic_reading_control",
+      "timestampSeconds": null,
+      "sourceSha256": null,
+      "frameSha256": "14b081d43595deb5121ecec7ca7609a0d4c06312983862819c6953d29d923346",
+      "width": 768,
+      "height": 512,
+      "latencyMs": 128.11270001111552,
+      "regions": [
+        {
+          "text": "WILLOW STREET",
+          "confidence": 0.9990379996476545,
+          "polygonNormalized": [
+            [
+              0.055989583333333336,
+              0.392578125
+            ],
+            [
+              0.5247395833333334,
+              0.392578125
+            ],
+            [
+              0.5247395833333334,
+              0.478515625
+            ],
+            [
+              0.055989583333333336,
+              0.478515625
+            ]
+          ]
+        }
+      ],
+      "exactTextMatch": true
+    },
+    {
+      "id": "menu",
+      "expectedText": "SOUP SALAD COFFEE",
+      "role": "menu_not_identity",
+      "kind": "synthetic_reading_control",
+      "timestampSeconds": null,
+      "sourceSha256": null,
+      "frameSha256": "c372ce2bdd5810ea80b89c42722105defdaa0d14ebf8d3ea5107bce0e047b794",
+      "width": 768,
+      "height": 512,
+      "latencyMs": 160.16590000072028,
+      "regions": [
+        {
+          "text": "SOUP SALAD COFFEE",
+          "confidence": 0.7689645656680146,
+          "polygonNormalized": [
+            [
+              0.052083333333333336,
+              0.396484375
+            ],
+            [
+              0.66015625,
+              0.396484375
+            ],
+            [
+              0.66015625,
+              0.478515625
+            ],
+            [
+              0.052083333333333336,
+              0.478515625
+            ]
+          ]
+        }
+      ],
+      "exactTextMatch": true
+    },
+    {
+      "id": "social_overlay",
+      "expectedText": "BEST CAFE IN TOWN",
+      "role": "overlay_not_identity",
+      "kind": "synthetic_reading_control",
+      "timestampSeconds": null,
+      "sourceSha256": null,
+      "frameSha256": "5d52a8ff2d7dca81662f7e21063ea950300b540d6a6c2eda31ac90be50921de7",
+      "width": 768,
+      "height": 512,
+      "latencyMs": 118.27740000444464,
+      "regions": [
+        {
+          "text": "BEST CAFE IN TOWN",
+          "confidence": 0.9922320883645842,
+          "polygonNormalized": [
+            [
+              0.05859375,
+              0.392578125
+            ],
+            [
+              0.6263020833333334,
+              0.392578125
+            ],
+            [
+              0.6263020833333334,
+              0.478515625
+            ],
+            [
+              0.05859375,
+              0.478515625
+            ]
+          ]
+        }
+      ],
+      "exactTextMatch": true
+    },
+    {
+      "id": "brand_clothing",
+      "expectedText": "PRADA",
+      "role": "brand_not_venue",
+      "kind": "synthetic_reading_control",
+      "timestampSeconds": null,
+      "sourceSha256": null,
+      "frameSha256": "e7bb5bf4df38b96d104589175aea9dcae67256b13c22a07582afc590af6d1cd5",
+      "width": 768,
+      "height": 512,
+      "latencyMs": 127.93210000381805,
+      "regions": [
+        {
+          "text": "PRADA",
+          "confidence": 0.999987045170451,
+          "polygonNormalized": [
+            [
+              0.34765625,
+              0.443359375
+            ],
+            [
+              0.5481770833333334,
+              0.443359375
+            ],
+            [
+              0.5481770833333334,
+              0.529296875
+            ],
+            [
+              0.34765625,
+              0.529296875
+            ]
+          ]
+        }
+      ],
+      "exactTextMatch": true
+    },
+    {
+      "id": "blank",
+      "expectedText": "",
+      "role": "negative",
+      "kind": "synthetic_reading_control",
+      "timestampSeconds": null,
+      "sourceSha256": null,
+      "frameSha256": "43d0eceb909fc6aeeb9699fa36311239cce6fff601942ce750258b0e0123d182",
+      "width": 768,
+      "height": 512,
+      "latencyMs": 85.04269999684766,
+      "regions": [],
+      "exactTextMatch": true
+    },
+    {
+      "id": "mad_yolks_0",
+      "kind": "existing_user_authorized_local_fixture",
+      "timestampSeconds": 0,
+      "expectedText": null,
+      "sourceSha256": "32f3733115b45e8e3e4a4af55110aa5737c5a8dabbbc5ea48b2a5e6c58929eb1",
+      "role": "unadjudicated_source_text",
+      "frameSha256": "f4ebdf09295f6835d68ab39562531eec0ccfd1d7a4d22c58fcad690f9fd759cf",
+      "width": 540,
+      "height": 960,
+      "latencyMs": 213.49500000360422,
+      "regions": [
+        {
+          "text": "HAVE YOU TRIED THE BEST",
+          "confidence": 0.732559966571218,
+          "polygonNormalized": [
+            [
+              0.08518518518518518,
+              0.20625
+            ],
+            [
+              0.9185185185185185,
+              0.20625
+            ],
+            [
+              0.9185185185185185,
+              0.2604166666666667
+            ],
+            [
+              0.08518518518518518,
+              0.2604166666666667
+            ]
+          ]
+        },
+        {
+          "text": "BREAKFAST SANDWVICHES",
+          "confidence": 0.4987915686908274,
+          "polygonNormalized": [
+            [
+              0.08518518518518518,
+              0.25625
+            ],
+            [
+              0.9166666666666666,
+              0.25625
+            ],
+            [
+              0.9166666666666666,
+              0.30833333333333335
+            ],
+            [
+              0.08518518518518518,
+              0.30833333333333335
+            ]
+          ]
+        },
+        {
+          "text": "IN SANTA CRUZ?",
+          "confidence": 0.7166136058012375,
+          "polygonNormalized": [
+            [
+              0.22962962962962963,
+              0.30416666666666664
+            ],
+            [
+              0.7666666666666667,
+              0.30416666666666664
+            ],
+            [
+              0.7666666666666667,
+              0.3614583333333333
+            ],
+            [
+              0.22962962962962963,
+              0.3614583333333333
+            ]
+          ]
+        }
+      ],
+      "exactTextMatch": null
+    },
+    {
+      "id": "mad_yolks_4",
+      "kind": "existing_user_authorized_local_fixture",
+      "timestampSeconds": 4,
+      "expectedText": null,
+      "sourceSha256": "32f3733115b45e8e3e4a4af55110aa5737c5a8dabbbc5ea48b2a5e6c58929eb1",
+      "role": "unadjudicated_source_text",
+      "frameSha256": "180d8132d71fb1970108799da13f8b1e5d82322a103f5e245b5695590672a80d",
+      "width": 540,
+      "height": 960,
+      "latencyMs": 392.1218999894336,
+      "regions": [
+        {
+          "text": "HAVE YOU TRIED THE BEST",
+          "confidence": 0.9923501568182406,
+          "polygonNormalized": [
+            [
+              0.08518518518518518,
+              0.20625
+            ],
+            [
+              0.9185185185185185,
+              0.20625
+            ],
+            [
+              0.9185185185185185,
+              0.2604166666666667
+            ],
+            [
+              0.08518518518518518,
+              0.2604166666666667
+            ]
+          ]
+        },
+        {
+          "text": "BREAKFAST SANDWICHES",
+          "confidence": 0.8518263404320048,
+          "polygonNormalized": [
+            [
+              0.08518518518518518,
+              0.25625
+            ],
+            [
+              0.9185185185185185,
+              0.25625
+            ],
+            [
+              0.9185185185185185,
+              0.30833333333333335
+            ],
+            [
+              0.08518518518518518,
+              0.30833333333333335
+            ]
+          ]
+        },
+        {
+          "text": "IN SANTA CRUZ?",
+          "confidence": 0.768204521621069,
+          "polygonNormalized": [
+            [
+              0.22962962962962963,
+              0.3072916666666667
+            ],
+            [
+              0.762962962962963,
+              0.3072916666666667
+            ],
+            [
+              0.762962962962963,
+              0.35833333333333334
+            ],
+            [
+              0.22962962962962963,
+              0.35833333333333334
+            ]
+          ]
+        },
+        {
+          "text": "J",
+          "confidence": 0.3825647311905165,
+          "polygonNormalized": [
+            [
+              0.2462962962962963,
+              0.6677083333333333
+            ],
+            [
+              0.3314814814814815,
+              0.6677083333333333
+            ],
+            [
+              0.3314814814814815,
+              0.7135416666666666
+            ],
+            [
+              0.2462962962962963,
+              0.7135416666666666
+            ]
+          ]
+        },
+        {
+          "text": "o9",
+          "confidence": 0.15920989021891402,
+          "polygonNormalized": [
+            [
+              0.15555555555555556,
+              0.69375
+            ],
+            [
+              0.26666666666666666,
+              0.69375
+            ],
+            [
+              0.26666666666666666,
+              0.7458333333333333
+            ],
+            [
+              0.15555555555555556,
+              0.7458333333333333
+            ]
+          ]
+        },
+        {
+          "text": "myl",
+          "confidence": 0.20774984741609098,
+          "polygonNormalized": [
+            [
+              0.38628458313357544,
+              0.7209631035374293
+            ],
+            [
+              0.6966231973328262,
+              0.6144797154628685
+            ],
+            [
+              0.7470487501997578,
+              0.6790368964625706
+            ],
+            [
+              0.438561987852359,
+              0.7855202845371315
+            ]
+          ]
+        },
+        {
+          "text": "7",
+          "confidence": 0.2285526258883488,
+          "polygonNormalized": [
+            [
+              -0.03328738139083323,
+              0.666148418130099
+            ],
+            [
+              0.09535827955768209,
+              0.6236105312459368
+            ],
+            [
+              0.14069478879824066,
+              0.6661432485365677
+            ],
+            [
+              0.008345424146021622,
+              0.7086811354207299
+            ]
+          ]
+        },
+        {
+          "text": "Yu",
+          "confidence": 0.3047114083824593,
+          "polygonNormalized": [
+            [
+              0.501053332424509,
+              0.8160789152863897
+            ],
+            [
+              0.6709150326797386,
+              0.747732843137255
+            ],
+            [
+              0.724872593501417,
+              0.8016294180469437
+            ],
+            [
+              0.5550108932461874,
+              0.8699754901960783
+            ]
+          ]
+        },
+        {
+          "text": "Yle",
+          "confidence": 0.12106372979987134,
+          "polygonNormalized": [
+            [
+              0.14754036819009006,
+              0.8041746856603885
+            ],
+            [
+              0.34716683000819604,
+              0.7729142830457754
+            ],
+            [
+              0.3709781503284285,
+              0.8302003143396115
+            ],
+            [
+              0.1713516885103225,
+              0.8614607169542247
+            ]
+          ]
+        },
+        {
+          "text": "ApD",
+          "confidence": 0.14323204894472283,
+          "polygonNormalized": [
+            [
+              -0.007026812216658766,
+              0.8382192611101126
+            ],
+            [
+              0.1697981489019172,
+              0.8169365371091347
+            ],
+            [
+              0.18480458999443655,
+              0.8690724055565541
+            ],
+            [
+              0.006127777024008756,
+              0.8903551295575319
+            ]
+          ]
+        },
+        {
+          "text": "~Q",
+          "confidence": 0.564158033474258,
+          "polygonNormalized": [
+            [
+              0.7488334195988945,
+              0.8346595157206965
+            ],
+            [
+              0.8964898629794953,
+              0.8272340391239656
+            ],
+            [
+              0.9011665804011055,
+              0.8747154842793035
+            ],
+            [
+              0.7535101370205047,
+              0.8831826275427009
+            ]
+          ]
+        },
+        {
+          "text": "MAD",
+          "confidence": 0.3410571761201897,
+          "polygonNormalized": [
+            [
+              0.3467648931271724,
+              0.8773707423818771
+            ],
+            [
+              0.5272486477155469,
+              0.8284248611607026
+            ],
+            [
+              0.5699017735394942,
+              0.8778375909514563
+            ],
+            [
+              0.3894180189511197,
+              0.9267834721726307
+            ]
+          ]
+        }
+      ],
+      "exactTextMatch": null
+    },
+    {
+      "id": "griffith_4",
+      "kind": "cached_public_CC0_video",
+      "timestampSeconds": 4,
+      "expectedText": null,
+      "sourceSha256": "eae07ea2326c458aa1eafcc537fb1af40b24d4d35f05e4f6c9c023fa453695e2",
+      "role": "unadjudicated_source_text",
+      "frameSha256": "fc1b6bc6908c8ff30a6592f72822d2180e66ff9bbd89782b797675f62507d06e",
+      "width": 768,
+      "height": 432,
+      "latencyMs": 77.96359999338165,
+      "regions": [],
+      "exactTextMatch": null
+    },
+    {
+      "id": "dettifoss_4",
+      "kind": "cached_public_CC_BY_2.0_video",
+      "timestampSeconds": 4,
+      "expectedText": null,
+      "sourceSha256": "addc0568524bef61a9475350dd369aadaa606a8332b5a3b3fffa986781e9d464",
+      "role": "unadjudicated_source_text",
+      "frameSha256": "fed2a5bb5a33f5b3f803c5ef8a1b0b0082593a384de923c8d2dde5356db3b488",
+      "width": 768,
+      "height": 432,
+      "latencyMs": 89.68859999731649,
+      "regions": [],
+      "exactTextMatch": null
+    }
+  ]
+}

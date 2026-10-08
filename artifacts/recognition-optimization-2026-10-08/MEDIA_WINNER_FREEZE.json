@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "selectionBeforeHeldOut": true,
+  "winner": "batched_hash",
+  "selectionEvidence": {
+    "developmentUniqueSources": 16,
+    "developmentExactParity": "16/16",
+    "calibrationUniqueSources": 4,
+    "calibrationPairedRuns": 8,
+    "calibrationExactParity": "8/8",
+    "calibrationFasterPairs": "7/8"
+  },
+  "rejected": {
+    "single_decode_eval": "3/16 development source extractions failed; successful sources also included large slowdowns. Eval-only."
+  },
+  "frameBudget": "Preserve current timestamps, JPEG bytes, resize and maximum24; no accuracy claim from reducing image count",
+  "heldOutProtocol": "Four source groups; one paired baseline and winner run each; no further strategy tuning after opening results",
+  "runtimeActivation": "After held-out exact parity gate; production deployment not authorized"
+}
