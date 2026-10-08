@@ -34,7 +34,7 @@ begin
   update public.places p set
     short_formatted_address=coalesce(c->>'shortFormattedAddress',p.short_formatted_address),
     google_primary_type=coalesce(c->>'primaryType',p.google_primary_type),
-    google_types=case when jsonb_typeof(c->'types')='array' then array(select jsonb_array_elements_text(c->'types')) else p.google_types end,
+    google_types=case when jsonb_typeof(c->'types')='array' and jsonb_array_length(c->'types')>0 then array(select jsonb_array_elements_text(c->'types')) else p.google_types end,
     google_type_label=coalesce(c->>'googleMapsTypeLabel',c->>'primaryTypeDisplayName',p.google_type_label),
     business_status=coalesce(c->>'businessStatus',p.business_status)
     where p.id=r.place_id;

@@ -39,7 +39,11 @@ export async function promotePlaceVideoMedia(args: {
     try {
       const { data, error } = await args.admin.storage.from(EVIDENCE_BUCKET).download(frame.storagePath);
       if (!error && data) {
-        storagePath = `${args.placeId}/${await identityHash(identity.key)}.jpg`;
+        // Immutable bytes: a rejected callback may leave an unreferenced object,
+        // but must never overwrite an image referenced by a newer generation.
+        const frameDigest = await crypto.subtle.digest('SHA-256', await data.arrayBuffer());
+        const frameHash = [...new Uint8Array(frameDigest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+        storagePath = `${args.placeId}/${await identityHash(identity.key)}-${frameHash}.jpg`;
         const upload = await args.admin.storage.from(GALLERY_BUCKET).upload(storagePath, data, {
           contentType: 'image/jpeg', cacheControl: '604800', upsert: true,
         });

@@ -82,6 +82,8 @@ begin
   if (select community_visibility from place_video_media)<>'OWNER_ONLY' then raise exception 'private media made public'; end if;
   update saved_places set category='user-choice',category_user_overridden=true,notes='user note';
   perform public.commit_media_claim_candidate(j,t,2,claim_time,pg_temp.payload());
+  perform public.commit_media_claim_candidate(j,t,2,claim_time,jsonb_set(pg_temp.payload(),'{candidate,types}','[]'));
+  if (select google_types from places limit 1)<>array['cafe'] then raise exception 'empty types erased canonical metadata'; end if;
   if (select count(*) from saved_places)<>1 or (select count(*) from share_job_place_results)<>1 then raise exception 'retry duplicated save'; end if;
   if not exists(select 1 from saved_places where category='user-choice' and notes='user note' and ai_note='fixture note') then raise exception 'user category/note overwritten'; end if;
   rows:=jsonb_build_array(jsonb_build_object('share_job_id',j,'share_media_task_id',t,'user_id','00000000-0000-0000-0000-000000000099','logical_result_id','bad-owner','outcome','candidate_confirmation'));
