@@ -108,7 +108,7 @@ function aggregateRecovery(
   };
 }
 
-function reviewSafe(execution: PremiumRecognitionExecution): PremiumRecognitionExecution {
+export function applyAutomaticDeepReviewPolicy(execution: PremiumRecognitionExecution): PremiumRecognitionExecution {
   return {
     ...execution,
     destinations: execution.destinations.map((destination) => ({
@@ -193,12 +193,12 @@ class AutomaticDeepRecognitionModel implements ModelProvider {
       allowDistinctiveVisualAutoSave: false,
       signal: input.signal,
     } as const;
-    const first = reviewSafe(await this.runDeep({ ...deepInput, frameSet: frameSets.F1 }));
+    const first = applyAutomaticDeepReviewPolicy(await this.runDeep({ ...deepInput, frameSet: frameSets.F1 }));
     const firstSpecificHypotheses = specificHypothesisCount(first);
     let recoverySpecificHypotheses = 0;
     let execution = first;
     if (firstSpecificHypotheses === 0) {
-      const recovery = reviewSafe(await this.runDeep({
+      const recovery = applyAutomaticDeepReviewPolicy(await this.runDeep({
         ...deepInput,
         frameSet: frameSets.F2,
         recognitionPass: 'ZERO_HYPOTHESIS_RECOVERY',

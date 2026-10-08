@@ -30,16 +30,7 @@ import { generateSyntheticMedia, ffmpegAvailable } from './support/generateSynth
 // (chainable, any arity) is exercised by runMediaTask's progress/diagnostics
 // writes. Every step resolves to `{ data: null, error: null }`.
 // ---------------------------------------------------------------------------
-function fakeSupabaseClient(): any {
-  const resolved = Promise.resolve({ data: null, error: null });
-  const chain: any = {
-    eq: () => chain,
-    then: resolved.then.bind(resolved),
-    catch: resolved.catch.bind(resolved),
-    finally: resolved.finally.bind(resolved),
-  };
-  return { from: () => ({ update: () => chain, select: () => chain }) };
-}
+import { claimedTaskClient } from './support/claimedTaskClient.js';
 
 class CapturingTranscription implements TranscriptionProvider {
   readonly name = 'capturing';
@@ -85,6 +76,7 @@ function fakeTask(id: string): MediaTask {
     status: 'processing',
     progress_stage: 'queued',
     attempts: 1,
+    locked_at: '2026-10-08T18:00:00Z',
     max_attempts: 3,
   };
 }
@@ -112,7 +104,7 @@ test('transcript hierarchy: captions present => transcription provider is NEVER 
     const transcription = new CapturingTranscription();
     const deps: TaskDeps = {
       cfg,
-      client: fakeSupabaseClient(),
+      client: claimedTaskClient(fakeTask('caption-case')),
       resolvers: [
         makeResolver(
           {
@@ -151,7 +143,7 @@ test('transcript hierarchy: no captions => existing audio transcription path sti
     const transcription = new CapturingTranscription();
     const deps: TaskDeps = {
       cfg,
-      client: fakeSupabaseClient(),
+      client: claimedTaskClient(fakeTask('no-caption-case')),
       resolvers: [
         makeResolver({ mimeType: 'video/mp4', source: 'instagram/yt-dlp-direct', warnings: [] }, media.videoWithAudio),
       ],
@@ -180,7 +172,7 @@ test('transcript hierarchy: empty captionsTranscript array falls through to audi
     const transcription = new CapturingTranscription();
     const deps: TaskDeps = {
       cfg,
-      client: fakeSupabaseClient(),
+      client: claimedTaskClient(fakeTask('empty-captions-case')),
       resolvers: [
         makeResolver(
           { mimeType: 'video/mp4', source: 'youtube/yt-dlp-merged', warnings: [], captionsTranscript: [] },
