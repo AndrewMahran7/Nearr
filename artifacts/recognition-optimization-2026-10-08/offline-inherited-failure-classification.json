@@ -1,0 +1,555 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "45cedb7fc3e5d391e68295f60e2e097640008faa",
+  "integrationCommit": "7aa09f0f1bc6a738a3b83dd42c696ce40ce5d4a3",
+  "classificationMethod": "Actual isolated baseline execution of failing root TypeScript component. Original package test command unchanged. Node outbound network blocked; credentials removed from child environment. Current package-lock unchanged from baseline. Source equality normalizes only CRLF to LF. Entire tests stop at first failure; later assertions are not claimed checked.",
+  "baselineSnapshotWorkingDirectory": "C:/Users/andre/Desktop/Nearr-worktrees/recognition-optimization-eval/.tmp/baseline-regression",
+  "baselineExecutableResolution": "Literal node resolved through PATH; absolute executable path not captured.",
+  "baselineDependencyRoot": "C:/Users/andre/Desktop/Nearr-worktrees/recognition-pareto-optimization/node_modules",
+  "baselinePackageLockIdenticalToIntegration": true,
+  "baselineOfflineNetworkGuardSha256": "93356a9228f02cbebe4a4f65222e017027e00a01c4dde16b08359e9a4becacdd",
+  "baselineEnvironment": {
+    "removedKeyRegex": "API_KEY|SECRET|TOKEN|PASSWORD|DATABASE_URL|SUPABASE_URL (case insensitive)",
+    "alsoRemoved": [
+      "NODE_OPTIONS"
+    ],
+    "NODE_PATH": "C:/Users/andre/Desktop/Nearr-worktrees/recognition-pareto-optimization/node_modules",
+    "disabledLiveFlags": [
+      "MEDIA_E2E_TESTS",
+      "MEDIA_LIVE_TESTS",
+      "INSTAGRAM_LIVE_TESTS",
+      "NATIVE_VIDEO_LIVE_TESTS",
+      "RUN_LIVE_MEDIA_REGRESSION"
+    ],
+    "disabledFlagValue": "0",
+    "networkGuard": "http/https request/get;net connect/createConnection/Socket.prototype.connect;globalThis.fetch throw OFFLINE_NETWORK_BLOCKED",
+    "networkGuardTriggeredFailures": 0
+  },
+  "remainingSuiteLaunches": 85,
+  "passedLaunches": 74,
+  "failedLaunches": 11,
+  "inheritedFirstFailuresReproduced": 11,
+  "introducedFirstFailuresObserved": 0,
+  "notAnAllGreenSuite": true,
+  "baselineRerunScope": "Only each failing root TypeScript component; composite npm wrappers not rerun wholesale. Existing passed worker components retain original run evidence.",
+  "shortCircuitCoverage": "test:onboarding-v2-visual failed Phase1Visual before MagicRender. Parent is running the MagicRender leaf separately; its result is outside this file.",
+  "importantUnresolvedBehavior": "The same-place moment assertion expects a grouped natural venue without explicit city+region to remain review-only; actual true persists in baseline and integration. Classification as inherited does not establish that behavior is safe or make this assertion pass.",
+  "metadataFailureInspectedBranch": {
+    "lfNormalizedContentIdentical": true,
+    "sha256": "8037cf8d5bb68cfb22dc78ca9bce43acd13d904827f81e92e03253ee55711040",
+    "firstFinalizeAt": 1621,
+    "fallbackGateAt": 3445,
+    "staleEndDelimiterMissing": true
+  },
+  "failures": [
+    {
+      "suite": "test:monetization-token-ux",
+      "classification": "INHERITED_BASELINE_FAILURE_REPRODUCED",
+      "currentPackageCommand": [
+        "npm",
+        "run",
+        "test:monetization-token-ux"
+      ],
+      "unchangedPackageScript": "ts-node -P scripts/tsconfig.json scripts/testMonetizationTokenUx.ts",
+      "baselineComponentCommand": [
+        "node",
+        "--require",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-optimization-eval/.tmp/baseline-regression/offline-network-guard.cjs",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-pareto-optimization/node_modules/ts-node/dist/bin.js",
+        "-P",
+        "scripts/tsconfig.json",
+        "scripts/testMonetizationTokenUx.ts"
+      ],
+      "baselineExitCode": 1,
+      "currentExitCode": 1,
+      "sameFirstFailureMessage": true,
+      "firstFailure": "Error: ENOENT: no such file or directory, open '$BASELINE\\app\\monetization.tsx'",
+      "firstFailureSourceLocation": "at source ($BASELINE\\scripts\\testMonetizationTokenUx.ts:19:13)",
+      "testSourceComparison": {
+        "path": "scripts/testMonetizationTokenUx.ts",
+        "baselineExists": true,
+        "currentExists": true,
+        "lfNormalizedContentIdentical": true,
+        "baselineSha256": "da7962986be76c83ca1d45415bc8daf8f97fdfca50975e912a205a2168230ba3"
+      },
+      "relatedSourceComparisons": [
+        {
+          "path": "app/monetization.tsx",
+          "baselineExists": false,
+          "currentExists": false,
+          "lfNormalizedContentIdentical": true,
+          "baselineSha256": null
+        }
+      ],
+      "baselineLogRelativeToEvalWorktree": ".tmp/baseline-regression/audit-logs/test-monetization-token-ux.log",
+      "baselineLogSha256": "c57e351dc8bd50b337d93ac1ee64b3f6ef7494c7f42e66e57ab20c2cd5899edb",
+      "currentLogRelativeToIntegrationWorktree": ".tmp/offline-remaining/test-monetization-token-ux.log",
+      "currentLogSha256": "4f1206c32065ff6e929c7e380bda26457a13873f7c168431b28d68b4a64512ed",
+      "remainingAssertionCoverage": "Execution stops at first failure; later assertions not claimed checked."
+    },
+    {
+      "suite": "test:monetization-integration",
+      "classification": "INHERITED_BASELINE_FAILURE_REPRODUCED",
+      "currentPackageCommand": [
+        "npm",
+        "run",
+        "test:monetization-integration"
+      ],
+      "unchangedPackageScript": "ts-node -P scripts/tsconfig.json scripts/testMonetizationIntegration.ts",
+      "baselineComponentCommand": [
+        "node",
+        "--require",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-optimization-eval/.tmp/baseline-regression/offline-network-guard.cjs",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-pareto-optimization/node_modules/ts-node/dist/bin.js",
+        "-P",
+        "scripts/tsconfig.json",
+        "scripts/testMonetizationIntegration.ts"
+      ],
+      "baselineExitCode": 1,
+      "currentExitCode": 1,
+      "sameFirstFailureMessage": true,
+      "firstFailure": "Error: ENOENT: no such file or directory, open '$BASELINE\\app\\monetization.tsx'",
+      "firstFailureSourceLocation": "at source ($BASELINE\\scripts\\testMonetizationIntegration.ts:26:13)",
+      "testSourceComparison": {
+        "path": "scripts/testMonetizationIntegration.ts",
+        "baselineExists": true,
+        "currentExists": true,
+        "lfNormalizedContentIdentical": true,
+        "baselineSha256": "a2f3e29dac89eb9cd200ce7ecd6add3b3dafc9e4dcb93daf24d2b0340c69c221"
+      },
+      "relatedSourceComparisons": [
+        {
+          "path": "app/monetization.tsx",
+          "baselineExists": false,
+          "currentExists": false,
+          "lfNormalizedContentIdentical": true,
+          "baselineSha256": null
+        }
+      ],
+      "baselineLogRelativeToEvalWorktree": ".tmp/baseline-regression/audit-logs/test-monetization-integration.log",
+      "baselineLogSha256": "a0c95ea43f3b598f36297d677ef2f3d2abd8a63e9e14089534785f897b75ee1c",
+      "currentLogRelativeToIntegrationWorktree": ".tmp/offline-remaining/test-monetization-integration.log",
+      "currentLogSha256": "e9a6cf1a886c83130f9395815072d76698e4fc1c926e75f9a752eebc0bd0f0c3",
+      "remainingAssertionCoverage": "Execution stops at first failure; later assertions not claimed checked."
+    },
+    {
+      "suite": "test:premium-request-monetization",
+      "classification": "INHERITED_BASELINE_FAILURE_REPRODUCED",
+      "currentPackageCommand": [
+        "npm",
+        "run",
+        "test:premium-request-monetization"
+      ],
+      "unchangedPackageScript": "ts-node -P scripts/tsconfig.json scripts/testPremiumRequestMonetization.ts",
+      "baselineComponentCommand": [
+        "node",
+        "--require",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-optimization-eval/.tmp/baseline-regression/offline-network-guard.cjs",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-pareto-optimization/node_modules/ts-node/dist/bin.js",
+        "-P",
+        "scripts/tsconfig.json",
+        "scripts/testPremiumRequestMonetization.ts"
+      ],
+      "baselineExitCode": 1,
+      "currentExitCode": 1,
+      "sameFirstFailureMessage": true,
+      "firstFailure": "Error: ENOENT: no such file or directory, open '$BASELINE\\app\\monetization.tsx'",
+      "firstFailureSourceLocation": "at source ($BASELINE\\scripts\\testPremiumRequestMonetization.ts:20:13)",
+      "testSourceComparison": {
+        "path": "scripts/testPremiumRequestMonetization.ts",
+        "baselineExists": true,
+        "currentExists": true,
+        "lfNormalizedContentIdentical": true,
+        "baselineSha256": "5e06d3cb783e64e300486197fea4a315ba04266fa99b22868a4f97304b7f2e68"
+      },
+      "relatedSourceComparisons": [
+        {
+          "path": "app/monetization.tsx",
+          "baselineExists": false,
+          "currentExists": false,
+          "lfNormalizedContentIdentical": true,
+          "baselineSha256": null
+        }
+      ],
+      "baselineLogRelativeToEvalWorktree": ".tmp/baseline-regression/audit-logs/test-premium-request-monetization.log",
+      "baselineLogSha256": "3fd3f17fe0d8b2d6efe9f7a40fa79d3df0201f3b1f88d1add28f64431953d70e",
+      "currentLogRelativeToIntegrationWorktree": ".tmp/offline-remaining/test-premium-request-monetization.log",
+      "currentLogSha256": "1c932e448c9221bc5c1fcc418ac571d3a0924c985d8125e50bd89bc447d70adc",
+      "remainingAssertionCoverage": "Execution stops at first failure; later assertions not claimed checked."
+    },
+    {
+      "suite": "test:area-match-premium",
+      "classification": "INHERITED_BASELINE_FAILURE_REPRODUCED",
+      "currentPackageCommand": [
+        "npm",
+        "run",
+        "test:area-match-premium"
+      ],
+      "unchangedPackageScript": "ts-node -P scripts/tsconfig.json scripts/testAreaMatchPremium.ts",
+      "baselineComponentCommand": [
+        "node",
+        "--require",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-optimization-eval/.tmp/baseline-regression/offline-network-guard.cjs",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-pareto-optimization/node_modules/ts-node/dist/bin.js",
+        "-P",
+        "scripts/tsconfig.json",
+        "scripts/testAreaMatchPremium.ts"
+      ],
+      "baselineExitCode": 1,
+      "currentExitCode": 1,
+      "sameFirstFailureMessage": true,
+      "firstFailure": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /premium_request_cta_tapped/. Input:",
+      "firstFailureSourceLocation": "at $BASELINE\\scripts\\testAreaMatchPremium.ts:238:13",
+      "testSourceComparison": {
+        "path": "scripts/testAreaMatchPremium.ts",
+        "baselineExists": true,
+        "currentExists": true,
+        "lfNormalizedContentIdentical": true,
+        "baselineSha256": "6a0d370fcb8efcfd891eb1601d4c3643b9d9cc0c09de9cabdd3dc167ef996f0d"
+      },
+      "relatedSourceComparisons": [
+        {
+          "path": "app/share-jobs/[jobId].tsx",
+          "baselineExists": true,
+          "currentExists": true,
+          "lfNormalizedContentIdentical": true,
+          "baselineSha256": "30a89b402a0f5a04c448f1d431201dc070607d83d09ff7965c42cea808e8ba0a"
+        }
+      ],
+      "baselineLogRelativeToEvalWorktree": ".tmp/baseline-regression/audit-logs/test-area-match-premium.log",
+      "baselineLogSha256": "77ff802412025089d53468ec540ae6a0d1cbdf693344f4f8e46d36ea199a88b5",
+      "currentLogRelativeToIntegrationWorktree": ".tmp/offline-remaining/test-area-match-premium.log",
+      "currentLogSha256": "7f47fc880235a565db4e8e1c55ba4239bb42387d6428111a9d25d8bd8b84aba2",
+      "remainingAssertionCoverage": "Execution stops at first failure; later assertions not claimed checked."
+    },
+    {
+      "suite": "test:vayrin-same-place-moment-consolidation",
+      "classification": "INHERITED_BASELINE_FAILURE_REPRODUCED",
+      "currentPackageCommand": [
+        "npm",
+        "run",
+        "test:vayrin-same-place-moment-consolidation"
+      ],
+      "unchangedPackageScript": "npm --prefix services/media-worker run test:same-place-moments && ts-node -P scripts/tsconfig.json scripts/testVayrinSamePlaceMomentConsolidation.ts",
+      "baselineComponentCommand": [
+        "node",
+        "--require",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-optimization-eval/.tmp/baseline-regression/offline-network-guard.cjs",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-pareto-optimization/node_modules/ts-node/dist/bin.js",
+        "-P",
+        "scripts/tsconfig.json",
+        "scripts/testVayrinSamePlaceMomentConsolidation.ts"
+      ],
+      "baselineExitCode": 1,
+      "currentExitCode": 1,
+      "sameFirstFailureMessage": true,
+      "firstFailure": "AssertionError [ERR_ASSERTION]: a grouped natural venue without explicit city+region text remains review-only",
+      "firstFailureSourceLocation": "at Object.<anonymous> ($BASELINE\\scripts\\testVayrinSamePlaceMomentConsolidation.ts:91:8)",
+      "testSourceComparison": {
+        "path": "scripts/testVayrinSamePlaceMomentConsolidation.ts",
+        "baselineExists": true,
+        "currentExists": true,
+        "lfNormalizedContentIdentical": true,
+        "baselineSha256": "321b7979077656f3aa01df4c66dc01e82608b13437732232f0c90ccf9db2650f"
+      },
+      "relatedSourceComparisons": [
+        {
+          "path": "supabase/functions/process-share-jobs/mediaEvidence.ts",
+          "baselineExists": true,
+          "currentExists": true,
+          "lfNormalizedContentIdentical": true,
+          "baselineSha256": "a7307c3f7a0b69165ea5ca0d5f32493b9e44b70d70bf0be30831b91ab4cc272a"
+        },
+        {
+          "path": "lib/placeIdentityClassification.ts",
+          "baselineExists": true,
+          "currentExists": true,
+          "lfNormalizedContentIdentical": true,
+          "baselineSha256": "ecb2f1d8e54804dd83701cae9fe981d85bdd6d5f13ec2a2c084b00655f2a9491"
+        },
+        {
+          "path": "lib/areaMatchPremium.ts",
+          "baselineExists": true,
+          "currentExists": true,
+          "lfNormalizedContentIdentical": true,
+          "baselineSha256": "1a9a73651d3bc0cecea934d2a5f7e39fc2d876f347da5c65ea5958f6391e0695"
+        }
+      ],
+      "baselineLogRelativeToEvalWorktree": ".tmp/baseline-regression/audit-logs/test-vayrin-same-place-moment-consolidation.log",
+      "baselineLogSha256": "597dc061a5c5f77b058f88a0462d4fe15c61472795f4ab5d9719d0b89b4275ca",
+      "currentLogRelativeToIntegrationWorktree": ".tmp/offline-remaining/test-vayrin-same-place-moment-consolidation.log",
+      "currentLogSha256": "6a711df8d1d7a35b145888ae0d2fbe959eb187d49e396776b69cb4443c477b6d",
+      "remainingAssertionCoverage": "Execution stops at first failure; later assertions not claimed checked."
+    },
+    {
+      "suite": "test:metadata-failure-fallback",
+      "classification": "INHERITED_BASELINE_FAILURE_REPRODUCED",
+      "currentPackageCommand": [
+        "npm",
+        "run",
+        "test:metadata-failure-fallback"
+      ],
+      "unchangedPackageScript": "ts-node -P scripts/tsconfig.json scripts/testMetadataFailureMediaFallback.ts",
+      "baselineComponentCommand": [
+        "node",
+        "--require",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-optimization-eval/.tmp/baseline-regression/offline-network-guard.cjs",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-pareto-optimization/node_modules/ts-node/dist/bin.js",
+        "-P",
+        "scripts/tsconfig.json",
+        "scripts/testMetadataFailureMediaFallback.ts"
+      ],
+      "baselineExitCode": 1,
+      "currentExitCode": 1,
+      "sameFirstFailureMessage": true,
+      "firstFailure": "AssertionError [ERR_ASSERTION]: the gate runs before any finalize",
+      "firstFailureSourceLocation": "at Object.<anonymous> ($BASELINE\\scripts\\testMetadataFailureMediaFallback.ts:113:10)",
+      "testSourceComparison": {
+        "path": "scripts/testMetadataFailureMediaFallback.ts",
+        "baselineExists": true,
+        "currentExists": true,
+        "lfNormalizedContentIdentical": true,
+        "baselineSha256": "5c912598be7ed9efda4a73b04a148a97ec18a610a18df62dc6446760302734c0"
+      },
+      "relatedSourceComparisons": [
+        {
+          "path": "supabase/functions/process-share-jobs/index.ts",
+          "baselineExists": true,
+          "currentExists": true,
+          "lfNormalizedContentIdentical": false,
+          "baselineSha256": "a3466aded66964a54a49fa7a3b1e14a8fbe8b43baf6624a92c2f540b792872f1"
+        }
+      ],
+      "baselineLogRelativeToEvalWorktree": ".tmp/baseline-regression/audit-logs/test-metadata-failure-fallback.log",
+      "baselineLogSha256": "6170e7b764bb9761c0c47c833309272f71e5a271f6f58d52e70782bca7b6c28f",
+      "currentLogRelativeToIntegrationWorktree": ".tmp/offline-remaining/test-metadata-failure-fallback.log",
+      "currentLogSha256": "ceda28357f0f2608258639705bc15e9772051e19a7d82ae9f8390c9102ac6e61",
+      "remainingAssertionCoverage": "Execution stops at first failure; later assertions not claimed checked."
+    },
+    {
+      "suite": "test:ambiguity-review",
+      "classification": "INHERITED_BASELINE_FAILURE_REPRODUCED",
+      "currentPackageCommand": [
+        "npm",
+        "run",
+        "test:ambiguity-review"
+      ],
+      "unchangedPackageScript": "ts-node -P scripts/tsconfig.json scripts/testAmbiguityReviewFlow.ts",
+      "baselineComponentCommand": [
+        "node",
+        "--require",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-optimization-eval/.tmp/baseline-regression/offline-network-guard.cjs",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-pareto-optimization/node_modules/ts-node/dist/bin.js",
+        "-P",
+        "scripts/tsconfig.json",
+        "scripts/testAmbiguityReviewFlow.ts"
+      ],
+      "baselineExitCode": 1,
+      "currentExitCode": 1,
+      "sameFirstFailureMessage": true,
+      "firstFailure": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:",
+      "firstFailureSourceLocation": "at Object.<anonymous> ($BASELINE\\scripts\\testAmbiguityReviewFlow.ts:119:8)",
+      "testSourceComparison": {
+        "path": "scripts/testAmbiguityReviewFlow.ts",
+        "baselineExists": true,
+        "currentExists": true,
+        "lfNormalizedContentIdentical": true,
+        "baselineSha256": "835576ec8363a2adfc21e03e3589596110d7ede84ea91d508c3dcb039d753682"
+      },
+      "relatedSourceComparisons": [
+        {
+          "path": "lib/shareJobsUi.ts",
+          "baselineExists": true,
+          "currentExists": true,
+          "lfNormalizedContentIdentical": true,
+          "baselineSha256": "e0e3e675ac423429e4d99bdd1f78cbe47dfb4da91ee9aa949abebb358f3e6e77"
+        }
+      ],
+      "baselineLogRelativeToEvalWorktree": ".tmp/baseline-regression/audit-logs/test-ambiguity-review.log",
+      "baselineLogSha256": "9077b95b8c7942d24d97e0c68b5997b23b279c4c60377a700c57dade7603d857",
+      "currentLogRelativeToIntegrationWorktree": ".tmp/offline-remaining/test-ambiguity-review.log",
+      "currentLogSha256": "e5b89fd14c84653fbf4a1a80d72c24cf506cae2002feb2bc374f35f0488a15c1",
+      "remainingAssertionCoverage": "Execution stops at first failure; later assertions not claimed checked."
+    },
+    {
+      "suite": "test:onboarding-v2-hands-on-activation",
+      "classification": "INHERITED_BASELINE_FAILURE_REPRODUCED",
+      "currentPackageCommand": [
+        "npm",
+        "run",
+        "test:onboarding-v2-hands-on-activation"
+      ],
+      "unchangedPackageScript": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2HandsOnActivation.ts",
+      "baselineComponentCommand": [
+        "node",
+        "--require",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-optimization-eval/.tmp/baseline-regression/offline-network-guard.cjs",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-pareto-optimization/node_modules/ts-node/dist/bin.js",
+        "-P",
+        "scripts/tsconfig.json",
+        "scripts/testOnboardingV2HandsOnActivation.ts"
+      ],
+      "baselineExitCode": 1,
+      "currentExitCode": 1,
+      "sameFirstFailureMessage": true,
+      "firstFailure": "AssertionError [ERR_ASSERTION]: final exit opens the ordinary map without a repeated focus instruction",
+      "firstFailureSourceLocation": "at Object.<anonymous> ($BASELINE\\scripts\\testOnboardingV2HandsOnActivation.ts:67:8)",
+      "testSourceComparison": {
+        "path": "scripts/testOnboardingV2HandsOnActivation.ts",
+        "baselineExists": true,
+        "currentExists": true,
+        "lfNormalizedContentIdentical": true,
+        "baselineSha256": "0c274076cd4fb9ef5fe05b901784afea240c76ca15295e2d9f8b0ce9cf4b51e5"
+      },
+      "relatedSourceComparisons": [
+        {
+          "path": "components/onboarding/v2/OnboardingV2SecondHalf.tsx",
+          "baselineExists": true,
+          "currentExists": true,
+          "lfNormalizedContentIdentical": true,
+          "baselineSha256": "354c6189ed1f5d498f8dec3c40ba1dcdcef44d57c7f9fc12c2af5b8dae66e6bd"
+        }
+      ],
+      "baselineLogRelativeToEvalWorktree": ".tmp/baseline-regression/audit-logs/test-onboarding-v2-hands-on-activation.log",
+      "baselineLogSha256": "cbc715dd909c2ae4059aa3b53f5921d6b56b0c08bd515c4b0cd40ecef6bad173",
+      "currentLogRelativeToIntegrationWorktree": ".tmp/offline-remaining/test-onboarding-v2-hands-on-activation.log",
+      "currentLogSha256": "f7fc942b919b7ce9b020a6d5bb17c8899501d10b5ef2b543796a9a5b22abf2c1",
+      "remainingAssertionCoverage": "Execution stops at first failure; later assertions not claimed checked."
+    },
+    {
+      "suite": "test:onboarding-v2-phase1-production",
+      "classification": "INHERITED_BASELINE_FAILURE_REPRODUCED",
+      "currentPackageCommand": [
+        "npm",
+        "run",
+        "test:onboarding-v2-phase1-production"
+      ],
+      "unchangedPackageScript": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2Phase1Production.ts",
+      "baselineComponentCommand": [
+        "node",
+        "--require",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-optimization-eval/.tmp/baseline-regression/offline-network-guard.cjs",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-pareto-optimization/node_modules/ts-node/dist/bin.js",
+        "-P",
+        "scripts/tsconfig.json",
+        "scripts/testOnboardingV2Phase1Production.ts"
+      ],
+      "baselineExitCode": 1,
+      "currentExitCode": 1,
+      "sameFirstFailureMessage": true,
+      "firstFailure": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Linking\\.openURL/. Input:",
+      "firstFailureSourceLocation": "at Object.<anonymous> ($BASELINE\\scripts\\testOnboardingV2Phase1Production.ts:103:8)",
+      "testSourceComparison": {
+        "path": "scripts/testOnboardingV2Phase1Production.ts",
+        "baselineExists": true,
+        "currentExists": true,
+        "lfNormalizedContentIdentical": true,
+        "baselineSha256": "a4fb8128baab84fa6385c292cb904d646171540a67b2e4d54d4878025e0b49c5"
+      },
+      "relatedSourceComparisons": [
+        {
+          "path": "components/onboarding/v2/OnboardingV2MapCoachmark.tsx",
+          "baselineExists": true,
+          "currentExists": true,
+          "lfNormalizedContentIdentical": true,
+          "baselineSha256": "2f8bc938b703603a00f678e82ee47cc6c635efea4001662b81f1fbcb1a279686"
+        }
+      ],
+      "baselineLogRelativeToEvalWorktree": ".tmp/baseline-regression/audit-logs/test-onboarding-v2-phase1-production.log",
+      "baselineLogSha256": "438fdf9d1af2d90b0bf982034ed66853c22d3e08e808ec667b7128cea603268d",
+      "currentLogRelativeToIntegrationWorktree": ".tmp/offline-remaining/test-onboarding-v2-phase1-production.log",
+      "currentLogSha256": "f7c95804ac730f026bd4cf00bc7b2f45291ce2fc0b77db45bccf759c53b61deb",
+      "remainingAssertionCoverage": "Execution stops at first failure; later assertions not claimed checked."
+    },
+    {
+      "suite": "test:onboarding-v2-visual",
+      "classification": "INHERITED_BASELINE_FAILURE_REPRODUCED",
+      "currentPackageCommand": [
+        "npm",
+        "run",
+        "test:onboarding-v2-visual"
+      ],
+      "unchangedPackageScript": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2Phase1Visual.ts && ts-node -P scripts/tsconfig.json scripts/testOnboardingV2MagicRender.ts",
+      "baselineComponentCommand": [
+        "node",
+        "--require",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-optimization-eval/.tmp/baseline-regression/offline-network-guard.cjs",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-pareto-optimization/node_modules/ts-node/dist/bin.js",
+        "-P",
+        "scripts/tsconfig.json",
+        "scripts/testOnboardingV2Phase1Visual.ts"
+      ],
+      "baselineExitCode": 1,
+      "currentExitCode": 1,
+      "sameFirstFailureMessage": true,
+      "firstFailure": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /real app use Nearr's live recognition/. Input:",
+      "firstFailureSourceLocation": "at Object.<anonymous> ($BASELINE\\scripts\\testOnboardingV2Phase1Visual.ts:63:8)",
+      "testSourceComparison": {
+        "path": "scripts/testOnboardingV2Phase1Visual.ts",
+        "baselineExists": true,
+        "currentExists": true,
+        "lfNormalizedContentIdentical": true,
+        "baselineSha256": "62eb66221d72d1239d95f53bf3e1b834744d2aa76bdde4c683730e505707bfda"
+      },
+      "relatedSourceComparisons": [
+        {
+          "path": "components/onboarding/v2/OnboardingV2SecondHalf.tsx",
+          "baselineExists": true,
+          "currentExists": true,
+          "lfNormalizedContentIdentical": true,
+          "baselineSha256": "354c6189ed1f5d498f8dec3c40ba1dcdcef44d57c7f9fc12c2af5b8dae66e6bd"
+        }
+      ],
+      "baselineLogRelativeToEvalWorktree": ".tmp/baseline-regression/audit-logs/test-onboarding-v2-visual.log",
+      "baselineLogSha256": "b316aae155c4a7dacf0d6572899f9df5c21ffcf83a8f59a986324f12c2bd5f46",
+      "currentLogRelativeToIntegrationWorktree": ".tmp/offline-remaining/test-onboarding-v2-visual.log",
+      "currentLogSha256": "fb8716e9f96400c90bf512def9e3a22c151e481a286e090508c0e4e5a89aa54c",
+      "remainingAssertionCoverage": "Execution stops at first failure; later assertions not claimed checked."
+    },
+    {
+      "suite": "test:map-queue-entry",
+      "classification": "INHERITED_BASELINE_FAILURE_REPRODUCED",
+      "currentPackageCommand": [
+        "npm",
+        "run",
+        "test:map-queue-entry"
+      ],
+      "unchangedPackageScript": "ts-node -P scripts/tsconfig.json scripts/testMapQueueEntryPoint.ts",
+      "baselineComponentCommand": [
+        "node",
+        "--require",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-optimization-eval/.tmp/baseline-regression/offline-network-guard.cjs",
+        "C:/Users/andre/Desktop/Nearr-worktrees/recognition-pareto-optimization/node_modules/ts-node/dist/bin.js",
+        "-P",
+        "scripts/tsconfig.json",
+        "scripts/testMapQueueEntryPoint.ts"
+      ],
+      "baselineExitCode": 1,
+      "currentExitCode": 1,
+      "sameFirstFailureMessage": true,
+      "firstFailure": "AssertionError [ERR_ASSERTION]: Nearby Explorer owns the map chrome while active",
+      "firstFailureSourceLocation": "at Object.<anonymous> ($BASELINE\\scripts\\testMapQueueEntryPoint.ts:156:10)",
+      "testSourceComparison": {
+        "path": "scripts/testMapQueueEntryPoint.ts",
+        "baselineExists": true,
+        "currentExists": true,
+        "lfNormalizedContentIdentical": true,
+        "baselineSha256": "f389e10ba5761972a8457526b6ef76a942cf0d79be6f456c4d0b382b9344ee84"
+      },
+      "relatedSourceComparisons": [
+        {
+          "path": "app/(tabs)/map.tsx",
+          "baselineExists": true,
+          "currentExists": true,
+          "lfNormalizedContentIdentical": true,
+          "baselineSha256": "a5e44336f4b34a45ddb7be2ce4161e6a72efea1197ac947b7bec1b85f9d30162"
+        }
+      ],
+      "baselineLogRelativeToEvalWorktree": ".tmp/baseline-regression/audit-logs/test-map-queue-entry.log",
+      "baselineLogSha256": "38717eb6485b4908ce4bb5b944d107362fb6d8d1197d7a260faf6641ba2389ab",
+      "currentLogRelativeToIntegrationWorktree": ".tmp/offline-remaining/test-map-queue-entry.log",
+      "currentLogSha256": "ba1261aa680d310abda2cf69e8f4198293134540e406ce6e468b7384cb538a32",
+      "remainingAssertionCoverage": "Execution stops at first failure; later assertions not claimed checked."
+    }
+  ]
+}
