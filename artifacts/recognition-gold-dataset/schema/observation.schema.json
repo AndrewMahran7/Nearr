@@ -14,6 +14,7 @@
     "multi_place_detected": { "type": ["boolean", "null"] },
     "geography": { "type": ["object", "null"] },
     "elapsed_ms": { "type": ["number", "null"], "minimum": 0 },
+    "first_usable_result_ms": { "type": ["number", "null"], "minimum": 0 },
     "cost_usd": { "type": ["number", "null"], "minimum": 0 }
   },
   "$defs": {

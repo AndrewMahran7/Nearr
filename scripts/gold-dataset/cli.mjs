@@ -19,7 +19,7 @@ function args(argv) {
   for (let i = 0; i < argv.length; i++) {
     if (!argv[i].startsWith('--')) throw new Error(`unexpected_argument:${argv[i]}`);
     const key = argv[i].slice(2).replaceAll('-', '_');
-    if (['explicit_heldout'].includes(key)) { out[key] = true; continue; }
+    if (['explicit_heldout', 'independent'].includes(key)) { out[key] = true; continue; }
     if (++i >= argv.length) throw new Error(`missing_argument:${key}`);
     out[key] = argv[i];
   }
@@ -95,6 +95,9 @@ function materialize(opts) {
   }
 }
 function seal(opts) {
+  const manifestFile = path.resolve(opts.manifest ?? defaults.manifest);
+  const privateRoot = path.resolve(local) + path.sep;
+  if (!manifestFile.startsWith(privateRoot)) throw new Error('holdout_requires_private_combined_manifest');
   const { manifest, labels } = read(opts);
   const splits = splitsFile(opts, manifest, labels);
   const held = manifest.filter((r) => splits.assignments[r.case_id] === 'held_out');
@@ -102,6 +105,13 @@ function seal(opts) {
   if (manifest.length < 250 || groups.size < 60 || held.length < 60 || held.length > 80) throw new Error('holdout_quality_size_gate');
   const byId = new Map(labels.map((l) => [l.case_id, l]));
   for (const r of held) if (!holdoutEligibility(r, byId.get(r.case_id)).eligible) throw new Error(`holdout_review_gate:${r.case_id}`);
+  const classes = new Set(held.map((r) => byId.get(r.case_id).label_class));
+  if (!['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI', 'KNOWN_NEGATIVE'].every((x) => classes.has(x))) throw new Error('holdout_missing_label_slice');
+  if (!['description_hidden', 'location_hidden', 'visual_only', 'text_only'].every((view) => held.some((r) => r.view_eligibility[view]))) throw new Error('holdout_missing_ablation_slice');
+  if (!held.some((r) => r.misleading_metadata === true || (Array.isArray(r.misleading_metadata) && r.misleading_metadata.length))) throw new Error('holdout_missing_misleading_metadata');
+  if (new Set(held.map((r) => r.platform)).size < 2 || new Set(held.flatMap((r) => r.categories)).size < 5) throw new Error('holdout_platform_or_category_imbalance');
+  const countries = new Set(held.map((r) => r.geography?.country ?? byId.get(r.case_id)?.geography?.country ?? byId.get(r.case_id)?.expected_places?.[0]?.country).filter(Boolean));
+  if (countries.size < 3) throw new Error('holdout_geography_imbalance');
   const sealDoc = {
     schema_version: 1, created_at: new Date().toISOString(), heldout_cases: held.length, heldout_source_groups: groups.size,
     manifest_sha256: sha256(fs.readFileSync(opts.manifest ?? defaults.manifest)),
@@ -146,10 +156,18 @@ function review(opts) {
   const { manifest, labels } = read(opts);
   const record = manifest.find((r) => r.case_id === opts.case);
   if (!record) throw new Error('unknown_case');
+  if (opts.decision) {
+    if (!['accept', 'reject', 'needs_more_research', 'region_only', 'ambiguous', 'negative'].includes(opts.decision) || !opts.reviewer) throw new Error('invalid_review_decision');
+    const decision = { schema_version: 1, case_id: record.case_id, decision: opts.decision, reviewer: opts.reviewer, reviewed_at: new Date().toISOString(), independent: opts.independent === true, notes: opts.notes ?? null };
+    const decisionFile = path.join(local, 'review_decisions_private', `${record.case_id}-${Date.now()}-${sha256(cryptoRandom()).slice(0, 8)}.json`);
+    writeOnce(decisionFile, JSON.stringify(decision, null, 2) + '\n');
+    return { output: decisionFile, action: 'recorded_for_private_label_adjudication' };
+  }
   const output = path.join(local, 'review', `${record.case_id}.html`);
   writeOnce(output, renderReview(record, labels.find((l) => l.case_id === record.case_id)));
   return { output };
 }
+function cryptoRandom() { return `${Date.now()}-${Math.random()}-${process.pid}`; }
 function main() {
   const [command, ...raw] = process.argv.slice(2), opts = args(raw);
   let result;
