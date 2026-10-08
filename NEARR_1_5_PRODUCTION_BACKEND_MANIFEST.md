@@ -1,5 +1,7 @@
 # Nearr 1.5 Production backend deployment manifest — HOLD
 
+2026-10-08 unblocker update: `PRODUCTION_BACKUP_AND_RESTORE_REPORT.md` records a successful encrypted logical database restore, but the restored data and a live read-only Production count both reveal one pre-existing saved-place-source owner mismatch. This is a stop condition for V2 design/security, not a license to apply Step 1. The archive is local and its DPAPI key is machine/account-bound; storage object bytes are excluded. No Production step below has been executed.
+
 Source branch `release/nearr-1.5-production-compat`, based on `ded040465176a193bba8c6921b179b07ef6a9a64`. This is a conditional future sequence, **not** authorization to run it while the gates below remain red. Never use the Development release worktree's blanket migration push, never deploy Dev Edge v142, and do not deploy Railway, monetization, Jev, recognition, or a Production OTA.
 
 | Step | Intended change / command | Verification | Safe rollback / stop |
