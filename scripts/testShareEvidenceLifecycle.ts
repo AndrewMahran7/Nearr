@@ -21,6 +21,9 @@ const payload = {
 async function run() {
   const safe = evidencePathsForOwnedJob(payload, userId, jobId);
   assert.deepEqual(safe, [0, 1, 2, 3, 4].map(path), 'only five exact owned paths survive');
+  const claimPath = `${userId}/${jobId}/${taskId}--claim-2-0123456789abcdef01234567/00-0.jpg`;
+  assert.deepEqual(evidencePathsForOwnedJob({ evidenceFrames: [{ storagePath: claimPath }] }, userId, jobId),
+    [claimPath], 'claim-specific directories preserve owned evidence access and deletion');
   assert.deepEqual(evidencePathsForOwnedJob({ evidenceFrames: [
     { storagePath: `${otherUserId}/${jobId}/${taskId}/00-0.jpg` },
     { storagePath: `${userId}/../${taskId}/00-0.jpg` },
