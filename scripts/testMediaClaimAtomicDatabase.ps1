@@ -86,6 +86,16 @@ begin
   if (select google_types from places limit 1)<>array['cafe'] then raise exception 'empty types erased canonical metadata'; end if;
   if (select count(*) from saved_places)<>1 or (select count(*) from share_job_place_results)<>1 then raise exception 'retry duplicated save'; end if;
   if not exists(select 1 from saved_places where category='user-choice' and notes='user note' and ai_note='fixture note') then raise exception 'user category/note overwritten'; end if;
+  perform public.commit_media_claim_candidate(j,t,2,claim_time,jsonb_set(pg_temp.payload(),'{autoNote}','"replacement cue"'));
+  if (select ai_note from saved_places limit 1)<>'fixture note' then raise exception 'existing AI note overwritten'; end if;
+  update saved_places set source_url='https://example.test/other-post',ai_note=null;
+  perform public.commit_media_claim_candidate(j,t,2,claim_time,pg_temp.payload());
+  if exists(select 1 from saved_places where ai_note is not null or source_url<>'https://example.test/other-post') then raise exception 'different source received incoming cue'; end if;
+  update saved_places set source_url='https://example.test/source';
+  perform public.commit_media_claim_candidate(j,t,2,claim_time,jsonb_set(pg_temp.payload(),'{autoNote}','""'));
+  if exists(select 1 from saved_places where ai_note is not null) then raise exception 'empty note persisted'; end if;
+  perform public.commit_media_claim_candidate(j,t,2,claim_time,pg_temp.payload());
+  if (select ai_note from saved_places limit 1)<>'fixture note' then raise exception 'same source note not attached'; end if;
   rows:=jsonb_build_array(jsonb_build_object('share_job_id',j,'share_media_task_id',t,'user_id','00000000-0000-0000-0000-000000000099','logical_result_id','bad-owner','outcome','candidate_confirmation'));
   begin perform public.write_media_claim_results(j,t,2,claim_time,rows); raise exception 'foreign owner accepted';
   exception when others then if sqlerrm<>'invalid_result_owner' then raise; end if; end;
