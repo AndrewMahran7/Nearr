@@ -1,0 +1,1218 @@
+{
+  "manifestSha256": "e124f0b31d55218cc2033477c01f087a5cdadc610642164f26f937ee36a7e01d",
+  "split": "held_out",
+  "variants": [
+    "baseline_repaired",
+    "batched_hash"
+  ],
+  "repeats": 1,
+  "scope": "Local frame evidence parity/timing, no model inference or recognition accuracy",
+  "rows": [
+    {
+      "id": "niagara_video",
+      "sourceSha256": "b35aeb94f92a54ed4da96afa8c04c94f21816a1198e571c9da860fc7f0fbfd5a",
+      "split": "held_out",
+      "repeat": 0,
+      "variant": "baseline_repaired",
+      "durationMs": 5284.3691,
+      "rawCount": 17,
+      "keptCount": 2,
+      "evidence": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first",
+          "aHash": "0000ffffffff0e00",
+          "jpegSha256": "c4ca15906ea519bb2ea907e3057ac5e822f498907041a4c4cc2efbed6cd5ccd3"
+        },
+        {
+          "timestampSeconds": 1,
+          "reason": "interval",
+          "aHash": "0000ffffffff0e00",
+          "jpegSha256": "a192d01878ac5dd50e28335c267eb283d6b738350790802d74aaf12500dbb5a1"
+        },
+        {
+          "timestampSeconds": 2,
+          "reason": "interval",
+          "aHash": "0020ffffffff0e00",
+          "jpegSha256": "6e9382b64079fc76e16724a769788304c96a4e5a8b35cdb575b42059b8291946"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval",
+          "aHash": "0020ffffffff0e00",
+          "jpegSha256": "31bf0229f35a96dda7e9d5eafd7265222f30db7e283ca62f73f624911cc0c0d0"
+        },
+        {
+          "timestampSeconds": 4,
+          "reason": "interval",
+          "aHash": "0062ffffffff0e00",
+          "jpegSha256": "d78b99627bf90e03c1c4b6a3dd1593c9d0f355a2a29dff9a80cb499019ad775d"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval",
+          "aHash": "0066ffffffff0e00",
+          "jpegSha256": "42ebb5a4bc1bcdc783bf7e2a10c9fdce57cb7b944042320f5f9606c02d9cf14e"
+        },
+        {
+          "timestampSeconds": 6,
+          "reason": "interval",
+          "aHash": "00e4fffffffe0e00",
+          "jpegSha256": "5e83d38b7c908b6ef6931c06a6a6f5ebb586f6e856d01efeb0e6a0e9d37ce4c0"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval",
+          "aHash": "00e0ffffffff0e00",
+          "jpegSha256": "1fe2eccf381758b19164d7578cacd6c3bb62d287d94384b51e05d70cb79e6454"
+        },
+        {
+          "timestampSeconds": 8,
+          "reason": "interval",
+          "aHash": "00e0ffffffff1e00",
+          "jpegSha256": "c516396ec29cd521f89874e5d8bbe94f0bac3416864fb1e33610976ad6d03ad2"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval",
+          "aHash": "00e0ffffffff1e00",
+          "jpegSha256": "b6fbb698d2cc1d00f42e0237d0d77d2207ac856a1ce3891d8a55e3f296138ad3"
+        },
+        {
+          "timestampSeconds": 10,
+          "reason": "interval",
+          "aHash": "00e0ffffffff0e00",
+          "jpegSha256": "de767fdfef4341ef939cc1b5cec133b4aeacf40b000e19aa0bd3241f82cdb0d5"
+        },
+        {
+          "timestampSeconds": 11,
+          "reason": "interval",
+          "aHash": "00e0ffffffff0e00",
+          "jpegSha256": "c7c59ee2a07bb948018a5507b9cb2fee06aa2daab48d88b4c7e266f6bdafb2ae"
+        },
+        {
+          "timestampSeconds": 12,
+          "reason": "interval",
+          "aHash": "00e0ffffffff5e00",
+          "jpegSha256": "fb8563b8fff1b4e799023b31f1a111c38548ac682ec5f37366ad88182bb49690"
+        },
+        {
+          "timestampSeconds": 13,
+          "reason": "interval",
+          "aHash": "00e0ffffffff5e00",
+          "jpegSha256": "d6088eb97918378d9f073971946d3062cd71381502db796371537d6b53961ca7"
+        },
+        {
+          "timestampSeconds": 14,
+          "reason": "interval",
+          "aHash": "00e0ffffffff9e00",
+          "jpegSha256": "58f1dbcac9323c03017e858b525fc907aa50e3ef55daff0d79397e02c332afc5"
+        },
+        {
+          "timestampSeconds": 15,
+          "reason": "interval",
+          "aHash": "00e0ffffffff9e00",
+          "jpegSha256": "0ca36c6680398076d1cca2dc489144652ded7d7261a075f6a8d336b8e0de93c1"
+        },
+        {
+          "timestampSeconds": 15.202,
+          "reason": "last",
+          "aHash": "00c0ffffffff1e00",
+          "jpegSha256": "43710b3735e9ee2e37ae678a62689297ac624bd3a2b1b5a708d2b58bca672225"
+        }
+      ],
+      "survivors": [
+        0,
+        15.202
+      ],
+      "metrics": {
+        "processCount": 34,
+        "cpuMs": 4312,
+        "peakChildRssKiB": 103524
+      },
+      "failure": null,
+      "exactEvidenceParity": true,
+      "dedupParity": true
+    },
+    {
+      "id": "niagara_video",
+      "sourceSha256": "b35aeb94f92a54ed4da96afa8c04c94f21816a1198e571c9da860fc7f0fbfd5a",
+      "split": "held_out",
+      "repeat": 0,
+      "variant": "batched_hash",
+      "durationMs": 3106.9309999999996,
+      "rawCount": 17,
+      "keptCount": 2,
+      "evidence": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first",
+          "aHash": "0000ffffffff0e00",
+          "jpegSha256": "c4ca15906ea519bb2ea907e3057ac5e822f498907041a4c4cc2efbed6cd5ccd3"
+        },
+        {
+          "timestampSeconds": 1,
+          "reason": "interval",
+          "aHash": "0000ffffffff0e00",
+          "jpegSha256": "a192d01878ac5dd50e28335c267eb283d6b738350790802d74aaf12500dbb5a1"
+        },
+        {
+          "timestampSeconds": 2,
+          "reason": "interval",
+          "aHash": "0020ffffffff0e00",
+          "jpegSha256": "6e9382b64079fc76e16724a769788304c96a4e5a8b35cdb575b42059b8291946"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval",
+          "aHash": "0020ffffffff0e00",
+          "jpegSha256": "31bf0229f35a96dda7e9d5eafd7265222f30db7e283ca62f73f624911cc0c0d0"
+        },
+        {
+          "timestampSeconds": 4,
+          "reason": "interval",
+          "aHash": "0062ffffffff0e00",
+          "jpegSha256": "d78b99627bf90e03c1c4b6a3dd1593c9d0f355a2a29dff9a80cb499019ad775d"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval",
+          "aHash": "0066ffffffff0e00",
+          "jpegSha256": "42ebb5a4bc1bcdc783bf7e2a10c9fdce57cb7b944042320f5f9606c02d9cf14e"
+        },
+        {
+          "timestampSeconds": 6,
+          "reason": "interval",
+          "aHash": "00e4fffffffe0e00",
+          "jpegSha256": "5e83d38b7c908b6ef6931c06a6a6f5ebb586f6e856d01efeb0e6a0e9d37ce4c0"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval",
+          "aHash": "00e0ffffffff0e00",
+          "jpegSha256": "1fe2eccf381758b19164d7578cacd6c3bb62d287d94384b51e05d70cb79e6454"
+        },
+        {
+          "timestampSeconds": 8,
+          "reason": "interval",
+          "aHash": "00e0ffffffff1e00",
+          "jpegSha256": "c516396ec29cd521f89874e5d8bbe94f0bac3416864fb1e33610976ad6d03ad2"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval",
+          "aHash": "00e0ffffffff1e00",
+          "jpegSha256": "b6fbb698d2cc1d00f42e0237d0d77d2207ac856a1ce3891d8a55e3f296138ad3"
+        },
+        {
+          "timestampSeconds": 10,
+          "reason": "interval",
+          "aHash": "00e0ffffffff0e00",
+          "jpegSha256": "de767fdfef4341ef939cc1b5cec133b4aeacf40b000e19aa0bd3241f82cdb0d5"
+        },
+        {
+          "timestampSeconds": 11,
+          "reason": "interval",
+          "aHash": "00e0ffffffff0e00",
+          "jpegSha256": "c7c59ee2a07bb948018a5507b9cb2fee06aa2daab48d88b4c7e266f6bdafb2ae"
+        },
+        {
+          "timestampSeconds": 12,
+          "reason": "interval",
+          "aHash": "00e0ffffffff5e00",
+          "jpegSha256": "fb8563b8fff1b4e799023b31f1a111c38548ac682ec5f37366ad88182bb49690"
+        },
+        {
+          "timestampSeconds": 13,
+          "reason": "interval",
+          "aHash": "00e0ffffffff5e00",
+          "jpegSha256": "d6088eb97918378d9f073971946d3062cd71381502db796371537d6b53961ca7"
+        },
+        {
+          "timestampSeconds": 14,
+          "reason": "interval",
+          "aHash": "00e0ffffffff9e00",
+          "jpegSha256": "58f1dbcac9323c03017e858b525fc907aa50e3ef55daff0d79397e02c332afc5"
+        },
+        {
+          "timestampSeconds": 15,
+          "reason": "interval",
+          "aHash": "00e0ffffffff9e00",
+          "jpegSha256": "0ca36c6680398076d1cca2dc489144652ded7d7261a075f6a8d336b8e0de93c1"
+        },
+        {
+          "timestampSeconds": 15.202,
+          "reason": "last",
+          "aHash": "00c0ffffffff1e00",
+          "jpegSha256": "43710b3735e9ee2e37ae678a62689297ac624bd3a2b1b5a708d2b58bca672225"
+        }
+      ],
+      "survivors": [
+        0,
+        15.202
+      ],
+      "metrics": {
+        "processCount": 18,
+        "cpuMs": 4203,
+        "peakChildRssKiB": 103320
+      },
+      "failure": null,
+      "exactEvidenceParity": true,
+      "dedupParity": true
+    },
+    {
+      "id": "yosemite_upper_falls_video",
+      "sourceSha256": "578b99e9aba191253549c438a3c001d24c8234b65b50109e63e75091683604ee",
+      "split": "held_out",
+      "repeat": 0,
+      "variant": "baseline_repaired",
+      "durationMs": 6828.4123,
+      "rawCount": 23,
+      "keptCount": 2,
+      "evidence": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "172528cff056a4c840da47424f0cada3b5a3f1950cd19db50152ca902ab98bba"
+        },
+        {
+          "timestampSeconds": 1,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "ef7cf2325d13c0f7913cb9a2e04b52457caf1ed19b00f0b50273eb27d568c1b2"
+        },
+        {
+          "timestampSeconds": 2,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "0ea326ad18f7655493425a8f9936b4f14f7ea0817864f6eb8644eadcca789a61"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "03a7ca087a4289e394833e2ed2e65561d72bd0dcf457b52dd9918b82771d0e94"
+        },
+        {
+          "timestampSeconds": 4,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "958bbb02c672bb995d07f10c132659633931b9bbc7b4841dfbb566318d277312"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "5363eea9bc6d17575822a111a2e8bb6060dc39948482f428f62c6c9c6d1a8c56"
+        },
+        {
+          "timestampSeconds": 6,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "ff4507934a42bc5d4c380064be7e6dab14f1252fe5f6e95944981c049b8ee7c4"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "361df2af592c67063ac94093328d561c7785e6b412e1c1377877f8d11901ccf5"
+        },
+        {
+          "timestampSeconds": 8,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "9aaa3432aeb32749021d785864c7b8df992dc5f3b522194e4bc357ea00739cfd"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "78faad7e03f1c9f586e6d05e3547fd6df57c38b4b948b60214d4e061eb745637"
+        },
+        {
+          "timestampSeconds": 10,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "54a37a983eab084a9291af76289b40a07b70082f79b53f0dc256c1a21fb57010"
+        },
+        {
+          "timestampSeconds": 11,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "5316efabe79e67c2d5a2efd672d32e80d91814e692528567c59309845bc07f93"
+        },
+        {
+          "timestampSeconds": 12,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "fb675ad9000b395df0df21894f1f67c1e7bc75341005200a86876286f0f16625"
+        },
+        {
+          "timestampSeconds": 13,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "2d219b43685e12eb6531bd0cbb31ba4ea9b7b6cee4f9f571b1a6beded67e770f"
+        },
+        {
+          "timestampSeconds": 14,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "1d59d8cff95d2f7885fd9bfff7cae8666cf6b5f255837fa5d0ab9e08e0e465f1"
+        },
+        {
+          "timestampSeconds": 15,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "1cfb9404075f89fcfa633bdca50f337dddfde3bb77d544d5b459e47a693c437f"
+        },
+        {
+          "timestampSeconds": 16,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "fe8f153b8886b6f4a7f5abd4618616a3750207fff622157d81bb57ba4ba112df"
+        },
+        {
+          "timestampSeconds": 17,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "35cfa0fe84759d7e35977be29314d142fda830a89ccc5d6f97f95477347c90e6"
+        },
+        {
+          "timestampSeconds": 18,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "b4e868ca13e3a10e0e9316037fbcb5ae8ec50bbfdaf0462482c4c60330a57c30"
+        },
+        {
+          "timestampSeconds": 19,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "79981aba0bcfe598f5077cb0b2e69c32517780e4b92861e3900a4c6879cfd628"
+        },
+        {
+          "timestampSeconds": 20,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "af5e889e50679b1ac91da495eff3c6ec347ea55177f50a84b5ec6e6f88ef8e1b"
+        },
+        {
+          "timestampSeconds": 21,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "04295cecd6992f99de0c90dba7191496d66dfbeadf40646e36e3276b8d55b20a"
+        },
+        {
+          "timestampSeconds": 21.736,
+          "reason": "last",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "56ac59f3524d7e943e2a7ace45059d22f99f6fe59e4201b0cc8d2318bef87925"
+        }
+      ],
+      "survivors": [
+        0,
+        21.736
+      ],
+      "metrics": {
+        "processCount": 46,
+        "cpuMs": 5556,
+        "peakChildRssKiB": 104068
+      },
+      "failure": null,
+      "exactEvidenceParity": true,
+      "dedupParity": true
+    },
+    {
+      "id": "yosemite_upper_falls_video",
+      "sourceSha256": "578b99e9aba191253549c438a3c001d24c8234b65b50109e63e75091683604ee",
+      "split": "held_out",
+      "repeat": 0,
+      "variant": "batched_hash",
+      "durationMs": 5131.091700000001,
+      "rawCount": 23,
+      "keptCount": 2,
+      "evidence": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "172528cff056a4c840da47424f0cada3b5a3f1950cd19db50152ca902ab98bba"
+        },
+        {
+          "timestampSeconds": 1,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "ef7cf2325d13c0f7913cb9a2e04b52457caf1ed19b00f0b50273eb27d568c1b2"
+        },
+        {
+          "timestampSeconds": 2,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "0ea326ad18f7655493425a8f9936b4f14f7ea0817864f6eb8644eadcca789a61"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "03a7ca087a4289e394833e2ed2e65561d72bd0dcf457b52dd9918b82771d0e94"
+        },
+        {
+          "timestampSeconds": 4,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "958bbb02c672bb995d07f10c132659633931b9bbc7b4841dfbb566318d277312"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "5363eea9bc6d17575822a111a2e8bb6060dc39948482f428f62c6c9c6d1a8c56"
+        },
+        {
+          "timestampSeconds": 6,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "ff4507934a42bc5d4c380064be7e6dab14f1252fe5f6e95944981c049b8ee7c4"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "361df2af592c67063ac94093328d561c7785e6b412e1c1377877f8d11901ccf5"
+        },
+        {
+          "timestampSeconds": 8,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "9aaa3432aeb32749021d785864c7b8df992dc5f3b522194e4bc357ea00739cfd"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "78faad7e03f1c9f586e6d05e3547fd6df57c38b4b948b60214d4e061eb745637"
+        },
+        {
+          "timestampSeconds": 10,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "54a37a983eab084a9291af76289b40a07b70082f79b53f0dc256c1a21fb57010"
+        },
+        {
+          "timestampSeconds": 11,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "5316efabe79e67c2d5a2efd672d32e80d91814e692528567c59309845bc07f93"
+        },
+        {
+          "timestampSeconds": 12,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "fb675ad9000b395df0df21894f1f67c1e7bc75341005200a86876286f0f16625"
+        },
+        {
+          "timestampSeconds": 13,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "2d219b43685e12eb6531bd0cbb31ba4ea9b7b6cee4f9f571b1a6beded67e770f"
+        },
+        {
+          "timestampSeconds": 14,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "1d59d8cff95d2f7885fd9bfff7cae8666cf6b5f255837fa5d0ab9e08e0e465f1"
+        },
+        {
+          "timestampSeconds": 15,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "1cfb9404075f89fcfa633bdca50f337dddfde3bb77d544d5b459e47a693c437f"
+        },
+        {
+          "timestampSeconds": 16,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "fe8f153b8886b6f4a7f5abd4618616a3750207fff622157d81bb57ba4ba112df"
+        },
+        {
+          "timestampSeconds": 17,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "35cfa0fe84759d7e35977be29314d142fda830a89ccc5d6f97f95477347c90e6"
+        },
+        {
+          "timestampSeconds": 18,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "b4e868ca13e3a10e0e9316037fbcb5ae8ec50bbfdaf0462482c4c60330a57c30"
+        },
+        {
+          "timestampSeconds": 19,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "79981aba0bcfe598f5077cb0b2e69c32517780e4b92861e3900a4c6879cfd628"
+        },
+        {
+          "timestampSeconds": 20,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "af5e889e50679b1ac91da495eff3c6ec347ea55177f50a84b5ec6e6f88ef8e1b"
+        },
+        {
+          "timestampSeconds": 21,
+          "reason": "interval",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "04295cecd6992f99de0c90dba7191496d66dfbeadf40646e36e3276b8d55b20a"
+        },
+        {
+          "timestampSeconds": 21.736,
+          "reason": "last",
+          "aHash": "fe7c3c3c3c301808",
+          "jpegSha256": "56ac59f3524d7e943e2a7ace45059d22f99f6fe59e4201b0cc8d2318bef87925"
+        }
+      ],
+      "survivors": [
+        0,
+        21.736
+      ],
+      "metrics": {
+        "processCount": 24,
+        "cpuMs": 4980,
+        "peakChildRssKiB": 104096
+      },
+      "failure": null,
+      "exactEvidenceParity": true,
+      "dedupParity": true
+    },
+    {
+      "id": "multnomah_video",
+      "sourceSha256": "81fc441712fdbfb8f6b02142164429b7a81d997a86f592fabce66604bb926b38",
+      "split": "held_out",
+      "repeat": 0,
+      "variant": "baseline_repaired",
+      "durationMs": 4165.178099999997,
+      "rawCount": 17,
+      "keptCount": 5,
+      "evidence": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first",
+          "aHash": "7efcf8ecec68c800",
+          "jpegSha256": "5c7fe53b133d97ef56368eb23e1c765300c9c0d0a2dedaf239ba621143f3ae74"
+        },
+        {
+          "timestampSeconds": 1,
+          "reason": "interval",
+          "aHash": "7efef8ecece8e800",
+          "jpegSha256": "77b906fdd147854134493d02fe3dc2e72f28aa8bc9cefd14b1c0db1cab3b90c1"
+        },
+        {
+          "timestampSeconds": 2,
+          "reason": "interval",
+          "aHash": "7efef8ecfce8e800",
+          "jpegSha256": "1ab7a4d1dc5aeb7769b2bcf854790a95e96bd32250b6f02259e61ae3f0072fe5"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval",
+          "aHash": "7efefcecfce8e800",
+          "jpegSha256": "b02432b4af56636bfd60c912e87af96189edb57a5ae79182dcdc7e3d52e94f44"
+        },
+        {
+          "timestampSeconds": 4,
+          "reason": "interval",
+          "aHash": "7efefcecfce8e800",
+          "jpegSha256": "1209613efcc118799d36e4b4d40815b114d763ae4c1bf2d86b5fdb5d7aa222d6"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval",
+          "aHash": "7cfcfcecfce8e800",
+          "jpegSha256": "4021a356d7cf340669a36db9df11a743cc66e2b891ac08e383d088c7582b1635"
+        },
+        {
+          "timestampSeconds": 6,
+          "reason": "interval",
+          "aHash": "7cfcfcecfce8e800",
+          "jpegSha256": "038c3343e6f56689af8dc1dc1d7e3c366acd287228bb6bab173b75cd70d0832e"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval",
+          "aHash": "fcfefcfcfce8c808",
+          "jpegSha256": "1184f463cb00de6fffd3e3a3e43170718550d6a64d20b9c24598fee7b0ae9005"
+        },
+        {
+          "timestampSeconds": 8,
+          "reason": "interval",
+          "aHash": "fcfcfcfcece80808",
+          "jpegSha256": "920385008897e9aca3bf54fa965954a3e01d10f014be8d20712c48f238b54b79"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval",
+          "aHash": "f8fcfcfcece80808",
+          "jpegSha256": "8065bbcdb7019f902de009781a969d047b260e80d2be2419a652ba6340c09ad7"
+        },
+        {
+          "timestampSeconds": 10,
+          "reason": "interval",
+          "aHash": "f8fcfcfce8d81808",
+          "jpegSha256": "de2041b942f6350fbf5ee31cda9911ffe2e519b6994b9a01164ecb597d4d24d0"
+        },
+        {
+          "timestampSeconds": 11,
+          "reason": "interval",
+          "aHash": "f8fcfce8f8181800",
+          "jpegSha256": "4229efa786cdaffe41c077cb4e18abc269c20a49f0a056e2edfe5d2d14388e81"
+        },
+        {
+          "timestampSeconds": 12,
+          "reason": "interval",
+          "aHash": "ecfcf8f898181000",
+          "jpegSha256": "16e6c5e65eb54c9cc709cb7934826b0e54df53baf37faef2dbc7bf2576b4f394"
+        },
+        {
+          "timestampSeconds": 13,
+          "reason": "interval",
+          "aHash": "fcfcecf818181800",
+          "jpegSha256": "5dbdfffc2d7ddd6b9068e99a498422e0d9c10c81e4472fe8eb2f2f0a2444676e"
+        },
+        {
+          "timestampSeconds": 14,
+          "reason": "interval",
+          "aHash": "fcfcecf818981800",
+          "jpegSha256": "810e8c4a4ea9d91c143f1250d9c72220488cf4e9863287e75bb4e4f295b1a808"
+        },
+        {
+          "timestampSeconds": 15,
+          "reason": "interval",
+          "aHash": "fcfcecf818981800",
+          "jpegSha256": "eb32d93a441f229a1b42ef1252f2c920185b5b50bc0902af50255624b173ddab"
+        },
+        {
+          "timestampSeconds": 15.122,
+          "reason": "last",
+          "aHash": "fcfcecf818981800",
+          "jpegSha256": "99af18caf75e497dd67aa24cc3c4a8fec571d2ab1ed85972df0dfd1ddde9171b"
+        }
+      ],
+      "survivors": [
+        0,
+        7,
+        10,
+        12,
+        15.122
+      ],
+      "metrics": {
+        "processCount": 34,
+        "cpuMs": 2818,
+        "peakChildRssKiB": 62712
+      },
+      "failure": null,
+      "exactEvidenceParity": true,
+      "dedupParity": true
+    },
+    {
+      "id": "multnomah_video",
+      "sourceSha256": "81fc441712fdbfb8f6b02142164429b7a81d997a86f592fabce66604bb926b38",
+      "split": "held_out",
+      "repeat": 0,
+      "variant": "batched_hash",
+      "durationMs": 2457.196100000001,
+      "rawCount": 17,
+      "keptCount": 5,
+      "evidence": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first",
+          "aHash": "7efcf8ecec68c800",
+          "jpegSha256": "5c7fe53b133d97ef56368eb23e1c765300c9c0d0a2dedaf239ba621143f3ae74"
+        },
+        {
+          "timestampSeconds": 1,
+          "reason": "interval",
+          "aHash": "7efef8ecece8e800",
+          "jpegSha256": "77b906fdd147854134493d02fe3dc2e72f28aa8bc9cefd14b1c0db1cab3b90c1"
+        },
+        {
+          "timestampSeconds": 2,
+          "reason": "interval",
+          "aHash": "7efef8ecfce8e800",
+          "jpegSha256": "1ab7a4d1dc5aeb7769b2bcf854790a95e96bd32250b6f02259e61ae3f0072fe5"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval",
+          "aHash": "7efefcecfce8e800",
+          "jpegSha256": "b02432b4af56636bfd60c912e87af96189edb57a5ae79182dcdc7e3d52e94f44"
+        },
+        {
+          "timestampSeconds": 4,
+          "reason": "interval",
+          "aHash": "7efefcecfce8e800",
+          "jpegSha256": "1209613efcc118799d36e4b4d40815b114d763ae4c1bf2d86b5fdb5d7aa222d6"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval",
+          "aHash": "7cfcfcecfce8e800",
+          "jpegSha256": "4021a356d7cf340669a36db9df11a743cc66e2b891ac08e383d088c7582b1635"
+        },
+        {
+          "timestampSeconds": 6,
+          "reason": "interval",
+          "aHash": "7cfcfcecfce8e800",
+          "jpegSha256": "038c3343e6f56689af8dc1dc1d7e3c366acd287228bb6bab173b75cd70d0832e"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval",
+          "aHash": "fcfefcfcfce8c808",
+          "jpegSha256": "1184f463cb00de6fffd3e3a3e43170718550d6a64d20b9c24598fee7b0ae9005"
+        },
+        {
+          "timestampSeconds": 8,
+          "reason": "interval",
+          "aHash": "fcfcfcfcece80808",
+          "jpegSha256": "920385008897e9aca3bf54fa965954a3e01d10f014be8d20712c48f238b54b79"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval",
+          "aHash": "f8fcfcfcece80808",
+          "jpegSha256": "8065bbcdb7019f902de009781a969d047b260e80d2be2419a652ba6340c09ad7"
+        },
+        {
+          "timestampSeconds": 10,
+          "reason": "interval",
+          "aHash": "f8fcfcfce8d81808",
+          "jpegSha256": "de2041b942f6350fbf5ee31cda9911ffe2e519b6994b9a01164ecb597d4d24d0"
+        },
+        {
+          "timestampSeconds": 11,
+          "reason": "interval",
+          "aHash": "f8fcfce8f8181800",
+          "jpegSha256": "4229efa786cdaffe41c077cb4e18abc269c20a49f0a056e2edfe5d2d14388e81"
+        },
+        {
+          "timestampSeconds": 12,
+          "reason": "interval",
+          "aHash": "ecfcf8f898181000",
+          "jpegSha256": "16e6c5e65eb54c9cc709cb7934826b0e54df53baf37faef2dbc7bf2576b4f394"
+        },
+        {
+          "timestampSeconds": 13,
+          "reason": "interval",
+          "aHash": "fcfcecf818181800",
+          "jpegSha256": "5dbdfffc2d7ddd6b9068e99a498422e0d9c10c81e4472fe8eb2f2f0a2444676e"
+        },
+        {
+          "timestampSeconds": 14,
+          "reason": "interval",
+          "aHash": "fcfcecf818981800",
+          "jpegSha256": "810e8c4a4ea9d91c143f1250d9c72220488cf4e9863287e75bb4e4f295b1a808"
+        },
+        {
+          "timestampSeconds": 15,
+          "reason": "interval",
+          "aHash": "fcfcecf818981800",
+          "jpegSha256": "eb32d93a441f229a1b42ef1252f2c920185b5b50bc0902af50255624b173ddab"
+        },
+        {
+          "timestampSeconds": 15.122,
+          "reason": "last",
+          "aHash": "fcfcecf818981800",
+          "jpegSha256": "99af18caf75e497dd67aa24cc3c4a8fec571d2ab1ed85972df0dfd1ddde9171b"
+        }
+      ],
+      "survivors": [
+        0,
+        7,
+        10,
+        12,
+        15.122
+      ],
+      "metrics": {
+        "processCount": 18,
+        "cpuMs": 2156,
+        "peakChildRssKiB": 62656
+      },
+      "failure": null,
+      "exactEvidenceParity": true,
+      "dedupParity": true
+    },
+    {
+      "id": "aiglun_video",
+      "sourceSha256": "156f66c193a3f1238704194656294a9dadbe9a1d50edbac72860ad4e31eec8f4",
+      "split": "held_out",
+      "repeat": 0,
+      "variant": "baseline_repaired",
+      "durationMs": 7182.4012,
+      "rawCount": 24,
+      "keptCount": 20,
+      "evidence": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first",
+          "aHash": "808682cefaf2c784",
+          "jpegSha256": "a04fdff9be027793e9e767502540a7ba14654478e60bafa58bef8cbb0d7049e8"
+        },
+        {
+          "timestampSeconds": 1,
+          "reason": "interval",
+          "aHash": "808686defafac784",
+          "jpegSha256": "b919c68280aee3f4d114e67f3586e113c126c43394f910feb36a2f51bbd919c9"
+        },
+        {
+          "timestampSeconds": 2,
+          "reason": "interval",
+          "aHash": "83c3edf9f7c68602",
+          "jpegSha256": "b8587104578d60c091cfc1aa512e512e395bb6104268d9e799e62a24f9089349"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval",
+          "aHash": "4f05021303031307",
+          "jpegSha256": "62ce9e71ceb8719a46ada157694cf5fab7d83cddee96e149312620eecb666ea4"
+        },
+        {
+          "timestampSeconds": 4,
+          "reason": "interval",
+          "aHash": "0101030303173f3f",
+          "jpegSha256": "3b5a6106349b34ef0c9bc9619960d4381e74c721f37bd75585681b5aa1645f3e"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval",
+          "aHash": "01030313397fd70f",
+          "jpegSha256": "be1b6a8e50862274685aed57923d6a40c09b0e4ba62cd21ece1f625335f5cbaa"
+        },
+        {
+          "timestampSeconds": 6,
+          "reason": "interval",
+          "aHash": "0101111103077fff",
+          "jpegSha256": "5516f20a861ff40d93f2e243b031aa5602db757e8c1e5e2ec7705aa5cbddfcfd"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval",
+          "aHash": "010018000337ffdf",
+          "jpegSha256": "8d87aa1f339760c9080268e067337487dfda09032cc1f14df61ee74db1619783"
+        },
+        {
+          "timestampSeconds": 8,
+          "reason": "interval",
+          "aHash": "0000080003ffcf8f",
+          "jpegSha256": "85cc21001215ddbf2d9c6b5e4730ce22b0dcef3c96082007c6fe494bd79ff2ce"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval",
+          "aHash": "0000080000ffff77",
+          "jpegSha256": "978f8653cf161d9951e0ee0c5304152b0fa69fb42bab5a1507b96ac46ec47154"
+        },
+        {
+          "timestampSeconds": 10,
+          "reason": "interval",
+          "aHash": "000c1e060200bf7f",
+          "jpegSha256": "6e3ce00d6e88683d2242478bbb0c547dd3bd8c39aa67c4b80374d5e3107da92c"
+        },
+        {
+          "timestampSeconds": 11,
+          "reason": "interval",
+          "aHash": "00187e2fe7e3737f",
+          "jpegSha256": "fd2f53a171f9e01c14c4ff56727d91354c90cd94d777af71d06c56b6f831305e"
+        },
+        {
+          "timestampSeconds": 13,
+          "reason": "interval",
+          "aHash": "00385cfc7677333b",
+          "jpegSha256": "936bcadba92302b687f8121c7f2facce5366a0b7275273d9f735865e150550c3"
+        },
+        {
+          "timestampSeconds": 14,
+          "reason": "interval",
+          "aHash": "0038d8fc66673737",
+          "jpegSha256": "0366f40c2b136a997a3dfae097424a04e40ae1624c1bb26ffd8618ef4aaf3a6b"
+        },
+        {
+          "timestampSeconds": 15,
+          "reason": "interval",
+          "aHash": "2018dc766733333f",
+          "jpegSha256": "a256fb54c2b1e5a1d6f35066a5794cf754285fbc91e9b8c466d9274c7da5efa7"
+        },
+        {
+          "timestampSeconds": 16,
+          "reason": "interval",
+          "aHash": "18dca4666777777a",
+          "jpegSha256": "6651321f56c8fa420f499453e426bcf8fd421920edf8cfea6bc723f3289b0ebd"
+        },
+        {
+          "timestampSeconds": 17,
+          "reason": "interval",
+          "aHash": "18a4064663727afc",
+          "jpegSha256": "aba9fadacc1c9a81ee8c414375ccbc3760efcc4d2232423bec66129823d6de10"
+        },
+        {
+          "timestampSeconds": 18,
+          "reason": "interval",
+          "aHash": "0084060660707cfe",
+          "jpegSha256": "90cbc59166485802b7a21995b9198f669ccb26fdba3f375c7859d088d10be15f"
+        },
+        {
+          "timestampSeconds": 19,
+          "reason": "interval",
+          "aHash": "0004060640707cff",
+          "jpegSha256": "45c57559365f77e01a67809fd5750e20eb5b066c5c0660207a3c6e736e8ac601"
+        },
+        {
+          "timestampSeconds": 20,
+          "reason": "interval",
+          "aHash": "0004040400f07ebf",
+          "jpegSha256": "0b6a78add0f0d1a9a119c43c87a6ef1371c59d6f2967556547588601e12450de"
+        },
+        {
+          "timestampSeconds": 21,
+          "reason": "interval",
+          "aHash": "0008040000f07f7f",
+          "jpegSha256": "ddfe643c95006fd3fc63ed1a01a35115598f65978955d853199e71c2aff54ea2"
+        },
+        {
+          "timestampSeconds": 22,
+          "reason": "interval",
+          "aHash": "00080000007f7fff",
+          "jpegSha256": "eec9bb17b2e5a8dcab3bd6cb0cba7cca0e744f454f164780cd4d94e532311e8c"
+        },
+        {
+          "timestampSeconds": 23,
+          "reason": "interval",
+          "aHash": "0008080003077f7f",
+          "jpegSha256": "8afa0e958ec3be870bea1a6d49dbb7a21995b01f24ce10be5d02046d4bee5616"
+        },
+        {
+          "timestampSeconds": 23.66,
+          "reason": "last",
+          "aHash": "0001181801070f7f",
+          "jpegSha256": "0dbf72730ab1c58037d3d6f33fd7e030bbc56cc34d9aec54b03ab5ebcf47b46b"
+        }
+      ],
+      "survivors": [
+        0,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        23,
+        23.66
+      ],
+      "metrics": {
+        "processCount": 48,
+        "cpuMs": 6707,
+        "peakChildRssKiB": 103424
+      },
+      "failure": null,
+      "exactEvidenceParity": true,
+      "dedupParity": true
+    },
+    {
+      "id": "aiglun_video",
+      "sourceSha256": "156f66c193a3f1238704194656294a9dadbe9a1d50edbac72860ad4e31eec8f4",
+      "split": "held_out",
+      "repeat": 0,
+      "variant": "batched_hash",
+      "durationMs": 4957.795900000005,
+      "rawCount": 24,
+      "keptCount": 20,
+      "evidence": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first",
+          "aHash": "808682cefaf2c784",
+          "jpegSha256": "a04fdff9be027793e9e767502540a7ba14654478e60bafa58bef8cbb0d7049e8"
+        },
+        {
+          "timestampSeconds": 1,
+          "reason": "interval",
+          "aHash": "808686defafac784",
+          "jpegSha256": "b919c68280aee3f4d114e67f3586e113c126c43394f910feb36a2f51bbd919c9"
+        },
+        {
+          "timestampSeconds": 2,
+          "reason": "interval",
+          "aHash": "83c3edf9f7c68602",
+          "jpegSha256": "b8587104578d60c091cfc1aa512e512e395bb6104268d9e799e62a24f9089349"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval",
+          "aHash": "4f05021303031307",
+          "jpegSha256": "62ce9e71ceb8719a46ada157694cf5fab7d83cddee96e149312620eecb666ea4"
+        },
+        {
+          "timestampSeconds": 4,
+          "reason": "interval",
+          "aHash": "0101030303173f3f",
+          "jpegSha256": "3b5a6106349b34ef0c9bc9619960d4381e74c721f37bd75585681b5aa1645f3e"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval",
+          "aHash": "01030313397fd70f",
+          "jpegSha256": "be1b6a8e50862274685aed57923d6a40c09b0e4ba62cd21ece1f625335f5cbaa"
+        },
+        {
+          "timestampSeconds": 6,
+          "reason": "interval",
+          "aHash": "0101111103077fff",
+          "jpegSha256": "5516f20a861ff40d93f2e243b031aa5602db757e8c1e5e2ec7705aa5cbddfcfd"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval",
+          "aHash": "010018000337ffdf",
+          "jpegSha256": "8d87aa1f339760c9080268e067337487dfda09032cc1f14df61ee74db1619783"
+        },
+        {
+          "timestampSeconds": 8,
+          "reason": "interval",
+          "aHash": "0000080003ffcf8f",
+          "jpegSha256": "85cc21001215ddbf2d9c6b5e4730ce22b0dcef3c96082007c6fe494bd79ff2ce"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval",
+          "aHash": "0000080000ffff77",
+          "jpegSha256": "978f8653cf161d9951e0ee0c5304152b0fa69fb42bab5a1507b96ac46ec47154"
+        },
+        {
+          "timestampSeconds": 10,
+          "reason": "interval",
+          "aHash": "000c1e060200bf7f",
+          "jpegSha256": "6e3ce00d6e88683d2242478bbb0c547dd3bd8c39aa67c4b80374d5e3107da92c"
+        },
+        {
+          "timestampSeconds": 11,
+          "reason": "interval",
+          "aHash": "00187e2fe7e3737f",
+          "jpegSha256": "fd2f53a171f9e01c14c4ff56727d91354c90cd94d777af71d06c56b6f831305e"
+        },
+        {
+          "timestampSeconds": 13,
+          "reason": "interval",
+          "aHash": "00385cfc7677333b",
+          "jpegSha256": "936bcadba92302b687f8121c7f2facce5366a0b7275273d9f735865e150550c3"
+        },
+        {
+          "timestampSeconds": 14,
+          "reason": "interval",
+          "aHash": "0038d8fc66673737",
+          "jpegSha256": "0366f40c2b136a997a3dfae097424a04e40ae1624c1bb26ffd8618ef4aaf3a6b"
+        },
+        {
+          "timestampSeconds": 15,
+          "reason": "interval",
+          "aHash": "2018dc766733333f",
+          "jpegSha256": "a256fb54c2b1e5a1d6f35066a5794cf754285fbc91e9b8c466d9274c7da5efa7"
+        },
+        {
+          "timestampSeconds": 16,
+          "reason": "interval",
+          "aHash": "18dca4666777777a",
+          "jpegSha256": "6651321f56c8fa420f499453e426bcf8fd421920edf8cfea6bc723f3289b0ebd"
+        },
+        {
+          "timestampSeconds": 17,
+          "reason": "interval",
+          "aHash": "18a4064663727afc",
+          "jpegSha256": "aba9fadacc1c9a81ee8c414375ccbc3760efcc4d2232423bec66129823d6de10"
+        },
+        {
+          "timestampSeconds": 18,
+          "reason": "interval",
+          "aHash": "0084060660707cfe",
+          "jpegSha256": "90cbc59166485802b7a21995b9198f669ccb26fdba3f375c7859d088d10be15f"
+        },
+        {
+          "timestampSeconds": 19,
+          "reason": "interval",
+          "aHash": "0004060640707cff",
+          "jpegSha256": "45c57559365f77e01a67809fd5750e20eb5b066c5c0660207a3c6e736e8ac601"
+        },
+        {
+          "timestampSeconds": 20,
+          "reason": "interval",
+          "aHash": "0004040400f07ebf",
+          "jpegSha256": "0b6a78add0f0d1a9a119c43c87a6ef1371c59d6f2967556547588601e12450de"
+        },
+        {
+          "timestampSeconds": 21,
+          "reason": "interval",
+          "aHash": "0008040000f07f7f",
+          "jpegSha256": "ddfe643c95006fd3fc63ed1a01a35115598f65978955d853199e71c2aff54ea2"
+        },
+        {
+          "timestampSeconds": 22,
+          "reason": "interval",
+          "aHash": "00080000007f7fff",
+          "jpegSha256": "eec9bb17b2e5a8dcab3bd6cb0cba7cca0e744f454f164780cd4d94e532311e8c"
+        },
+        {
+          "timestampSeconds": 23,
+          "reason": "interval",
+          "aHash": "0008080003077f7f",
+          "jpegSha256": "8afa0e958ec3be870bea1a6d49dbb7a21995b01f24ce10be5d02046d4bee5616"
+        },
+        {
+          "timestampSeconds": 23.66,
+          "reason": "last",
+          "aHash": "0001181801070f7f",
+          "jpegSha256": "0dbf72730ab1c58037d3d6f33fd7e030bbc56cc34d9aec54b03ab5ebcf47b46b"
+        }
+      ],
+      "survivors": [
+        0,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        23,
+        23.66
+      ],
+      "metrics": {
+        "processCount": 25,
+        "cpuMs": 5528,
+        "peakChildRssKiB": 103988
+      },
+      "failure": null,
+      "exactEvidenceParity": true,
+      "dedupParity": true
+    }
+  ]
+}

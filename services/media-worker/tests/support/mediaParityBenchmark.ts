@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile, mkdtemp, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { performance } from 'node:perf_hooks';
+import { fileURLToPath } from 'node:url';
 import { loadConfig } from '../../src/config/env.js';
 import { inspectMedia } from '../../src/pipeline/inspectMedia.js';
 import { extractFramesWithStrategy, type FrameExtractionMetrics } from '../../src/pipeline/extractFrames.js';
@@ -55,7 +56,7 @@ if (args.includes('--freeze')) {
   if (variants.some((v) => !['baseline_repaired', 'batched_hash', 'single_decode_eval'].includes(v))) throw new Error('unknown_variant');
   if (!variants.includes('baseline_repaired')) throw new Error('paired_baseline_required');
   const rows: unknown[] = [];
-  const scratchRoot = path.resolve('../../.tmp/media-parity');
+  const scratchRoot = fileURLToPath(new URL('../../../../.tmp/media-parity/', import.meta.url));
   await mkdir(scratchRoot, { recursive: true });
   for (const item of manifest.items.filter((i) => i.split === split)) {
     const full = path.join(mediaRoot, item.file);

@@ -80,7 +80,7 @@ export async function extractFrames(
   workDir: string,
   signal: AbortSignal,
 ): Promise<SelectedFrame[]> {
-  return extractFramesWithStrategy(cfg, probe, inPath, workDir, signal, cfg.frameExtractionStrategy ?? 'legacy');
+  return extractFramesWithStrategy(cfg, probe, inPath, workDir, signal, cfg.frameExtractionStrategy ?? 'batched_hash');
 }
 
 /** Evaluation seam: the legacy arm retains the repaired baseline exactly. */
