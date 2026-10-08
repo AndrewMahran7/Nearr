@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-08",
+  "source_branch": "feat/recognition-pareto-optimization",
+  "inventory_scope": "historically exposed public social-post references only; availability and labels unverified",
+  "counts": {
+    "prior_v2_total": 118,
+    "prior_v2_social_sources": 88,
+    "prior_v2_non_social_or_controls": 30,
+    "social_candidates": 105,
+    "by_platform": {
+      "facebook": 2,
+      "instagram": 95,
+      "other": 1,
+      "tiktok": 2,
+      "youtube": 5
+    },
+    "correction_rows": 8,
+    "correction_distinct_sources": 5,
+    "development_correction_rows": 0,
+    "user_action_rows": 18,
+    "user_action_distinct_sources": 10,
+    "restricted_action_sources_not_committed": 15,
+    "candidates_with_retained_caption_or_description": 27,
+    "previously_labeled_exact_single": 22,
+    "new_gold_verified_in_committed_manifest": 0,
+    "ignored": 31
+  },
+  "restricted_historical_job_queue": {
+    "development": {
+      "total_source_rows": 27,
+      "recognized_content_ids": 27,
+      "unresolved_url_shapes": 0,
+      "already_in_curated_candidates": 19
+    },
+    "production": {
+      "total_source_rows": 638,
+      "recognized_content_ids": 596,
+      "unresolved_url_shapes": 42,
+      "already_in_curated_candidates": 54
+    }
+  },
+  "ignored_reasons": {
+    "constructed_control": 2,
+    "not_a_supported_public_social_post": 29
+  },
+  "sources": {
+    "artifacts/automatic-deep-recognition/runs/automatic-deep-auto_deep_candidate-2026-09-06T00-32-59-381Z/results.json": {
+      "sha256": "a4f104849a79f6ee5538fbe75f937a5fc1881028110966379019762f5da597e4",
+      "bytes": 93922
+    },
+    "artifacts/recognition-optimization-2026-10-08/dataset-v2/inputs.json": {
+      "sha256": "71dbd1c4ab6cf8ef1d4bd14c2e9b0258e95f8c32b31609ac85e5741f46e1b56a",
+      "bytes": 101435
+    },
+    "artifacts/recognition-optimization-2026-10-08/dataset-v2/labels.json": {
+      "sha256": "14a1690ad5a5d3942b504a873f9ed7e9edd47b21776b69d9615bf9dc3102c6e1",
+      "bytes": 100005
+    },
+    "artifacts/recognition/FOUNDER_12_VIDEO_BURST_AUTO_DEEP_REGRESSION_2026-09-05.json": {
+      "sha256": "7bcab5c6ce80204c446aa73004f81fe2e38d2bbaee1d7f1de430333fcaca5866",
+      "bytes": 3184
+    },
+    "artifacts/recognition/RECENT_FOUNDER_4_VIDEO_REGRESSION_2026-09-05.json": {
+      "sha256": "b42e12a9e172e8b1e399803c4826c9acc74bbc38f37e76c910adce878384762c",
+      "bytes": 1011
+    },
+    "artifacts/share-gold-labeling-labeled.json": {
+      "sha256": "f218103017b9adb3d3448c02da9f09838c37b3536e2e54f0b3151eb5d3ddec0f",
+      "bytes": 77725
+    },
+    "scripts/mediaRegressionCorpus.json": {
+      "sha256": "1dfef6c21f20e5708b47f0af6a37991997980aaa44e84f986e43449e1ce6eb0a",
+      "bytes": 30400
+    },
+    "scripts/phase2-gold-set.json": {
+      "sha256": "e03bf37ddb1bb3dd4806803b043b5e13cc1f5072d549f09d4e0bcf83117a50c0",
+      "bytes": 4377
+    },
+    "scripts/shareRegressionFixtures.ts": {
+      "sha256": "42886eee2f9b6778af418b1d1eb0f11f2c77ca7265de9ab974a36b877982daf0",
+      "bytes": 5728
+    },
+    "scripts/tutorialFixtureManifest.json": {
+      "sha256": "d10c9b7a51c5a66485fc433e2db8a5e2ee7be2480aa22d5ceab3413813b08835",
+      "bytes": 1612
+    }
+  },
+  "output_sha256": {
+    "historical_social_candidates": "d1394b7335548b90cd292758e8ef3b8bdd63608568eff661f2eeef7fbb5fb716",
+    "legacy_source_mapping": "cbfae64fea22e6e57d4a09fe848a6acad7d6995c8a0e4249ee8d9bf8f1341b86",
+    "private_label_draft_before_separate_adjudication": "09b08bbddcbc7eed7cd8f669eb1ad1db6e9566c4728b8f064794f0674c04b86d",
+    "restricted_job_queue": "3ef389a383d948c6ed6abc3ae93e23f817523e0e2ed401e3082ccf54f4f0a6e1",
+    "restricted_action_queue": "ae43d76521340822baada07fa39101fcc634a64482ca4f41502a93eb54eeb3e4"
+  }
+}
