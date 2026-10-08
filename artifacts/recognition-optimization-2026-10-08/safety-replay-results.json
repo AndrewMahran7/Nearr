@@ -1,0 +1,270 @@
+{
+  "kind": "synthetic_policy_controls_not_accuracy",
+  "productionSha": "e9daf499cfb276ea7072b651642a04218b90ccf9",
+  "rows": [
+    {
+      "caseId": "plausibility_is_not_identity",
+      "kind": "synthetic_policy_control",
+      "production": "save",
+      "repaired": "escalate",
+      "expected": "escalate",
+      "passed": true
+    },
+    {
+      "caseId": "review_stays_review",
+      "kind": "synthetic_policy_control",
+      "production": "save",
+      "repaired": "escalate",
+      "expected": "escalate",
+      "passed": true
+    },
+    {
+      "caseId": "reject_stays_reject",
+      "kind": "synthetic_policy_control",
+      "production": "save",
+      "repaired": "escalate",
+      "expected": "escalate",
+      "passed": true
+    },
+    {
+      "caseId": "same_name_branches_need_review",
+      "kind": "synthetic_policy_control",
+      "production": "save",
+      "repaired": "escalate",
+      "expected": "escalate",
+      "passed": true
+    },
+    {
+      "caseId": "unique_caption_name_remains_automatic",
+      "kind": "synthetic_policy_control",
+      "production": "save",
+      "repaired": "save",
+      "expected": "save",
+      "passed": true
+    },
+    {
+      "caseId": "unique_bound_address_remains_automatic",
+      "kind": "synthetic_policy_control",
+      "production": "save",
+      "repaired": "save",
+      "expected": "save",
+      "passed": true
+    },
+    {
+      "caseId": "two_bound_addresses_cannot_choose_branch",
+      "kind": "synthetic_policy_control",
+      "production": "save",
+      "repaired": "escalate",
+      "expected": "escalate",
+      "passed": true
+    },
+    {
+      "caseId": "semantic_contradiction_rejected",
+      "kind": "synthetic_policy_control",
+      "production": "escalate",
+      "repaired": "escalate",
+      "expected": "escalate",
+      "passed": true
+    },
+    {
+      "caseId": "broad_area_not_exact_place",
+      "kind": "synthetic_policy_control",
+      "production": "escalate",
+      "repaired": "escalate",
+      "expected": "escalate",
+      "passed": true
+    },
+    {
+      "caseId": "named_lead_status_needs_help",
+      "kind": "synthetic_policy_control",
+      "production": "1",
+      "repaired": "1",
+      "expected": "1",
+      "passed": true
+    },
+    {
+      "caseId": "named_lead_status_failed",
+      "kind": "synthetic_policy_control",
+      "production": "1",
+      "repaired": "0",
+      "expected": "0",
+      "passed": true
+    },
+    {
+      "caseId": "named_lead_status_cancelled",
+      "kind": "synthetic_policy_control",
+      "production": "0",
+      "repaired": "0",
+      "expected": "0",
+      "passed": true
+    },
+    {
+      "caseId": "named_lead_status_completed",
+      "kind": "synthetic_policy_control",
+      "production": "0",
+      "repaired": "0",
+      "expected": "0",
+      "passed": true
+    },
+    {
+      "caseId": "named_lead_status_processing_metadata",
+      "kind": "synthetic_policy_control",
+      "production": "0",
+      "repaired": "0",
+      "expected": "0",
+      "passed": true
+    },
+    {
+      "caseId": "review_lead_not_promoted_by_singleton",
+      "kind": "synthetic_policy_control",
+      "production": "1",
+      "repaired": "0",
+      "expected": "0",
+      "passed": true
+    },
+    {
+      "caseId": "metadata_singleton_without_identity",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "false",
+      "expected": "false",
+      "passed": true
+    },
+    {
+      "caseId": "metadata_exact_address",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "true",
+      "expected": "true",
+      "passed": true
+    },
+    {
+      "caseId": "metadata_same_address_wrong_tenant",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "false",
+      "expected": "false",
+      "passed": true
+    },
+    {
+      "caseId": "media_source_speech_positive",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "true",
+      "expected": "true",
+      "passed": true
+    },
+    {
+      "caseId": "media_model_prior_negative",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "false",
+      "expected": "false",
+      "passed": true
+    },
+    {
+      "caseId": "media_creator_negative",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "false",
+      "expected": "false",
+      "passed": true
+    },
+    {
+      "caseId": "media_unresolved_sibling",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "false",
+      "expected": "false",
+      "passed": true
+    },
+    {
+      "caseId": "greece_prada_country_veto",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "false",
+      "expected": "false",
+      "passed": true
+    },
+    {
+      "caseId": "mallorca_girona_region_veto",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "false",
+      "expected": "false",
+      "passed": true
+    },
+    {
+      "caseId": "sponsor_is_not_a_venue",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "BRAND",
+      "expected": "BRAND",
+      "passed": true
+    },
+    {
+      "caseId": "bare_tag_is_ambiguous",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "AMBIGUOUS",
+      "expected": "AMBIGUOUS",
+      "passed": true
+    },
+    {
+      "caseId": "locative_brand_store_is_a_venue",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "VENUE",
+      "expected": "VENUE",
+      "passed": true
+    },
+    {
+      "caseId": "failed_job_hides_confident_candidates",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "0",
+      "expected": "0",
+      "passed": true
+    },
+    {
+      "caseId": "failed_parent_not_finalized",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "parent_already_terminal",
+      "expected": "parent_already_terminal",
+      "passed": true
+    },
+    {
+      "caseId": "review_parent_not_overwritten",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "parent_already_terminal",
+      "expected": "parent_already_terminal",
+      "passed": true
+    },
+    {
+      "caseId": "multi_place_evidence_continues",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "resolve",
+      "expected": "resolve",
+      "passed": true
+    },
+    {
+      "caseId": "cache_default_suspended",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "false",
+      "expected": "false",
+      "passed": true
+    },
+    {
+      "caseId": "qualification_cannot_use_answer_cache",
+      "kind": "synthetic_policy_control",
+      "production": null,
+      "repaired": "false",
+      "expected": "false",
+      "passed": true
+    }
+  ]
+}
