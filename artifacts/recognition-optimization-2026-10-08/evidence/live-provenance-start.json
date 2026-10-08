@@ -1,0 +1,125 @@
+{
+  "capturedAt": "2026-10-08T22:23:41.038Z",
+  "developmentEdge": "[\n  {\n    \"created_at\": 1787183849025,\n    \"entrypoint_path\": \"file:///tmp/user_fn_qnfxnmvxpjzfydgudtvs_2bf6a549-e9c6-4cee-accb-3a6bc95b44d5_73/source/supabase/functions/create-share-job/index.ts\",\n    \"ezbr_sha256\": \"f59013c4c9332755ff217805a0c4ad0f6077148c6cc47b3a4f98ed3e5003ae60\",\n    \"id\": \"2bf6a549-e9c6-4cee-accb-3a6bc95b44d5\",\n    \"import_map\": false,\n    \"name\": \"create-share-job\",\n    \"slug\": \"create-share-job\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1789093904363,\n    \"verify_jwt\": true,\n    \"version\": 73\n  },\n  {\n    \"created_at\": 1787183854449,\n    \"entrypoint_path\": \"file:///tmp/user_fn_qnfxnmvxpjzfydgudtvs_ebe4a408-d9e0-45ce-8874-501ad006f9f4_18/source/supabase/functions/delete-account/index.ts\",\n    \"ezbr_sha256\": \"6ef7334c1572f4f754d85cca815879e9ecd15625c0c6960c2063d0c5d6ab82c7\",\n    \"id\": \"ebe4a408-d9e0-45ce-8874-501ad006f9f4\",\n    \"import_map\": false,\n    \"name\": \"delete-account\",\n    \"slug\": \"delete-account\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1788476021058,\n    \"verify_jwt\": true,\n    \"version\": 58\n  },\n  {\n    \"created_at\": 1787183860550,\n    \"entrypoint_path\": \"file:///tmp/user_fn_qnfxnmvxpjzfydgudtvs_7c25443f-d595-4332-b3fd-627855bd782a_142/source/supabase/functions/process-share-jobs/index.ts\",\n    \"ezbr_sha256\": \"14a14902b8251e5c567d8fb7793692089a55a96821e40867e06ffbd67289195a\",\n    \"id\": \"7c25443f-d595-4332-b3fd-627855bd782a\",\n    \"import_map\": false,\n    \"name\": \"process-share-jobs\",\n    \"slug\": \"process-share-jobs\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1791496130788,\n    \"verify_jwt\": false,\n    \"version\": 142\n  },\n  {\n    \"created_at\": 1787183865872,\n    \"entrypoint_path\": \"file:///tmp/user_fn_qnfxnmvxpjzfydgudtvs_87f5bb75-f296-4cf7-83fc-d976fa65c634_86/source/supabase/functions/process-share-link/index.ts\",\n    \"ezbr_sha256\": \"bd87696a4f850bf1f573f7b6f63ac2abe804c1990131984fb92da0a5245871fe\",\n    \"id\": \"87f5bb75-f296-4cf7-83fc-d976fa65c634\",\n    \"import_map\": false,\n    \"name\": \"process-share-link\",\n    \"slug\": \"process-share-link\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1789500944209,\n    \"verify_jwt\": false,\n    \"version\": 86\n  },\n  {\n    \"created_at\": 1787283828415,\n    \"entrypoint_path\": \"file:///tmp/user_fn_qnfxnmvxpjzfydgudtvs_f498c174-895a-4041-bfdb-d4a665e6db53_1/source/supabase/functions/e2e-place-fixture/index.ts\",\n    \"ezbr_sha256\": \"20f26cb1e6d13ebc5275901f1d467f57881e25993cdb8b0d07ad5cd2b6932397\",\n    \"id\": \"f498c174-895a-4041-bfdb-d4a665e6db53\",\n    \"import_map\": false,\n    \"name\": \"e2e-place-fixture\",\n    \"slug\": \"e2e-place-fixture\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1787283828415,\n    \"verify_jwt\": false,\n    \"version\": 53\n  },\n  {\n    \"created_at\": 1787618932746,\n    \"entrypoint_path\": \"file:///tmp/user_fn_qnfxnmvxpjzfydgudtvs_82f35111-734f-4668-b1ac-e05d10e9cd17_1/source/supabase/functions/delete-share-job/index.ts\",\n    \"ezbr_sha256\": \"88c625982be7d7c64d81c9bdbcd38a8333ac22c6ba61844190fb8848780c73dc\",\n    \"id\": \"82f35111-734f-4668-b1ac-e05d10e9cd17\",\n    \"import_map\": false,\n    \"name\": \"delete-share-job\",\n    \"slug\": \"delete-share-job\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1787618932746,\n    \"verify_jwt\": true,\n    \"version\": 52\n  },\n  {\n    \"created_at\": 1788476008844,\n    \"entrypoint_path\": \"file:///tmp/user_fn_qnfxnmvxpjzfydgudtvs_3e297d08-a1c8-4320-b22e-b5137a348ce2_41/source/supabase/functions/monetization/index.ts\",\n    \"ezbr_sha256\": \"a58057377579ab1d5e447e023751c2dd5b9c7cc5d5883714b8bde77de1a8135f\",\n    \"id\": \"3e297d08-a1c8-4320-b22e-b5137a348ce2\",\n    \"import_map\": false,\n    \"name\": \"monetization\",\n    \"slug\": \"monetization\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1789065921565,\n    \"verify_jwt\": true,\n    \"version\": 44\n  },\n  {\n    \"created_at\": 1788649770877,\n    \"entrypoint_path\": \"file:///tmp/user_fn_qnfxnmvxpjzfydgudtvs_d7852a17-2513-4c08-80f0-f45110ae5702_2/source/supabase/functions/public-place/index.ts\",\n    \"ezbr_sha256\": \"ddd57441cdd4647b14fded422375837861a489a128971054a2f7a4e2471684b9\",\n    \"id\": \"d7852a17-2513-4c08-80f0-f45110ae5702\",\n    \"import_map\": false,\n    \"name\": \"public-place\",\n    \"slug\": \"public-place\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1788650551004,\n    \"verify_jwt\": false,\n    \"version\": 12\n  },\n  {\n    \"created_at\": 1788675575498,\n    \"entrypoint_path\": \"file:///tmp/user_fn_qnfxnmvxpjzfydgudtvs_7296106e-2840-4685-8eac-ee28a2253e90_2/source/supabase/functions/get-place-videos/index.ts\",\n    \"ezbr_sha256\": \"92141568b51776c9b6ebf348147ce0706e6172266cc3ac699af06b6edbd8f050\",\n    \"id\": \"7296106e-2840-4685-8eac-ee28a2253e90\",\n    \"import_map\": false,\n    \"name\": \"get-place-videos\",\n    \"slug\": \"get-place-videos\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1788726661461,\n    \"verify_jwt\": false,\n    \"version\": 10\n  },\n  {\n    \"created_at\": 1788734658449,\n    \"entrypoint_path\": \"file:///tmp/user_fn_qnfxnmvxpjzfydgudtvs_68dff82f-dbee-47c3-b63e-f57a1b5415c1_8/source/supabase/functions/revenuecat-webhook/index.ts\",\n    \"ezbr_sha256\": \"db5a050393480243cac20326fe9843c894919a4a29791ffebe2ac362abb1a808\",\n    \"id\": \"68dff82f-dbee-47c3-b63e-f57a1b5415c1\",\n    \"import_map\": false,\n    \"name\": \"revenuecat-webhook\",\n    \"slug\": \"revenuecat-webhook\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1789068465629,\n    \"verify_jwt\": false,\n    \"version\": 9\n  },\n  {\n    \"created_at\": 1789018607973,\n    \"entrypoint_path\": \"file:///tmp/user_fn_qnfxnmvxpjzfydgudtvs_55d7e6d7-b8d6-4730-88d2-a2f338857416_11/source/supabase/functions/get-onboarding-tutorial/index.ts\",\n    \"ezbr_sha256\": \"59aab65fdc34c361b3b747257d5d5b0b81ba0a3e7ca596f46b37bee63d1fc542\",\n    \"id\": \"55d7e6d7-b8d6-4730-88d2-a2f338857416\",\n    \"import_map\": false,\n    \"name\": \"get-onboarding-tutorial\",\n    \"slug\": \"get-onboarding-tutorial\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1789093907605,\n    \"verify_jwt\": true,\n    \"version\": 11\n  },\n  {\n    \"created_at\": 1789093912551,\n    \"entrypoint_path\": \"file:///tmp/user_fn_qnfxnmvxpjzfydgudtvs_8d63c2ec-d656-46d1-9b50-0ebe4a93a77d_1/source/supabase/functions/reset-onboarding-qa/index.ts\",\n    \"ezbr_sha256\": \"dd0340fea538c76ab3e6edb25ec2727b1923e7b1c74a35698e8e0289cc02f4d3\",\n    \"id\": \"8d63c2ec-d656-46d1-9b50-0ebe4a93a77d\",\n    \"import_map\": false,\n    \"name\": \"reset-onboarding-qa\",\n    \"slug\": \"reset-onboarding-qa\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1789093912551,\n    \"verify_jwt\": true,\n    \"version\": 1\n  }\n]\n",
+  "productionEdge": "[\n  {\n    \"created_at\": 1777652736396,\n    \"entrypoint_path\": \"file:///tmp/user_fn_rlqvxdwtetxsqxhqztkw_4aa605b0-09e3-4bf3-93c0-3b175fd7bfa3_153/source/supabase/functions/process-share-link/index.ts\",\n    \"ezbr_sha256\": \"5925fde1868010306fa5fbcf1b10d399bf65fed38737a1606b96e9e07f7a6290\",\n    \"id\": \"4aa605b0-09e3-4bf3-93c0-3b175fd7bfa3\",\n    \"import_map\": false,\n    \"name\": \"process-share-link\",\n    \"slug\": \"process-share-link\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1788909039059,\n    \"verify_jwt\": false,\n    \"version\": 153\n  },\n  {\n    \"created_at\": 1785254078253,\n    \"entrypoint_path\": \"file:///tmp/user_fn_rlqvxdwtetxsqxhqztkw_8ab729f6-726c-402a-9f1b-17d7b9b592e1_25/source/supabase/functions/delete-account/index.ts\",\n    \"ezbr_sha256\": \"6ef7334c1572f4f754d85cca815879e9ecd15625c0c6960c2063d0c5d6ab82c7\",\n    \"id\": \"8ab729f6-726c-402a-9f1b-17d7b9b592e1\",\n    \"import_map\": false,\n    \"name\": \"delete-account\",\n    \"slug\": \"delete-account\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1788593253153,\n    \"verify_jwt\": true,\n    \"version\": 42\n  },\n  {\n    \"created_at\": 1785516419474,\n    \"entrypoint_path\": \"file:///tmp/user_fn_rlqvxdwtetxsqxhqztkw_db9725e9-94eb-424f-a62c-4efe0f46a4db_32/source/supabase/functions/create-share-job/index.ts\",\n    \"ezbr_sha256\": \"d8f2e4a35d8a5c9f9dbcfc0795343a586c319042eb0c9df3fac96c7b801e0451\",\n    \"id\": \"db9725e9-94eb-424f-a62c-4efe0f46a4db\",\n    \"import_map\": false,\n    \"name\": \"create-share-job\",\n    \"slug\": \"create-share-job\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1788734561488,\n    \"verify_jwt\": true,\n    \"version\": 45\n  },\n  {\n    \"created_at\": 1785516424990,\n    \"entrypoint_path\": \"file:///tmp/user_fn_rlqvxdwtetxsqxhqztkw_91ca28c3-2da2-46e2-b2a5-2ef47fbdf52f_123/source/supabase/functions/process-share-jobs/index.ts\",\n    \"ezbr_sha256\": \"578f81df4c87b54ec178ee0ce32aadd35be527d6d6f30c0760a0bb8add925339\",\n    \"id\": \"91ca28c3-2da2-46e2-b2a5-2ef47fbdf52f\",\n    \"import_map\": false,\n    \"name\": \"process-share-jobs\",\n    \"slug\": \"process-share-jobs\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1788910065140,\n    \"verify_jwt\": false,\n    \"version\": 123\n  },\n  {\n    \"created_at\": 1787620729479,\n    \"entrypoint_path\": \"file:///tmp/user_fn_rlqvxdwtetxsqxhqztkw_61740e10-bf7e-471b-8389-2fd599a4dcef_1/source/supabase/functions/delete-share-job/index.ts\",\n    \"ezbr_sha256\": \"850ce03727419256f340313a12f8308966c15a562d1e1c1fcc16ec223c796de2\",\n    \"id\": \"61740e10-bf7e-471b-8389-2fd599a4dcef\",\n    \"import_map\": false,\n    \"name\": \"delete-share-job\",\n    \"slug\": \"delete-share-job\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1787620729479,\n    \"verify_jwt\": true,\n    \"version\": 18\n  },\n  {\n    \"created_at\": 1788593262359,\n    \"entrypoint_path\": \"file:///tmp/user_fn_rlqvxdwtetxsqxhqztkw_9676307a-011c-447c-806c-31589352b263_3/source/supabase/functions/monetization/index.ts\",\n    \"ezbr_sha256\": \"e0b02b8a1563e02fc460e4d71dfd9609c0813382c53323647aad7f81d85b4c6d\",\n    \"id\": \"9676307a-011c-447c-806c-31589352b263\",\n    \"import_map\": false,\n    \"name\": \"monetization\",\n    \"slug\": \"monetization\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1788640276505,\n    \"verify_jwt\": true,\n    \"version\": 19\n  },\n  {\n    \"created_at\": 1788654570198,\n    \"entrypoint_path\": \"file:///tmp/user_fn_rlqvxdwtetxsqxhqztkw_dda5d56e-c68a-4fd5-9b72-fc30f8447d8d_1/source/supabase/functions/public-place/index.ts\",\n    \"ezbr_sha256\": \"ec91e1f1b9294eb867fa10b733de79e641cd39b461df5c35b3b0efd2d96879fd\",\n    \"id\": \"dda5d56e-c68a-4fd5-9b72-fc30f8447d8d\",\n    \"import_map\": false,\n    \"name\": \"public-place\",\n    \"slug\": \"public-place\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1788654570198,\n    \"verify_jwt\": false,\n    \"version\": 16\n  },\n  {\n    \"created_at\": 1788727320889,\n    \"entrypoint_path\": \"file:///tmp/user_fn_rlqvxdwtetxsqxhqztkw_1f401678-6109-4587-bf05-5508e9ea2d75_1/source/supabase/functions/get-place-videos/index.ts\",\n    \"ezbr_sha256\": \"92141568b51776c9b6ebf348147ce0706e6172266cc3ac699af06b6edbd8f050\",\n    \"id\": \"1f401678-6109-4587-bf05-5508e9ea2d75\",\n    \"import_map\": false,\n    \"name\": \"get-place-videos\",\n    \"slug\": \"get-place-videos\",\n    \"status\": \"ACTIVE\",\n    \"updated_at\": 1788727320889,\n    \"verify_jwt\": false,\n    \"version\": 16\n  }\n]\n",
+  "developmentRailway": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Found 2 deployment(s):\n\n- **11acd95c-90f3-407e-aefa-2f1d66fc05a9** [SUCCESS]\n  service: 3c8cd190-b118-4ee4-9338-407843ef4e1f, env: 57d055b7-5326-4f96-a7a9-70523ee0d3f0\n  created: 2026-09-15T19:36:39.266Z by Andrew Mahran\n  regions: sfo\n  can redeploy · can roll back\n- **0b9776ae-d9df-4fad-8ff3-9e8b34153a93** [REMOVED]\n  service: 3c8cd190-b118-4ee4-9338-407843ef4e1f, env: 57d055b7-5326-4f96-a7a9-70523ee0d3f0\n  created: 2026-09-14T23:37:08.476Z by Andrew Mahran\n  regions: sfo\n  can redeploy"
+      }
+    ],
+    "structuredContent": {
+      "deployments": [
+        {
+          "canRedeploy": true,
+          "canRollback": true,
+          "createdAt": "2026-09-15T19:36:39.266Z",
+          "creator": {
+            "email": "mahranandrew@gmail.com",
+            "id": "f908d142-7c9a-4733-a8df-561875a88d74",
+            "name": "Andrew Mahran"
+          },
+          "environmentId": "57d055b7-5326-4f96-a7a9-70523ee0d3f0",
+          "id": "11acd95c-90f3-407e-aefa-2f1d66fc05a9",
+          "meta": {
+            "reason": "deploy"
+          },
+          "regions": [
+            "sfo"
+          ],
+          "serviceId": "3c8cd190-b118-4ee4-9338-407843ef4e1f",
+          "snapshotId": "1dffb360-d2ca-4459-aad8-cfec6a4ae347",
+          "status": "SUCCESS",
+          "updatedAt": "2026-09-15T19:39:28.114Z",
+          "url": null
+        },
+        {
+          "canRedeploy": true,
+          "canRollback": false,
+          "createdAt": "2026-09-14T23:37:08.476Z",
+          "creator": {
+            "email": "mahranandrew@gmail.com",
+            "id": "f908d142-7c9a-4733-a8df-561875a88d74",
+            "name": "Andrew Mahran"
+          },
+          "environmentId": "57d055b7-5326-4f96-a7a9-70523ee0d3f0",
+          "id": "0b9776ae-d9df-4fad-8ff3-9e8b34153a93",
+          "meta": {
+            "reason": "deploy"
+          },
+          "regions": [
+            "sfo"
+          ],
+          "serviceId": "3c8cd190-b118-4ee4-9338-407843ef4e1f",
+          "snapshotId": "e41172ba-0c5b-4ed5-a1a4-6ee32cccead2",
+          "status": "REMOVED",
+          "updatedAt": "2026-09-15T19:39:30.357Z",
+          "url": null
+        }
+      ]
+    }
+  },
+  "productionRailway": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Found 2 deployment(s):\n\n- **fee82c18-6652-449b-8f54-9868ad54dcc0** [SKIPPED]\n  service: 59234570-e2ec-4a7e-86de-22826da86c66, env: 49650a9c-4744-4649-8cd1-4ff38473d22f\n  created: 2026-09-09T05:13:01.421Z by Andrew Mahran\n  branch main · commit ded0404 · fix: make fallback place save one tap\n  can redeploy\n- **6e78ebe9-58f7-4799-a90e-86238a1b14e9** [SUCCESS]\n  service: 59234570-e2ec-4a7e-86de-22826da86c66, env: 49650a9c-4744-4649-8cd1-4ff38473d22f\n  created: 2026-09-08T23:27:26.675Z by Andrew Mahran\n  branch main · commit e9daf49 · chore: align source conflict metrics\n  regions: sfo\n  can redeploy · can roll back"
+      }
+    ],
+    "structuredContent": {
+      "deployments": [
+        {
+          "canRedeploy": true,
+          "canRollback": false,
+          "createdAt": "2026-09-09T05:13:01.421Z",
+          "creator": {
+            "email": "mahranandrew@gmail.com",
+            "id": "f908d142-7c9a-4733-a8df-561875a88d74",
+            "name": "Andrew Mahran"
+          },
+          "environmentId": "49650a9c-4744-4649-8cd1-4ff38473d22f",
+          "id": "fee82c18-6652-449b-8f54-9868ad54dcc0",
+          "meta": {
+            "branch": "main",
+            "commitHash": "ded040465176a193bba8c6921b179b07ef6a9a64",
+            "commitMessage": "fix: make fallback place save one tap",
+            "reason": "deploy"
+          },
+          "regions": [],
+          "serviceId": "59234570-e2ec-4a7e-86de-22826da86c66",
+          "snapshotId": "aeb509cb-bcef-4482-91ef-5487489ad86b",
+          "status": "SKIPPED",
+          "updatedAt": "2026-09-09T05:13:07.951Z",
+          "url": null
+        },
+        {
+          "canRedeploy": true,
+          "canRollback": true,
+          "createdAt": "2026-09-08T23:27:26.675Z",
+          "creator": {
+            "email": "mahranandrew@gmail.com",
+            "id": "f908d142-7c9a-4733-a8df-561875a88d74",
+            "name": "Andrew Mahran"
+          },
+          "environmentId": "49650a9c-4744-4649-8cd1-4ff38473d22f",
+          "id": "6e78ebe9-58f7-4799-a90e-86238a1b14e9",
+          "meta": {
+            "branch": "main",
+            "commitHash": "e9daf499cfb276ea7072b651642a04218b90ccf9",
+            "commitMessage": "chore: align source conflict metrics",
+            "reason": "deploy"
+          },
+          "regions": [
+            "sfo"
+          ],
+          "serviceId": "59234570-e2ec-4a7e-86de-22826da86c66",
+          "snapshotId": "bdd63300-bb55-40f3-b1ec-e298f1f220db",
+          "status": "SUCCESS",
+          "updatedAt": "2026-09-08T23:27:56.389Z",
+          "url": null
+        }
+      ]
+    }
+  }
+}

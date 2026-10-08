@@ -1,0 +1,1167 @@
+{
+  "boundary": "offline descriptor and geometric correspondence pilot, not autonomous recognition",
+  "device": "cuda",
+  "gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU",
+  "torch": "2.5.1+cu121",
+  "eigenCheckpointSha256": "b47ea1efb51041604e9c135508764175bbaa98dece47b47da664517317d0aff3",
+  "planSha256": "b155fe837824bf50a4203363cf6f12afb69b3c5487f995efde649de24f0728cb",
+  "frameCount": 44,
+  "referenceFrames": 30,
+  "descriptorBytes": 90112,
+  "cudaPeakAllocatedBytes": 877640704,
+  "embeddingTimingsMsIncludingFirstColdInference": {
+    "p50": 10.194349997618701,
+    "p75": 14.933200003724778,
+    "p90": 24.23341999965488,
+    "p95": 41.24946499869113
+  },
+  "featureExtractionTimingsMs": {
+    "p50": 53.336099997977726,
+    "p75": 61.970149996341206,
+    "p90": 70.11680000869092,
+    "p95": 92.50955000607064
+  },
+  "matcherTimingsMs": {
+    "p50": 49.073199996200856,
+    "p75": 60.137425007269485,
+    "p90": 72.94165000348585,
+    "p95": 129.96829999610782
+  },
+  "summary": [
+    {
+      "boundary": "same_video_temporal_control",
+      "geography": "global",
+      "queries": 10,
+      "sourceGroups": 10,
+      "recallAt1Count": 10,
+      "recallAt3Count": 10,
+      "recallAt5Count": 10
+    },
+    {
+      "boundary": "same_video_temporal_control",
+      "geography": "country",
+      "queries": 10,
+      "sourceGroups": 10,
+      "recallAt1Count": 10,
+      "recallAt3Count": 10,
+      "recallAt5Count": 10
+    },
+    {
+      "boundary": "independent_source_locality",
+      "geography": "global",
+      "queries": 4,
+      "sourceGroups": 2,
+      "recallAt1Count": 2,
+      "recallAt3Count": 4,
+      "recallAt5Count": 4
+    },
+    {
+      "boundary": "independent_source_locality",
+      "geography": "country",
+      "queries": 4,
+      "sourceGroups": 2,
+      "recallAt1Count": 2,
+      "recallAt3Count": 4,
+      "recallAt5Count": 4
+    }
+  ],
+  "retrieval": [
+    {
+      "queryIndex": 3,
+      "source": "cavitt_a_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "cavitt",
+        "dettifoss_video",
+        "summersville_video",
+        "sydney_opera_video",
+        "etretat_video",
+        "cocoa_pier_video",
+        "la_jolla_locality",
+        "niagara_video",
+        "golden_gate_video",
+        "griffith_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 1.996899998630397,
+      "shortlistReferenceIndices": [
+        1,
+        12,
+        36
+      ]
+    },
+    {
+      "queryIndex": 3,
+      "source": "cavitt_a_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "country",
+      "candidatePlaces": 6,
+      "rankedGroups": [
+        "cavitt",
+        "summersville_video",
+        "cocoa_pier_video",
+        "la_jolla_locality",
+        "golden_gate_video",
+        "griffith_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.06669999856967479,
+      "shortlistReferenceIndices": [
+        1,
+        36,
+        16
+      ]
+    },
+    {
+      "queryIndex": 4,
+      "source": "cavitt_b_video",
+      "boundary": "independent_source_locality",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "cavitt",
+        "dettifoss_video",
+        "la_jolla_locality",
+        "summersville_video",
+        "sydney_opera_video",
+        "cocoa_pier_video",
+        "etretat_video",
+        "golden_gate_video",
+        "niagara_video",
+        "griffith_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 1.0323000024072826,
+      "shortlistReferenceIndices": [
+        0,
+        12,
+        6
+      ]
+    },
+    {
+      "queryIndex": 4,
+      "source": "cavitt_b_video",
+      "boundary": "independent_source_locality",
+      "geography": "country",
+      "candidatePlaces": 6,
+      "rankedGroups": [
+        "cavitt",
+        "la_jolla_locality",
+        "summersville_video",
+        "cocoa_pier_video",
+        "golden_gate_video",
+        "griffith_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.14540000120177865,
+      "shortlistReferenceIndices": [
+        0,
+        6,
+        37
+      ]
+    },
+    {
+      "queryIndex": 5,
+      "source": "cavitt_b_video",
+      "boundary": "independent_source_locality",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "cavitt",
+        "dettifoss_video",
+        "la_jolla_locality",
+        "summersville_video",
+        "sydney_opera_video",
+        "cocoa_pier_video",
+        "etretat_video",
+        "golden_gate_video",
+        "niagara_video",
+        "griffith_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.10869999823626131,
+      "shortlistReferenceIndices": [
+        0,
+        12,
+        6
+      ]
+    },
+    {
+      "queryIndex": 5,
+      "source": "cavitt_b_video",
+      "boundary": "independent_source_locality",
+      "geography": "country",
+      "candidatePlaces": 6,
+      "rankedGroups": [
+        "cavitt",
+        "la_jolla_locality",
+        "summersville_video",
+        "cocoa_pier_video",
+        "golden_gate_video",
+        "griffith_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.060999998822808266,
+      "shortlistReferenceIndices": [
+        0,
+        6,
+        37
+      ]
+    },
+    {
+      "queryIndex": 9,
+      "source": "la_jolla_a_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "la_jolla_locality",
+        "cocoa_pier_video",
+        "etretat_video",
+        "summersville_video",
+        "sydney_opera_video",
+        "golden_gate_video",
+        "cavitt",
+        "dettifoss_video",
+        "niagara_video",
+        "griffith_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 1.0062000073958188,
+      "shortlistReferenceIndices": [
+        6,
+        16,
+        42
+      ]
+    },
+    {
+      "queryIndex": 9,
+      "source": "la_jolla_a_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "country",
+      "candidatePlaces": 6,
+      "rankedGroups": [
+        "la_jolla_locality",
+        "cocoa_pier_video",
+        "summersville_video",
+        "golden_gate_video",
+        "cavitt",
+        "griffith_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.06260001100599766,
+      "shortlistReferenceIndices": [
+        6,
+        16,
+        37
+      ]
+    },
+    {
+      "queryIndex": 10,
+      "source": "la_jolla_b_video",
+      "boundary": "independent_source_locality",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "summersville_video",
+        "cavitt",
+        "la_jolla_locality",
+        "sydney_opera_video",
+        "dettifoss_video",
+        "etretat_video",
+        "griffith_video",
+        "golden_gate_video",
+        "cocoa_pier_video",
+        "niagara_video"
+      ],
+      "correctRank": 3,
+      "searchMs": 0.08880000677891076,
+      "shortlistReferenceIndices": [
+        36,
+        0,
+        6
+      ]
+    },
+    {
+      "queryIndex": 10,
+      "source": "la_jolla_b_video",
+      "boundary": "independent_source_locality",
+      "geography": "country",
+      "candidatePlaces": 6,
+      "rankedGroups": [
+        "summersville_video",
+        "cavitt",
+        "la_jolla_locality",
+        "griffith_video",
+        "golden_gate_video",
+        "cocoa_pier_video"
+      ],
+      "correctRank": 3,
+      "searchMs": 0.05329999839887023,
+      "shortlistReferenceIndices": [
+        36,
+        0,
+        6
+      ]
+    },
+    {
+      "queryIndex": 11,
+      "source": "la_jolla_b_video",
+      "boundary": "independent_source_locality",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "summersville_video",
+        "la_jolla_locality",
+        "cavitt",
+        "sydney_opera_video",
+        "dettifoss_video",
+        "griffith_video",
+        "etretat_video",
+        "cocoa_pier_video",
+        "golden_gate_video",
+        "niagara_video"
+      ],
+      "correctRank": 2,
+      "searchMs": 0.08539999544154853,
+      "shortlistReferenceIndices": [
+        36,
+        6,
+        0
+      ]
+    },
+    {
+      "queryIndex": 11,
+      "source": "la_jolla_b_video",
+      "boundary": "independent_source_locality",
+      "geography": "country",
+      "candidatePlaces": 6,
+      "rankedGroups": [
+        "summersville_video",
+        "la_jolla_locality",
+        "cavitt",
+        "griffith_video",
+        "cocoa_pier_video",
+        "golden_gate_video"
+      ],
+      "correctRank": 2,
+      "searchMs": 0.08170001092366874,
+      "shortlistReferenceIndices": [
+        36,
+        6,
+        0
+      ]
+    },
+    {
+      "queryIndex": 15,
+      "source": "dettifoss_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "dettifoss_video",
+        "summersville_video",
+        "cavitt",
+        "golden_gate_video",
+        "niagara_video",
+        "etretat_video",
+        "cocoa_pier_video",
+        "sydney_opera_video",
+        "la_jolla_locality",
+        "griffith_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.08829998841974884,
+      "shortlistReferenceIndices": [
+        13,
+        37,
+        1
+      ]
+    },
+    {
+      "queryIndex": 15,
+      "source": "dettifoss_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "country",
+      "candidatePlaces": 1,
+      "rankedGroups": [
+        "dettifoss_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.01340000017080456,
+      "shortlistReferenceIndices": [
+        13
+      ]
+    },
+    {
+      "queryIndex": 19,
+      "source": "cocoa_pier_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "cocoa_pier_video",
+        "la_jolla_locality",
+        "etretat_video",
+        "niagara_video",
+        "golden_gate_video",
+        "summersville_video",
+        "cavitt",
+        "dettifoss_video",
+        "sydney_opera_video",
+        "griffith_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.08420000085607171,
+      "shortlistReferenceIndices": [
+        18,
+        8,
+        40
+      ]
+    },
+    {
+      "queryIndex": 19,
+      "source": "cocoa_pier_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "country",
+      "candidatePlaces": 6,
+      "rankedGroups": [
+        "cocoa_pier_video",
+        "la_jolla_locality",
+        "golden_gate_video",
+        "summersville_video",
+        "cavitt",
+        "griffith_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.05200000305194408,
+      "shortlistReferenceIndices": [
+        18,
+        8,
+        28
+      ]
+    },
+    {
+      "queryIndex": 23,
+      "source": "griffith_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "griffith_video",
+        "sydney_opera_video",
+        "cavitt",
+        "golden_gate_video",
+        "summersville_video",
+        "niagara_video",
+        "etretat_video",
+        "la_jolla_locality",
+        "dettifoss_video",
+        "cocoa_pier_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.08589999924879521,
+      "shortlistReferenceIndices": [
+        22,
+        32,
+        1
+      ]
+    },
+    {
+      "queryIndex": 23,
+      "source": "griffith_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "country",
+      "candidatePlaces": 6,
+      "rankedGroups": [
+        "griffith_video",
+        "cavitt",
+        "golden_gate_video",
+        "summersville_video",
+        "la_jolla_locality",
+        "cocoa_pier_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.11160000576637685,
+      "shortlistReferenceIndices": [
+        22,
+        1,
+        29
+      ]
+    },
+    {
+      "queryIndex": 27,
+      "source": "niagara_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "niagara_video",
+        "etretat_video",
+        "dettifoss_video",
+        "cocoa_pier_video",
+        "golden_gate_video",
+        "cavitt",
+        "la_jolla_locality",
+        "griffith_video",
+        "summersville_video",
+        "sydney_opera_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.09089999366551638,
+      "shortlistReferenceIndices": [
+        24,
+        42,
+        12
+      ]
+    },
+    {
+      "queryIndex": 27,
+      "source": "niagara_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "country",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "niagara_video",
+        "etretat_video",
+        "dettifoss_video",
+        "cocoa_pier_video",
+        "golden_gate_video",
+        "cavitt",
+        "la_jolla_locality",
+        "griffith_video",
+        "summersville_video",
+        "sydney_opera_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.08670000534038991,
+      "shortlistReferenceIndices": [
+        24,
+        42,
+        12
+      ]
+    },
+    {
+      "queryIndex": 31,
+      "source": "golden_gate_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "golden_gate_video",
+        "cocoa_pier_video",
+        "niagara_video",
+        "la_jolla_locality",
+        "dettifoss_video",
+        "cavitt",
+        "sydney_opera_video",
+        "griffith_video",
+        "summersville_video",
+        "etretat_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.0999000039882958,
+      "shortlistReferenceIndices": [
+        29,
+        16,
+        25
+      ]
+    },
+    {
+      "queryIndex": 31,
+      "source": "golden_gate_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "country",
+      "candidatePlaces": 6,
+      "rankedGroups": [
+        "golden_gate_video",
+        "cocoa_pier_video",
+        "la_jolla_locality",
+        "cavitt",
+        "griffith_video",
+        "summersville_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.05289999535307288,
+      "shortlistReferenceIndices": [
+        29,
+        16,
+        8
+      ]
+    },
+    {
+      "queryIndex": 35,
+      "source": "sydney_opera_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "sydney_opera_video",
+        "la_jolla_locality",
+        "cavitt",
+        "griffith_video",
+        "dettifoss_video",
+        "golden_gate_video",
+        "summersville_video",
+        "cocoa_pier_video",
+        "etretat_video",
+        "niagara_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.13889999536331743,
+      "shortlistReferenceIndices": [
+        32,
+        7,
+        1
+      ]
+    },
+    {
+      "queryIndex": 35,
+      "source": "sydney_opera_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "country",
+      "candidatePlaces": 1,
+      "rankedGroups": [
+        "sydney_opera_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.01780000457074493,
+      "shortlistReferenceIndices": [
+        32
+      ]
+    },
+    {
+      "queryIndex": 39,
+      "source": "summersville_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "summersville_video",
+        "cavitt",
+        "dettifoss_video",
+        "etretat_video",
+        "la_jolla_locality",
+        "sydney_opera_video",
+        "griffith_video",
+        "niagara_video",
+        "golden_gate_video",
+        "cocoa_pier_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.08820000221021473,
+      "shortlistReferenceIndices": [
+        36,
+        0,
+        14
+      ]
+    },
+    {
+      "queryIndex": 39,
+      "source": "summersville_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "country",
+      "candidatePlaces": 6,
+      "rankedGroups": [
+        "summersville_video",
+        "cavitt",
+        "la_jolla_locality",
+        "griffith_video",
+        "golden_gate_video",
+        "cocoa_pier_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.05200000305194408,
+      "shortlistReferenceIndices": [
+        36,
+        0,
+        6
+      ]
+    },
+    {
+      "queryIndex": 43,
+      "source": "etretat_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "global",
+      "candidatePlaces": 10,
+      "rankedGroups": [
+        "etretat_video",
+        "la_jolla_locality",
+        "cavitt",
+        "dettifoss_video",
+        "niagara_video",
+        "cocoa_pier_video",
+        "summersville_video",
+        "sydney_opera_video",
+        "griffith_video",
+        "golden_gate_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.09830000635702163,
+      "shortlistReferenceIndices": [
+        41,
+        6,
+        2
+      ]
+    },
+    {
+      "queryIndex": 43,
+      "source": "etretat_video",
+      "boundary": "same_video_temporal_control",
+      "geography": "country",
+      "candidatePlaces": 1,
+      "rankedGroups": [
+        "etretat_video"
+      ],
+      "correctRank": 1,
+      "searchMs": 0.014599994756281376,
+      "shortlistReferenceIndices": [
+        41
+      ]
+    }
+  ],
+  "geometry": [
+    {
+      "querySource": "cavitt_a_video",
+      "referenceSource": "cavitt_a_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": true,
+      "matches": 400,
+      "inliers": 399,
+      "inlierRatio": 0.9975,
+      "overlapSupported": true,
+      "matcherMs": 370.83719999645837,
+      "ransacMs": 11.449400000856258
+    },
+    {
+      "querySource": "cavitt_a_video",
+      "referenceSource": "summersville_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 62,
+      "inliers": 20,
+      "inlierRatio": 0.3225806451612903,
+      "overlapSupported": true,
+      "matcherMs": 43.51610000594519,
+      "ransacMs": 22.09240000229329
+    },
+    {
+      "querySource": "cavitt_a_video",
+      "referenceSource": "cocoa_pier_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 16,
+      "inliers": 5,
+      "inlierRatio": 0.3125,
+      "overlapSupported": false,
+      "matcherMs": 51.422200005617924,
+      "ransacMs": 19.8417000065092
+    },
+    {
+      "querySource": "cavitt_b_video",
+      "referenceSource": "cavitt_a_video",
+      "boundary": "independent_source_locality",
+      "sameCatalogLocality": true,
+      "matches": 96,
+      "inliers": 27,
+      "inlierRatio": 0.28125,
+      "overlapSupported": true,
+      "matcherMs": 39.3972999881953,
+      "ransacMs": 35.38180000032298
+    },
+    {
+      "querySource": "cavitt_b_video",
+      "referenceSource": "la_jolla_a_video",
+      "boundary": "independent_source_locality",
+      "sameCatalogLocality": false,
+      "matches": 37,
+      "inliers": 6,
+      "inlierRatio": 0.16216216216216217,
+      "overlapSupported": false,
+      "matcherMs": 53.2188000070164,
+      "ransacMs": 63.5863000061363
+    },
+    {
+      "querySource": "cavitt_b_video",
+      "referenceSource": "summersville_video",
+      "boundary": "independent_source_locality",
+      "sameCatalogLocality": false,
+      "matches": 18,
+      "inliers": 5,
+      "inlierRatio": 0.2777777777777778,
+      "overlapSupported": false,
+      "matcherMs": 74.05930000822991,
+      "ransacMs": 56.745599998976104
+    },
+    {
+      "querySource": "cavitt_b_video",
+      "referenceSource": "cavitt_a_video",
+      "boundary": "independent_source_locality",
+      "sameCatalogLocality": true,
+      "matches": 96,
+      "inliers": 31,
+      "inlierRatio": 0.3229166666666667,
+      "overlapSupported": true,
+      "matcherMs": 91.56289999373257,
+      "ransacMs": 22.23750000121072
+    },
+    {
+      "querySource": "cavitt_b_video",
+      "referenceSource": "la_jolla_a_video",
+      "boundary": "independent_source_locality",
+      "sameCatalogLocality": false,
+      "matches": 32,
+      "inliers": 7,
+      "inlierRatio": 0.21875,
+      "overlapSupported": false,
+      "matcherMs": 59.61320000642445,
+      "ransacMs": 82.06430000427645
+    },
+    {
+      "querySource": "cavitt_b_video",
+      "referenceSource": "summersville_video",
+      "boundary": "independent_source_locality",
+      "sameCatalogLocality": false,
+      "matches": 26,
+      "inliers": 6,
+      "inlierRatio": 0.23076923076923078,
+      "overlapSupported": false,
+      "matcherMs": 245.18450000323355,
+      "ransacMs": 82.05799999996088
+    },
+    {
+      "querySource": "la_jolla_a_video",
+      "referenceSource": "la_jolla_a_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": true,
+      "matches": 182,
+      "inliers": 98,
+      "inlierRatio": 0.5384615384615384,
+      "overlapSupported": true,
+      "matcherMs": 59.345800007577054,
+      "ransacMs": 2.6476000057300553
+    },
+    {
+      "querySource": "la_jolla_a_video",
+      "referenceSource": "cocoa_pier_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 30,
+      "inliers": 7,
+      "inlierRatio": 0.23333333333333334,
+      "overlapSupported": false,
+      "matcherMs": 49.046400003135204,
+      "ransacMs": 62.39099999947939
+    },
+    {
+      "querySource": "la_jolla_a_video",
+      "referenceSource": "summersville_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 20,
+      "inliers": 5,
+      "inlierRatio": 0.25,
+      "overlapSupported": false,
+      "matcherMs": 33.297700007096864,
+      "ransacMs": 48.42709998774808
+    },
+    {
+      "querySource": "la_jolla_b_video",
+      "referenceSource": "summersville_video",
+      "boundary": "independent_source_locality",
+      "sameCatalogLocality": false,
+      "matches": 60,
+      "inliers": 11,
+      "inlierRatio": 0.18333333333333332,
+      "overlapSupported": false,
+      "matcherMs": 61.71010000980459,
+      "ransacMs": 75.68460000038613
+    },
+    {
+      "querySource": "la_jolla_b_video",
+      "referenceSource": "cavitt_a_video",
+      "boundary": "independent_source_locality",
+      "sameCatalogLocality": false,
+      "matches": 41,
+      "inliers": 7,
+      "inlierRatio": 0.17073170731707318,
+      "overlapSupported": false,
+      "matcherMs": 34.813900012522936,
+      "ransacMs": 66.3219999987632
+    },
+    {
+      "querySource": "la_jolla_b_video",
+      "referenceSource": "la_jolla_a_video",
+      "boundary": "independent_source_locality",
+      "sameCatalogLocality": true,
+      "matches": 28,
+      "inliers": 7,
+      "inlierRatio": 0.25,
+      "overlapSupported": false,
+      "matcherMs": 43.67199999978766,
+      "ransacMs": 47.72310001135338
+    },
+    {
+      "querySource": "la_jolla_b_video",
+      "referenceSource": "summersville_video",
+      "boundary": "independent_source_locality",
+      "sameCatalogLocality": false,
+      "matches": 37,
+      "inliers": 9,
+      "inlierRatio": 0.24324324324324326,
+      "overlapSupported": true,
+      "matcherMs": 63.352600001962855,
+      "ransacMs": 60.6396999937715
+    },
+    {
+      "querySource": "la_jolla_b_video",
+      "referenceSource": "la_jolla_a_video",
+      "boundary": "independent_source_locality",
+      "sameCatalogLocality": true,
+      "matches": 25,
+      "inliers": 7,
+      "inlierRatio": 0.28,
+      "overlapSupported": false,
+      "matcherMs": 58.00549998821225,
+      "ransacMs": 47.268299997085705
+    },
+    {
+      "querySource": "la_jolla_b_video",
+      "referenceSource": "cavitt_a_video",
+      "boundary": "independent_source_locality",
+      "sameCatalogLocality": false,
+      "matches": 47,
+      "inliers": 8,
+      "inlierRatio": 0.1702127659574468,
+      "overlapSupported": false,
+      "matcherMs": 35.32769999583252,
+      "ransacMs": 71.13810000009835
+    },
+    {
+      "querySource": "dettifoss_video",
+      "referenceSource": "dettifoss_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": true,
+      "matches": 121,
+      "inliers": 111,
+      "inlierRatio": 0.9173553719008265,
+      "overlapSupported": true,
+      "matcherMs": 39.90439999324735,
+      "ransacMs": 1.8232000002171844
+    },
+    {
+      "querySource": "cocoa_pier_video",
+      "referenceSource": "cocoa_pier_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": true,
+      "matches": 44,
+      "inliers": 11,
+      "inlierRatio": 0.25,
+      "overlapSupported": true,
+      "matcherMs": 54.3863000057172,
+      "ransacMs": 47.3574999923585
+    },
+    {
+      "querySource": "cocoa_pier_video",
+      "referenceSource": "la_jolla_a_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 13,
+      "inliers": 4,
+      "inlierRatio": 0.3076923076923077,
+      "overlapSupported": false,
+      "matcherMs": 34.781499998643994,
+      "ransacMs": 19.851000004564412
+    },
+    {
+      "querySource": "cocoa_pier_video",
+      "referenceSource": "golden_gate_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 10,
+      "inliers": 5,
+      "inlierRatio": 0.5,
+      "overlapSupported": false,
+      "matcherMs": 21.943500003544614,
+      "ransacMs": 3.6899999977322295
+    },
+    {
+      "querySource": "griffith_video",
+      "referenceSource": "griffith_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": true,
+      "matches": 263,
+      "inliers": 224,
+      "inlierRatio": 0.8517110266159695,
+      "overlapSupported": true,
+      "matcherMs": 49.09999998926651,
+      "ransacMs": 0.9537000005366281
+    },
+    {
+      "querySource": "griffith_video",
+      "referenceSource": "cavitt_a_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 11,
+      "inliers": 5,
+      "inlierRatio": 0.45454545454545453,
+      "overlapSupported": false,
+      "matcherMs": 22.3686999961501,
+      "ransacMs": 5.464100002427585
+    },
+    {
+      "querySource": "griffith_video",
+      "referenceSource": "golden_gate_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 0,
+      "inliers": 0,
+      "inlierRatio": 0,
+      "overlapSupported": false,
+      "matcherMs": 24.70149999135174,
+      "ransacMs": 0.005900001269765198
+    },
+    {
+      "querySource": "niagara_video",
+      "referenceSource": "niagara_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": true,
+      "matches": 313,
+      "inliers": 295,
+      "inlierRatio": 0.9424920127795527,
+      "overlapSupported": true,
+      "matcherMs": 56.2731999962125,
+      "ransacMs": 2.129499989678152
+    },
+    {
+      "querySource": "niagara_video",
+      "referenceSource": "etretat_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 17,
+      "inliers": 6,
+      "inlierRatio": 0.35294117647058826,
+      "overlapSupported": false,
+      "matcherMs": 65.42030000127852,
+      "ransacMs": 22.171299991896376
+    },
+    {
+      "querySource": "niagara_video",
+      "referenceSource": "dettifoss_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 21,
+      "inliers": 6,
+      "inlierRatio": 0.2857142857142857,
+      "overlapSupported": false,
+      "matcherMs": 34.360000005108304,
+      "ransacMs": 25.456400006078184
+    },
+    {
+      "querySource": "golden_gate_video",
+      "referenceSource": "golden_gate_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": true,
+      "matches": 197,
+      "inliers": 180,
+      "inlierRatio": 0.9137055837563451,
+      "overlapSupported": true,
+      "matcherMs": 71.82399999874178,
+      "ransacMs": 0.7959999929880723
+    },
+    {
+      "querySource": "golden_gate_video",
+      "referenceSource": "cocoa_pier_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 4,
+      "inliers": 4,
+      "inlierRatio": 1.0,
+      "overlapSupported": false,
+      "matcherMs": 19.850900003802963,
+      "ransacMs": 2.1972999966237694
+    },
+    {
+      "querySource": "golden_gate_video",
+      "referenceSource": "la_jolla_a_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 13,
+      "inliers": 5,
+      "inlierRatio": 0.38461538461538464,
+      "overlapSupported": false,
+      "matcherMs": 24.851599999237806,
+      "ransacMs": 9.196600003633648
+    },
+    {
+      "querySource": "sydney_opera_video",
+      "referenceSource": "sydney_opera_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": true,
+      "matches": 367,
+      "inliers": 318,
+      "inlierRatio": 0.8664850136239782,
+      "overlapSupported": true,
+      "matcherMs": 32.899899990297854,
+      "ransacMs": 0.9167000098386779
+    },
+    {
+      "querySource": "summersville_video",
+      "referenceSource": "summersville_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": true,
+      "matches": 64,
+      "inliers": 11,
+      "inlierRatio": 0.171875,
+      "overlapSupported": false,
+      "matcherMs": 44.00539999187458,
+      "ransacMs": 64.09569999959785
+    },
+    {
+      "querySource": "summersville_video",
+      "referenceSource": "cavitt_a_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 27,
+      "inliers": 5,
+      "inlierRatio": 0.18518518518518517,
+      "overlapSupported": false,
+      "matcherMs": 54.0130000008503,
+      "ransacMs": 68.34469999012072
+    },
+    {
+      "querySource": "summersville_video",
+      "referenceSource": "la_jolla_a_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": false,
+      "matches": 46,
+      "inliers": 11,
+      "inlierRatio": 0.2391304347826087,
+      "overlapSupported": true,
+      "matcherMs": 64.53050000709482,
+      "ransacMs": 70.3936999925645
+    },
+    {
+      "querySource": "etretat_video",
+      "referenceSource": "etretat_video",
+      "boundary": "same_video_temporal_control",
+      "sameCatalogLocality": true,
+      "matches": 305,
+      "inliers": 288,
+      "inlierRatio": 0.9442622950819672,
+      "overlapSupported": true,
+      "matcherMs": 25.141200007055886,
+      "ransacMs": 0.7122999959392473
+    }
+  ],
+  "paidUsd": 0,
+  "limitations": [
+    "Previously exposed source catalog; zero unseen recognition holdout.",
+    "Two independent source locality groups only; La Jolla exact-location label quarantined.",
+    "Same-video controls measure repeat evidence matching, not generalization.",
+    "Country is a supplied source-catalog prior; coverage is tiny and some countries have only one candidate.",
+    "Homography correspondence is visual overlap, never proof of exact place identity."
+  ]
+}

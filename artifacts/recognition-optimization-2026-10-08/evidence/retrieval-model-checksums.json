@@ -1,0 +1,17 @@
+{
+  "checkpoints": [
+    {
+      "file": "ResNet18_512_eigenplaces.pth",
+      "bytes": 45836738,
+      "sha256": "b47ea1efb51041604e9c135508764175bbaa98dece47b47da664517317d0aff3"
+    },
+    {
+      "file": "depth-save.pth",
+      "bytes": 4375832,
+      "sha256": "9c2ee4ded238892dfa51569941372601e35e4a74aa6f84ea80053d2ab1c07abe"
+    }
+  ],
+  "code_revision": "a2969f71d5ea31017443af490b15273ca4c50af1",
+  "kornia": "0.8.1",
+  "torch": "2.5.1+cu121"
+}

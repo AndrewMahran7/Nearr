@@ -1,0 +1,7 @@
+{
+  "source": "45cedb7fc3e5d391e68295f60e2e097640008faa",
+  "equal": true,
+  "deployed": "d0d2832acaed79791a9bab4deb0fd0d170a441bb727c28832236681f6d890c4a",
+  "git": "d0d2832acaed79791a9bab4deb0fd0d170a441bb727c28832236681f6d890c4a",
+  "normalization": "CRLF to LF, one final newline; entrypoint only"
+}
