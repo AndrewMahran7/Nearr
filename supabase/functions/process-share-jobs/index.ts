@@ -1,4 +1,3 @@
-import { evaluateMediaClaimFence } from './mediaClaimFence.ts';
 // supabase/functions/process-share-jobs/index.ts
 //
 // Durable, retry-safe worker for the async share flow.
@@ -19,6 +18,7 @@ import { evaluateMediaClaimFence } from './mediaClaimFence.ts';
 // @ts-nocheck — Deno runtime.
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { evaluateMediaClaimFence } from './mediaClaimFence.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
 
 import { readEnv, validateEnv } from '../process-share-link/env.ts';
