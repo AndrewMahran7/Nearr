@@ -1,0 +1,15 @@
+# Multi-place evaluation
+
+**No independently labeled real multi-place post has a complete expected place set in the available frozen corpus.** Real multi-place exact-set accuracy, precision, recall, F1 and correct autonomous resolution are therefore unavailable, not zero and not 100%.
+
+Five historical cases (`S03`, `S04`, `S05`, `C04`, `C05`) describe multiple places but lack a complete destination-level truth set. A historical cliff montage also lacks verified component identities. These are useful evidence-collection and conservative-review cases; their incomplete labels cannot score exact-set recovery. A listed restaurant from a montage does not establish that every required place was recovered.
+
+The public catalog has two deterministic composites: Dettifoss + Griffith Observatory, and La Jolla + Golden Gate. They are labeled as `composite_control`, excluded from real accuracy. The La Jolla component also carries an unresolved source-location disagreement; it must not become evidence for real exact-place accuracy. Existing media extraction can test temporal coverage on these clips without treating them as independent submissions.
+
+The baseline's 31-case conditional post-deep replay has no verified real multi set. Its emitted one/many flag is retained in per-case output. The 30/31 historical one/many agreement in the raw summary is mostly single-place controls and includes inherited cardinality labels; **it is not a multi-place detection recall estimate**.
+
+The safety repair detects an exact first place plus unresolved broad or partial second-place evidence and sends the submission to deeper processing/review. Previously an `every` check could let the first exact place hide an unresolved companion. Deterministic controls prove the routing contract for a broad second place, partial second place, and two exact places. They do not prove a gain in real multi-place recognition accuracy.
+
+The scorer requires all of the following for an autonomous multi success: the multi decision is true; every expected physical place matches at its declared granularity; no extra place is returned; and the result is completed without review. It performs one-to-one assignment so an alias cannot fill two required destinations. Unit controls exercise missing destinations, extra destinations, missed detection, ambiguous alias assignment, and separation of synthetic controls from real denominators.
+
+Reduced frame budgets and aggressive visual selection remain experiments until a real segmented multi corpus establishes non-regression. A future annotation record must include complete destination sets, accepted aliases/IDs and branch specificity, evidence time segments, same-place alias consolidation, and confidence in set completeness. Group all source clips, reposts and venues across splits. Founder QA should prioritize real two/three-stop tours, repeated views of one venue, multiple branches of the same chain, a named venue plus scenic region, and a montage whose second place has only a brief sign.

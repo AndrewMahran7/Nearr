@@ -1,0 +1,77 @@
+{
+  "caseId": "P05",
+  "status": "review",
+  "places": [
+    {
+      "id": null,
+      "name": "Orange County Greek Festival (OC Greek Fest) at St. John the Baptist Greek Orthodox Church",
+      "locality": "Anaheim",
+      "region": "California",
+      "country": "United States",
+      "address": null
+    }
+  ],
+  "candidates": [
+    {
+      "id": null,
+      "name": "Orange County Greek Festival (OC Greek Fest) at St. John the Baptist Greek Orthodox Church",
+      "locality": "Anaheim",
+      "region": "California",
+      "country": "United States",
+      "address": null
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.08169999999995525,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.06590000000005602,
+      "endMs": 0.07150000000001455
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.07490000000007058,
+      "endMs": 0.0787000000000262
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 0,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "no_defensible_specific_place",
+  "providerReplay": [
+    {
+      "name": "Orange County Greek Festival (OC Greek Fest) at St. John the Baptist Greek Orthodox Church",
+      "replayed": false,
+      "reason": "full_provider_response_not_retained",
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.039736,
+    "modelLatencyMs": 9008,
+    "totalLatencyMs": 24863
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "caseId": "P06",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJ5cuORWom3YARPTjxELrS3ng",
+      "name": "Biergarten at Old World Huntington Beach (Old World Village)",
+      "locality": "Huntington Beach",
+      "region": "California",
+      "country": "United States",
+      "address": "7561 Center Ave #49, Huntington Beach, CA 92647, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJ5cuORWom3YARPTjxELrS3ng",
+      "name": "Biergarten at Old World Huntington Beach (Old World Village)",
+      "locality": "Huntington Beach",
+      "region": "California",
+      "country": "United States",
+      "address": "7561 Center Ave #49, Huntington Beach, CA 92647, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.10040000000003602,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.05349999999998545,
+      "endMs": 0.08220000000005712
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.08760000000006585,
+      "endMs": 0.09809999999993124
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 0,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Biergarten at Old World Huntington Beach (Old World Village)",
+      "replayed": false,
+      "reason": "full_provider_response_not_retained",
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.037644,
+    "modelLatencyMs": 6698,
+    "totalLatencyMs": 21343
+  }
+}

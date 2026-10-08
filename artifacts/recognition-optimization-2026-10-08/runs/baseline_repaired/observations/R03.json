@@ -1,0 +1,81 @@
+{
+  "caseId": "R03",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJebCqymldv1QR2ivpC1qxzWI",
+      "name": "Tamolitch Blue Pool (Tamolitch Falls)",
+      "locality": "McKenzie Bridge",
+      "region": "Oregon",
+      "country": "United States",
+      "address": "National Forest Road 2672-655, McKenzie Bridge, OR 97413, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJebCqymldv1QR2ivpC1qxzWI",
+      "name": "Tamolitch Blue Pool (Tamolitch Falls)",
+      "locality": "McKenzie Bridge",
+      "region": "Oregon",
+      "country": "United States",
+      "address": "National Forest Road 2672-655, McKenzie Bridge, OR 97413, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.15419999999994616,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.05209999999988213,
+      "endMs": 0.139299999999821
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.13969999999994798,
+      "endMs": 0.1413000000000011
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.14429999999993015,
+      "endMs": 0.15189999999984138
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Tamolitch Blue Pool (Tamolitch Falls)",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.05936,
+    "modelLatencyMs": 31896,
+    "totalLatencyMs": 44647
+  }
+}

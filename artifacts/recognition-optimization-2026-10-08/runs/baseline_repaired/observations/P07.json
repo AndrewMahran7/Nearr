@@ -1,0 +1,81 @@
+{
+  "caseId": "P07",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJU_ab-yIVjoAR5WIBCe7nKpE",
+      "name": "The Point Market",
+      "locality": "Santa Cruz",
+      "region": "California",
+      "country": "United States",
+      "address": "23040 E Cliff Dr, Santa Cruz, CA 95062, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJU_ab-yIVjoAR5WIBCe7nKpE",
+      "name": "The Point Market",
+      "locality": "Santa Cruz",
+      "region": "California",
+      "country": "United States",
+      "address": "23040 E Cliff Dr, Santa Cruz, CA 95062, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.134900000000016,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.053800000000137516,
+      "endMs": 0.11509999999998399
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.11570000000006075,
+      "endMs": 0.12170000000014625
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.1248000000000502,
+      "endMs": 0.1329000000000633
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "AUTO_SAVE"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "The Point Market",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.039512,
+    "modelLatencyMs": 9619,
+    "totalLatencyMs": 32156
+  }
+}

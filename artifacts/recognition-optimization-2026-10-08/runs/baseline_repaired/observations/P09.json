@@ -1,0 +1,81 @@
+{
+  "caseId": "P09",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJ4SCfxshrjoARoXzvWT_38_I",
+      "name": "Tacos El Chuy food truck",
+      "locality": "Santa Cruz",
+      "region": "California",
+      "country": "United States",
+      "address": "402 Ingalls St, Santa Cruz, CA 95060, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJ4SCfxshrjoARoXzvWT_38_I",
+      "name": "Tacos El Chuy food truck",
+      "locality": "Santa Cruz",
+      "region": "California",
+      "country": "United States",
+      "address": "402 Ingalls St, Santa Cruz, CA 95060, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "MEDIUM",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.17049999999994725,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.05919999999991887,
+      "endMs": 0.15419999999994616
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.15480000000002292,
+      "endMs": 0.15660000000002583
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.1595999999999549,
+      "endMs": 0.16840000000001965
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Tacos El Chuy food truck",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.038468,
+    "modelLatencyMs": 21932,
+    "totalLatencyMs": 28236
+  }
+}

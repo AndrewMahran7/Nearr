@@ -1,0 +1,3621 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "caseId": "C01",
+      "sourceKeys": [
+        "https://www.facebook.com/watch"
+      ],
+      "sourceUrl": "https://www.facebook.com/watch/?v=10153231379946729",
+      "categories": [
+        "negative",
+        "control"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "C01"
+        }
+      ],
+      "groupKeys": [
+        "source:https://www.facebook.com/watch"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-132bfbedb1681a28"
+    },
+    {
+      "caseId": "C02",
+      "sourceKeys": [
+        "https://www.snapchat.com/@chrismagee3/spotlight/W7_EDlXWTBiXAEEniNoMPwAAYYmdnaHlpb3l5AZ-_qdtxAZ-_qF1-AAAAAQ"
+      ],
+      "sourceUrl": "https://www.snapchat.com/@chrismagee3/spotlight/W7_EDlXWTBiXAEEniNoMPwAAYYmdnaHlpb3l5AZ-_qdtxAZ-_qF1-AAAAAQ",
+      "categories": [
+        "negative",
+        "generic_famous_match_control"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "C02"
+        }
+      ],
+      "groupKeys": [
+        "source:https://www.snapchat.com/@chrismagee3/spotlight/W7_EDlXWTBiXAEEniNoMPwAAYYmdnaHlpb3l5AZ-_qdtxAZ-_qF1-AAAAAQ"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-371e0b6ba48a5ff4"
+    },
+    {
+      "caseId": "C03",
+      "sourceKeys": [
+        "https://www.youtube.com/watch"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "categories": [
+        "negative",
+        "generic_famous_match_control"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "C03"
+        }
+      ],
+      "groupKeys": [
+        "source:https://www.youtube.com/watch"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-0dfab5acbae0000e"
+    },
+    {
+      "caseId": "C04",
+      "sourceKeys": [
+        "https://www.tiktok.com/@theviplist/video/7285850230342290731"
+      ],
+      "sourceUrl": "https://www.tiktok.com/@theviplist/video/7285850230342290731",
+      "categories": [
+        "multi_place",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "C04"
+        }
+      ],
+      "groupKeys": [
+        "place:carbone",
+        "source:https://www.tiktok.com/@theviplist/video/7285850230342290731"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-34a44366294a5bf0"
+    },
+    {
+      "caseId": "C05",
+      "sourceKeys": [
+        "https://youtube.com/shorts/zGDjyXh7t-w"
+      ],
+      "sourceUrl": "https://youtube.com/shorts/zGDjyXh7t-w",
+      "categories": [
+        "multi_place",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "C05"
+        }
+      ],
+      "groupKeys": [
+        "source:https://youtube.com/shorts/zGDjyXh7t-w"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-12754373b28abdbe"
+    },
+    {
+      "caseId": "C06",
+      "sourceKeys": [
+        "https://www.tiktok.com/@satexasfoodies/video/7433811014237326622"
+      ],
+      "sourceUrl": "https://www.tiktok.com/@satexasfoodies/video/7433811014237326622",
+      "categories": [
+        "business",
+        "restaurant",
+        "control"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "C06"
+        }
+      ],
+      "groupKeys": [
+        "place:tuxedo cat s coffee",
+        "source:https://www.tiktok.com/@satexasfoodies/video/7433811014237326622"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-e18b75a07d89860b"
+    },
+    {
+      "caseId": "CJ001",
+      "sourceKeys": [
+        "instagram:Da2Rb92NKGw"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/Da2Rb92NKGw/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ001"
+        }
+      ],
+      "groupKeys": [
+        "place:lac de vouglans",
+        "source:instagram:Da2Rb92NKGw"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-40554a3192af2ba7"
+    },
+    {
+      "caseId": "CJ002",
+      "sourceKeys": [
+        "instagram:DZIXov9tVu7"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DZIXov9tVu7/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ002"
+        }
+      ],
+      "groupKeys": [
+        "place:marseille multi location montage individual clips unresolved",
+        "source:instagram:DZIXov9tVu7"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-9108de70437cd7a0"
+    },
+    {
+      "caseId": "CJ003",
+      "sourceKeys": [
+        "instagram:DbB3ZOUya93"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DbB3ZOUya93/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ003"
+        }
+      ],
+      "groupKeys": [
+        "place:sooke potholes",
+        "source:instagram:DbB3ZOUya93"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-1dc6b2c2f2623879"
+    },
+    {
+      "caseId": "CJ005",
+      "sourceKeys": [
+        "instagram:Dbh90croV4d"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/Dbh90croV4d/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ005"
+        }
+      ],
+      "groupKeys": [
+        "place:ponta da piedade sea cave complex",
+        "source:instagram:Dbh90croV4d"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-245e926ff0b6d1c2"
+    },
+    {
+      "caseId": "CJ006",
+      "sourceKeys": [
+        "instagram:DcekCtbStlP"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DcekCtbStlP/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ006"
+        }
+      ],
+      "groupKeys": [
+        "place:lido galomar",
+        "source:instagram:DcekCtbStlP"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-f82175cc2fa2991f"
+    },
+    {
+      "caseId": "CJ007",
+      "sourceKeys": [
+        "instagram:DcVUFxntIKW"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DcVUFxntIKW/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ007"
+        }
+      ],
+      "groupKeys": [
+        "place:cala varques",
+        "source:instagram:DcVUFxntIKW"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-8e75a9ecbaa0f5fc"
+    },
+    {
+      "caseId": "CJ008",
+      "sourceKeys": [
+        "instagram:DWrKNRujq4X"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DWrKNRujq4X/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ008"
+        }
+      ],
+      "groupKeys": [
+        "place:cenote zaci",
+        "source:instagram:DWrKNRujq4X"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-833302c09281038b"
+    },
+    {
+      "caseId": "CJ009",
+      "sourceKeys": [
+        "instagram:C6pIphxy4qr"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/C6pIphxy4qr/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ009"
+        }
+      ],
+      "groupKeys": [
+        "place:waimea bay jump rock",
+        "source:instagram:C6pIphxy4qr"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-d49f01f319c8727c"
+    },
+    {
+      "caseId": "CJ010",
+      "sourceKeys": [
+        "instagram:DAvJrtQIGVU"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DAvJrtQIGVU/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ010"
+        }
+      ],
+      "groupKeys": [
+        "place:unidentified mallorca coastal sea hole",
+        "source:instagram:DAvJrtQIGVU"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-da1c65e1a5b77c05"
+    },
+    {
+      "caseId": "CJ011",
+      "sourceKeys": [
+        "instagram:DCfD1bFIsuE"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DCfD1bFIsuE/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ011"
+        }
+      ],
+      "groupKeys": [
+        "place:makapipi falls",
+        "source:instagram:DCfD1bFIsuE"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-3aeca4b1a869d811"
+    },
+    {
+      "caseId": "CJ012",
+      "sourceKeys": [
+        "instagram:DBW35nppVUS"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DBW35nppVUS/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ012"
+        }
+      ],
+      "groupKeys": [
+        "place:tamolitch blue pool",
+        "source:instagram:DBW35nppVUS"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-ab36036ef4ff0a20"
+    },
+    {
+      "caseId": "CJ013",
+      "sourceKeys": [
+        "instagram:DFyZwBJT_Xy"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DFyZwBJT_Xy/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ013"
+        }
+      ],
+      "groupKeys": [
+        "place:ching s pond blue sapphire pool",
+        "source:instagram:DFyZwBJT_Xy"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-9b0c9907b5cbff0c"
+    },
+    {
+      "caseId": "CJ014",
+      "sourceKeys": [
+        "instagram:DB6yxXwSgU7"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DB6yxXwSgU7/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ014"
+        }
+      ],
+      "groupKeys": [
+        "place:spitting cave",
+        "source:instagram:DB6yxXwSgU7"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-a97954c7810e1790"
+    },
+    {
+      "caseId": "CJ015",
+      "sourceKeys": [
+        "instagram:DbtjWEKIjn9"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DbtjWEKIjn9/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ015"
+        }
+      ],
+      "groupKeys": [
+        "place:pont d en gil",
+        "source:instagram:DbtjWEKIjn9"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-d37b51ec0a6c1f75"
+    },
+    {
+      "caseId": "CJ016",
+      "sourceKeys": [
+        "instagram:DaW06-bujG_"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DaW06-bujG_/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ016"
+        }
+      ],
+      "groupKeys": [
+        "place:the arch at pappy s point",
+        "source:instagram:DaW06-bujG_"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-c30494ae88774ae0"
+    },
+    {
+      "caseId": "CJ017",
+      "sourceKeys": [
+        "instagram:CJUBgodgdUV"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/CJUBgodgdUV/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ017"
+        }
+      ],
+      "groupKeys": [
+        "place:the crack at wet beaver creek",
+        "source:instagram:CJUBgodgdUV"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-a8e3db4e3ca9964d"
+    },
+    {
+      "caseId": "CJ018",
+      "sourceKeys": [
+        "instagram:CvsmEqhKIeO"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/CvsmEqhKIeO/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ018"
+        }
+      ],
+      "groupKeys": [
+        "place:embalse de la toba",
+        "source:instagram:CvsmEqhKIeO"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-26fad792de3c7412"
+    },
+    {
+      "caseId": "CJ019",
+      "sourceKeys": [
+        "instagram:DbzakoPumeL"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DbzakoPumeL/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ019"
+        }
+      ],
+      "groupKeys": [
+        "place:potem falls",
+        "source:instagram:DbzakoPumeL"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-b9e8eebec4be83d4"
+    },
+    {
+      "caseId": "CJ020",
+      "sourceKeys": [
+        "instagram:CV8GaG8LHbK"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/CV8GaG8LHbK/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ020"
+        }
+      ],
+      "groupKeys": [
+        "place:cenote maya native park",
+        "source:instagram:CV8GaG8LHbK"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-e5c77384f3b2cb4e"
+    },
+    {
+      "caseId": "CJ021",
+      "sourceKeys": [
+        "instagram:C_voKVguTuR"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/C_voKVguTuR/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ021"
+        }
+      ],
+      "groupKeys": [
+        "place:unnamed waterfall on nahua expeditions tzotzil route",
+        "source:instagram:C_voKVguTuR"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-1635ad24e0494dcf"
+    },
+    {
+      "caseId": "CJ022",
+      "sourceKeys": [
+        "instagram:DNKwgA6MQ9m"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DNKwgA6MQ9m/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ022"
+        }
+      ],
+      "groupKeys": [
+        "place:area recreativa el chantre rio jucar",
+        "source:instagram:DNKwgA6MQ9m"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-16b7e99036b4908b"
+    },
+    {
+      "caseId": "CJ023",
+      "sourceKeys": [
+        "instagram:DCtiKTyIkxN"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DCtiKTyIkxN/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ023"
+        }
+      ],
+      "groupKeys": [
+        "place:bassin la paix",
+        "source:instagram:DCtiKTyIkxN"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-806aba6fc0d6d407"
+    },
+    {
+      "caseId": "CJ024",
+      "sourceKeys": [
+        "instagram:Db3bZ_-Nz3R"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/Db3bZ_-Nz3R/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ024"
+        }
+      ],
+      "groupKeys": [
+        "place:es pontas",
+        "source:instagram:Db3bZ_-Nz3R"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-3a79a04f63e4c2db"
+    },
+    {
+      "caseId": "CJ025",
+      "sourceKeys": [
+        "instagram:C-VuDm0PmCH"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/C-VuDm0PmCH/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ025"
+        }
+      ],
+      "groupKeys": [
+        "place:fort lauderdale aquatic center",
+        "source:instagram:C-VuDm0PmCH"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-299b348b066162cf"
+    },
+    {
+      "caseId": "CJ026",
+      "sourceKeys": [
+        "instagram:Davq4ZDvO7f"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/Davq4ZDvO7f/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ026"
+        }
+      ],
+      "groupKeys": [
+        "place:marble river provincial park",
+        "source:instagram:Davq4ZDvO7f"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-1f59ff60ee9d9152"
+    },
+    {
+      "caseId": "CJ027",
+      "sourceKeys": [
+        "instagram:C9NorfaPN3T"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/C9NorfaPN3T/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ027"
+        }
+      ],
+      "groupKeys": [
+        "place:koosah falls",
+        "source:instagram:C9NorfaPN3T"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-d37460629e83f524"
+    },
+    {
+      "caseId": "CJ028",
+      "sourceKeys": [
+        "instagram:C87QU_LJNCK"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/C87QU_LJNCK/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ028"
+        }
+      ],
+      "groupKeys": [
+        "place:koosah falls",
+        "source:instagram:C87QU_LJNCK"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-d37460629e83f524"
+    },
+    {
+      "caseId": "CJ029",
+      "sourceKeys": [
+        "instagram:DGRIr0SvMMX"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DGRIr0SvMMX/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ029"
+        }
+      ],
+      "groupKeys": [
+        "place:tamolitch blue pool",
+        "source:instagram:DGRIr0SvMMX"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-ab36036ef4ff0a20"
+    },
+    {
+      "caseId": "CJ030",
+      "sourceKeys": [
+        "instagram:DWTZd0IEZSA"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DWTZd0IEZSA/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ030"
+        }
+      ],
+      "groupKeys": [
+        "place:honeymoon beach cliff jumping ledge",
+        "source:instagram:DWTZd0IEZSA"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-121a008b3680af97"
+    },
+    {
+      "caseId": "CJ031",
+      "sourceKeys": [
+        "instagram:C9sIk72u5PM"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/C9sIk72u5PM/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ031"
+        }
+      ],
+      "groupKeys": [
+        "place:dorset marble quarry",
+        "source:instagram:C9sIk72u5PM"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-330dd1decd033bba"
+    },
+    {
+      "caseId": "CJ032",
+      "sourceKeys": [
+        "instagram:CvQED2QtBZe"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/CvQED2QtBZe/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ032"
+        }
+      ],
+      "groupKeys": [
+        "place:torre incina at cala incina",
+        "source:instagram:CvQED2QtBZe"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-3eb6dff2efc46fb2"
+    },
+    {
+      "caseId": "CJ033",
+      "sourceKeys": [
+        "instagram:CaB4Ve1NIW_"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/CaB4Ve1NIW_/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ033"
+        }
+      ],
+      "groupKeys": [
+        "place:waimea bay jump rock",
+        "source:instagram:CaB4Ve1NIW_"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-d49f01f319c8727c"
+    },
+    {
+      "caseId": "CJ034",
+      "sourceKeys": [
+        "instagram:Cj80H_jAXkm"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/Cj80H_jAXkm/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ034"
+        }
+      ],
+      "groupKeys": [
+        "place:new river gorge bridge",
+        "source:instagram:Cj80H_jAXkm"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-7a05f21d4ea274b2"
+    },
+    {
+      "caseId": "CJ035",
+      "sourceKeys": [
+        "instagram:CxVz9cQxiGW"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/CxVz9cQxiGW/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ035"
+        }
+      ],
+      "groupKeys": [
+        "place:the toilet bowl at lake powell",
+        "source:instagram:CxVz9cQxiGW"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-fae59d3aa2d5c700"
+    },
+    {
+      "caseId": "CJ036",
+      "sourceKeys": [
+        "instagram:DUppjPgEngm"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DUppjPgEngm/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ036"
+        }
+      ],
+      "groupKeys": [
+        "place:balangan beach cliffs",
+        "source:instagram:DUppjPgEngm"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-f3224dce8edbd816"
+    },
+    {
+      "caseId": "CJ037",
+      "sourceKeys": [
+        "instagram:DKPf-PjI1Rq"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DKPf-PjI1Rq/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ037"
+        }
+      ],
+      "groupKeys": [
+        "place:cascade des baumes",
+        "source:instagram:DKPf-PjI1Rq"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-982b0b04b4716202"
+    },
+    {
+      "caseId": "CJ038",
+      "sourceKeys": [
+        "instagram:CsjqggyA2qu"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/CsjqggyA2qu/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ038"
+        }
+      ],
+      "groupKeys": [
+        "place:gunlock falls",
+        "source:instagram:CsjqggyA2qu"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-577e0f9a671a3e98"
+    },
+    {
+      "caseId": "CJ039",
+      "sourceKeys": [
+        "instagram:C9cvc9Xveub"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/C9cvc9Xveub/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ039"
+        }
+      ],
+      "groupKeys": [
+        "place:escalante potholes recreation site",
+        "source:instagram:C9cvc9Xveub"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-e6123decc129a94e"
+    },
+    {
+      "caseId": "CJ040",
+      "sourceKeys": [
+        "instagram:Cty5hdxA-dx"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/Cty5hdxA-dx/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ040"
+        }
+      ],
+      "groupKeys": [
+        "place:koosah falls",
+        "source:instagram:Cty5hdxA-dx"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-d37460629e83f524"
+    },
+    {
+      "caseId": "CJ041",
+      "sourceKeys": [
+        "instagram:CoDBylYjjTH"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/CoDBylYjjTH/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ041"
+        }
+      ],
+      "groupKeys": [
+        "place:cenote zaci",
+        "source:instagram:CoDBylYjjTH"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-833302c09281038b"
+    },
+    {
+      "caseId": "CJ042",
+      "sourceKeys": [
+        "instagram:Dc1-OPBBGEP"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/Dc1-OPBBGEP/",
+      "categories": [
+        "natural",
+        "cliff"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ042"
+        }
+      ],
+      "groupKeys": [
+        "place:three location montage individual clips unresolved",
+        "source:instagram:Dc1-OPBBGEP"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-17a7193335d4a369"
+    },
+    {
+      "caseId": "H01",
+      "sourceKeys": [
+        "instagram:DYpcd2ZBTsZ"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/DYpcd2ZBTsZ/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "H01"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 0,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:2nd floor",
+        "source:instagram:DYpcd2ZBTsZ",
+        "place:2nd floor"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-1462acfd3f7301c9"
+    },
+    {
+      "caseId": "H02",
+      "sourceKeys": [
+        "instagram:C-BEtdnyGdR"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/C-BEtdnyGdR/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "H02"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 1,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:mad yolks",
+        "source:instagram:C-BEtdnyGdR",
+        "place:mad yolks"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-c80c005bf0f8461e"
+    },
+    {
+      "caseId": "H03",
+      "sourceKeys": [
+        "instagram:DV_bi8LiaIz"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/DV_bi8LiaIz/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "H03"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 2,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 26,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:las palmas taco bar",
+        "source:instagram:DV_bi8LiaIz",
+        "place:las palmas taco bar",
+        "place:las palmas taco bar"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-9926b4b686fcbb90"
+    },
+    {
+      "caseId": "H04",
+      "sourceKeys": [
+        "instagram:DWUI9fvDCck"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/DWUI9fvDCck/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "H04"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 3,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:seabright deli",
+        "source:instagram:DWUI9fvDCck",
+        "place:seabright deli"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-24136a7c1da16b4b"
+    },
+    {
+      "caseId": "H05",
+      "sourceKeys": [
+        "instagram:C2QKOHuP6qG"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/C2QKOHuP6qG/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "H05"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 4,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:mad yolks",
+        "source:instagram:C2QKOHuP6qG",
+        "place:mad yolks"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-c80c005bf0f8461e"
+    },
+    {
+      "caseId": "H06",
+      "sourceKeys": [
+        "instagram:DYlLg3coKFw"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/DYlLg3coKFw/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "H06"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 5,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:baqba mexican grill",
+        "source:instagram:DYlLg3coKFw",
+        "place:baqba mexican grill"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-3004d54bb4bf5a5f"
+    },
+    {
+      "caseId": "H07",
+      "sourceKeys": [
+        "instagram:DYidHK4PuVf"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/DYidHK4PuVf/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "H07"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 6,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:famous dave s bar b que",
+        "source:instagram:DYidHK4PuVf",
+        "place:famous dave s bar b que"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-22b3d4eabf4300c2"
+    },
+    {
+      "caseId": "H08",
+      "sourceKeys": [
+        "instagram:DYfr81GhvTS"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/DYfr81GhvTS/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "H08"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 7,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:loaded cafe orange",
+        "source:instagram:DYfr81GhvTS",
+        "place:loaded cafe orange"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-834d42451cf57548"
+    },
+    {
+      "caseId": "H09",
+      "sourceKeys": [
+        "instagram:DYVn771vefW"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/DYVn771vefW/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "H09"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 8,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:pho bamboo vietnamese restaurant",
+        "source:instagram:DYVn771vefW",
+        "place:pho bamboo vietnamese restaurant"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-303db44b0f1a79ba"
+    },
+    {
+      "caseId": "H10",
+      "sourceKeys": [
+        "instagram:DYGvkJ0oDjA"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/DYGvkJ0oDjA/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "H10"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 9,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:baja sharkeez",
+        "source:instagram:DYGvkJ0oDjA",
+        "place:baja sharkeez"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-fcfee9dbaea55d7b"
+    },
+    {
+      "caseId": "H11",
+      "sourceKeys": [
+        "instagram:DNT_wptv1K9"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/DNT_wptv1K9/",
+      "categories": [
+        "business",
+        "restaurant",
+        "hard"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "H11"
+        }
+      ],
+      "groupKeys": [
+        "place:no good burger joint",
+        "source:instagram:DNT_wptv1K9"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-2a4a183c93aee491"
+    },
+    {
+      "caseId": "H12",
+      "sourceKeys": [
+        "instagram:DLfvZunSKRp"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DLfvZunSKRp/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "H12"
+        }
+      ],
+      "groupKeys": [
+        "place:old fisherman s grotto",
+        "source:instagram:DLfvZunSKRp"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-4b172e80e17a5fa7"
+    },
+    {
+      "caseId": "P01",
+      "sourceKeys": [
+        "instagram:DWZNJZ-EthD"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DWZNJZ-EthD/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "P01"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 11,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:aptos st bbq",
+        "source:instagram:DWZNJZ-EthD",
+        "place:aptos st bbq"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-2758a1c329d45c03"
+    },
+    {
+      "caseId": "P02",
+      "sourceKeys": [
+        "instagram:DYbLVMBp_dY"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DYbLVMBp_dY/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "P02"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 24,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:blk earth sea spirits",
+        "source:instagram:DYbLVMBp_dY",
+        "place:blk earth sea spirits"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-16acf74d124a9b4d"
+    },
+    {
+      "caseId": "P03",
+      "sourceKeys": [
+        "instagram:DYx8S0PPy6b"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DYx8S0PPy6b/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "P03"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 27,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:chocolat",
+        "source:instagram:DYx8S0PPy6b",
+        "place:chocolate the restaurant"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-c994ecef8f751a78"
+    },
+    {
+      "caseId": "P04",
+      "sourceKeys": [
+        "instagram:DYYfWR9oeYS"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DYYfWR9oeYS/",
+      "categories": [
+        "business",
+        "market"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "P04"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 21,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:mesa verde farmers market",
+        "source:instagram:DYYfWR9oeYS",
+        "place:mesa verde farmers market"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-529f9d5e5ed6a6ca"
+    },
+    {
+      "caseId": "P05",
+      "sourceKeys": [
+        "instagram:DYOcSIkorkN"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DYOcSIkorkN/",
+      "categories": [
+        "business",
+        "event"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "P05"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 23,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:oc greek fest",
+        "source:instagram:DYOcSIkorkN",
+        "place:oc greek fest"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-570d18a23470cca7"
+    },
+    {
+      "caseId": "P06",
+      "sourceKeys": [
+        "instagram:DYS8NLyh4Bq"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DYS8NLyh4Bq/",
+      "categories": [
+        "business",
+        "event"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "P06"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 22,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:old world biergarten festival hall concert venue",
+        "source:instagram:DYS8NLyh4Bq",
+        "place:old world biergarten festival hall concert venue"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-f5d98b10bd2d59d9"
+    },
+    {
+      "caseId": "P07",
+      "sourceKeys": [
+        "instagram:DOXJtDlgcoi"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DOXJtDlgcoi/",
+      "categories": [
+        "business",
+        "market"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "P07"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 19,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:point market",
+        "source:instagram:DOXJtDlgcoi",
+        "place:point market cafe"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-6d972cde2ab759ee"
+    },
+    {
+      "caseId": "P08",
+      "sourceKeys": [
+        "instagram:DVUMt3DkmnK"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DVUMt3DkmnK/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "P08"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 13,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:seabright deli",
+        "source:instagram:DVUMt3DkmnK",
+        "place:seabright deli"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-24136a7c1da16b4b"
+    },
+    {
+      "caseId": "P09",
+      "sourceKeys": [
+        "instagram:CmwyLcshhwy"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/CmwyLcshhwy/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "P09"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 17,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:tacos el chuy",
+        "source:instagram:CmwyLcshhwy",
+        "place:tacos el chuy truck"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-dc5c2523df8e2e36"
+    },
+    {
+      "caseId": "P10",
+      "sourceKeys": [
+        "instagram:DSYfkivkiOA"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DSYfkivkiOA/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "P10"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 18,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:taqueria los pericos",
+        "source:instagram:DSYfkivkiOA",
+        "place:taqueria los pericos"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-5c13dc65b52d224b"
+    },
+    {
+      "caseId": "public-aiglun_rope_jump",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:RopeJump_160m_free_fall,_Aiglun,_France.webm"
+      ],
+      "categories": [
+        "natural",
+        "cliff_jumping",
+        "non_places",
+        "ambiguous"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "aiglun_rope_jump",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:aiglun_video",
+        "place:aiglun",
+        "source:https://commons.wikimedia.org/wiki/File:RopeJump_160m_free_fall,_Aiglun,_France.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:RopeJump_160m_free_fall,_Aiglun,_France.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-22d2b811c761cf78"
+    },
+    {
+      "caseId": "public-al_jahlieh_informal_waterfall",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Al-_Jahlieh_Hike.webm"
+      ],
+      "categories": [
+        "natural",
+        "waterfall",
+        "non_places",
+        "ambiguous"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "al_jahlieh_informal_waterfall",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:al_jahlieh_video",
+        "place:al jahlieh",
+        "source:https://commons.wikimedia.org/wiki/File:Al-_Jahlieh_Hike.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Al-_Jahlieh_Hike.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-62bc3ffbc78d7e45"
+    },
+    {
+      "caseId": "public-cavitt_creek_a",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Cavitt_Creek_Falls_Recreation_Site_(21876399333).webm"
+      ],
+      "categories": [
+        "natural",
+        "waterfall",
+        "swimming_hole",
+        "non_places",
+        "same_scene_ambiguity"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "cavitt_creek_a",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:cavitt_a_video",
+        "place:cavitt creek falls recreation site",
+        "source:https://commons.wikimedia.org/wiki/File:Cavitt_Creek_Falls_Recreation_Site_(21876399333).webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Cavitt_Creek_Falls_Recreation_Site_(21876399333).webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-34ba6f7ea85f828c"
+    },
+    {
+      "caseId": "public-cavitt_creek_b",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Cavitt_Creek_Falls_Recreation_Site_(22309631570).webm"
+      ],
+      "categories": [
+        "natural",
+        "waterfall",
+        "swimming_hole",
+        "non_places",
+        "same_scene_ambiguity"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "cavitt_creek_b",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:cavitt_b_video",
+        "place:cavitt creek falls recreation site",
+        "source:https://commons.wikimedia.org/wiki/File:Cavitt_Creek_Falls_Recreation_Site_(22309631570).webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Cavitt_Creek_Falls_Recreation_Site_(22309631570).webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-34ba6f7ea85f828c"
+    },
+    {
+      "caseId": "public-cocoa_beach_pier",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Cocoa_Beach_(May_2023)_and_Pier.webm"
+      ],
+      "categories": [
+        "strong_easy",
+        "beach",
+        "background_landmark"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "cocoa_beach_pier",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:cocoa_pier_video",
+        "place:cocoa beach pier",
+        "source:https://commons.wikimedia.org/wiki/File:Cocoa_Beach_(May_2023)_and_Pier.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Cocoa_Beach_(May_2023)_and_Pier.webm",
+          "license": "CC0"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-cc5d30f69528664b"
+    },
+    {
+      "caseId": "public-copacabana_beach",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Apresenta%C3%A7%C3%A3o_da_Banda_Marcial_do_Corpo_de_Fuzileiros_Navais_na_praia_de_Copacabana,_Rio_de_Janeiro_(52342639852).webm"
+      ],
+      "categories": [
+        "natural",
+        "beach",
+        "urban_landmark"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "copacabana_beach",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:copacabana_video",
+        "place:copacabana beach",
+        "source:https://commons.wikimedia.org/wiki/File:Apresenta%C3%A7%C3%A3o_da_Banda_Marcial_do_Corpo_de_Fuzileiros_Navais_na_praia_de_Copacabana,_Rio_de_Janeiro_(52342639852).webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Apresenta%C3%A7%C3%A3o_da_Banda_Marcial_do_Corpo_de_Fuzileiros_Navais_na_praia_de_Copacabana,_Rio_de_Janeiro_(52342639852).webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-2af534e3ce71f24d"
+    },
+    {
+      "caseId": "public-dettifoss_hidden_natural",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Dettifoss_waterfall_in_Vatnajokull_National_Park,_Iceland.webm"
+      ],
+      "categories": [
+        "strong_easy",
+        "natural",
+        "waterfall"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "dettifoss_hidden_natural",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:dettifoss_video",
+        "place:dettifoss",
+        "source:https://commons.wikimedia.org/wiki/File:Dettifoss_waterfall_in_Vatnajokull_National_Park,_Iceland.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Dettifoss_waterfall_in_Vatnajokull_National_Park,_Iceland.webm",
+          "license": "CC BY 2.0"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-6334c7ff1a79813c"
+    },
+    {
+      "caseId": "public-dinas_emrys_stream_hard_negative",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Dinas_Emrys,_Gwynedd.webmhd.webm"
+      ],
+      "categories": [
+        "hard_negative",
+        "natural",
+        "model_prior_trap"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "dinas_emrys_stream_hard_negative",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:dinas_emrys_video",
+        "source:https://commons.wikimedia.org/wiki/File:Dinas_Emrys,_Gwynedd.webmhd.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Dinas_Emrys,_Gwynedd.webmhd.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-eb3a5cd8f66674c0"
+    },
+    {
+      "caseId": "public-eiffel_tower_aerial",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Eiffel_Tower,_Paris_2022.webm"
+      ],
+      "categories": [
+        "strong_easy",
+        "model_prior_trap",
+        "landmark"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "eiffel_tower_aerial",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:eiffel_video",
+        "place:eiffel tower",
+        "source:https://commons.wikimedia.org/wiki/File:Eiffel_Tower,_Paris_2022.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Eiffel_Tower,_Paris_2022.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-d299eedd62efc9a5"
+    },
+    {
+      "caseId": "public-es_pontas_pre_comment",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Es_Pont%C3%A0s.jpg"
+      ],
+      "categories": [
+        "natural",
+        "cliff",
+        "sea_arch",
+        "lookalike_geography",
+        "mediterranean_rock_trap",
+        "current_physical_case"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "es_pontas_pre_comment",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:es_pontas_image",
+        "place:es pontas",
+        "source:https://commons.wikimedia.org/wiki/File:Es_Pont%C3%A0s.jpg"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Es_Pont%C3%A0s.jpg",
+          "license": "CC BY-SA 3.0"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-3a79a04f63e4c2db"
+    },
+    {
+      "caseId": "public-etretat_porte_damont",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Porte_d%27Amont_2013_02_02_11_50.webm"
+      ],
+      "categories": [
+        "natural",
+        "cliff",
+        "cove",
+        "lookalike_geography",
+        "mediterranean_rock_trap"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "etretat_porte_damont",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:etretat_video",
+        "place:porte d amont",
+        "source:https://commons.wikimedia.org/wiki/File:Porte_d%27Amont_2013_02_02_11_50.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Porte_d%27Amont_2013_02_02_11_50.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-f0df26c0db5ea768"
+    },
+    {
+      "caseId": "public-golden_gate_bridge",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Golden_Gate_Bridge_Timelapse.webm"
+      ],
+      "categories": [
+        "strong_easy",
+        "landmark"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "golden_gate_bridge",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:golden_gate_video",
+        "place:golden gate bridge",
+        "source:https://commons.wikimedia.org/wiki/File:Golden_Gate_Bridge_Timelapse.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Golden_Gate_Bridge_Timelapse.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-64bdad04591ff6cf"
+    },
+    {
+      "caseId": "public-griffith_observatory_rotunda",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Foucault_pendulum_in_the_rotunda_in_Griffith_Observatory_in_July_2022.webm"
+      ],
+      "categories": [
+        "strong_easy",
+        "model_prior_trap",
+        "interior_landmark"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "griffith_observatory_rotunda",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:griffith_video",
+        "place:griffith observatory",
+        "source:https://commons.wikimedia.org/wiki/File:Foucault_pendulum_in_the_rotunda_in_Griffith_Observatory_in_July_2022.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Foucault_pendulum_in_the_rotunda_in_Griffith_Observatory_in_July_2022.webm",
+          "license": "CC0"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-6334c7ff1a79813c"
+    },
+    {
+      "caseId": "public-gullfoss_lookalike_waterfall",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Gullfoss_waterfall_in_Iceland.webm"
+      ],
+      "categories": [
+        "natural",
+        "waterfall",
+        "lookalike_geography",
+        "same_scene_ambiguity"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "gullfoss_lookalike_waterfall",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:gullfoss_video",
+        "place:gullfoss",
+        "source:https://commons.wikimedia.org/wiki/File:Gullfoss_waterfall_in_Iceland.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Gullfoss_waterfall_in_Iceland.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-f314fefd6068cdb3"
+    },
+    {
+      "caseId": "public-inside_colosseum_prior_trap",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Inside_Colosseum.webm"
+      ],
+      "categories": [
+        "model_prior_trap",
+        "ambiguous",
+        "landmark"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "inside_colosseum_prior_trap",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:colosseum_video",
+        "place:colosseum",
+        "source:https://commons.wikimedia.org/wiki/File:Inside_Colosseum.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Inside_Colosseum.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-69f85323b9406d8b"
+    },
+    {
+      "caseId": "public-kozjak_waterfall_canyoning",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:CANYONING_%26_CLIFF_JUMPING_OFF_KOZJAK_WATERFALL_-_SLOVENIA.webm"
+      ],
+      "categories": [
+        "natural",
+        "waterfall",
+        "cliff_jumping",
+        "non_places"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "kozjak_waterfall_canyoning",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:kozjak_video",
+        "place:kozjak waterfall",
+        "source:https://commons.wikimedia.org/wiki/File:CANYONING_%26_CLIFF_JUMPING_OFF_KOZJAK_WATERFALL_-_SLOVENIA.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:CANYONING_%26_CLIFF_JUMPING_OFF_KOZJAK_WATERFALL_-_SLOVENIA.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-4688ba6b8ca4db2a"
+    },
+    {
+      "caseId": "public-la_jolla_cove_a",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:La_Jolla_Cove_1_2016-05-15.webm"
+      ],
+      "categories": [
+        "natural",
+        "beach",
+        "cove",
+        "same_scene_ambiguity"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "la_jolla_cove_a",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:la_jolla_a_video",
+        "place:la jolla cove",
+        "source:https://commons.wikimedia.org/wiki/File:La_Jolla_Cove_1_2016-05-15.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:La_Jolla_Cove_1_2016-05-15.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-64bdad04591ff6cf"
+    },
+    {
+      "caseId": "public-la_jolla_cove_b",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:La_Jolla_Cove_1_2016-06-10.webm"
+      ],
+      "categories": [
+        "natural",
+        "beach",
+        "cove",
+        "same_scene_ambiguity"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "la_jolla_cove_b",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:la_jolla_b_video",
+        "place:la jolla cove",
+        "source:https://commons.wikimedia.org/wiki/File:La_Jolla_Cove_1_2016-06-10.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:La_Jolla_Cove_1_2016-06-10.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-64bdad04591ff6cf"
+    },
+    {
+      "caseId": "public-multi_dettifoss_griffith",
+      "kind": "composite_control",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Dettifoss_waterfall_in_Vatnajokull_National_Park,_Iceland.webm",
+        "https://commons.wikimedia.org/wiki/File:Foucault_pendulum_in_the_rotunda_in_Griffith_Observatory_in_July_2022.webm"
+      ],
+      "categories": [
+        "multi_place",
+        "natural",
+        "waterfall",
+        "interior_landmark"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "multi_dettifoss_griffith",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:dettifoss_video",
+        "public-source:griffith_video",
+        "place:dettifoss",
+        "source:https://commons.wikimedia.org/wiki/File:Dettifoss_waterfall_in_Vatnajokull_National_Park,_Iceland.webm",
+        "source:https://commons.wikimedia.org/wiki/File:Foucault_pendulum_in_the_rotunda_in_Griffith_Observatory_in_July_2022.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Dettifoss_waterfall_in_Vatnajokull_National_Park,_Iceland.webm",
+          "license": "CC BY 2.0"
+        },
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Foucault_pendulum_in_the_rotunda_in_Griffith_Observatory_in_July_2022.webm",
+          "license": "CC0"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-6334c7ff1a79813c"
+    },
+    {
+      "caseId": "public-multi_la_jolla_golden_gate",
+      "kind": "composite_control",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:La_Jolla_Cove_1_2016-05-15.webm",
+        "https://commons.wikimedia.org/wiki/File:Golden_Gate_Bridge_Timelapse.webm"
+      ],
+      "categories": [
+        "multi_place",
+        "natural",
+        "cove",
+        "landmark"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "multi_la_jolla_golden_gate",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:la_jolla_a_video",
+        "public-source:golden_gate_video",
+        "place:la jolla cove",
+        "source:https://commons.wikimedia.org/wiki/File:La_Jolla_Cove_1_2016-05-15.webm",
+        "source:https://commons.wikimedia.org/wiki/File:Golden_Gate_Bridge_Timelapse.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:La_Jolla_Cove_1_2016-05-15.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        },
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Golden_Gate_Bridge_Timelapse.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-64bdad04591ff6cf"
+    },
+    {
+      "caseId": "public-multnomah_falls",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Multnomah_Falls_(2017-05-28).webm"
+      ],
+      "categories": [
+        "natural",
+        "waterfall",
+        "lookalike_geography"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "multnomah_falls",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:multnomah_video",
+        "place:multnomah falls",
+        "source:https://commons.wikimedia.org/wiki/File:Multnomah_Falls_(2017-05-28).webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Multnomah_Falls_(2017-05-28).webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-610c465ea16318ba"
+    },
+    {
+      "caseId": "public-niagara_falls",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Video_of_Niagara_Falls_in_Spring_2026.webm"
+      ],
+      "categories": [
+        "strong_easy",
+        "natural",
+        "waterfall"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "niagara_falls",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:niagara_video",
+        "place:niagara falls",
+        "source:https://commons.wikimedia.org/wiki/File:Video_of_Niagara_Falls_in_Spring_2026.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Video_of_Niagara_Falls_in_Spring_2026.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-47f9e71538eca696"
+    },
+    {
+      "caseId": "public-saint_malo_ocean_hard_negative",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Ocean_waves.webm"
+      ],
+      "categories": [
+        "hard_negative",
+        "natural",
+        "coast",
+        "model_prior_trap"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "saint_malo_ocean_hard_negative",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:ocean_waves_video",
+        "source:https://commons.wikimedia.org/wiki/File:Ocean_waves.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Ocean_waves.webm",
+          "license": "CC BY-SA 3.0"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-b45715eb897e2050"
+    },
+    {
+      "caseId": "public-small_waterfall_hard_negative",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Small_waterfall.webm"
+      ],
+      "categories": [
+        "hard_negative",
+        "natural",
+        "waterfall",
+        "model_prior_trap"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "small_waterfall_hard_negative",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:small_waterfall_video",
+        "source:https://commons.wikimedia.org/wiki/File:Small_waterfall.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Small_waterfall.webm",
+          "license": "CC BY 3.0"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-d20bdaba88d19e04"
+    },
+    {
+      "caseId": "public-summersville_lake_cliff_jump",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Teen_dives_on_Summersville_Lake_Cliff_Jump.-d8Jo_xqxEn0.webm"
+      ],
+      "categories": [
+        "natural",
+        "cliff_jumping",
+        "non_places",
+        "ambiguous"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "summersville_lake_cliff_jump",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:summersville_video",
+        "place:summersville lake",
+        "source:https://commons.wikimedia.org/wiki/File:Teen_dives_on_Summersville_Lake_Cliff_Jump.-d8Jo_xqxEn0.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Teen_dives_on_Summersville_Lake_Cliff_Jump.-d8Jo_xqxEn0.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-7c958996fa170669"
+    },
+    {
+      "caseId": "public-sydney_opera_house",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Sydney_Opera_House_drone.webm"
+      ],
+      "categories": [
+        "strong_easy",
+        "landmark"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "sydney_opera_house",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:sydney_opera_video",
+        "place:sydney opera house",
+        "source:https://commons.wikimedia.org/wiki/File:Sydney_Opera_House_drone.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Sydney_Opera_House_drone.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-eb74846b76b9153a"
+    },
+    {
+      "caseId": "public-taj_mahal_parallax",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Taj_Mahal.webm"
+      ],
+      "categories": [
+        "strong_easy",
+        "model_prior_trap",
+        "landmark"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "taj_mahal_parallax",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:taj_mahal_video",
+        "place:taj mahal",
+        "source:https://commons.wikimedia.org/wiki/File:Taj_Mahal.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Taj_Mahal.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-0d6f25231724155c"
+    },
+    {
+      "caseId": "public-twelve_apostles",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Aerial_views_of_Port_Campbell_National_Park_and_Twelve_Apostles_Marine_National_Park,_Victoria,_Australia.webm"
+      ],
+      "categories": [
+        "natural",
+        "cliff",
+        "sea_stack",
+        "lookalike_geography"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "twelve_apostles",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:twelve_apostles_video",
+        "place:twelve apostles",
+        "source:https://commons.wikimedia.org/wiki/File:Aerial_views_of_Port_Campbell_National_Park_and_Twelve_Apostles_Marine_National_Park,_Victoria,_Australia.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Aerial_views_of_Port_Campbell_National_Park_and_Twelve_Apostles_Marine_National_Park,_Victoria,_Australia.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-092e0de36a8e6d65"
+    },
+    {
+      "caseId": "public-waimea_bay_pre_comment",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Waimea_Bay_Beach_(12598562733).jpg"
+      ],
+      "categories": [
+        "natural",
+        "beach",
+        "same_scene_ambiguity",
+        "current_physical_case"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "waimea_bay_pre_comment",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:waimea_image",
+        "place:waimea bay",
+        "source:https://commons.wikimedia.org/wiki/File:Waimea_Bay_Beach_(12598562733).jpg"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Waimea_Bay_Beach_(12598562733).jpg",
+          "license": "CC BY 2.0"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-9e509497ce5ca260"
+    },
+    {
+      "caseId": "public-yosemite_upper_falls",
+      "kind": "real",
+      "sourceKeys": [
+        "https://commons.wikimedia.org/wiki/File:Yosemite_Upper_Falls_high_flow_Yosemite_CA_2023-07-13_14-42-17_1.webm"
+      ],
+      "categories": [
+        "natural",
+        "waterfall",
+        "lookalike_geography"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "../sol-vs-terra/artifacts/model-benchmark/sol-vs-terra/fixture-catalog.json",
+          "caseId": "yosemite_upper_falls",
+          "allowedFields": [
+            "context",
+            "sources"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "public-source:yosemite_upper_falls_video",
+        "place:upper yosemite fall",
+        "source:https://commons.wikimedia.org/wiki/File:Yosemite_Upper_Falls_high_flow_Yosemite_CA_2023-07-13_14-42-17_1.webm"
+      ],
+      "sourceLicenses": [
+        {
+          "source": "https://commons.wikimedia.org/wiki/File:Yosemite_Upper_Falls_high_flow_Yosemite_CA_2023-07-13_14-42-17_1.webm",
+          "license": "Wikimedia Commons free-license metadata; see source page"
+        }
+      ],
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-0db61d661bc9f7ca"
+    },
+    {
+      "caseId": "R01",
+      "sourceKeys": [
+        "instagram:Cg2U22DjbEJ"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/Cg2U22DjbEJ/",
+      "categories": [
+        "natural",
+        "hard",
+        "generic_famous_match_control"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "R01"
+        }
+      ],
+      "groupKeys": [
+        "source:instagram:Cg2U22DjbEJ"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-e0a64b0b6d837fa4"
+    },
+    {
+      "caseId": "R02",
+      "sourceKeys": [
+        "instagram:DSvmLO_Eom9"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/DSvmLO_Eom9/",
+      "categories": [
+        "natural",
+        "hard",
+        "generic_famous_match_control"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "R02"
+        }
+      ],
+      "groupKeys": [
+        "source:instagram:DSvmLO_Eom9"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-c719df3d28484a1a"
+    },
+    {
+      "caseId": "R03",
+      "sourceKeys": [
+        "instagram:DZJ8ZvYub8Q"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/DZJ8ZvYub8Q/",
+      "categories": [
+        "natural",
+        "hard"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "R03"
+        }
+      ],
+      "groupKeys": [
+        "place:tamolitch blue pool",
+        "source:instagram:DZJ8ZvYub8Q"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-ab36036ef4ff0a20"
+    },
+    {
+      "caseId": "R04",
+      "sourceKeys": [
+        "instagram:C9Z963muLHI"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/C9Z963muLHI/",
+      "categories": [
+        "natural",
+        "hard"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "R04"
+        }
+      ],
+      "groupKeys": [
+        "place:dorset marble quarry",
+        "source:instagram:C9Z963muLHI"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-330dd1decd033bba"
+    },
+    {
+      "caseId": "R05",
+      "sourceKeys": [
+        "instagram:Db5qatGJgqH"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/Db5qatGJgqH/",
+      "categories": [
+        "natural",
+        "hard"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "R05"
+        }
+      ],
+      "groupKeys": [
+        "place:okere falls scenic reserve",
+        "source:instagram:Db5qatGJgqH"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-1444962ff685397f"
+    },
+    {
+      "caseId": "R06",
+      "sourceKeys": [
+        "instagram:5oXehfQxb2"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/5oXehfQxb2/",
+      "categories": [
+        "natural",
+        "control"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "R06"
+        }
+      ],
+      "groupKeys": [
+        "place:lake havasu",
+        "source:instagram:5oXehfQxb2"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-e7a271ee676b0303"
+    },
+    {
+      "caseId": "R07",
+      "sourceKeys": [
+        "instagram:C0bg-7sooKi"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/C0bg-7sooKi/",
+      "categories": [
+        "natural",
+        "hard",
+        "generic_famous_match_control"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "R07"
+        }
+      ],
+      "groupKeys": [
+        "source:instagram:C0bg-7sooKi"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-3ce42add5ce7a870"
+    },
+    {
+      "caseId": "R08",
+      "sourceKeys": [
+        "instagram:CqJo6QHJqPo"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/CqJo6QHJqPo/",
+      "categories": [
+        "natural",
+        "hard"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "R08"
+        },
+        {
+          "path": "artifacts/cliff-jumping/inference-corpus.json",
+          "caseId": "CJ004"
+        }
+      ],
+      "groupKeys": [
+        "place:moku nui",
+        "source:instagram:CqJo6QHJqPo",
+        "place:moku nui"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-bda7ec4bbac58dc5"
+    },
+    {
+      "caseId": "S01",
+      "sourceKeys": [
+        "instagram:DV9RcvwAQ0P"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DV9RcvwAQ0P/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "S01"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 10,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:seabright deli",
+        "source:instagram:DV9RcvwAQ0P",
+        "place:seabright deli"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-24136a7c1da16b4b"
+    },
+    {
+      "caseId": "S02",
+      "sourceKeys": [
+        "instagram:DYPweEqPtWy"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DYPweEqPtWy/",
+      "categories": [
+        "negative",
+        "generic_famous_match_control"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "S02"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 12,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "source:instagram:DYPweEqPtWy"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-bbe97d17449c6e00"
+    },
+    {
+      "caseId": "S03",
+      "sourceKeys": [
+        "instagram:CuIjn7kgPSe"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/CuIjn7kgPSe/",
+      "categories": [
+        "multi_place",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "S03"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 14,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "source:instagram:CuIjn7kgPSe"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-217c48f2b7fdd352"
+    },
+    {
+      "caseId": "S04",
+      "sourceKeys": [
+        "instagram:DTI2vG0jreQ"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DTI2vG0jreQ/",
+      "categories": [
+        "multi_place",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "S04"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 15,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "source:instagram:DTI2vG0jreQ"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-3491f905b529783d"
+    },
+    {
+      "caseId": "S05",
+      "sourceKeys": [
+        "instagram:C1c6FT0SwKm"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/C1c6FT0SwKm/",
+      "categories": [
+        "multi_place",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "S05"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 16,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "source:instagram:C1c6FT0SwKm"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-39a6c3d9fd987246"
+    },
+    {
+      "caseId": "S06",
+      "sourceKeys": [
+        "instagram:DMV8LZ4hUoG"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DMV8LZ4hUoG/",
+      "categories": [
+        "business",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "S06"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 20,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "place:seabright deli",
+        "source:instagram:DMV8LZ4hUoG",
+        "place:seabright deli"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-24136a7c1da16b4b"
+    },
+    {
+      "caseId": "S07",
+      "sourceKeys": [
+        "instagram:CwRQwIEI7GJ"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/CwRQwIEI7GJ/",
+      "categories": [
+        "negative",
+        "restaurant"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "S07"
+        },
+        {
+          "path": "artifacts/share-gold-labeling-labeled.json",
+          "recordIndex": 25,
+          "allowedFields": [
+            "title",
+            "description",
+            "detected_handles",
+            "metadata_extracted_address"
+          ]
+        }
+      ],
+      "groupKeys": [
+        "source:instagram:CwRQwIEI7GJ"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-4fc42779a8a8ca27"
+    },
+    {
+      "caseId": "V02",
+      "sourceKeys": [
+        "instagram:DUWyZkfgbT4"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/DUWyZkfgbT4/",
+      "categories": [
+        "business",
+        "restaurant",
+        "control"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "V02"
+        }
+      ],
+      "groupKeys": [
+        "place:capone s italian cucina",
+        "source:instagram:DUWyZkfgbT4"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-14be013e815b69d5"
+    },
+    {
+      "caseId": "V03",
+      "sourceKeys": [
+        "instagram:CxdY35frOrf"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/CxdY35frOrf/",
+      "categories": [
+        "business",
+        "restaurant",
+        "control"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "V03"
+        }
+      ],
+      "groupKeys": [
+        "place:brooklyn city pizzeria market",
+        "source:instagram:CxdY35frOrf"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-f4e6989385ff9927"
+    },
+    {
+      "caseId": "V04",
+      "sourceKeys": [
+        "instagram:DYq7Q3Lza0G"
+      ],
+      "sourceUrl": "https://www.instagram.com/reel/DYq7Q3Lza0G/",
+      "categories": [
+        "natural",
+        "hard"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "V04"
+        }
+      ],
+      "groupKeys": [
+        "place:hellfire bay",
+        "source:instagram:DYq7Q3Lza0G"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-c18d19d9d33cc24e"
+    },
+    {
+      "caseId": "V05",
+      "sourceKeys": [
+        "instagram:DX77lghIHeG"
+      ],
+      "sourceUrl": "https://www.instagram.com/p/DX77lghIHeG/",
+      "categories": [
+        "business",
+        "restaurant",
+        "hard",
+        "control"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "artifacts/sol-parity/inference-corpus.json",
+          "caseId": "V05"
+        }
+      ],
+      "groupKeys": [
+        "place:paradise dynasty",
+        "source:instagram:DX77lghIHeG"
+      ],
+      "kind": "real",
+      "split": "TRAIN_DEVELOPMENT",
+      "exposure": "historical_outcomes_already_exposed",
+      "group": "group-9ab4b3b17d7ebfe6"
+    }
+  ]
+}

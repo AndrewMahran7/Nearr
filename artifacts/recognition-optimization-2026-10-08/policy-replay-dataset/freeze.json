@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "experimentGeneration": 1,
+  "frozenAt": "2026-10-08T22:35:05.473Z",
+  "inputSha256": "3afc6a6dd2ef6429a879658487859429c653dfa46634a57281aa40ddd5f35008",
+  "labelSha256": "b28267964d0c4d7c256250c244dd2850bc3ad76459e9d43e73cc1aabf6699800",
+  "parentInputSha256": "71dbd1c4ab6cf8ef1d4bd14c2e9b0258e95f8c32b31609ac85e5741f46e1b56a",
+  "parentLabelSha256": "14a1690ad5a5d3942b504a873f9ed7e9edd47b21776b69d9615bf9dc3102c6e1",
+  "sourceHashes": {
+    "modelAttempts": "e4272dd527e11ac3313e74c66b984f761c5d80e2ad871784b9af58b1269195c2",
+    "localRuntime": "cea79dbe49e47705772c8cb1d763b94017ac025f97531b514266d8f93270e40a"
+  },
+  "selectedBeforeExecution": "All cases with persisted raw model call; selected by data availability, never by correctness.",
+  "cases": 31,
+  "boundary": "retained model call -> current canonicalization where complete provider response retained -> current safety -> automatic deep REVIEW -> pure finalization; no acquisition, model, source-evidence inference, database or client execution"
+}

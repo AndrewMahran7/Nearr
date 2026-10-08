@@ -1,0 +1,775 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Tuxedo Cat's Coffee",
+        "Tuxedo Cat Coffee"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#C06",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "C06"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "2nd Floor",
+          "aliases": [
+            "2nd Floor",
+            "2nd Floor Restaurant Bar Gallery Nightclub",
+            "2nd Floor Gallery Bar & Grill"
+          ],
+          "locality": "Huntington Beach"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "VERIFIED",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "PINNED_BACKEND_FIXTURE",
+          "reference": "scripts/shareRegressionFixtures.ts#instagram-2nd-floor-post",
+          "supports": "venue and Huntington Beach address"
+        }
+      ],
+      "acceptedGranularity": "exact_physical_place",
+      "notes": null,
+      "caseId": "H01"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Mad Yolks",
+          "aliases": [
+            "Mad Yolks"
+          ],
+          "locality": "Santa Cruz"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Mad Yolks"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-1cab4fbf2251"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "H02"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Las Palmas Taco Bar",
+        "Las Palmas"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#H03",
+          "supports": "venue identity"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "H03"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Seabright Deli",
+          "aliases": [
+            "Seabright Deli"
+          ],
+          "locality": null
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Seabright Deli"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-393a255347ae"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "H04"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Mad Yolks",
+          "aliases": [
+            "Mad Yolks"
+          ],
+          "locality": "Santa Cruz"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Mad Yolks"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-9a0fa6a97d27"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "H05"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Baqba Mexican Grill",
+          "aliases": [
+            "Baqba Mexican Grill"
+          ],
+          "locality": "Montclair"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Baqba Mexican Grill",
+        "Baqba"
+      ],
+      "previousQuality": "PROVISIONAL",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-64a2fefb9fc4"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "H06"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Loaded Cafe - Orange",
+          "aliases": [
+            "Loaded Cafe - Orange"
+          ],
+          "locality": "Orange"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Loaded Cafe - Orange",
+        "Loaded Cafe"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-7741047607ba"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "H08"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Pho Bamboo Vietnamese Restaurant",
+          "aliases": [
+            "Pho Bamboo Vietnamese Restaurant"
+          ],
+          "locality": "City Of Industry"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Pho Bamboo Vietnamese Restaurant",
+        "Pho Bamboo",
+        "Pho Bamboo Restaurant"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-971421f1c594"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "H09"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Baja Sharkeez",
+        "Baja Sharkeez Huntington Beach"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#H10",
+          "supports": "Huntington Beach branch"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "H10"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "No Good Burger Joint",
+        "No Good Burger Joint NY"
+      ],
+      "previousQuality": "PROVISIONAL",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#H11",
+          "supports": "venue family only; branch unresolved"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": "Multiple New York-area branches exist and the legacy fixture does not establish the exact physical branch.",
+      "caseId": "H11"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Old Fisherman's Grotto",
+        "Fisherman's Grotto"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#H12",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "H12"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Aptos St. BBQ",
+          "aliases": [
+            "Aptos St. BBQ"
+          ],
+          "locality": null
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Aptos St. BBQ",
+        "Aptos Street BBQ"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-8c385ce29164"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "P01"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "BLK Earth Sea Spirits",
+        "BLK"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#P02",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "P02"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Chocolat",
+        "Chocolate the Restaurant",
+        "Chocolat Restaurant",
+        "Chocolate (Chocolate the Restaurant)"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#P03",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "P03"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Mesa Verde Farmers' Market",
+        "Mesa Verde Farmers Market",
+        "Mesa Verde Farmers Market by Farm Habit",
+        "Mesa Verde Farmers Market (Farm Habit Mesa Verde)"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#P04",
+          "supports": "market identity"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "P04"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "OC Greek Fest",
+          "aliases": [
+            "OC Greek Fest"
+          ],
+          "locality": "Anaheim"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "OC Greek Fest",
+        "Orange County Greek Festival",
+        "Orange County Greek Festival at St. John the Baptist Greek Orthodox Church",
+        "Orange County Greek Festival (OC Greek Fest) at St. John the Baptist Greek Orthodox Church"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-b37450ca8f08"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "P05"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Old World Biergarten Festival Hall & Concert Venue",
+          "aliases": [
+            "Old World Biergarten Festival Hall & Concert Venue"
+          ],
+          "locality": "Huntington Beach"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Old World Biergarten Festival Hall & Concert Venue",
+        "Old World Biergarten",
+        "Old World Huntington Beach",
+        "Biergarten at Old World Huntington Beach (Old World Village)",
+        "Old World German Restaurant & Biergarten at Old World Village"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-fd77e0119e08"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "P06"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Point Market",
+        "The Point Market & Cafe",
+        "The Point Market"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#P07",
+          "supports": "market identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "P07"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Seabright Deli"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#P08",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "P08"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Tacos El Chuy",
+        "Tacos El Chuy Food Truck"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#P09",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "P09"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Tamolitch Blue Pool",
+        "Tamolitch Falls",
+        "Blue Pool",
+        "Tamolitch Blue Pool (Tamolitch Falls)"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#R03",
+          "supports": "Tamolitch Blue Pool alias family"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "R03"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Dorset Marble Quarry",
+        "Dorset Quarry",
+        "Dorset Marble Quarry (Norcross-West Marble Quarry)"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#R04",
+          "supports": "Dorset Marble Quarry identity"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "R04"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Okere Falls Scenic Reserve",
+        "Okere Falls",
+        "Okere Falls Track",
+        "Okere Falls Scenic Reserve (Kaituna River)"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#R05",
+          "supports": "Okere Falls identity"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "R05"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Moku Nui",
+          "aliases": [
+            "Moku Nui",
+            "Mokulua Moku Nui"
+          ],
+          "country": "United States"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "VERIFIED_EXACT",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CqJo6QHJqPo/",
+          "shortFinding": "Caption says Hawaii and hashtags identify Kailua and the Mokes."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://dlnr.hawaii.gov/wp-content/uploads/2024/07/C-1.pdf",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "acceptedGranularity": "named_physical_feature",
+      "notes": "The source says Hawaii and tags Kailua and the Mokes; the shortcode is the historical R08 duplicate, and public sources distinguish larger Moku Nui from Moku Iki.",
+      "caseId": "R08",
+      "country": "United States",
+      "region": "Hawaii"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Seabright Deli",
+          "aliases": [
+            "Seabright Deli"
+          ],
+          "locality": "Santa Cruz"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [
+        "Seabright Deli"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "founder_reviewed_existing_gold_label",
+          "reference": "../jev-evaluation-reconciliation/evaluations/jev-recognition/dataset_manifest.jsonl#jev-real-3516b72187e5"
+        }
+      ],
+      "acceptedGranularity": "exact_place",
+      "notes": "Retained founder-reviewed label; former split is exposed and discarded for this generation.",
+      "caseId": "S01"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Seabright Deli"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#S06",
+          "supports": "venue identity and locality"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "S06"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Capone's Italian Cucina",
+          "aliases": [
+            "Capone's Italian Cucina",
+            "Capone's Cucina"
+          ],
+          "locality": "Huntington Beach"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "VERIFIED",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "PINNED_BACKEND_FIXTURE",
+          "reference": "scripts/shareRegressionFixtures.ts#instagram-capones-cucina-reel",
+          "supports": "venue and branch address"
+        }
+      ],
+      "acceptedGranularity": "exact_physical_place",
+      "notes": null,
+      "caseId": "V02"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Brooklyn City Pizzeria & Market",
+          "aliases": [
+            "Brooklyn City Pizzeria & Market",
+            "Brooklyn City Pizzeria",
+            "Brooklyn City Market"
+          ],
+          "locality": "Laguna Niguel"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "VERIFIED",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "PINNED_BACKEND_FIXTURE",
+          "reference": "scripts/shareRegressionFixtures.ts#instagram-brooklyn-city-pizzeria-reel",
+          "supports": "venue and branch address"
+        }
+      ],
+      "acceptedGranularity": "exact_physical_place",
+      "notes": null,
+      "caseId": "V03"
+    },
+    {
+      "label": "UNVERIFIED",
+      "expectedPlaces": [],
+      "proposedPlacesNotGroundTruth": [
+        "Hellfire Bay"
+      ],
+      "previousQuality": "HIGH_CONFIDENCE",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": false,
+      "provenance": [
+        {
+          "kind": "CURATED_LEGACY_GROUND_TRUTH",
+          "reference": "artifacts/sol-parity/ground-truth.json#V04",
+          "supports": "Hellfire Bay identity"
+        }
+      ],
+      "acceptedGranularity": "unestablished",
+      "notes": null,
+      "caseId": "V04"
+    },
+    {
+      "label": "VERIFIED_EXACT_SINGLE",
+      "expectedPlaces": [
+        {
+          "name": "Paradise Dynasty",
+          "aliases": [
+            "Paradise Dynasty",
+            "Paradise Dynasty at South Coast Plaza",
+            "Paradise Dynasty Costa Mesa"
+          ],
+          "locality": "South Coast Plaza"
+        }
+      ],
+      "proposedPlacesNotGroundTruth": [],
+      "previousQuality": "VERIFIED",
+      "multiPlaceExpected": false,
+      "completeSetEstablished": true,
+      "provenance": [
+        {
+          "kind": "PINNED_BACKEND_FIXTURE",
+          "reference": "scripts/shareRegressionFixtures.ts#instagram-paradise-dynasty-post",
+          "supports": "restaurant tenant and Costa Mesa branch"
+        }
+      ],
+      "acceptedGranularity": "exact_physical_place",
+      "notes": null,
+      "caseId": "V05"
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "caseId": "H11",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJwfFb4flYwokRP78kZ3ER5a8",
+      "name": "No Good Burger Joint",
+      "locality": null,
+      "region": "New York",
+      "country": "United States",
+      "address": "119 W 56th St, New York, NY 10019, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJwfFb4flYwokRP78kZ3ER5a8",
+      "name": "No Good Burger Joint",
+      "locality": null,
+      "region": "New York",
+      "country": "United States",
+      "address": "119 W 56th St, New York, NY 10019, USA"
+    },
+    {
+      "id": "ChIJ6UFvLv17wokRLxG2cJk8iFA",
+      "name": "No Good Burger Joint – Rockville Centre",
+      "locality": "Rockville Centre",
+      "region": "New York",
+      "country": "United States",
+      "address": "88 N Village Ave, Rockville Centre, NY 11570, USA"
+    },
+    {
+      "id": "ChIJs6bUiwp7wokRzCTx1C_Cjq0",
+      "name": "No Good Burger Joint – Baldwin",
+      "locality": "Baldwin",
+      "region": "New York",
+      "country": "United States",
+      "address": "930 Atlantic Ave, Baldwin, NY 11510, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.3264000000001488,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.0987999999999829,
+      "endMs": 0.2315000000000964
+    },
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.23390000000017608,
+      "endMs": 0.2898999999999887
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.2904000000000906,
+      "endMs": 0.3024000000000342
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.30700000000001637,
+      "endMs": 0.3218000000001666
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 2,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "No Good Burger Joint",
+      "replayed": false,
+      "reason": "full_provider_response_not_retained",
+      "calls": 1
+    },
+    {
+      "name": "No Good Burger Joint – Rockville Centre",
+      "replayed": true,
+      "calls": 1
+    },
+    {
+      "name": "No Good Burger Joint – Baldwin",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.0418,
+    "modelLatencyMs": 10570,
+    "totalLatencyMs": 21658
+  }
+}

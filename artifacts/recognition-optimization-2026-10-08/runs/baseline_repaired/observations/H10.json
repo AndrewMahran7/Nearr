@@ -1,0 +1,81 @@
+{
+  "caseId": "H10",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJvxBa4_4f3YARih5A9O_Z6ps",
+      "name": "Baja Sharkeez Newport Beach",
+      "locality": "Newport Beach",
+      "region": "California",
+      "country": "United States",
+      "address": "114 Mc Fadden Pl, Newport Beach, CA 92663, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJvxBa4_4f3YARih5A9O_Z6ps",
+      "name": "Baja Sharkeez Newport Beach",
+      "locality": "Newport Beach",
+      "region": "California",
+      "country": "United States",
+      "address": "114 Mc Fadden Pl, Newport Beach, CA 92663, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.40239999999994325,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.11630000000013752,
+      "endMs": 0.2233000000001084
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.22400000000016007,
+      "endMs": 0.3683000000000902
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.3831000000000131,
+      "endMs": 0.39820000000008804
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 1,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Baja Sharkeez Newport Beach",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.035828,
+    "modelLatencyMs": 5162,
+    "totalLatencyMs": 22573
+  }
+}

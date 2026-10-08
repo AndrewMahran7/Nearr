@@ -1,0 +1,91 @@
+{
+  "caseId": "R08",
+  "status": "review",
+  "places": [
+    {
+      "id": null,
+      "name": "Moku Nui, Mokulua Islands",
+      "locality": "Kailua",
+      "region": "Hawaii",
+      "country": "United States",
+      "address": null
+    }
+  ],
+  "candidates": [
+    {
+      "id": null,
+      "name": "Moku Nui, Mokulua Islands",
+      "locality": "Kailua",
+      "region": "Hawaii",
+      "country": "United States",
+      "address": null
+    },
+    {
+      "id": "ChIJwx-q1FEUAHwRoyqaD18fq38",
+      "name": "Queen's Bath cliff-jumping cove, Moku Nui",
+      "locality": "Kailua",
+      "region": "Hawaii",
+      "country": "United States",
+      "address": "Moku Nui, Hawaii 96734, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "MEDIUM",
+  "multiPlaceDecision": false,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.09619999999995343,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.06790000000000873,
+      "endMs": 0.08030000000007931
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.08469999999988431,
+      "endMs": 0.09400000000005093
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 0,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "NAMED_LEAD"
+  ],
+  "ordinaryDecisions": [
+    "NAMED_LEAD"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Moku Nui, Mokulua Islands",
+      "replayed": false,
+      "reason": "full_provider_response_not_retained",
+      "calls": 1
+    },
+    {
+      "name": "Queen's Bath cliff-jumping cove, Moku Nui",
+      "replayed": false,
+      "reason": "full_provider_response_not_retained",
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.051056,
+    "modelLatencyMs": 22238,
+    "totalLatencyMs": 32969
+  }
+}

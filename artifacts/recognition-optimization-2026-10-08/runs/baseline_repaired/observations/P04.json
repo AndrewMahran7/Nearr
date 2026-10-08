@@ -1,0 +1,114 @@
+{
+  "caseId": "P04",
+  "status": "review",
+  "places": [
+    {
+      "id": "ChIJ_xurk7bf3IARMf5rcv8wxJs",
+      "name": "Mesa Verde Farmers Market (Farm Habit Mesa Verde)",
+      "locality": "Costa Mesa",
+      "region": "California",
+      "country": "United States",
+      "address": "1525 Mesa Verde Dr E, Costa Mesa, CA 92626, USA"
+    },
+    {
+      "id": "ChIJYRZbxcLf3IARboEvbUfAXRk",
+      "name": "Deli Nerds",
+      "locality": "Costa Mesa",
+      "region": "California",
+      "country": "United States",
+      "address": "1525 Mesa Verde Dr E Ste 117, Costa Mesa, CA 92626, USA"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "ChIJ_xurk7bf3IARMf5rcv8wxJs",
+      "name": "Mesa Verde Farmers Market (Farm Habit Mesa Verde)",
+      "locality": "Costa Mesa",
+      "region": "California",
+      "country": "United States",
+      "address": "1525 Mesa Verde Dr E, Costa Mesa, CA 92626, USA"
+    },
+    {
+      "id": "ChIJYRZbxcLf3IARboEvbUfAXRk",
+      "name": "Deli Nerds",
+      "locality": "Costa Mesa",
+      "region": "California",
+      "country": "United States",
+      "address": "1525 Mesa Verde Dr E Ste 117, Costa Mesa, CA 92626, USA"
+    }
+  ],
+  "autonomous": false,
+  "confidence": "HIGH",
+  "multiPlaceDecision": true,
+  "unsupportedAutosave": false,
+  "wallTimeMs": 0.23330000000009932,
+  "firstUsableResultMs": null,
+  "stages": [
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.07369999999991705,
+      "endMs": 0.16020000000003165
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.1609000000000833,
+      "endMs": 0.16270000000008622
+    },
+    {
+      "name": "canonicalization_local_replay",
+      "startMs": 0.16499999999996362,
+      "endMs": 0.21640000000002146
+    },
+    {
+      "name": "premium_policy_replay",
+      "startMs": 0.21690000000012333,
+      "endMs": 0.21810000000004948
+    },
+    {
+      "name": "automatic_deep_and_finalizer_replay",
+      "startMs": 0.2215000000001055,
+      "endMs": 0.23060000000009495
+    }
+  ],
+  "retries": 0,
+  "cacheBehavior": "read_only_retained_evidence",
+  "providerUsage": [
+    {
+      "provider": "local",
+      "operation": "places_record_replay",
+      "calls": 2,
+      "costUsd": 0,
+      "measurement": "measured"
+    }
+  ],
+  "providerLedgerComplete": true,
+  "boundary": "deterministic_policy_replay",
+  "failureClass": null,
+  "replayScope": "conditional_after_deep_escalation; stored_evidence_basis; canonicalization_only_with_complete_retained_response; no_full_source_metadata_or_geography_reconstruction",
+  "premiumDecisions": [
+    "REVIEW",
+    "REVIEW"
+  ],
+  "ordinaryDecisions": [
+    "REVIEW",
+    "REVIEW"
+  ],
+  "finalizationReason": "upstream_exact_identity_review_required",
+  "providerReplay": [
+    {
+      "name": "Mesa Verde Farmers Market (Farm Habit Mesa Verde)",
+      "replayed": true,
+      "calls": 1
+    },
+    {
+      "name": "Deli Nerds",
+      "replayed": true,
+      "calls": 1
+    }
+  ],
+  "historicalUsageNotInExperimentLedger": {
+    "modelCostUsd": 0.042108,
+    "modelLatencyMs": 9488,
+    "totalLatencyMs": 26325
+  }
+}
