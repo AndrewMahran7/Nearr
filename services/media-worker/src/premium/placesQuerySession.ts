@@ -14,6 +14,12 @@ export type PlacesQueryRecord = {
   ok: boolean;
 };
 
+/** Invalid configuration must serialize work, never bypass the permit bound
+ * (NaN comparisons are false) or make Array.from create zero workers. */
+function normalizeConcurrency(value: number, upperBound: number): number {
+  return Number.isFinite(value) ? Math.max(1, Math.min(upperBound, Math.floor(value))) : 1;
+}
+
 /** One recognition execution owns this object. It is never a global answer
  * cache. Keep exact query text and provider semantics: case/diacritics and
  * geographic qualifiers are not interchangeable. No credentials are logged. */
@@ -22,7 +28,7 @@ export function createPlacesQuerySession(args: {
   mode: PlacesExecutionMode;
   concurrency?: number;
 }) {
-  const limit = args.mode === 'bounded' ? Math.max(1, Math.min(3, Math.floor(args.concurrency ?? 3))) : 1;
+  const limit = args.mode === 'bounded' ? normalizeConcurrency(args.concurrency ?? 3, 3) : 1;
   let active = 0;
   let peakActive = 0;
   let actualRequests = 0;
@@ -96,7 +102,8 @@ export function createPlacesQuerySession(args: {
 export async function mapPlacesInOrder<T, U>(values: readonly T[], concurrency: number, fn: (value: T, index: number) => Promise<U>): Promise<U[]> {
   const out = new Array<U>(values.length);
   let cursor = 0;
-  await Promise.all(Array.from({ length: Math.min(values.length, Math.max(1, concurrency)) }, async () => {
+  const limit = Math.min(values.length, normalizeConcurrency(concurrency, values.length));
+  await Promise.all(Array.from({ length: limit }, async () => {
     while (cursor < values.length) {
       const index = cursor++;
       out[index] = await fn(values[index]!, index);

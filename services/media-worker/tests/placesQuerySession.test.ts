@@ -70,3 +70,51 @@ test('baseline mode performs every request serially with no memoization', async 
   await Promise.all(Array.from({ length: 5 }, () => session.search('same', 'key')));
   assert.equal(calls, 5); assert.equal(session.telemetry().avoidedRequests, 0);
 });
+
+test('invalid and fractional session concurrency cannot bypass the provider bound', async (t) => {
+  const cases = [
+    ['NaN', Number.NaN, 1], ['positive infinity', Number.POSITIVE_INFINITY, 1],
+    ['negative infinity', Number.NEGATIVE_INFINITY, 1], ['negative', -4, 1],
+    ['zero', 0, 1], ['sub-one fraction', 0.9, 1], ['fractional', 2.9, 2], ['over cap', 99, 3],
+  ] as const;
+  for (const [name, concurrency, expectedPeak] of cases) {
+    await t.test(name, async () => {
+      let active = 0; let peak = 0;
+      const session = createPlacesQuerySession({ mode: 'bounded', concurrency, search: async (query) => {
+        peak = Math.max(peak, ++active); await tick(); active--;
+        return { ok: true, results: [candidate(query)] };
+      } });
+      const values = ['one', 'two', 'three', 'four', 'five'];
+      const result = await Promise.all(values.map((value) => session.search(value, 'key')));
+      assert.equal(peak, expectedPeak);
+      assert.equal(session.telemetry().concurrencyLimit, expectedPeak);
+      assert.equal(session.telemetry().actualRequests, values.length);
+      assert.deepEqual(result.map((row) => row.ok && row.results[0]!.name), values);
+    });
+  }
+});
+
+test('map concurrency normalization runs every item exactly once and preserves order', async (t) => {
+  const cases = [
+    ['NaN', Number.NaN, 1], ['positive infinity', Number.POSITIVE_INFINITY, 1],
+    ['negative infinity', Number.NEGATIVE_INFINITY, 1], ['negative', -3, 1],
+    ['zero', 0, 1], ['sub-one fraction', 0.4, 1], ['fractional', 2.7, 2], ['over input size', 99, 5],
+  ] as const;
+  for (const [name, concurrency, expectedPeak] of cases) {
+    await t.test(name, async () => {
+      let active = 0; let peak = 0;
+      const visited: number[] = [];
+      const values = [0, 1, 2, 3, 4];
+      const result = await mapPlacesInOrder(values, concurrency, async (value, index) => {
+        visited.push(index); peak = Math.max(peak, ++active); await tick(); active--;
+        return `result-${value}`;
+      });
+      assert.equal(peak, expectedPeak);
+      assert.deepEqual(visited, values);
+      assert.deepEqual(result, values.map((value) => `result-${value}`));
+    });
+  }
+  assert.deepEqual(await mapPlacesInOrder([], Number.NaN, async () => {
+    throw new Error('empty input must not execute');
+  }), []);
+});
