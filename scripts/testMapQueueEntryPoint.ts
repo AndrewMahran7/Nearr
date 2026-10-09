@@ -132,11 +132,11 @@ const button = read('components/map/ShareQueueButton.tsx');
 
   assert.equal(
     renderGate.trim(),
-    '{!searchVisible && !nearbyExplorer ? (',
-    'only full-screen search or Nearby Explorer may hide the Queue',
+    "{!searchVisible && !nearbyExplorer && (sheetSnap !== 'full' || !!selected) ? (",
+    'full Saved owns an equivalent Activity entry; selected detail retains the map entry',
   );
   assert.ok(
-    !/shouldShowMapControls|previewExpanded|selected/.test(renderGate),
+    !/shouldShowMapControls|previewExpanded/.test(renderGate),
     'the Queue must NOT be hidden along with the selection-gated top chrome',
   );
   assert.ok(
@@ -144,17 +144,18 @@ const button = read('components/map/ShareQueueButton.tsx');
     'the first onboarding map uses the same Queue entry point as later visits',
   );
   assert.ok(map.includes('styles.queueChrome'), 'it has its own positioned overlay');
+  assert.match(read('components/map/MapBottomSheet.tsx'), /<ShareQueueButton \/>/, 'expanded Saved carries the same real Activity route and count');
 
   // The search bar and filter chips keep the original contract — this fix does
   // not drag the rest of the chrome over an open sheet.
   const chromeIndex = map.indexOf('<MapTopSearchBar');
-  const chromeBlock = map.slice(Math.max(0, chromeIndex - 300), chromeIndex);
+  const chromeBlock = map.slice(Math.max(0, chromeIndex - 500), chromeIndex);
   assert.ok(
     chromeBlock.includes('shouldShowMapControls'),
     'search + filters still yield to an expanded place, as they did before',
   );
   assert.ok(
-    map.includes('shouldShowMapControls = !nearbyExplorer && shouldRenderMapTopChrome({'),
+    map.includes('shouldShowMapControls = mapChromeDecision.topChromeRendered'),
     'Nearby Explorer owns the map chrome while active',
   );
   assert.equal(
@@ -187,8 +188,8 @@ const button = read('components/map/ShareQueueButton.tsx');
   // top inset + gap + search bar (50) + gap + filter row (38), left-aligned.
   assert.match(
     map,
-    /queueChrome: \{[\s\S]{0,220}top: insetTop \+ Spacing\.md \+ 50 \+ Spacing\.sm \+ 38,[\s\S]{0,80}left: Spacing\.lg,/,
-    'the pill lands exactly where it used to',
+    /queueChrome: \{[\s\S]{0,220}top: insetTop \+ Spacing\.md,[\s\S]{0,80}right: Spacing\.lg,/,
+    'Activity is aligned with the compact search/brand row',
   );
   // The clearance reserved for it is still accounted for, so nothing below
   // (View All / preview pills) creeps up underneath it.
@@ -214,9 +215,9 @@ const button = read('components/map/ShareQueueButton.tsx');
 
   // Both placements, against the real geometry, on every supported device.
   // `expandedSheetHeight` mirrors app/(tabs)/map.tsx.
-  const TAB_BAR = 83;
+  const TAB_BAR = 0; // Fieldnotes owns Map/Saved dock inside map screen
   const PILL_HEIGHT = 44;
-  const PILL_MARGIN = 8; // ShareQueueButton's own marginTop
+  const PILL_MARGIN = 0; // Compact Activity icon has no external margin
   const devices = [
     { name: 'iPhone SE', height: 667, inset: 20 },
     { name: 'iPhone 13 mini', height: 812, inset: 50 },
@@ -238,7 +239,7 @@ const button = read('components/map/ShareQueueButton.tsx');
     );
 
     // Sheet down → the original slot, which has the whole map to itself.
-    const restingBottom = safeTop + 12 + 50 + 8 + 38 + PILL_MARGIN + PILL_HEIGHT;
+    const restingBottom = safeTop + 12 + PILL_HEIGHT;
     assert.ok(restingBottom < mapArea, `${device.name}: resting Queue pill is on screen`);
   }
 }
@@ -251,7 +252,7 @@ const button = read('components/map/ShareQueueButton.tsx');
   const detailScreen = read('app/share-jobs/[jobId].tsx');
 
   assert.ok(queueScreen.includes('<ShareJobsSheet'), 'the queue sheet is unchanged');
-  assert.ok(queueScreen.includes('Recent finds'), 'and keeps its title');
+  assert.ok(queueScreen.includes('Activity') || queueScreen.includes('Finding your places'), 'Activity uses the approved consumer title');
   // Exact-place navigation out of the queue (82eac44) still goes through the
   // validated contract, by canonical saved_places.id.
   assert.ok(
@@ -261,4 +262,4 @@ const button = read('components/map/ShareQueueButton.tsx');
   );
 }
 
-console.log('PASS map queue entry point: present, ungated by selection, same position, same route');
+console.log('PASS map queue entry point: present, ungated by selection, Fieldnotes placement, same route');

@@ -18,6 +18,7 @@ import { memo, useCallback, useEffect, useState, type ComponentProps } from 'rea
 import { StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Marker } from 'react-native-maps';
+import { useTheme } from '@/lib/theme';
 
 import {
   CLUSTER_ACCESSIBILITY_HINT,
@@ -33,6 +34,7 @@ type Props = {
 const CLUSTER_SNAPSHOT_SETTLE_MS = 120;
 
 function NearrMapClusterMarkerView({ cluster, onPress, dimmed }: Props) {
+  const { colors } = useTheme();
   const [tracksViewChanges, setTracksViewChanges] = useState(true);
 
   // Re-arm native snapshotting only when the drawn visual actually changes.
@@ -40,7 +42,7 @@ function NearrMapClusterMarkerView({ cluster, onPress, dimmed }: Props) {
     setTracksViewChanges(true);
     const id = setTimeout(() => setTracksViewChanges(false), CLUSTER_SNAPSHOT_SETTLE_MS);
     return () => clearTimeout(id);
-  }, [cluster.count, cluster.glyph, cluster.sizing.diameter]);
+  }, [cluster.count, cluster.glyph, cluster.sizing.diameter, colors.surface]);
 
   const handlePress = useCallback(
     (event: { stopPropagation?: () => void }) => {
@@ -77,23 +79,21 @@ function NearrMapClusterMarkerView({ cluster, onPress, dimmed }: Props) {
         <View
           style={[
             styles.halo,
+            { backgroundColor: colors.surface, borderColor: colors.border },
             { width: haloSize, height: haloSize, borderRadius: haloSize / 2 },
           ]}
         />
         <View
           style={[
             styles.disc,
+            { backgroundColor: colors.text, borderColor: colors.surface },
             { width: diameter, height: diameter, borderRadius: diameter / 2 },
           ]}
         >
-          <MaterialCommunityIcons
-            name={cluster.glyph as ComponentProps<typeof MaterialCommunityIcons>['name']}
-            size={iconSize}
-            color="#282421"
-          />
           <Text
             style={[
               styles.count,
+              { color: colors.bg },
               { fontSize: countFontSize, lineHeight: countFontSize + 2 },
             ]}
             numberOfLines={1}

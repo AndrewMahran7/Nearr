@@ -1,318 +1,55 @@
-/**
- * MapPlaceSearchDropdown — a compact, Google-Maps-style place search anchored
- * under the top of the map. Replaces the previous full-screen saved-place
- * overlay.
- *
- * Behavior:
- *   - Searches REAL places via the existing `usePlacesSearch` hook (the same
- *     Google Places source `app/add-place.tsx` uses). It does NOT search saved
- *     places and does NOT trigger share-link extraction.
- *   - Renders as an absolutely-positioned panel over the map (map stays visible
- *     behind it); the panel is height-capped (~40% of the screen).
- *   - Tapping a result hands the place name to the parent, which opens the
- *     existing add/save flow (`/add-place?q=...`).
- */
-
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlaceImage } from '@/components/PlaceImage';
-import { Radius, Spacing } from '@/constants';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { useTheme } from '@/lib/theme';
+import { currentSavedPlaces, searchSavedPlaces, savedPlaceNotePreview } from '@/lib/savedPlacesBrowse';
+import { placeSourceCards } from '@/lib/placeSources';
 import type { PlaceCandidate } from '@/services/placesService';
+import type { SavedPlaceWithPlace } from '@/types';
 
-type Props = {
-  visible: boolean;
-  /** Top safe-area + chrome offset so the input lines up with the search bar. */
-  topInset: number;
-  /** Current-device proximity for manual search. Never source/video context. */
-  locationBias?: { lat: number; lng: number };
-  onClose: () => void;
-  /** Open the existing add/save flow for the chosen real-world place. */
-  onPickPlace: (place: PlaceCandidate) => void;
-};
+type Props = { visible: boolean; topInset: number; locationBias?: { lat: number; lng: number }; onClose: () => void; onPickPlace: (place: PlaceCandidate) => void; savedPlaces?: SavedPlaceWithPlace[]; offline?: boolean; onSelectSaved?: (place: SavedPlaceWithPlace) => void; onSaveFromLink?: () => void };
+type SearchRow = { kind: 'saved'; place: SavedPlaceWithPlace } | { kind: 'new'; place: PlaceCandidate };
 
-export function MapPlaceSearchDropdown({
-  visible,
-  topInset,
-  locationBias,
-  onClose,
-  onPickPlace,
-}: Props) {
+/** Local memory search and explicitly requested discovery share one calm, keyboard-safe surface. */
+export function MapPlaceSearchDropdown({ visible, topInset, locationBias, onClose, onPickPlace, savedPlaces = [], offline = false, onSelectSaved, onSaveFromLink }: Props) {
   const { colors, typography } = useTheme();
-  const { height: windowHeight } = useWindowDimensions();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
-
+  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
+  const [scope, setScope] = useState<'saved' | 'new'>('saved');
   const { results, loading, error, lastQuery, search, reset } = usePlacesSearch();
   const inputRef = useRef<TextInput>(null);
-
-  // Reset + focus on open; clear search state on close.
+  useEffect(() => { if (visible) { setQuery(''); setScope(savedPlaces.length || offline ? 'saved' : 'new'); reset(); const id = setTimeout(() => inputRef.current?.focus(), 120); return () => clearTimeout(id); } reset(); }, [visible, reset]);
   useEffect(() => {
-    if (visible) {
-      setQuery('');
-      reset();
-      const id = setTimeout(() => inputRef.current?.focus(), 120);
-      return () => clearTimeout(id);
-    }
-    reset();
-    return undefined;
-  }, [visible, reset]);
-
-  // Debounced live search (300ms), mirroring add-place. The hook drops stale
-  // responses, so the user always sees results for the latest query.
-  useEffect(() => {
-    if (!visible) return;
-    const q = query.trim();
-    if (q.length < 3) return;
-    if (q === lastQuery) return;
-    const id = setTimeout(() => {
-      void search(q, locationBias, {
-        mode: 'manual',
-        userLocation: locationBias ?? null,
-        regionConfidence: 'none',
-        sourceEvidence: [],
-      });
-    }, 300);
+    if (!visible || offline || scope !== 'new') return;
+    const q = query.trim(); if (q.length < 3 || q === lastQuery) return;
+    const id = setTimeout(() => { void search(q, locationBias, { mode: 'manual', userLocation: locationBias ?? null, regionConfidence: 'none', sourceEvidence: [] }); }, 300);
     return () => clearTimeout(id);
-  }, [query, visible, lastQuery, search, locationBias]);
-
-  const trimmed = query.trim();
-  const panelMaxHeight = Math.round(windowHeight * 0.4);
-
+  }, [query, visible, scope, offline, lastQuery, search, locationBias]);
+  const savedResults = useMemo(() => searchSavedPlaces(currentSavedPlaces(savedPlaces), query), [savedPlaces, query]);
+  const rows: SearchRow[] = scope === 'saved' ? savedResults.map(place => ({ kind: 'saved', place })) : query.trim().length >= 3 && !offline ? results.map(place => ({ kind: 'new', place })) : [];
   if (!visible) return null;
-
-  return (
-    <View style={styles.overlay} pointerEvents="box-none">
-      {/* Tap outside the panel to dismiss. */}
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-
-      <View style={[styles.anchor, { top: topInset }]} pointerEvents="box-none">
-        <View style={styles.inputRow}>
-          <Pressable
-            onPress={onClose}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Close search"
-            style={styles.backBtn}
-          >
-            <Feather name="arrow-left" size={20} color={colors.text} />
-          </Pressable>
-          <View style={styles.inputWrap}>
-            <Feather name="search" size={18} color={colors.textSecondary} />
-            <TextInput
-              ref={inputRef}
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search for a place"
-              placeholderTextColor={colors.textMuted}
-              style={[typography.body, styles.input]}
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="search"
-            />
-            {query.length > 0 ? (
-              <Pressable
-                onPress={() => setQuery('')}
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel="Clear search"
-              >
-                <Feather name="x" size={18} color={colors.textMuted} />
-              </Pressable>
-            ) : null}
-          </View>
-        </View>
-
-        <View style={[styles.panel, { maxHeight: panelMaxHeight }]}>
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.panelContent}
-          >
-            {trimmed.length < 3 ? (
-              <Text style={[typography.caption, styles.helper]}>
-                Search for a restaurant, shop, park, or any place.
-              </Text>
-            ) : loading && results.length === 0 ? (
-              <View style={styles.center}>
-                <ActivityIndicator color={colors.primary} />
-              </View>
-            ) : error ? (
-              <Text style={[typography.caption, styles.helper]}>
-                Couldn’t search places. Try again.
-              </Text>
-            ) : results.length === 0 ? (
-              <Text style={[typography.caption, styles.helper]}>No places found</Text>
-            ) : (
-              results.map((place, index) => (
-                <Pressable
-                  key={place.googlePlaceId ?? `${place.name}-${place.formattedAddress ?? ''}`}
-                  onPress={() => onPickPlace(place)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Add ${place.name}`}
-                  style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-                >
-                  <PlaceImage
-                    googlePlaceId={place.googlePlaceId}
-                    initialPhotoUrls={place.photoUrls?.length
-                      ? place.photoUrls
-                      : place.photoUrl ? [place.photoUrl] : undefined}
-                    size={52}
-                    borderRadius={11}
-                    preferPlacePhoto
-                    presentationMode="candidate"
-                    presentationActive={index === 0}
-                    hydrationPolicy={index === 0
-                      ? 'active_manual_search'
-                      : index < 4 ? 'compact_known_only' : 'offscreen_manual_search'}
-                    presentationContext={{
-                      trigger: 'manual_search',
-                      candidateIndex: index,
-                      candidateCount: results.length,
-                    }}
-                    accessibilityLabel={`Photo of ${place.name}`}
-                  />
-                  <View style={styles.rowCopy}>
-                    <Text style={typography.bodyStrong} numberOfLines={1}>
-                      {place.name}
-                    </Text>
-                    {place.formattedAddress ? (
-                      <Text style={[typography.caption, styles.rowAddr]} numberOfLines={1}>
-                        {place.formattedAddress}
-                      </Text>
-                    ) : null}
-                  </View>
-                  {place.category ? (
-                    <View style={styles.categoryChip}>
-                      <Text style={styles.categoryChipText} numberOfLines={1}>
-                        {place.category}
-                      </Text>
-                    </View>
-                  ) : null}
-                </Pressable>
-              ))
-            )}
-          </ScrollView>
-        </View>
-      </View>
-    </View>
-  );
+  return <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.overlay, { backgroundColor: colors.bg, paddingTop: topInset }]} accessibilityViewIsModal>
+    <View style={styles.header}><Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close search" style={[styles.icon, { backgroundColor: colors.surface }]}><Feather name="arrow-left" size={22} color={colors.text} /></Pressable><Text style={[typography.heading, styles.headerTitle]}>Find a place</Text>{onSaveFromLink ? <Pressable onPress={onSaveFromLink} accessibilityRole="button" accessibilityLabel="Paste a social post link" style={[styles.icon, { backgroundColor: colors.surface }]}><Feather name="link" size={21} color={colors.text} /></Pressable> : <View style={styles.icon} />}</View>
+    <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}><Feather name="search" size={22} color={colors.textSecondary} /><TextInput ref={inputRef} value={query} onChangeText={setQuery} placeholder={scope === 'saved' ? 'Name, city or your note' : 'Place, city or address'} placeholderTextColor={colors.textMuted} style={[typography.body, styles.input]} accessibilityLabel="Search places" autoCapitalize="none" autoCorrect={false} returnKeyType="search" />{query ? <Pressable onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear search" style={styles.icon}><Feather name="x" size={21} color={colors.textSecondary} /></Pressable> : null}</View>
+    <View style={styles.scopes}>{([{ id: 'saved', label: 'Your places' }, { id: 'new', label: 'Find somewhere new' }] as const).map(item => <Pressable key={item.id} onPress={() => setScope(item.id)} accessibilityRole="tab" accessibilityState={{ selected: scope === item.id }} style={[styles.scope, { backgroundColor: scope === item.id ? colors.primary : colors.surface, borderColor: colors.border }]}><Text style={[typography.label, { color: scope === item.id ? colors.textInverse : colors.text, textAlign: 'center' }]}>{item.label}</Text></Pressable>)}</View>
+    <View style={styles.section}><Text style={[typography.heading, styles.flex]} accessibilityRole="header">{scope === 'saved' ? 'Your places' : 'Find somewhere new'}</Text>{loading && scope === 'new' ? <ActivityIndicator size="small" color={colors.primary} accessibilityLabel="Finding places" /> : <Text style={typography.caption}>{rows.length ? `${rows.length} ${rows.length === 1 ? 'match' : 'matches'}` : ''}</Text>}</View>
+    <FlatList<SearchRow> data={rows} keyExtractor={item => item.kind === 'saved' ? item.place.id : item.place.googlePlaceId ?? `${item.place.name}-${item.place.formattedAddress}`} keyboardShouldPersistTaps="handled" initialNumToRender={8} maxToRenderPerBatch={8} windowSize={5} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 24 }}
+      ListEmptyComponent={<Text style={[typography.body, { color: colors.textSecondary, paddingTop: 16 }]}>{scope === 'saved' ? savedPlaces.length ? 'No memories found. Try a name, city or your note.' : 'Your saved places will be here. Find somewhere new to begin.' : offline ? 'You’re offline. Your saved places are still available.' : query.trim().length < 3 ? 'Search for a restaurant, beach, shop or somewhere you want to go.' : loading ? 'Finding places…' : error ? 'Couldn’t search places. Check your connection and try again.' : 'No places found. Try adding a city.'}</Text>}
+      renderItem={({ item, index }) => {
+        const saved = item.kind === 'saved' ? item.place : null;
+        const candidate = item.kind === 'new' ? item.place : null;
+        const name = saved?.place.name ?? candidate!.name;
+        const address = saved?.place.formatted_address ?? candidate?.formattedAddress;
+        const source = saved ? placeSourceCards(saved)[0] : null;
+        const note = saved ? savedPlaceNotePreview(saved) : null;
+        return <Pressable onPress={() => saved ? onSelectSaved?.(saved) : onPickPlace(candidate!)} accessibilityRole="button" accessibilityLabel={saved ? `Open saved place ${name}` : `Save ${name}`} style={({ pressed }) => [styles.row, { borderColor: colors.border, backgroundColor: pressed ? colors.surfaceElevated : 'transparent' }]}>
+          <PlaceImage googlePlaceId={saved?.place.google_place_id ?? candidate?.googlePlaceId} sourceUri={source?.thumbnailUrl} initialPhotoUrls={candidate?.photoUrls?.length ? candidate.photoUrls : candidate?.photoUrl ? [candidate.photoUrl] : undefined} size={72} borderRadius={12} preferPlacePhoto presentationMode="candidate" presentationActive={item.kind === 'new' && index === 0} hydrationPolicy={saved ? 'saved_snapshot' : index === 0 ? 'active_manual_search' : index < 4 ? 'compact_known_only' : 'offscreen_manual_search'} presentationContext={{ trigger: 'manual_search', candidateIndex: index, candidateCount: rows.length }} accessibilityLabel={`Photo of ${name}`} />
+          <View style={styles.flex}>{saved ? <Text style={[styles.eyebrow, { color: colors.accent }]}>SAVED</Text> : null}<Text style={typography.bodyStrong} numberOfLines={3}>{name}</Text>{address ? <Text style={[typography.caption, { marginTop: 4 }]} numberOfLines={2}>{address}</Text> : null}{note ? <Text style={[typography.caption, { marginTop: 8 }]} numberOfLines={2}>{note.text}</Text> : null}</View><Feather name={saved ? 'chevron-right' : 'plus'} size={23} color={colors.text} />
+        </Pressable>;
+      }} />
+  </KeyboardAvoidingView>;
 }
-
-function createStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  typography: ReturnType<typeof useTheme>['typography'],
-) {
-  return StyleSheet.create({
-    overlay: {
-      ...StyleSheet.absoluteFillObject,
-      zIndex: 20,
-    },
-    anchor: {
-      position: 'absolute',
-      left: Spacing.lg,
-      right: Spacing.lg,
-    },
-    inputRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.sm,
-    },
-    backBtn: {
-      width: 40,
-      height: 50,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    inputWrap: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.sm,
-      height: 50,
-      paddingHorizontal: Spacing.md,
-      borderRadius: Radius.pill,
-      backgroundColor: colors.surfaceElevated,
-      borderWidth: 1,
-      borderColor: colors.primary,
-      shadowColor: '#000',
-      shadowOpacity: 0.28,
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: 6 },
-      elevation: 5,
-    },
-    input: {
-      flex: 1,
-      color: colors.text,
-      paddingVertical: 0,
-    },
-    panel: {
-      marginTop: Spacing.sm,
-      marginLeft: 40 + Spacing.sm,
-      borderRadius: Radius.lg,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-      overflow: 'hidden',
-      shadowColor: '#000',
-      shadowOpacity: 0.3,
-      shadowRadius: 18,
-      shadowOffset: { width: 0, height: 8 },
-      elevation: 10,
-    },
-    panelContent: {
-      padding: Spacing.xs,
-    },
-    helper: {
-      color: colors.textMuted,
-      padding: Spacing.md,
-    },
-    center: {
-      padding: Spacing.xl,
-      alignItems: 'center',
-    },
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.md,
-      paddingVertical: Spacing.sm,
-      paddingHorizontal: Spacing.sm,
-      borderRadius: Radius.md,
-    },
-    rowPressed: {
-      backgroundColor: colors.surfaceElevated,
-    },
-    rowCopy: {
-      flex: 1,
-    },
-    rowAddr: {
-      color: colors.textSecondary,
-      marginTop: 1,
-    },
-    categoryChip: {
-      paddingVertical: 3,
-      paddingHorizontal: Spacing.sm,
-      borderRadius: Radius.pill,
-      backgroundColor: colors.surfaceElevated,
-      borderWidth: 1,
-      borderColor: colors.border,
-      maxWidth: 96,
-    },
-    categoryChipText: {
-      ...typography.caption,
-      color: colors.textSecondary,
-    },
-  });
-}
+const styles = StyleSheet.create({ overlay: { ...StyleSheet.absoluteFillObject, zIndex: 30 }, header: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 24, marginBottom: 24, gap: 8 }, headerTitle: { flex: 1, textAlign: 'center' }, icon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 999 }, inputWrap: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 24, borderWidth: 1, borderRadius: 12, paddingLeft: 16, paddingRight: 4, minHeight: 54 }, input: { flex: 1, paddingVertical: 12, minWidth: 0 }, scopes: { flexDirection: 'row', gap: 8, marginHorizontal: 24, marginTop: 16 }, scope: { flex: 1, minHeight: 48, paddingHorizontal: 8, paddingVertical: 12, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, justifyContent: 'center' }, section: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 24, marginTop: 24, marginBottom: 8 }, flex: { flex: 1, minWidth: 0 }, row: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 20, borderBottomWidth: StyleSheet.hairlineWidth }, eyebrow: { fontSize: 11, lineHeight: 16, fontWeight: '700', letterSpacing: 1.2, marginBottom: 4 } });

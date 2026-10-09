@@ -204,7 +204,11 @@ assert.match(
   componentSource,
   /selected && showsLabel[\s\S]{0,40}width: selectedWidth, height: selectedHeight/,
 );
-assert.match(componentSource, /!redesignEnabled \|\| !selected \|\| !savedState/);
+assert.match(componentSource, /!redesignEnabled \|\| !savedState/);
+const nonselectedBranch = componentSource.slice(componentSource.indexOf('if (!selected) {'), componentSource.indexOf('// Share the canonical local-first'));
+assert.match(nonselectedBranch, /photoEligible.*readSavedPlaceSnapshot/s, 'unselected thumbnails read only the local snapshot');
+assert.match(nonselectedBranch, /return \(\) => \{ cancelled = true; \};/, 'nonselected markers return before hydration');
+assert.doesNotMatch(nonselectedBranch, /hydrateSavedPlace|fetch\(/, 'bounded photo decoration cannot request Google');
 assert.match(componentSource, /hydrateSavedPlace\(\{/);
 assert.match(componentSource, /const nextPhotoUri = hydrated\.details\.photoUrls\[0\]/);
 assert.match(componentSource, /tracksViewChanges=\{tracksViewChanges\}/);

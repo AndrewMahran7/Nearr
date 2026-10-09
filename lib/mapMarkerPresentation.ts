@@ -127,6 +127,8 @@ export function savedMarkerPresentation(
     selected: boolean;
     photoUri?: string | null;
     photoFailed?: boolean;
+    /** Bounded Fieldnotes thumbnail selected by the parent, local zoom only. */
+    photoEligible?: boolean;
     /** Defaults true for the ordinary saved-place map. */
     savedState?: boolean;
     /**
@@ -141,7 +143,7 @@ export function savedMarkerPresentation(
   const category = savedPlaceCategory(saved);
   const categoryPresentation = MARKER_CATEGORY_PRESENTATIONS[category];
   const photoUri = input.photoUri?.trim() || null;
-  const usePhoto = input.selected && !!photoUri && !input.photoFailed;
+  const usePhoto = (input.selected || (input.photoEligible && input.detailLevel === 'local')) && !!photoUri && !input.photoFailed;
 
   return {
     category,

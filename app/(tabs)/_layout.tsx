@@ -26,6 +26,7 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
+          display: 'none',
         },
       }}
     >
@@ -60,6 +61,7 @@ export default function TabsLayout() {
         }}
         options={{
           title: 'Settings',
+          href: null,
           tabBarIcon: ({ color, size }) => (
             <Feather name="settings" color={color} size={size} />
           ),

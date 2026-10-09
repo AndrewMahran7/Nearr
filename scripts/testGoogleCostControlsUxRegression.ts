@@ -168,10 +168,13 @@ async function run() {
   const marker = read('components/map/NearrMapMarker.tsx');
   assert.match(marker, /hydrateSavedPlace/);
   const map = read('app/(tabs)/map.tsx');
-  assert.match(map, /initialPhotoUrls=\{\[selectedImageUri\]\}/);
+  assert.match(map, /<SelectedPlaceCard[\s\S]{0,100}imageUri=\{selectedImageUri\}/);
+  const selectedCard = readFileSync(join(process.cwd(), 'components/map/FieldnotesMapChrome.tsx'), 'utf8');
+  assert.match(selectedCard, /source=\{\{ uri: imageUri \}\}/, 'the preview displays the already-resolved local-first image');
+  assert.doesNotMatch(selectedCard, /hydrateSavedPlace|fetch\(|getPlaceDetails/, 'the extracted card cannot make another provider request');
   const manual = read('components/map/MapPlaceSearchDropdown.tsx');
-  assert.match(manual, /initialPhotoUrls=\{place\.photoUrls/);
-  assert.match(manual, /presentationActive=\{index === 0\}/);
+  assert.match(manual, /initialPhotoUrls=\{candidate\?\.photoUrls/);
+  assert.match(manual, /presentationActive=\{item\.kind === 'new' && index === 0\}/);
   const placeImage = read('components/PlaceImage.tsx');
   assert.match(placeImage, /const candidatePhotoUrls = knownImageryVisible \? placePhotoUrls : \[\]/);
   assert.match(placeImage, /acquirePlacePresentationImage\(remoteResolvedUri\)/);

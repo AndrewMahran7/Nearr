@@ -443,13 +443,13 @@ async function main() {
   // -------------------------------------------------------------------------
   const searchBar = read('components/map/MapTopSearchBar.tsx');
   assert.match(
-    searchBar,
-    /disabled=\{offline\}/,
-    'the search entry point is disabled offline, so no remote place search can be issued',
+    read('components/map/MapPlaceSearchDropdown.tsx'),
+    /if \(!visible \|\| offline \|\| scope !== 'new'\) return;/,
+    'remote search is gated before scheduling any request, while local saved search remains usable offline',
   );
   assert.match(
     searchBar,
-    /Search unavailable offline/,
+    /Search your saved places offline/,
     'offline search state is explained rather than silently broken',
   );
 

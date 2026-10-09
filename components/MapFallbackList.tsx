@@ -6,7 +6,9 @@
  */
 
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { PlaceImage } from './PlaceImage';
 import { Card } from './Card';
 import { EmptyState } from './EmptyState';
 import { Radius, Spacing } from '@/constants';
@@ -22,40 +24,37 @@ export function MapFallbackList({ data, onPressItem }: Props) {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
+    <FlatList data={data} keyExtractor={item => item.id} initialNumToRender={8} windowSize={5} contentContainerStyle={styles.scroll} ListHeaderComponent={
       <View style={styles.headerCard}>
-        <Text style={typography.bodyStrong}>Map unavailable in demo mode</Text>
+        <Text style={typography.title}>Your places</Text>
         <Text style={[typography.caption, styles.muted, { marginTop: Spacing.xs }]}>
-          Native map keys aren&apos;t configured, so we&apos;re showing a list of
-          your saved places with their coordinates instead.
+          A little inspiration, everywhere. Explore your saved places below.
         </Text>
       </View>
-      {data.length === 0 ? (
+      } ListEmptyComponent={
         <EmptyState
           title="No places yet"
           body="Save a place to see it here."
         />
-      ) : (
-        data.map((s) => (
-          <Pressable key={s.id} onPress={() => onPressItem(s)}>
+      } renderItem={({ item: s }) => (
+          <Pressable onPress={() => onPressItem(s)} accessibilityRole="button" accessibilityLabel={`Open ${s.place.name}`}>
             <Card style={styles.row}>
-              <Text style={typography.heading} numberOfLines={1}>{s.place.name}</Text>
+              <PlaceImage googlePlaceId={s.place.google_place_id} hydrationPolicy="compact_known_only" size={64} borderRadius={12} />
+              <View style={{ flex: 1 }}>
+              <Text style={typography.bodyStrong} numberOfLines={3}>{s.place.name}</Text>
               {s.place.formatted_address ? (
                 <Text style={[typography.caption, styles.muted]} numberOfLines={2}>
                   {s.place.formatted_address}
                 </Text>
               ) : null}
-              <Text style={[typography.caption, styles.coord]}>
-                {s.place.latitude.toFixed(4)}, {s.place.longitude.toFixed(4)}
-              </Text>
               <View style={styles.actionRow}>
-                <Text style={styles.action}>View details ›</Text>
+                <Text style={styles.action}>View place</Text>
               </View>
+              </View>
+              <Feather name="chevron-right" size={20} color={colors.textSecondary} />
             </Card>
           </Pressable>
-        ))
-      )}
-    </ScrollView>
+      )} />
   );
 }
 
@@ -73,7 +72,7 @@ function createStyles(
       backgroundColor: colors.surface,
       marginBottom: Spacing.md,
     },
-    row: { marginBottom: Spacing.sm, gap: Spacing.xs },
+    row: { marginBottom: Spacing.sm, gap: Spacing.md, flexDirection: 'row', alignItems: 'center' },
     muted: { color: colors.textMuted },
     coord: { color: colors.textMuted, marginTop: Spacing.xs },
     actionRow: { marginTop: Spacing.sm },

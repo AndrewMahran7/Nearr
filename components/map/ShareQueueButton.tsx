@@ -52,12 +52,11 @@ export function ShareQueueButton() {
       style={({ pressed }) => [styles.pill, pressed ? styles.pressed : null]}
       accessibilityRole="button"
       accessibilityLabel={
-        queueCount > 0 ? `Share queue, ${queueCount} current items` : 'Share queue'
+        queueCount > 0 ? `Activity, ${queueCount} current items` : 'Activity'
       }
       hitSlop={6}
     >
-      <Feather name="inbox" size={17} color={colors.text} />
-      <Text style={[typography.caption, styles.label]}>Queue</Text>
+      <Feather name="inbox" size={22} color={colors.text} />
       {queueCount > 0 ? (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{queueCount}</Text>
@@ -74,11 +73,11 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       alignItems: 'center',
       gap: 6,
       alignSelf: 'flex-start',
-      marginTop: Spacing.sm,
       minHeight: 44,
-      paddingHorizontal: Spacing.md + 2,
+      width: 44,
+      justifyContent: 'center',
       borderRadius: Radius.pill,
-      backgroundColor: colors.surfaceElevated,
+      backgroundColor: colors.surface,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
       shadowColor: '#000',
@@ -87,18 +86,21 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       shadowOffset: { width: 0, height: 2 },
       elevation: 2,
     },
-    pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
+    pressed: { backgroundColor: colors.surfaceElevated },
     label: { color: colors.text, fontWeight: '600' },
     badge: {
+      position: 'absolute',
+      right: -2,
+      top: -2,
       minWidth: 18,
       height: 18,
       borderRadius: 9,
       paddingHorizontal: 5,
       marginLeft: 2,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.accent,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    badgeText: { color: colors.textInverse, fontSize: 11, fontWeight: '700' },
+    badgeText: { color: colors.surface, fontSize: 11, fontWeight: '700' },
   });
 }

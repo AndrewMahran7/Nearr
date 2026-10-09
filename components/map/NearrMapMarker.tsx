@@ -21,6 +21,8 @@ import {
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Marker } from 'react-native-maps';
+import { useTheme } from '@/lib/theme';
+import { readSavedPlaceSnapshot } from '@/lib/savedPlaceSnapshot';
 
 import {
   savedMarkerPresentation,
@@ -51,6 +53,7 @@ type Props = {
   savedState?: boolean;
   /** Bounded thumbnail already returned by the nearby recommendation request. */
   photoUri?: string | null;
+  photoEligible?: boolean;
   accessibilityHint?: string;
 };
 
@@ -83,8 +86,11 @@ function NearrMapMarkerView({
   redesignEnabled,
   savedState = true,
   photoUri: suppliedPhotoUri,
+  photoEligible = false,
   accessibilityHint,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [tracksViewChanges, setTracksViewChanges] = useState(true);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoFailed, setPhotoFailed] = useState(false);
@@ -104,7 +110,13 @@ function NearrMapMarkerView({
     setPhotoUri(suppliedPhotoUri?.trim() || null);
     setPhotoFailed(false);
     if (suppliedPhotoUri?.trim()) return () => { cancelled = true; };
-    if (!redesignEnabled || !selected || !savedState) return () => { cancelled = true; };
+    if (!redesignEnabled || !savedState) return () => { cancelled = true; };
+    if (!selected) {
+      if (photoEligible) void readSavedPlaceSnapshot({ userId: place.user_id, savedPlaceId: place.id, googlePlaceId: place.place.google_place_id }).then(result => {
+        if (!cancelled && result.status === 'hit') setPhotoUri(result.snapshot.localImageUri);
+      });
+      return () => { cancelled = true; };
+    }
     // Share the canonical local-first request with Place Detail. Hydration is
     // coalesced by saved id, so marker + card never produce duplicate recovery.
     recordMapPinDiagnostic('selected-photo-request', { savedPlaceId: place.id });
@@ -126,7 +138,7 @@ function NearrMapMarkerView({
     return () => {
       cancelled = true;
     };
-  }, [place.id, place.place.google_place_id, place.user_id, redesignEnabled, savedState, selected, suppliedPhotoUri]);
+  }, [place.id, place.place.google_place_id, place.user_id, redesignEnabled, savedState, selected, suppliedPhotoUri, photoEligible]);
 
   const presentation = useMemo(
     () => savedMarkerPresentation(place, {
@@ -136,8 +148,9 @@ function NearrMapMarkerView({
       photoFailed,
       detailVisible,
       savedState,
+      photoEligible,
     }),
-    [detailLevel, detailVisible, photoFailed, photoUri, place, savedState, selected],
+    [detailLevel, detailVisible, photoFailed, photoUri, place, savedState, selected, photoEligible],
   );
 
   // The label capsule is part of the rasterized visual, so its presence also
@@ -161,6 +174,7 @@ function NearrMapMarkerView({
     presentation.showLabel,
     presentation.visual,
     presentation.photoUri,
+    colors.surface,
   ]);
 
   const handlePress = useCallback(
@@ -183,7 +197,8 @@ function NearrMapMarkerView({
   }, [place.id]);
 
   const markerSize = selected
-    ? 52
+    ? 60
+    : presentation.visual === 'photo' ? 46
     : detailLevel === 'dense'
       ? 20
       : detailLevel === 'compact'
@@ -197,7 +212,7 @@ function NearrMapMarkerView({
         ? 14
         : 18;
   const selectedWidth = 148;
-  const selectedHeight = 78;
+  const selectedHeight = 90;
 
   return (
     <Marker
@@ -245,7 +260,7 @@ function NearrMapMarkerView({
           <View
             style={[
               styles.categoryDisc,
-              { width: markerSize, height: markerSize, borderRadius: markerSize / 2 },
+              { width: markerSize, height: markerSize, borderRadius: presentation.visual === 'photo' ? 14 : markerSize / 2 },
               selected && styles.selectedDisc,
               groupMember && !selected && styles.groupMemberDisc,
               detailLevel === 'dense' && !selected && styles.denseDisc,
@@ -262,9 +277,9 @@ function NearrMapMarkerView({
               />
             ) : (
               <MaterialCommunityIcons
-                name={presentation.glyph as ComponentProps<typeof MaterialCommunityIcons>['name']}
+                name={(savedState ? 'star-four-points' : presentation.glyph) as ComponentProps<typeof MaterialCommunityIcons>['name']}
                 size={iconSize}
-                color={selected ? '#FFF7ED' : '#282421'}
+                color={selected ? colors.onGradient : colors.text}
               />
             )}
             {savedState && !selected && detailLevel !== 'dense' ? <View style={styles.savedDot} /> : null}
@@ -303,11 +318,12 @@ export const NearrMapMarker = memo(NearrMapMarkerView, (prev, next) =>
   prev.redesignEnabled === next.redesignEnabled &&
   prev.savedState === next.savedState &&
   prev.photoUri === next.photoUri &&
+  prev.photoEligible === next.photoEligible &&
   prev.accessibilityHint === next.accessibilityHint &&
   prev.onPress === next.onPress,
 );
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) { return StyleSheet.create({
   legacyWrap: {
     width: 28,
     height: 28,
@@ -332,7 +348,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#FF6A1A',
+    backgroundColor: colors.brand,
     borderWidth: 2,
     borderColor: '#FFFFFF',
   },
@@ -344,9 +360,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFF4E8',
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: '#282421',
+    borderColor: colors.text,
     shadowColor: '#000000',
     shadowOpacity: 0.24,
     shadowRadius: 4,
@@ -360,9 +376,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   selectedDisc: {
-    backgroundColor: '#FF6A1A',
+    backgroundColor: colors.brand,
     borderWidth: 4,
-    borderColor: '#FFF4E8',
+    borderColor: colors.surface,
     shadowOpacity: 0.34,
     shadowRadius: 7,
     shadowOffset: { width: 0, height: 3 },
@@ -371,11 +387,11 @@ const styles = StyleSheet.create({
   legacyGroupHalo: {
     backgroundColor: 'rgba(255, 106, 26, 0.42)',
     borderWidth: 2,
-    borderColor: '#FF6A1A',
+    borderColor: colors.brand,
   },
   groupMemberDisc: {
     borderWidth: 3,
-    borderColor: '#FF6A1A',
+    borderColor: colors.brand,
     shadowOpacity: 0.28,
     shadowRadius: 5,
     elevation: 6,
@@ -387,9 +403,9 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#FF6A1A',
+    backgroundColor: colors.brand,
     borderWidth: 1,
-    borderColor: '#FFF4E8',
+    borderColor: colors.surface,
   },
   photo: {
     position: 'absolute',
@@ -404,9 +420,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 10,
-    backgroundColor: '#282421',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#FFF4E8',
+    borderColor: colors.surface,
     shadowColor: '#000000',
     shadowOpacity: 0.2,
     shadowRadius: 3,
@@ -414,9 +430,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   labelText: {
-    color: '#FFF7ED',
+    color: colors.text,
     fontSize: 11,
     lineHeight: 14,
     fontWeight: '700',
   },
 });
+}

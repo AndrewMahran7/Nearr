@@ -5,7 +5,7 @@
  * - Shows the user's location when foreground permission is granted.
  * - Tapping a marker opens an in-app preview card (Name, address, source,
  *   plus "View details" and "Open in Maps") instead of the platform callout.
- * - FAB opens the Save Place screen.
+ * - Map/Saved navigation shares the existing virtualized Saved library.
  *
  * Permission states:
  *   - 'pending'    : asking the OS; map still renders, no spinner overlay.
@@ -55,31 +55,35 @@ import * as Clipboard from 'expo-clipboard';
 const MAP_PROVIDER = Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined;
 
 const DARK_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#141414' }] },
+  { elementType: 'geometry', stylers: [{ color: '#303A31' }] },
   { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#787878' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#141414' }] },
-  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#1e1e1e' }] },
-  { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#B4BCAE' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#303A31' }] },
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#303830' }] },
+  { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#F4F3EB' }] },
   { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
-  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#b3b3b3' }] },
-  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },
-  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#5f6368' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#11171a' }] },
-  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#556064' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2c2c2c' }] },
-  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#202020' }] },
-  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#8a8a8a' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#343434' }] },
-  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#252525' }] },
-  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#b5b5b5' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#B4BCAE' }] },
+  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#303A31' }] },
+  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#A1AD9B' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#384C37' }] },
+  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#B4BCAE' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#53604E' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#303830' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#B4BCAE' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#53604E' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#303830' }] },
+  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#F4F3EB' }] },
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0b0f14' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4d6470' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#203B42' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#B8D5D9' }] },
 ];
 
 import { Button, Card, DemoModeBanner, MapFallbackList } from '@/components';
 import { PlaceImage } from '@/components/PlaceImage';
+import { fieldnotesPhotoMarkerIds } from '@/lib/fieldnotesMapPresentation';
+import { useReduceMotion } from '@/lib/useReduceMotion';
+import { hapticSuccess } from '@/lib/haptics';
+import { MapBrand, MapSavedDock, SelectedPlaceCard } from '@/components/map/FieldnotesMapChrome';
 import {
   FloatingMapActions,
   MapBottomSheet,
@@ -452,6 +456,7 @@ const PREVIEW_INITIAL_REGION: Region = {
 
 export default function MapScreen() {
   const router = useRouter();
+  const reduceMotion = useReduceMotion();
   const { colors, typography, resolvedTheme } = useTheme();
   const { state: onboardingV2State } = useOnboardingV2();
   const phase1Only = isOnboardingV2Phase1Only();
@@ -1149,11 +1154,11 @@ export default function MapScreen() {
       setSheetSnap(snap);
       Animated.timing(actionsLift, {
         toValue: visibleHeight,
-        duration: 200,
+        duration: reduceMotion ? 0 : 200,
         useNativeDriver: true,
       }).start();
     },
-    [actionsLift],
+    [actionsLift, reduceMotion],
   );
 
   // Bottom-sheet data. `useNearbyPlaces` is check-only here (never prompts) so
@@ -1162,7 +1167,7 @@ export default function MapScreen() {
   // We measure the real map-area height (excludes header + tab bar) via
   // onLayout so the sheet's expanded height never clips behind the top chrome;
   // windowHeight is only a first-paint fallback.
-  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+  const { height: windowHeight, width: windowWidth, fontScale } = useWindowDimensions();
   const [mapAreaHeight, setMapAreaHeight] = useState(0);
   const [mapAreaWidth, setMapAreaWidth] = useState(0);
   const [mapGroupSelectorHeight, setMapGroupSelectorHeight] = useState(0);
@@ -1197,6 +1202,7 @@ export default function MapScreen() {
   // dismissed. The pan responder reads the current value via a ref so it
   // never has to be recreated when the sheet toggles.
   const [previewExpanded, setPreviewExpanded] = useState(false);
+  useEffect(() => { if (selected && fontScale >= 1.5) setPreviewExpanded(true); }, [selected?.id, fontScale]);
   const previewExpandedRef = useRef(false);
   previewExpandedRef.current = previewExpanded;
   const previousPhase2MapActiveRef = useRef(phase2MapActive);
@@ -3230,12 +3236,14 @@ export default function MapScreen() {
         onPanResponderRelease: (_, gestureState) => {
           const vertical =
             Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
-          const springBack = () =>
+          const springBack = () => {
+            if (reduceMotion) { previewTranslateY.setValue(0); return; }
             Animated.spring(previewTranslateY, {
               toValue: 0,
               useNativeDriver: true,
-              bounciness: 6,
+              bounciness: 0,
             }).start();
+          };
 
           if (previewExpandedRef.current) {
             // From expanded, a small downward drag collapses back to preview;
@@ -3262,6 +3270,7 @@ export default function MapScreen() {
           springBack();
         },
         onPanResponderTerminate: () => {
+          if (reduceMotion) { previewTranslateY.setValue(0); return; }
           Animated.spring(previewTranslateY, {
             toValue: 0,
             useNativeDriver: true,
@@ -3269,7 +3278,7 @@ export default function MapScreen() {
           }).start();
         },
       }),
-    [dismissSelectedPlace, previewTranslateY, selected],
+    [dismissSelectedPlace, previewTranslateY, selected, reduceMotion],
   );
 
   // Stable handlers passed to MapView. onPanDrag fires on every gesture
@@ -3543,6 +3552,7 @@ export default function MapScreen() {
           return existing ?? null;
         }
         if (selectAfterSave) selectPlace(result.saved);
+        hapticSuccess();
         showSnackbar('Saved to your map', result.savedPlaceId);
         void trackEvent('save_success', {
           source_type: 'manual',
@@ -3697,6 +3707,8 @@ export default function MapScreen() {
     }
   }, [beginCameraMovement, userRegion]);
 
+  const photoMarkerIds = useMemo(() => fieldnotesPhotoMarkerIds(individualPlaces, selectedMarkerId, markerDetailLevel), [individualPlaces, selectedMarkerId, markerDetailLevel]);
+
   // -----------------------------------------------------------------------
   if (demo) {
     return (
@@ -3737,11 +3749,13 @@ export default function MapScreen() {
         provider={MAP_PROVIDER}
         style={StyleSheet.absoluteFill}
         customMapStyle={Platform.OS === 'android' && resolvedTheme === 'dark' ? DARK_MAP_STYLE : undefined}
+        userInterfaceStyle={resolvedTheme}
+        showsPointsOfInterest={false}
         // Only show the user dot when we actually have a fix. Toggling
         // `showsUserLocation` on without a usable provider can leave the
         // Google Maps Android view in a "loading" state.
         showsUserLocation={!mapPreview && permission === 'granted' && !!userRegion}
-        showsMyLocationButton={!mapPreview && permission === 'granted' && !!userRegion}
+        showsMyLocationButton={false}
         initialRegion={initialRegion}
         onMapReady={handleMapReady}
         onPress={handleMapPress}
@@ -3820,7 +3834,8 @@ export default function MapScreen() {
             detailLevel={markerDetailLevel}
             redesignEnabled={mapPinRedesignActive}
             savedState={explorerItemsById.get(p.id)?.savedState !== 'unsaved'}
-            photoUri={explorerItemsById.get(p.id)?.photoUrl ?? undefined}
+            photoEligible={photoMarkerIds.has(p.id)}
+            photoUri={photoMarkerIds.has(p.id) ? explorerItemsById.get(p.id)?.photoUrl ?? undefined : undefined}
             accessibilityHint={nearbyExplorer ? 'Opens this nearby place' : undefined}
           />
         ))}
@@ -3919,6 +3934,7 @@ export default function MapScreen() {
           }}
           style={[
             styles.previewWrap,
+            { bottom: insets.bottom + 84 },
             // Expanded, the detail is the page: it spans the full width and
             // meets the bottom edge so it reads as a sheet growing out of the
             // map rather than a floating card. Collapsed, it stays the inset
@@ -3961,63 +3977,11 @@ export default function MapScreen() {
                   </Pressable>
                 ) : null}
               </View>
-              {previewExpanded ? null : (
-              <View style={styles.previewTopRow}>
-                <View style={styles.previewThumb}>
-                  {selectedImageUri ? (
-                    <PlaceImage
-                      googlePlaceId={selected.place.google_place_id}
-                      initialPhotoUrls={[selectedImageUri]}
-                      hydrationPolicy="saved_snapshot"
-                      size={52}
-                      borderRadius={16}
-                      style={styles.previewThumbImage}
-                      accessibilityLabel={`Photo of ${selected.place.name}`}
-                    />
-                  ) : (
-                    <Feather
-                      name={selectedIconName(selected)}
-                      size={18}
-                      color={colors.accent}
-                    />
-                  )}
-                </View>
-                <View style={styles.previewCopy}>
-                  <View style={styles.previewHeader}>
-                    <Text style={[typography.heading, styles.previewTitle]} numberOfLines={1}>
-                      {selected.place.name}
-                    </Text>
-                    <Pressable
-                      onPress={() => dismissSelectedPlace()}
-                      accessibilityRole="button"
-                      accessibilityLabel="Close place preview"
-                      style={({ pressed }) => [styles.closeBtn, pressed && styles.controlPressed]}
-                    >
-                      <Feather name="x" size={22} color={colors.textSecondary} />
-                    </Pressable>
-                  </View>
-                  {selected.place.formatted_address ? (
-                    <Text style={[typography.caption, styles.previewAddress]} numberOfLines={1}>
-                      {selected.place.formatted_address}
-                    </Text>
-                  ) : null}
-                  <View style={styles.previewMetaRow}>
-                    {selectedDistance != null ? (
-                      <Text style={[typography.caption, styles.previewMetaText]}>
-                        {formatDistanceAway(selectedDistance)}
-                      </Text>
-                    ) : null}
-                    {selectedMeta(selected) ? (
-                      <View style={styles.metaPill}>
-                        <Text style={styles.metaPillText} numberOfLines={1}>
-                          {selectedMeta(selected)}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                </View>
-              </View>
-              )}
+              {previewExpanded ? null : <SelectedPlaceCard
+                place={selected} imageUri={selectedImageUri}
+                onOpen={() => setPreviewExpanded(true)}
+                onClose={() => dismissSelectedPlace()}
+              />}
             </View>
 
             {previewExpanded ? (
@@ -4085,19 +4049,6 @@ export default function MapScreen() {
                     ) : null}
                   </View>
                 ) : null}
-                <View style={styles.previewActions}>
-                  <Button
-                    title="Get directions"
-                    onPress={() => {
-                      if (isNearbyReminderSelection) {
-                        handleNearbyReminderGetDirections();
-                        return;
-                      }
-                      openExternalMaps(selected);
-                    }}
-                    style={styles.previewPrimaryAction}
-                  />
-                </View>
                 {/* Reminder LIFECYCLE, not place detail: declining the third
                     opportunity archives the reminder (MAX_REMINDER_OPPORTUNITIES).
                     "I went" moved into Place Detail V2, but this has no home
@@ -4115,17 +4066,7 @@ export default function MapScreen() {
                     <Text style={styles.reminderAdjustText}>Maybe next time</Text>
                   </Pressable>
                 ) : null}
-                <Pressable
-                  onPress={() => {
-                    setPreviewExpanded(true);
-                    if (__DEV__) console.log('[map-sheet] expanded');
-                  }}
-                  hitSlop={10}
-                  style={styles.previewSecondaryRow}
-                >
-                  <Text style={styles.previewSecondaryText}>Swipe up for details</Text>
-                  <Feather name="chevron-up" size={16} color={colors.textSecondary} />
-                </Pressable>
+
               </>
             )}
           </Card>
@@ -4158,18 +4099,24 @@ export default function MapScreen() {
           as a box-none overlay so only the bar/chips capture touches and the
           rest of the map stays pannable underneath. Hidden while the search
           dropdown is open so there is only ever ONE visible search input. */}
-      {shouldShowMapControls ? (
+      {shouldShowMapControls && (sheetSnap !== 'full' || !!selected) ? (
         <View style={styles.topChrome} pointerEvents="box-none">
-          <MapTopSearchBar
-            onPress={() => setSearchVisible(true)}
-            offline={offline}
-          />
-          <MapCategoryFilterBar
-            options={mapFilterChoices}
-            value={mapCategoryFilter}
-            onChange={handleSelectMapCategory}
-            onFitAll={visiblePlaces.length > 0 && !mapPreview ? fitVisiblePlaces : undefined}
-          />
+          <View style={styles.brandRow}>
+            <MapBrand />
+            <MapTopSearchBar onPress={() => setSearchVisible(true)} offline={offline} />
+          </View>
+          <View style={styles.mapContextRow}>
+            <View style={styles.mapContextCopy} pointerEvents="none">
+              <Text style={styles.mapEyebrow}>YOUR WORLD</Text>
+              <Text style={styles.mapContext} numberOfLines={2}>{validPlaces.length ? `${validPlaces.length} ${validPlaces.length === 1 ? 'place' : 'places'} to remember` : 'Places you want to go'}</Text>
+            </View>
+            {!phase2MapActive ? <MapCategoryFilterBar
+              options={mapFilterChoices} value={mapCategoryFilter}
+              onChange={handleSelectMapCategory}
+              onFitAll={visiblePlaces.length > 0 && !mapPreview ? fitVisiblePlaces : undefined}
+            /> : null}
+          </View>
+          {phase2MapActive ? <MapCategoryFilterBar options={mapFilterChoices} value={mapCategoryFilter} onChange={handleSelectMapCategory} expanded onFitAll={visiblePlaces.length > 0 && !mapPreview ? fitVisiblePlaces : undefined} /> : null}
         </View>
       ) : null}
 
@@ -4196,7 +4143,7 @@ export default function MapScreen() {
           dropdown, or dedicated Nearby Explorer, each of which owns the whole
           interaction surface.
           Regression covered by scripts/testMapQueueEntryPoint.ts. */}
-      {!searchVisible && !nearbyExplorer ? (
+      {!searchVisible && !nearbyExplorer && (sheetSnap !== 'full' || !!selected) ? (
         <View
           style={[
             styles.queueChrome,
@@ -4213,13 +4160,11 @@ export default function MapScreen() {
       ) : null}
 
 
-      {/* Floating right-side actions: recenter + orange paste-link. Hidden
-          while a preview card is showing or the sheet is full so they never
-          overlap. They follow the sheet's top edge via `actionsLift`. */}
+      {/* Recenter follows the memory peek; import lives in Search and Saved. */}
       {nearbyExplorer || selected || sheetSnap === 'full' ? null : (
         <FloatingMapActions
           onRecenter={recenterOnUser}
-          onPasteLink={handlePasteLink}
+          bottomInset={insets.bottom + 76}
           liftY={actionsLift}
         />
       )}
@@ -4238,7 +4183,8 @@ export default function MapScreen() {
           savedPlaces={validPlaces}
           partialHeight={sheetPartialHeight}
           availableHeight={availableHeight}
-          topInset={safeTopInset + topChromeClearance + Spacing.md}
+          topInset={safeTopInset + 8}
+          bottomInset={insets.bottom + 76}
           openSignal={sheetOpenSignal}
           minimizeSignal={sheetMinimizeSignal}
           onSnapChange={handleSheetSnapChange}
@@ -4283,10 +4229,21 @@ export default function MapScreen() {
       <MapPlaceSearchDropdown
         visible={searchVisible}
         topInset={safeTopInset + Spacing.md}
+        savedPlaces={data}
+        offline={offline}
+        onSelectSaved={(place) => { setSearchVisible(false); selectPlace(place); setPreviewExpanded(true); }}
+        onSaveFromLink={handlePasteLink}
         locationBias={userRegion ? { lat: userRegion.latitude, lng: userRegion.longitude } : undefined}
         onClose={() => setSearchVisible(false)}
         onPickPlace={handleSavePlaceCandidate}
       />
+
+      {!searchVisible && !nearbyExplorer && !previewExpanded && !phase2MapActive && !mapGroupRequest && !sourceGroupBrowseActive ? (
+        <MapSavedDock saved={!selected && sheetSnap === 'full'} bottom={insets.bottom + 12}
+          onMap={() => { if (selected) dismissSelectedPlace(); setSheetMode('nearby'); setSheetMinimizeSignal(value => value + 1); }}
+          onSaved={() => { if (selected) dismissSelectedPlace(); setSheetMode('saved'); setSheetOpenSignal(value => value + 1); }}
+        />
+      ) : null}
 
       {/* Post-save snackbar with Undo. After a direct save the selected-place
           preview card is showing, so lift the snackbar above it. */}
@@ -4335,6 +4292,11 @@ function createStyles(
     right: Spacing.lg,
   },
 
+  brandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 56, minHeight: 44 },
+  mapContextRow: { flexDirection: 'row', gap: 12, alignItems: 'center', marginTop: 16 },
+  mapContextCopy: { flex: 1 },
+  mapEyebrow: { color: colors.accent, fontSize: 11, lineHeight: 16, fontWeight: '700', letterSpacing: 1.2 },
+  mapContext: { ...typography.heading, fontSize: 19, lineHeight: 24, marginTop: 4 },
   explorerFilterChrome: {
     position: 'absolute',
     top: insetTop + Spacing.md,
@@ -4348,8 +4310,8 @@ function createStyles(
   // letting it outlive the selection-gated chrome above.
   queueChrome: {
     position: 'absolute',
-    top: insetTop + Spacing.md + 50 + Spacing.sm + 38,
-    left: Spacing.lg,
+    top: insetTop + Spacing.md,
+    right: Spacing.lg,
   },
   // Sheet-up placement: the top row, right-aligned so it reads as a floating
   // map action rather than a headless search bar. `left: 'auto'` undoes the
@@ -4487,7 +4449,7 @@ function createStyles(
     position: 'absolute',
     left: Spacing.lg,
     right: Spacing.lg,
-    bottom: Spacing.lg,
+    bottom: 88,
   },
   previewWrapExpanded: {
     left: 0,
@@ -4495,8 +4457,8 @@ function createStyles(
     bottom: 0,
   },
   previewCard: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.border,
     shadowColor: '#000',
@@ -4510,8 +4472,8 @@ function createStyles(
   // is continuous with the bottom of the screen.
   previewCardExpanded: {
     borderRadius: 0,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     borderWidth: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: Spacing.lg,
@@ -4649,7 +4611,7 @@ function createStyles(
     paddingTop: Spacing.xs,
     // The expanded sheet has no bottom padding of its own, so the last section
     // clears the tab bar from here rather than sliding under it.
-    paddingBottom: Spacing.xxl,
+    paddingBottom: Spacing.xxl + 32,
   },
   previewPrimaryAction: {
     width: '100%',

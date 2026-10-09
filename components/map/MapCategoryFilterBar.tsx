@@ -1,166 +1,36 @@
-/**
- * MapCategoryFilterBar — the map's single control row.
- *
- * Replaces the old Nearby / Recent / Saved chips, which never filtered the map
- * (they only picked which list the bottom sheet showed) and each duplicated
- * something the sheet already offered.
- *
- * This row answers the one question the map actually needs: "of the things I
- * saved, what do I want to see right now?" Chips are single-select and apply
- * immediately — glance, tap, map changes. The fit-all control lives at the end
- * of the SAME row so it no longer floats on its own misaligned line.
- *
- * Options come from lib/mapVisibility (which reuses the existing browse
- * sections), and only groups the user actually has places in are shown, so the
- * row stays short for a small collection.
- */
-
-import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-
-import { Radius, Spacing } from '@/constants';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useReduceMotion } from '@/lib/useReduceMotion';
 import { useTheme } from '@/lib/theme';
-import {
-  MAP_FILTER_ALL,
-  type MapFilterOption,
-  type MapVisibilityFilter,
-} from '@/lib/mapVisibility';
+import { MAP_FILTER_ALL, type MapFilterOption, type MapVisibilityFilter } from '@/lib/mapVisibility';
 
-type Props = {
-  options: MapFilterOption[];
-  value: MapVisibilityFilter;
-  onChange: (next: MapVisibilityFilter) => void;
-  /** Frame every currently visible place. Hidden when there is nothing to fit. */
-  onFitAll?: () => void;
-};
-
-export function MapCategoryFilterBar({ options, value, onChange, onFitAll }: Props) {
+type Props = { options: MapFilterOption[]; value: MapVisibilityFilter; onChange: (next: MapVisibilityFilter) => void; onFitAll?: () => void; expanded?: boolean };
+/** One quiet control in normal use; the actual filter choices remain visible for Phase 2 teaching. */
+export function MapCategoryFilterBar({ options, value, onChange, onFitAll, expanded = false }: Props) {
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
-
-  if (options.length === 0 && !onFitAll) return null;
-
-  return (
-    <View style={styles.row}>
-      {options.length > 0 ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-          style={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-        >
-          {options.map((option) => {
-            const active = option.id === value;
-            // The count rides on the active chip only: enough to make a hidden
-            // half of the map obvious, without numbers scattered everywhere.
-            const showCount = active && option.id !== MAP_FILTER_ALL;
-            return (
-              <Pressable
-                key={option.id}
-                onPress={() => onChange(option.id)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                accessibilityLabel={
-                  active
-                    ? `${option.label}, showing ${option.count} ${option.count === 1 ? 'place' : 'places'}`
-                    : `Show ${option.label}, ${option.count} ${option.count === 1 ? 'place' : 'places'}`
-                }
-                style={({ pressed }) => [
-                  styles.chip,
-                  active ? styles.chipActive : styles.chipInactive,
-                  pressed && styles.chipPressed,
-                ]}
-              >
-                <Text
-                  numberOfLines={1}
-                  style={[styles.chipLabel, { color: active ? colors.textInverse : colors.text }]}
-                >
-                  {option.label}
-                </Text>
-                {showCount ? (
-                  <View style={styles.countPill}>
-                    <Text style={styles.countText}>{option.count}</Text>
-                  </View>
-                ) : null}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      ) : (
-        <View style={styles.scroll} />
-      )}
-
-      {onFitAll ? (
-        <Pressable
-          onPress={onFitAll}
-          accessibilityRole="button"
-          accessibilityLabel="Fit all visible places on the map"
-          style={({ pressed }) => [styles.fitButton, pressed && styles.chipPressed]}
-        >
-          <Feather name="maximize" size={16} color={colors.text} />
-        </Pressable>
-      ) : null}
-    </View>
-  );
+  const insets = useSafeAreaInsets();
+  const reducedMotion = useReduceMotion();
+  const [open, setOpen] = useState(false);
+  if (!options.length && !onFitAll) return null;
+  const label = value === MAP_FILTER_ALL ? 'All places' : options.find(item => item.id === value)?.label ?? 'Filter';
+  const choose = (next: MapVisibilityFilter) => { onChange(next); setOpen(false); };
+  const choices = options.map(option => <Pressable key={option.id} onPress={() => choose(option.id)} accessibilityRole="button" accessibilityState={{ selected: option.id === value }} accessibilityLabel={`Show ${option.label}, ${option.count} places`} style={({ pressed }) => [styles.choice, { backgroundColor: option.id === value || pressed ? colors.surfaceElevated : 'transparent' }]}>
+    <Text style={[typography.bodyStrong, styles.flex]}>{option.label}</Text><Text style={typography.caption}>{option.count}</Text>{option.id === value ? <Feather name="check" size={20} color={colors.accent} /> : null}
+  </Pressable>);
+  return <View style={expanded ? styles.expanded : styles.wrap}>
+    {expanded ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.teachingChoices}>{options.map(option => <Pressable key={option.id} onPress={() => onChange(option.id)} accessibilityRole="button" accessibilityState={{ selected: option.id === value }} style={[styles.chip, { backgroundColor: option.id === value ? colors.primary : colors.surface, borderColor: colors.border }]}><Text style={[typography.label, { color: option.id === value ? colors.textInverse : colors.text }]}>{option.label}</Text></Pressable>)}</ScrollView> :
+      <Pressable onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={`Filter map, ${label}`} accessibilityState={{ expanded: open }} style={({ pressed }) => [styles.chip, { backgroundColor: pressed ? colors.surfaceElevated : colors.surface, borderColor: colors.border }]}><Feather name="sliders" size={17} color={colors.text} /><Text style={typography.label}>{label}</Text></Pressable>}
+    <Modal visible={open} transparent animationType={reducedMotion ? 'none' : 'fade'} onRequestClose={() => setOpen(false)}>
+      <View style={styles.modal}>
+        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay }]} onPress={() => setOpen(false)} accessibilityRole="button" accessibilityLabel="Close filters" />
+        <View accessibilityViewIsModal style={[styles.sheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 16 }]}>
+          <View style={styles.header}><Text style={[typography.heading, styles.flex]}>Your map, your way</Text><Pressable onPress={() => setOpen(false)} accessibilityRole="button" accessibilityLabel="Close filters" style={styles.close}><Feather name="x" size={22} color={colors.text} /></Pressable></View>
+          <ScrollView keyboardShouldPersistTaps="handled">{choices}{onFitAll ? <Pressable onPress={() => { setOpen(false); onFitAll(); }} accessibilityRole="button" accessibilityLabel="Fit all visible places on the map" style={styles.choice}><Feather name="maximize" size={20} color={colors.text} /><Text style={typography.bodyStrong}>Show these places on the map</Text></Pressable> : null}</ScrollView>
+        </View>
+      </View>
+    </Modal>
+  </View>;
 }
-
-function createStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  typography: ReturnType<typeof useTheme>['typography'],
-) {
-  return StyleSheet.create({
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.sm,
-      marginTop: Spacing.sm,
-    },
-    scroll: { flex: 1 },
-    scrollContent: { gap: Spacing.sm, paddingRight: Spacing.xs, alignItems: 'center' },
-    chip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      minHeight: 34,
-      paddingVertical: Spacing.xs + 2,
-      paddingHorizontal: Spacing.md,
-      borderRadius: Radius.pill,
-      borderWidth: 1,
-      shadowColor: '#000',
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-      shadowOffset: { width: 0, height: 3 },
-      elevation: 3,
-    },
-    chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    chipInactive: { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
-    chipPressed: { opacity: 0.75 },
-    chipLabel: { ...typography.label, fontWeight: '600' },
-    countPill: {
-      minWidth: 20,
-      paddingHorizontal: 5,
-      paddingVertical: 1,
-      borderRadius: Radius.pill,
-      backgroundColor: 'rgba(0,0,0,0.22)',
-      alignItems: 'center',
-    },
-    countText: { ...typography.caption, color: colors.textInverse, fontWeight: '700' },
-    fitButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.surfaceElevated,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.border,
-      shadowColor: '#000',
-      shadowOpacity: 0.2,
-      shadowRadius: 10,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 3,
-    },
-  });
-}
+const styles = StyleSheet.create({ wrap: { alignSelf: 'flex-end' }, expanded: { width: '100%' }, flex: { flex: 1 }, chip: { flexDirection: 'row', gap: 8, alignItems: 'center', minHeight: 44, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 16, paddingVertical: 8 }, teachingChoices: { gap: 8 }, modal: { flex: 1, justifyContent: 'flex-end' }, sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '80%', paddingHorizontal: 24, paddingTop: 16 }, header: { flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 12 }, close: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }, choice: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, padding: 12, borderRadius: 12, marginBottom: 4 } });

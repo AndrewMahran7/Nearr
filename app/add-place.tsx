@@ -19,11 +19,12 @@
  * Duplicates are non-fatal: we show a friendly alert and still navigate.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  ScrollView,
   Pressable,
   StyleSheet,
   Text,
@@ -34,6 +35,9 @@ import * as Location from 'expo-location';
 
 import { Button, Card, EmptyState, Input, Screen } from '@/components';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
+import { useTheme } from '@/lib/theme';
+import { PlaceImage } from '@/components/PlaceImage';
+import { hapticSuccess } from '@/lib/haptics';
 import { getActivationSaveFeedback } from '@/lib/activation';
 
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
@@ -54,19 +58,19 @@ function isSourceType(v: string | undefined): v is SourceType {
 function placesErrorMessage(err: PlacesError): string {
   switch (err.code) {
     case 'MISSING_API_KEY':
-      return err.message || 'Google Places API key is missing.';
+      return 'Place search is unavailable right now. Please try again later.';
     case 'NETWORK':
       return 'Network error. Check your connection and try again.';
     case 'OVER_QUERY_LIMIT':
       return 'Search quota exceeded for now. Try again later.';
     case 'REQUEST_DENIED':
-      return 'Search request denied. Check the API key configuration.';
+      return 'Place search is unavailable right now. Please try again later.';
     case 'INVALID_REQUEST':
       return 'Could not understand that search.';
     case 'NOT_FOUND':
       return 'No results.';
     default:
-      return err.message || 'Something went wrong.';
+      return 'Couldn?t search places. Please try again.';
   }
 }
 
@@ -82,6 +86,8 @@ async function getPostSaveCount(): Promise<number | null> {
 
 export default function SavePlace() {
   const router = useRouter();
+  const { colors: Colors, typography: Typography } = useTheme();
+  const styles = useMemo(() => createStyles(Colors), [Colors]);
   const params = useLocalSearchParams<{
     q?: string;
     source_url?: string;
@@ -214,6 +220,7 @@ export default function SavePlace() {
         sourceUrl: incomingSourceUrl,
       });
 
+      if (result.status === 'saved') hapticSuccess();
       if (result.status === 'duplicate') {
         Alert.alert('Already saved', `${selected.name} is already in your places.`);
       } else {
@@ -265,7 +272,7 @@ export default function SavePlace() {
         google_place_id: selected.googlePlaceId ?? null,
         error_code: 'save_threw',
       });
-      Alert.alert('Could not save', e?.message ?? 'Unknown error.');
+      Alert.alert('Could not save', 'Your place wasn?t saved. Check your connection and try again.');
     } finally {
       setSaving(false);
     }
@@ -277,9 +284,11 @@ export default function SavePlace() {
   if (selected) {
     return (
       <Screen>
-        <Text style={[Typography.title, styles.headerTitle]}>Save place</Text>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 48 }}>
+        <Text style={[Typography.title, styles.headerTitle]}>Make it a memory</Text>
 
         <Card style={styles.confirmCard}>
+          <PlaceImage googlePlaceId={selected.googlePlaceId} initialPhotoUrls={selected.photoUrls?.length ? selected.photoUrls : selected.photoUrl ? [selected.photoUrl] : undefined} preferPlacePhoto hydrationPolicy="active_manual_search" width="100%" height={210} borderRadius={Radius.md} accessibilityLabel={`Photo of ${selected.name}`} style={{ marginBottom: 16 }} />
           <Text style={Typography.heading}>{selected.name}</Text>
           {selected.formattedAddress ? (
             <Text style={[Typography.body, styles.muted]}>{selected.formattedAddress}</Text>
@@ -333,8 +342,9 @@ export default function SavePlace() {
         <View style={styles.actions}>
           <Button title="Back" variant="secondary" onPress={clearSelection} disabled={saving} />
           <View style={{ width: Spacing.md }} />
-          <Button title="Save" onPress={handleSave} loading={saving} style={{ flex: 1 }} />
+          <Button title="Save this place" variant="save" onPress={handleSave} loading={saving} style={{ flex: 1 }} />
         </View>
+        </ScrollView>
       </Screen>
     );
   }
@@ -344,7 +354,7 @@ export default function SavePlace() {
   // -----------------------------------------------------------------------
   return (
     <Screen>
-      <Text style={[Typography.title, styles.headerTitle]}>Add a place</Text>
+      <Text style={[Typography.title, styles.headerTitle]}>Find somewhere new</Text>
 
       <View style={styles.searchRow}>
         <Input
@@ -366,17 +376,22 @@ export default function SavePlace() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={results.length === 0 ? styles.emptyContent : undefined}
         ItemSeparatorComponent={() => <View style={styles.sep} />}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <Pressable
             style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             onPress={() => setSelected(item)}
+            accessibilityRole="button"
+            accessibilityLabel={`Inspect ${item.name}`}
           >
+            <PlaceImage googlePlaceId={item.googlePlaceId} initialPhotoUrls={item.photoUrls?.length ? item.photoUrls : item.photoUrl ? [item.photoUrl] : undefined} size={72} borderRadius={Radius.md} preferPlacePhoto hydrationPolicy={index === 0 ? 'active_manual_search' : index < 4 ? 'compact_known_only' : 'offscreen_manual_search'} presentationMode="candidate" presentationActive={index === 0} />
+            <View style={{ flex: 1 }}>
             <Text style={Typography.bodyStrong}>{item.name}</Text>
             {item.formattedAddress ? (
               <Text style={[Typography.caption, styles.muted, { marginTop: 2 }]}>
                 {item.formattedAddress}
               </Text>
             ) : null}
+            </View>
           </Pressable>
         )}
         ListEmptyComponent={
@@ -405,9 +420,13 @@ function RadiusOption({
   active: boolean;
   onPress: () => void;
 }) {
+  const { colors: Colors, typography: Typography } = useTheme();
+  const styles = useMemo(() => createStyles(Colors), [Colors]);
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
       style={[styles.radiusOption, active && styles.radiusOptionActive]}
     >
       <Text
@@ -433,6 +452,8 @@ function SearchEmptyState({
   lastQuery: string | null;
   onClear: () => void;
 }) {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => createStyles(Colors), [Colors]);
   if (loading) {
     return (
       <View style={styles.emptyBox}>
@@ -477,17 +498,15 @@ function SearchEmptyState({
 }
 
 // ---------------------------------------------------------------------------
-const styles = StyleSheet.create({
+function createStyles(Colors: ReturnType<typeof useTheme>['colors']) { return StyleSheet.create({
   headerTitle: { marginBottom: Spacing.lg },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: Spacing.lg,
   },
-  row: {
-    paddingVertical: Spacing.md,
-  },
-  rowPressed: { opacity: 0.6 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 16 },
+  rowPressed: { backgroundColor: Colors.surfaceElevated },
   sep: { height: 1, backgroundColor: Colors.border },
   muted: { color: Colors.textMuted },
   emptyContent: { flexGrow: 1, justifyContent: 'center' },
@@ -507,6 +526,8 @@ const styles = StyleSheet.create({
   },
   radiusOption: {
     flex: 1,
+    minHeight: 48,
+    justifyContent: 'center',
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.pill,
@@ -525,3 +546,4 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
 });
+}
