@@ -42,11 +42,11 @@ assert.doesNotMatch(service, /from\('share_jobs'\)\.delete\(/);
 assert.match(detail, /await archiveShareJob\(job\.id\)/);
 assert.doesNotMatch(detail, /await (cancelShareJob|deleteShareJob)\(job\.id\)/);
 
-assert.match(screen, /Empty your queue\?/);
-assert.match(screen, /This removes all items from your queue\. Your saved places won't be affected\./);
+assert.match(screen, /Empty Activity\?/);
+assert.match(screen, /This removes all items from Activity\. Your saved places won't be affected\./);
 assert.match(screen, /style: 'destructive'/);
-assert.match(screen, /Alert\.alert\('Queue emptied'\)/);
-assert.match(screen, /Connect to empty your queue\./);
+assert.match(screen, /Alert\.alert\('Activity cleared'\)/);
+assert.match(screen, /Connect to empty Activity\./);
 assert.match(screen, /setDismissedIds\(previousDismissed\)/);
 assert.match(screen, /setClearedIds\(previousCleared\)/);
 assert.match(screen, /await refresh\(\)/);

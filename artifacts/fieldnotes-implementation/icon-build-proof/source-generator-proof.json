@@ -1,0 +1,40 @@
+{
+  "scope": "Implementation source and installed Expo generator only; final IPA pending",
+  "configuration": {
+    "name": "Nearr",
+    "version": "1.6.59",
+    "bundleIdentifier": "com.nearr.ios",
+    "expoIcon": "./assets/icon.png",
+    "iosIcon": "./assets/icon.png",
+    "appearance": "automatic",
+    "appEnv": "development",
+    "backendEnv": "development"
+  },
+  "toolchain": {
+    "expo": "51.0.39",
+    "prebuildConfig": "7.0.9",
+    "configTypes": "51.0.3"
+  },
+  "source": {
+    "path": "assets/icon.png",
+    "sha256": "ac3ed31cf494843c72c5049e480e77f2af2fc74dcc8b9a85ce636aba0cc2db2a",
+    "width": 1024,
+    "height": 1024,
+    "channels": 3,
+    "space": "srgb",
+    "hasAlpha": false
+  },
+  "winnerBytesEqual": true,
+  "generated": {
+    "path": "artifacts/fieldnotes-implementation/icon-build-proof/generated/ios/Nearr/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png",
+    "sha256": "88f9be93097adc681d146e34812662ea5a25af65a17d5931834ea48f95ac25a0",
+    "width": 1024,
+    "height": 1024,
+    "hasAlpha": false
+  },
+  "decodedPixelsEqual": true,
+  "sourceDecodedRgbSha256": "51b4074c121482b01e35c8494c85a1a5723b388b0a6ce212a0fe291e4fe3059d",
+  "generatedDecodedRgbSha256": "51b4074c121482b01e35c8494c85a1a5723b388b0a6ce212a0fe291e4fe3059d",
+  "finalIpaInspected": false,
+  "installedIosHomeScreenInspected": false
+}

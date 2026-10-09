@@ -1466,7 +1466,7 @@ function ShareJobDetailScreen() {
 
   // Lightweight confirmation before a destructive remove.
   function confirmRemove() {
-    Alert.alert(PHASE_1_COPY.removeTitle, PHASE_1_COPY.removeMessage, [
+    Alert.alert('Remove from Activity?', 'This post will leave Activity.', [
       { text: 'Keep it', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: () => void handleRemove() },
     ]);
@@ -2374,7 +2374,7 @@ function ShareJobDetailScreen() {
                 <View style={styles.batchIntro}>
                   <SourceRibbon title="Original post" platform={platformName(platform)} thumbnail={overallSourceFrameUrl}
                     onPress={validateSourceUrl(sourceUrl).ok ? () => void openOriginalPost() : undefined} compact />
-                  <Text style={[typography.title, styles.batchTitle]}>{batch.order.length} places found</Text>
+                  <Text style={[typography.title, styles.batchTitle]}>{batch.order.length} {batch.order.every((id) => batch.rows[id]?.resolution === 'resolved') ? 'places found' : 'places to review'}</Text>
                   <Text style={[typography.body, styles.batchHelp]}>Keep the ones you want.</Text>
                   <View style={styles.batchSelectionActions}>
                     <Text accessibilityLiveRegion="polite" style={styles.batchProgress}>
@@ -3200,7 +3200,7 @@ export default function ShareJobDetailRoute() {
     <ErrorBoundary
       name="share-job-detail"
       fallbackTitle="Couldn't open this item"
-      fallbackBody="Something went wrong opening this queue item. Try again."
+      fallbackBody="Something went wrong opening this activity. Try again."
     >
       <ShareJobDetailScreen />
     </ErrorBoundary>

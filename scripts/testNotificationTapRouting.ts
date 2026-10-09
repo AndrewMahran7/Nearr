@@ -89,7 +89,7 @@ assert.deepEqual(missingJob.destination, { kind: 'share_queue' });
 assert.equal(missingJob.fallbackReason, 'missing_share_job_id');
 const detailSource = read('app/share-jobs/[jobId].tsx');
 assert.match(detailSource, /This save is no longer available\./);
-assert.match(detailSource, /This item is no longer in your queue\./);
+assert.match(detailSource, /This item is no longer in Activity\./);
 
 // J/K. Same response twice -> one intent; distinct request ids remain routable.
 const queue = new NotificationTapQueue();
