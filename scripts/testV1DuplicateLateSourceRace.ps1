@@ -1,7 +1,7 @@
 # Local-only V1 two-session duplicate-save transfer versus a late A source write.
 param([string]$SourceDatabase='nearr_ordered_rehearsal_20261009',[int]$Port=55458)
 $ErrorActionPreference='Stop'
-if($SourceDatabase -ne 'nearr_ordered_rehearsal_20261009' -or $Port -ne 55458){throw 'Local ordered rehearsal only'}
+if($SourceDatabase -notin @('nearr_ordered_rehearsal_20261009','nearr_release_migrated_20261009') -or $Port -ne 55458){throw 'Local qualified rehearsal only'}
 $database='nearr_v1_duplicate_late_'+[guid]::NewGuid().ToString('N').Substring(0,12)
 $created=$false
 function New-Id {[guid]::NewGuid().ToString()}

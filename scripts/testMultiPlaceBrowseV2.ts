@@ -93,7 +93,7 @@ check('existing save automatically attaches the source', () => {
   assert.match(saveBoundary, /Already saved[\s\S]*ENRICHED save/);
 });
 check('single match does not require Save 1 place', () => {
-  assert.match(review, /resolutionPlan\.action === 'auto_resolve'[\s\S]*await handleSaveManual\(resolutionPlan\.candidate, true\)[\s\S]*return/);
+  assert.match(review, /resolutionPlan\.action === 'auto_resolve'[\s\S]*const persisted = await persistCandidate\([\s\S]*shareJobCandidateToPlaceCandidate\(candidate\)[\s\S]*applyBatchSaveOutcomes\([\s\S]*return/);
 });
 check('multiple defensible results stay a bounded choice', () => {
   const plan = planFindRightPlace({

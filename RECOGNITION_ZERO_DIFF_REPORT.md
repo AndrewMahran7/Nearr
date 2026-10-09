@@ -1,0 +1,3 @@
+# Frozen recognition before/after — 2026-10-09 UTC
+
+Status: **NOT RUN; zero-difference gate unproven.** The staged Edge diff is isolated to notification authority and immediate dispatch, and no recognition source, model, Railway code, or Production recognition state was changed. Static isolation and the existing local boot test do not constitute the required 91-case, current-v123-versus-candidate before/after replay of candidate IDs/order, canonical identity, confidence, autosave/review/failure, multi-place output, and recognition state. Do not report a zero-diff result or deploy Edge until this comparison actually runs.

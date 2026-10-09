@@ -9,13 +9,17 @@ param(
   [int]$DuplicateIterations = 50,
   [int]$SameSourceIterations = 50,
   [int]$AttachIterations = 50,
+  [switch]$ReleaseGate,
   [ValidateSet('all','duplicate','attach')][string]$Phase = 'all'
 )
 $ErrorActionPreference = 'Stop'
-if ($SourceDatabase -ne 'nearr_migration_rehearsal_20261009' -or $Port -ne 55458 -or
-    $TransferIterations -lt 50 -or $SourceIterations -lt 50 -or $ChildFirstIterations -lt 50 -or
-    $DuplicateIterations -lt 50 -or $SameSourceIterations -lt 50 -or $AttachIterations -lt 50) {
-  throw 'Harness requires the local rehearsal database on port 55458 and at least 50 iterations of each race.'
+$minimum = if ($ReleaseGate) { 20 } else { 50 }
+$allowedSource = if ($ReleaseGate) { 'nearr_release_migrated_20261009' } else { 'nearr_migration_rehearsal_20261009' }
+if ($SourceDatabase -ne $allowedSource -or $Port -ne 55458 -or
+    $TransferIterations -lt $minimum -or $SourceIterations -lt $minimum -or
+    $ChildFirstIterations -lt $minimum -or $DuplicateIterations -lt $minimum -or
+    $SameSourceIterations -lt $minimum -or $AttachIterations -lt $minimum) {
+  throw "Harness requires $allowedSource on local port 55458 and at least $minimum iterations of each race."
 }
 $database = 'nearr_owner_races_' + [guid]::NewGuid().ToString('N').Substring(0, 12)
 $created = $false

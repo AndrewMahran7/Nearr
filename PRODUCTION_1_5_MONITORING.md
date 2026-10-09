@@ -1,0 +1,3 @@
+# Nearr 1.5 Production monitoring — 2026-10-09 UTC
+
+Status: **not a post-deploy monitoring window; deployment did not occur.** Read-only preflight showed zero saved-source owner mismatches/orphans/duplicate relationship groups, 903 share jobs and 337 notification events, current v123 Edge, and the expected Railway SUCCESS deployment. There is no after-deploy 5xx/RPC/auth/transfer/notification/recognition comparison because no backend change was made. When the release resumes, capture pre-change error baselines and monitor the bounded post-change window with repeated ownership-mismatch counts, V1/V2 RPC, share-job, notification duplicate/failure, Edge 5xx, and recognition errors.
