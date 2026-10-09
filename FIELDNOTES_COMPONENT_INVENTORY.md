@@ -11,7 +11,7 @@ This inventory describes the React Native implementation in `feat/nearr-1.6-fiel
 | `components/Fieldnotes.tsx` | Labelled 44-point `IconButton`, selected-state `FilterChip`, and textual/icon `StatusRow`. |
 | `components/SourceRibbon.tsx` | Original-post provenance with supplied thumbnail, platform, title, optional caption, Watch original action and unavailable state. It performs no image lookup and does not substitute destination imagery. |
 | `lib/useReduceMotion.ts`, `lib/haptics.ts` | Conservative live Reduce Motion preference; native feedback guarded by foreground/platform state and coalesced within 600ms. |
-| `assets/icon.png`, `assets/adaptive-icon.png` | Chosen Fieldnotes icon assets. Icon study and build integration have separate root-owned evidence. |
+| `assets/icon.png`, `assets/brand/fieldnotes-icon.svg` | Canonical Fieldnotes bitmap and editable vector. Expo/iOS and Android adaptive configuration use `assets/icon.png`. Icon study and compiled-build proof have separate evidence. |
 
 ## Product surfaces and ownership
 

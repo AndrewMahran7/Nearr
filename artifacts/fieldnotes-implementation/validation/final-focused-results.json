@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-09",
+  "productCommit": "4dd5aa7461ae55fd870f959033bdd63a03af34fb",
+  "evidence": "Exit codes and PASS output observed directly in root tool sessions after native visual corrections. Phase reports record additional agent-run targeted checks.",
+  "fullPrebuildCommandSet": { "resultFile": "results.json", "passed": 132, "failed": 0, "note": "Full command set preceded the final narrowly scoped visual corrections; do not imply it was rerun at the product commit above." },
+  "finalChecks": [
+    { "command": "node node_modules/typescript/bin/tsc --noEmit", "exitCode": 0, "note": "Passed at c3687dd before the final two prop-only edits: known Button save variant and numeric placeholder minimum height." },
+    { "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testFieldnotesReviewComponents.ts", "exitCode": 0, "summary": "24 actual renders across appearances, widths/text settings and 0/1/5 photos; independent controls, provenance, disabled save, motion, Activity virtualization" },
+    { "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testSourceEvidenceGalleryFallback.ts", "exitCode": 0, "summary": "Partial/all image decode failures, resolver rejection, stable request budget, changed-source reset and preserved source actions" },
+    { "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOneTapFallbackSave.ts", "exitCode": 0, "summary": "Auto-search, selection, explicit canonical persistence, recovery, layout and copy" }
+  ],
+  "unresolvedFailures": 0,
+  "nativeBuild": { "id": "74a22771-5998-485b-ac16-f316caf7491d", "status": "FINISHED", "platform": "ios", "version": "1.6.59", "build": "59" },
+  "otaExport": { "status": "Published", "runtime": "1.6.59", "platform": "ios", "modules": 1823, "group": "7cc8e190-b2a1-42e6-905a-0a6de9691ae2" }
+}

@@ -2,6 +2,8 @@
 
 October 9, 2026. This is a Development-only client redesign. Build identity and final validation are recorded in `FIELDNOTES_NATIVE_BUILD_REPORT.md`.
 
+The Development iOS build **1.6.59 (59)** completed successfully, and the initial iOS Development update is published for runtime **1.6.59**. Product source is `4dd5aa7461ae55fd870f959033bdd63a03af34fb`; later commits record evidence and reports. The compiled IPA includes the verified Fieldnotes icons and independent Share Extension. The next acceptance step is founder visual QA on an iPhone, using `NEARR_1_6_FOUNDER_QA.md`.
+
 ## Baseline and authority
 
 - Isolated worktree: `C:/Users/andre/Desktop/Nearr-worktrees/nearr-1.6-fieldnotes`.
@@ -15,7 +17,7 @@ October 9, 2026. This is a Development-only client redesign. Build identity and 
 
 Semantic Fieldnotes Light/Dark palettes, system type roles, spacing, flat surfaces, 44-point controls, 50-point adaptive buttons, a reserved save gradient, source provenance ribbon, status rows and a live Reduce Motion hook are implemented. New installs default to Light; stored light/dark/system preferences still take precedence. SDK51-compatible `expo-haptics` and `expo-linear-gradient` require a new native binary.
 
-Haptics are foreground-only, coalesced over 600 ms and failure tolerant. The foundation test checks 30 text contrast combinations and five native-feedback behavior cases. It passes. Integrated TypeScript validation is repeated after concurrent screen edits finish.
+Haptics are foreground-only, coalesced over 600 ms and failure tolerant. The foundation test checks 30 text contrast combinations and five native-feedback behavior cases. It passes. Final integrated TypeScript also passed; the last two presentation props passed focused review/image/persistence tests and the published iOS bundle export.
 
 The icon winner is C, Light Fieldnotes. It is an opaque 1024×1024 PNG at `assets/icon.png`; the editable vector is `assets/brand/fieldnotes-icon.svg`. SHA-256: `ac3ed31cf494843c72c5049e480e77f2af2fc74dcc8b9a85ce636aba0cc2db2a`. Study and native generator evidence are under `artifacts/fieldnotes-implementation/icon-study/`. The generated icon study is not an installed iOS screenshot.
 
@@ -29,7 +31,7 @@ Native iOS visual QA requires a connected iPhone or Mac simulator. Neither was a
 |---|---|
 | Map | Compact identity/search/Activity, one useful collapsed filter control, photo-marker cap with local snapshot reads, calm clusters, selected photo card, Map/Saved dock, full library only on request |
 | Place | Destination hero and honest image count, title/context on canvas, botanical Directions, original-post ribbon, explicit user/post provenance, reminder controls, visit, management under More |
-| Saved | One featured memory for an unfiltered collection of at most 50; compact virtualized rows otherwise; search/filter/sort and nearby eligibility preserved |
+| Saved | One featured memory with a usable local photo for an unfiltered collection of at most 50; missing/failed photos and larger collections use compact virtualized rows; search/filter/sort and nearby eligibility preserved |
 | Activity | Bounded FlatList with Needs your check / Finding places / On your map, honest indeterminate progress, recoverable failures and original persistence actions |
 | Quick Check | Neutral Possible match, distinct original evidence and destination images, active-only bounded photo hydration, clear Save/Not this actions |
 | Multi-place | Independent inspect and checkbox targets, Select all, accurate selection count, disabled zero-selection save, durable partial-success retry |
@@ -43,6 +45,8 @@ Native iOS visual QA requires a connected iPhone or Mac simulator. Neither was a
 
 Buttons show a restrained press state; disclosure and gallery movement respond to Reduce Motion. The bundled onboarding destination scene uses a 900 ms arrival. A foreground auto-save cue runs only after a persisted result reaches the client; its local pin/ring/sparkle never moves the map camera. Reduced-motion feedback uses a fade or static final state. Optional native haptics coalesce bursts over 600 ms and are suppressed in background/web contexts. The extension emits accepted feedback only after acknowledgement, with late callbacks suppressed after a terminal action.
 
+Save arrival waits for accessibility-preference readiness and consumes each identity once; Reduce Motion removes its ring and spark. Persisted review saves emit one optional completion cue, including one per successful batch action rather than per candidate. Initial Quick Check loading is compact and aligned to the content; refresh keeps already-known place content visible.
+
 ## Contracts kept intact
 
 The client reuses the existing source attachments, note provenance, place-photo limits, snapshot cache, hydrated active candidate, saved row identity, duplicate-save handling, partial multi-save outcomes, foreground location/camera guards, auth/anonymous transfer, Phase 2 practice and native extension handoff. Source and candidate imagery are not interchanged. No additional Google Places/photo lookups were added for marker or receipt decoration.
@@ -52,6 +56,7 @@ No backend, schema, worker, recognition/model, monetization or Production files 
 ## Validation and review artifacts
 
 - `artifacts/fieldnotes-implementation/validation/results.json`: per-command exit codes for the exact prebuild command set (parallel driver retains each command's lifecycle); `retry-results.json`, if present, records focused retries after fixes.
+- `artifacts/fieldnotes-implementation/validation/final-focused-results.json`: exact follow-up command results and their source boundaries after native visual corrections.
 - `detail-saved-onboarding-tests.json`: 29 onboarding suites plus actual component coverage.
 - `review-extension-phase.json`, `review-tests/`, `extension-tests/`: review, receipt and native-controller contract evidence.
 - `FIELDNOTES_ACCESSIBILITY_REPORT.md`, `FIELDNOTES_PERFORMANCE_REPORT.md`, `FIELDNOTES_REAL_DATA_QA.md`: measured versus unverified claims.
