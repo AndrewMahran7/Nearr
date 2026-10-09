@@ -68,6 +68,13 @@ test('answer spans contain offsets, not duplicated text', () => {
   assert.throws(() => validateManifest([manifest({ answer_spans: [{ field: 'caption', start: 3, end: 15, kind: 'exact_place', text: 'Cala Varques' }] })]), /invalid_answer_spans/);
 });
 
+test('text-only eligibility accepts absent caption and description when other text exists', () => {
+  const r = manifest({ evidence: { ...manifest().evidence, caption: null, description: null } });
+  assert.equal(validateManifest([r]).cases, 1);
+  const empty = manifest({ evidence: { ...r.evidence, hashtags: [], tagged_accounts: [], location_tag: null, source_geography: null, transcript: null }, view_eligibility: { ...r.view_eligibility, visual_audio: false } });
+  assert.throws(() => validateManifest([empty]), /invalid_text_only_eligibility/);
+});
+
 test('evidence views keep only intended modalities and exclude paths, labels and cache', () => {
   const r = manifest(), l = label();
   const full = inferencePayload(r, l, 'full');
