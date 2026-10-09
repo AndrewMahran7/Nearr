@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-09",
+  "sizes": [
+    1024,
+    180,
+    120,
+    60,
+    40,
+    29
+  ],
+  "candidates": [
+    {
+      "candidate": "a-fieldnotes-pin",
+      "width": 1024,
+      "height": 1024,
+      "channels": 3,
+      "space": "srgb",
+      "hasAlpha": false,
+      "isOpaque": true,
+      "sha256": "2a9c55b38035c5bba7e2b4b087aa52f1a2e98b632b1f2432be931448839a1e8a",
+      "masterPath": "candidates/a-fieldnotes-pin-1024.png"
+    },
+    {
+      "candidate": "b-botanical-frame",
+      "width": 1024,
+      "height": 1024,
+      "channels": 3,
+      "space": "srgb",
+      "hasAlpha": false,
+      "isOpaque": true,
+      "sha256": "7a443f1fa9560e03b1f5d948dd4e77d849c8e94d0700e9f144e06c3c955b48b5",
+      "masterPath": "candidates/b-botanical-frame-1024.png"
+    },
+    {
+      "candidate": "c-light-fieldnotes",
+      "width": 1024,
+      "height": 1024,
+      "channels": 3,
+      "space": "srgb",
+      "hasAlpha": false,
+      "isOpaque": true,
+      "sha256": "ac3ed31cf494843c72c5049e480e77f2af2fc74dcc8b9a85ce636aba0cc2db2a",
+      "masterPath": "candidates/c-light-fieldnotes-1024.png"
+    },
+    {
+      "candidate": "d-reduced-symbol",
+      "width": 1024,
+      "height": 1024,
+      "channels": 3,
+      "space": "srgb",
+      "hasAlpha": false,
+      "isOpaque": true,
+      "sha256": "fd81da9bd98da9c2b5f1759711ed2505fffd18a86d07ddfbd3497a43c0d0102c",
+      "masterPath": "candidates/d-reduced-symbol-1024.png"
+    }
+  ],
+  "winner": "c-light-fieldnotes",
+  "winnerSha256": "ac3ed31cf494843c72c5049e480e77f2af2fc74dcc8b9a85ce636aba0cc2db2a",
+  "safeArtworkBounds": {
+    "left": 244,
+    "top": 170,
+    "right": 780,
+    "bottom": 839
+  },
+  "minimumInsetPx": 170,
+  "nativeBuildVerified": false
+}

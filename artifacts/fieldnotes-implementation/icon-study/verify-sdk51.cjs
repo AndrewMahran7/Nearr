@@ -1,0 +1,21 @@
+const fs=require('fs');
+const path=require('path');
+const crypto=require('crypto');
+const sharp=require('C:/Users/andre/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp');
+const root=__dirname;
+const rc='C:/Users/andre/Desktop/Nearr-worktrees/Nearr-worktrees/nearr-1.5-ios';
+const icons=require(path.join(rc,'node_modules/@expo/prebuild-config/build/plugins/icons/withIosIcons.js'));
+(async()=>{
+ const iosNamedProjectRoot=path.join(root,'evidence/generated-sdk51/ios/Nearr');
+ const iconset=path.join(iosNamedProjectRoot,'Images.xcassets/AppIcon.appiconset');
+ fs.mkdirSync(iconset,{recursive:true});
+ const source=path.join(root,'winner-icon-1024.png');
+ const images=await icons.generateUniversalIconAsync(root,{icon:source,cacheKey:'fieldnotes-icon-study',iosNamedProjectRoot,platform:'ios'});
+ fs.writeFileSync(path.join(iconset,'Contents.json'),JSON.stringify({images,info:{version:1,author:'expo'}},null,2));
+ const p=path.join(iconset,images[0].filename);
+ const [rawA,rawB]=await Promise.all([sharp(source).removeAlpha().raw().toBuffer(),sharp(p).removeAlpha().raw().toBuffer()]);
+ const m=await sharp(p).metadata();
+ const result={expo:require(path.join(rc,'node_modules/expo/package.json')).version,prebuildConfig:require(path.join(rc,'node_modules/@expo/prebuild-config/package.json')).version,configTypes:require(path.join(rc,'node_modules/@expo/config-types/package.json')).version,generatedPath:path.relative(root,p),dimensions:[m.width,m.height],hasAlpha:m.hasAlpha,decodedPixelsEqual:rawA.equals(rawB),sourceSha256:crypto.createHash('sha256').update(fs.readFileSync(source)).digest('hex'),generatedSha256:crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex'),scope:'isolated SDK51 icon generation; not an actual iOS app archive or native build proof'};
+ fs.writeFileSync(path.join(root,'evidence/sdk51-generation.json'),JSON.stringify(result,null,2));
+ console.log(JSON.stringify(result,null,2));
+})();

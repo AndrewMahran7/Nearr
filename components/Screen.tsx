@@ -21,6 +21,6 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: colors.bg },
     fill: { flex: 1 },
-    padded: { padding: Spacing.lg },
+    padded: { padding: Spacing.xl },
   });
 }

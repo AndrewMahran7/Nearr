@@ -20,11 +20,6 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       padding: Spacing.lg,
       borderWidth: 1,
       borderColor: colors.border,
-      shadowColor: '#000',
-      shadowOpacity: colors.bg === '#FFF8F1' ? 0.08 : 0.24,
-      shadowRadius: 18,
-      shadowOffset: { width: 0, height: 8 },
-      elevation: 5,
     },
   });
 }

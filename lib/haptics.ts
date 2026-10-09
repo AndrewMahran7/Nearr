@@ -1,44 +1,19 @@
-import { Platform, Vibration } from 'react-native';
+import { AppState, Platform } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
-/**
- * Thin, crash-safe "haptic-ish" feedback helpers.
- *
- * Implemented with React Native built-ins ONLY — there is intentionally no
- * native haptics dependency (expo-haptics was removed so onboarding can be
- * tested without a native rebuild). These are a "nice to have" affordance:
- * every call is fire-and-forget and wrapped so it can never throw.
- *
- * Behaviour:
- *   - Android: a very brief `Vibration.vibrate` tick.
- *   - iOS (and web/other): safe no-op — a plain `Vibration` call on iOS is a
- *     long buzz, which is worse than nothing here, so we skip it until a real
- *     haptics engine is wired back in.
- *
- * The exported function names/signatures are unchanged so no caller needs to
- * change. Never await these.
- */
+let lastFeedbackAt = 0;
 
-/** Very brief Android vibration tick; no-op elsewhere. Never throws. */
-function briefVibrate(durationMs: number): void {
-  if (Platform.OS !== 'android') return;
-  try {
-    Vibration.vibrate(durationMs);
-  } catch {
-    // never throw — feedback is optional
-  }
+/** Optional foreground feedback. Bursts coalesce; lack of native support never blocks an action. */
+function feedback(action: () => Promise<void>): void {
+  if (Platform.OS === 'web' || AppState.currentState !== 'active') return;
+  const now = Date.now();
+  if (now - lastFeedbackAt < 600) return;
+  lastFeedbackAt = now;
+  try { void action().catch(() => undefined); } catch { /* Haptics are optional. */ }
 }
 
-/** Light selection tick — for tapping a demo target. */
-export function hapticSelection(): void {
-  briefVibrate(8);
-}
-
-/** Light impact — for a committed action like "Save". */
-export function hapticImpact(): void {
-  briefVibrate(12);
-}
-
-/** Success notification — for a completed save / pin drop. */
-export function hapticSuccess(): void {
-  briefVibrate(18);
-}
+export function hapticSelection(): void { feedback(() => Haptics.selectionAsync()); }
+export function hapticImpact(): void { feedback(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)); }
+/** Call only after the action has persisted, never when it starts. */
+export function hapticSuccess(): void { feedback(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)); }
+export function hapticError(): void { feedback(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)); }

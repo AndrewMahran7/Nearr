@@ -57,7 +57,7 @@ export function EmptyState({
     <>
       <Text style={[typography.heading, { color: titleColor }]}>{title}</Text>
       {body ? (
-        <Text style={[typography.body, styles.body]} numberOfLines={4}>
+        <Text style={[typography.body, styles.body]}>
           {body}
         </Text>
       ) : null}

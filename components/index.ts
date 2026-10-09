@@ -1,4 +1,6 @@
 export { Button } from './Button';
+export { SourceRibbon } from './SourceRibbon';
+export { IconButton, FilterChip, StatusRow } from './Fieldnotes';
 export { Card } from './Card';
 export { DemoModeBanner } from './DemoModeBanner';
 export { DevModeBanner } from './DevModeBanner';

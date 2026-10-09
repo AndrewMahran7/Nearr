@@ -375,6 +375,8 @@
     "expo-crypto": "~13.0.2",
     "expo-dev-client": "~4.0.29",
     "expo-file-system": "~17.0.1",
+    "expo-haptics": "~13.0.1",
+    "expo-linear-gradient": "~13.0.2",
     "expo-linking": "~6.3.0",
     "expo-location": "~17.0.0",
     "expo-notifications": "~0.28.0",
