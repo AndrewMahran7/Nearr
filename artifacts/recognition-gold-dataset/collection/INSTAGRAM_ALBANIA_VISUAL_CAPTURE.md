@@ -1,0 +1,11 @@
+# Albania Instagram public-video capture, 2026-10-08/09 UTC
+
+This bounded follow-up inspected two newly found public Instagram reels directly in the existing Edge browser. `instagram_new_visual_candidates.jsonl` is a source-only inventory, and `instagram_visual_capture_inventory.jsonl` lists each acquired video's duration, SHA-256 digest, and frame count. No media or complete third-party caption is committed.
+
+Each post was downloaded unauthenticated from its observed public URL using `yt-dlp`, without cookies and with a 30 MiB size limit. `ffmpeg` extracted native frames at two frames per second. All 15 frames of each short clip were inspected, including opening, middle, end, and scene changes. Both bounded downloads succeeded. The complete captions, private manifest rows, frame paths and hashes, and first-pass labels are stored outside Git under `C:/Users/andre/Desktop/Nearr-gold-private-2026-10-08/instagram_visual_batch/` and `.../media/<case_id>/`.
+
+The first reel's caption lists eight beaches while its 7.4-second video shows one continuous cliffside staircase and beach. The caption itself identifies the featured beach. Albania's national tourism page and an independent travel photograph of the distinctive stairway support the first-pass identity. Blind second review is pending, so the source-only record remains a candidate.
+
+The second reel names and visually overlays three Ksamil beaches in consecutive scenes. Its unlabeled opening two seconds show aerial water and a distinctive cliff cove; these may represent another depicted place. The exact complete set remains unresolved. Independent operator and tourism references corroborate the named beaches' existence but do not identify the opener. Normal `visual_only` retains the on-video place-name overlays; it is OCR-bearing. Neither new record is claimed as strict ready truth.
+
+The search used public Instagram, a public reel index only for leads, and tourism/operator references. The two videos were retained because they demonstrate caption-versus-footage and short unlabeled-intro failure modes. Further generic caption lists and unverifiable visual matches were not promoted.
