@@ -1,0 +1,7 @@
+# Legacy V1 account-transfer safety
+
+The public Nearr 1.4.55/build 56 client still calls `begin_onboarding_account_transfer(uuid,text)` and `complete_onboarding_account_transfer(text)`. Both signatures and the completion JSON keys (`permanent_user_id`, `destination_was_established`, `tutorial_saved_place_id`, `replayed`) remain available; there is no forced-update requirement for these writes.
+
+The historical V1 implementation could update a unique parent without moving child ownership, and could delete an anonymous duplicate save with source relationships. Migration `20261009000001` makes the unique parent update cascade every child owner atomically. Migration `20261009000003` replaces the V1 completion body without changing its signature: when B already has the place, B's save/notes/primary source remain, missing canonical source identities are copied, and A's save and source IDs are retained. B's blank legacy `source_url` may be filled, but B-authored values are not overwritten. The converted-A cleanup candidate excludes the retained graph.
+
+The real two-session V1 duplicate-late-source test passed both orders: transfer-first rejected the stale A association; child-first committed the association and copied it to B. The rollback-only SQL fixture passed unique two-source cascade, duplicate one-existing/one-missing-source merge, stable relationship IDs, repeated completion, foreign-destination replay denial, and source/destination RLS visibility. V1 is intentionally tutorial-save scoped; it is not substituted for V2's multiple-save transfer.

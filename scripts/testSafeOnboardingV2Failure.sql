@@ -153,8 +153,11 @@ select 1 / case when
        where id=:'grant_id'::uuid and status='pending')=1
   then 1 else 0 end as grant_rollback_assertion;
 
--- A mismatched parent/child graph is the exact historical V1 bug shape.
+-- Recreate the historical pre-invariant shape only inside this rollback-only
+-- local savepoint. With the composite FK present, a normal parent update
+-- cascades children and cannot create this fixture.
 savepoint historical_mismatch;
+alter table public.saved_place_sources drop constraint saved_place_sources_owner_fk;
 update public.saved_places set user_id=:'b' where id=:'unique_save';
 set local role authenticated;
 select set_config('request.jwt.claim.sub',:'b',true) is not null as b_claim_5;

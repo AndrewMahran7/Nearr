@@ -7,7 +7,8 @@ insert into auth.users(id,email) values
   ('00000000-0000-0000-0000-000000000012','other@example.invalid');
 insert into public.profiles(id,email) values
   ('00000000-0000-0000-0000-000000000011','legacy@example.invalid'),
-  ('00000000-0000-0000-0000-000000000012','other@example.invalid');
+  ('00000000-0000-0000-0000-000000000012','other@example.invalid')
+on conflict (id) do update set email=excluded.email;
 insert into public.places(id,google_place_id,name,latitude,longitude) values
   ('00000000-0000-0000-0000-000000000021','fixture-place','Fixture place',1,1);
 insert into public.saved_places(id,user_id,place_id,source_type) values

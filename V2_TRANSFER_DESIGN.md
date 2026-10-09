@@ -1,4 +1,6 @@
-# V2 account-transfer design from the proven ownership model — implementation HOLD
+# V2 account-transfer design from the proven ownership model — historical plan
+
+**2026-10-09 successor:** The implementation described as pending below has now been superseded by the five local-only migrations `20261009000001` through `20261009000005`, with final evidence in `OWNERSHIP_INVARIANT_DESIGN.md` and `V2_TRANSFER_FINAL_QUALIFICATION.md`. In particular, the unique-save owner move uses a composite-FK cascade, not a later separate child UPDATE; child-only/deferred checks were insufficient under concurrency. This document remains the original product-semantic design, not a current deployment status or authorization.
 
 The forensic result resolves the core question: `saved_place_sources.user_id` must equal its parent saved-place owner. It is **not** a historical creator field. Global source identity/media may be shared; each saved-place↔source association is user-owned. The old v1 unique-save transfer is the high-confidence cause of the observed mismatch: it changes only the parent owner, and the grant/timestamps match that path. A historical SQL execution log was not available. Development's `20260928000001_onboarding_real_saved_place_transfer.sql` repeats that omission and its duplicate branch deletes the source save, cascading source links. Do not promote either behavior.
 

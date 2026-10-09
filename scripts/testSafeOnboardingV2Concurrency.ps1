@@ -5,8 +5,8 @@ param(
   [int]$Port = 55458
 )
 $ErrorActionPreference = 'Continue'
-if ($SourceDatabase -notmatch '^nearr_postrepair_[0-9]{8}$' -or $Port -ne 55458) {
-  throw 'This harness is restricted to the local post-repair restore on port 55458.'
+if ($SourceDatabase -notmatch '^nearr_postrepair_[0-9]{8}$|^nearr_migration_rehearsal_20261009$|^nearr_final_replay_20261009$' -or $Port -ne 55458) {
+  throw 'This harness is restricted to the local post-repair restore or migration rehearsal on port 55458.'
 }
 $database = 'nearr_v2_concurrency_' + [guid]::NewGuid().ToString('N').Substring(0, 12)
 $created = $false
@@ -111,7 +111,7 @@ create trigger test_v2_concurrency_delay before update of status
     throw "Unique transfer failed during source-add race: $($pair4 | ConvertTo-Json -Compress)"
   }
   $right=($pair4 | Where-Object { $_.Side -eq 'right' })
-  if ($right.Exit -ne 0 -and $right.Output -notmatch 'saved_place_source_owner_mismatch') {
+  if ($right.Exit -ne 0 -and $right.Output -notmatch 'saved_place_source_owner_mismatch|saved_place_sources_owner_fk') {
     throw "Source-add race failed unexpectedly: $($pair4 | ConvertTo-Json -Compress)"
   }
   $sourceRaceDiagnostic=Invoke-TestSql "select jsonb_build_object('parent_owner_b',(select count(*) from public.saved_places where id='$sa5' and user_id='$b4'),'original_b',(select count(*) from public.saved_place_sources where saved_place_id='$sa5' and identity_key='fixture-concurrent:original' and user_id='$b4'),'late_a',(select count(*) from public.saved_place_sources where saved_place_id='$sa5' and identity_key='fixture-concurrent:late' and user_id='$a5'),'late_b',(select count(*) from public.saved_place_sources where saved_place_id='$sa5' and identity_key='fixture-concurrent:late' and user_id='$b4'),'global_mismatch',(select count(*) from public.saved_place_sources x join public.saved_places p on p.id=x.saved_place_id where x.user_id<>p.user_id))::text"
