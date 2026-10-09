@@ -1,0 +1,7 @@
+# Nearr 1.5.58 release impact — forensic pass only
+
+**Finding:** one legacy v1 transfer artifact is a genuine relationship-owner/RLS invariant violation, not intended creator provenance. The row is not presently shown as a child source to its saved-place owner. The parent legacy source mirror keeps the basic Watch link available in both inspected client versions, so an immediate visible loss was not proven. It remains a security/data-integrity defect and can affect source grouping when another visible child is attached.
+
+The anomaly should receive the separately authorized narrow repair in `PRODUCTION_OWNERSHIP_REPAIR_PLAN.md` before relying on transfer invariants for 1.5. This task did **not** perform that repair. Even after it, the Development V2 SQL remains unsafe and **must not be deployed**. A new V2 RPC, complete dependent-row/metadata rules, adversarial and concurrency tests, old/new client contracts, notification concurrency, frozen recognition replay, rollback verification, live QA, and physical upgrade checks remain open. Build 58 was not uploaded or submitted; no Production release change occurred.
+
+The current users' app and backend were not changed by this investigation. No forced update or Production OTA is proposed. The repaired relationship should improve source visibility without changing saved-place identity, notes, reminders, or the legacy link, but that outcome must be verified after any future authorized repair.
