@@ -1,0 +1,38 @@
+{
+  "audit_date_utc": "2026-10-09",
+  "research_window_utc_approx": ["19:17", "19:30"],
+  "access": "Authenticated existing Edge Instagram browser for public post discovery only; unauthenticated yt-dlp without cookies for bounded public-video acquisition; ffmpeg native 2 fps frame sampling; no likes, follows, comments, messages, private media, login changes, paid calls, or posting.",
+  "queries": [
+    "3 restaurants in Rome",
+    "3 waterfalls in Costa Rica",
+    "3 waterfalls in Iceland",
+    "3 waterfalls in Bali",
+    "3 beaches in Thailand",
+    "3 beaches in Algarve",
+    "3 beaches in Lagos Portugal"
+  ],
+  "new_full_video_captures": [
+    {"case_id": "g_7021ac9a49bc866a", "source_public_id": "DZWFGIUT64X", "duration_seconds": 14.7, "native_frames_inspected": 29, "initial_status": "candidate", "question": "Two cascade shots need independent same-attraction matching."},
+    {"case_id": "g_b6c60f33eb6a677c", "source_public_id": "DRxTKyyDG4L", "duration_seconds": 8.105011, "native_frames_inspected": 16, "initial_status": "candidate", "question": "Opening restaurant-view waterfall requires separate-site and scene-identity review."},
+    {"case_id": "g_648cb668cbe9b54c", "source_public_id": "DOd10-yCJPU", "duration_seconds": 9.87, "native_frames_inspected": 20, "initial_status": "candidate", "question": "Opening cove and bridge alias require independent geometric matching."}
+  ],
+  "screened_out_at_caption_or_modal_triage": [
+    {"source_public_id": "DQXWi0bjTaF", "reason": "Rome restaurant narration; no verified scene-level mapping acquired in this batch."},
+    {"source_public_id": "DYm-muKRfCW", "reason": "Costa Rica caption recommends eight waterfalls, exceeding bounded short-set target."},
+    {"source_public_id": "DZ3Du8vtx6G", "reason": "Generic unnamed Jurassic canyon falls; exact site not established from public description."},
+    {"source_public_id": "DEtj__YRUXg", "reason": "Seven Blue Falls waterfalls in one hike; individual cascade set not bounded."},
+    {"source_public_id": "DTB6QHAjYPi", "reason": "Iceland post gives only regional three-falls claim; individual identities absent."},
+    {"source_public_id": "Db0lQVQRZG7", "reason": "Iceland three-falls claim names only Haifoss; individual cascade set uncertain."},
+    {"source_public_id": "DUB_z2VjJVd", "reason": "Iceland three-falls themed post does not name precise sites."},
+    {"source_public_id": "DSMhgjogDki", "reason": "Bali reel repeats same three waterfall names as selected case; likely redundant and not separately captured."},
+    {"source_public_id": "DUiDF7QE7vS", "reason": "Thailand caption spans numerous islands and beaches; depicted branch-level sites unlikely to be a bounded short set."},
+    {"source_public_id": "DMxly0WMXXe", "reason": "Three large islands named, not exact beach sites."},
+    {"source_public_id": "DP9L7IYkwla", "reason": "Three broad island groups rather than exact cove destinations."},
+    {"source_public_id": "Dcd9fb3IZO_", "reason": "Three directly adjacent tide-linked Algarve beaches; exact shot-to-beach boundaries not obvious from modal, deprioritized."},
+    {"source_public_id": "DY5NeoqIkro", "reason": "Algarve modal says three beaches but supplies no exact names."},
+    {"source_public_id": "CurptiHuHL-", "reason": "Single Praia dos Três Irmãos presentation, with neighboring tide-linked coves mentioned but not a clear distinct-place itinerary."},
+    {"source_public_id": "Dauokq8gjK0", "reason": "Single Praia dos Três Irmãos presentation; redundant for this short multi-place batch."},
+    {"source_public_id": "C9Ku7jysp06", "reason": "Same three contiguous Alvor beaches as another screened result; deprioritized for scene-boundary ambiguity."}
+  ],
+  "interpretation": "Screened-out posts were not full-video reviewed; these reasons are triage judgments, not gold negative labels. Captured cases remain candidates until blind second pass and independent visual corroboration establish complete depicted sets."
+}
