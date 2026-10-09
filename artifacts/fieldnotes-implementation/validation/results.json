@@ -1,0 +1,803 @@
+{
+  "startedAt": "2026-10-09T21:04:42.587Z",
+  "completedAt": "2026-10-09T21:06:58.786Z",
+  "sourceCommit": "6437279a74904761725458f3fc2edd6793b924c8",
+  "source": "Exact unique npm commands from pretest:prebuild and test:prebuild; each command keeps its own lifecycle",
+  "concurrency": 3,
+  "passed": 132,
+  "failed": 0,
+  "results": [
+    {
+      "command": "npm run test:release-gate",
+      "exitCode": 0,
+      "seconds": 1.57,
+      "log": "test-release-gate.log"
+    },
+    {
+      "command": "npm run test:startup-smoke",
+      "exitCode": 0,
+      "seconds": 2.4,
+      "log": "test-startup-smoke.log"
+    },
+    {
+      "command": "npm run test:result-notifications",
+      "exitCode": 0,
+      "seconds": 1.93,
+      "log": "test-result-notifications.log"
+    },
+    {
+      "command": "npm run test:no-user-facing-vayrin",
+      "exitCode": 0,
+      "seconds": 3.71,
+      "log": "test-no-user-facing-vayrin.log"
+    },
+    {
+      "command": "npm run test:failure-messaging",
+      "exitCode": 0,
+      "seconds": 1.6,
+      "log": "test-failure-messaging.log"
+    },
+    {
+      "command": "npm run test:share-failure-presentation",
+      "exitCode": 0,
+      "seconds": 2.07,
+      "log": "test-share-failure-presentation.log"
+    },
+    {
+      "command": "npm run test:map-atomic-representation-stability",
+      "exitCode": 0,
+      "seconds": 3,
+      "log": "test-map-atomic-representation-stability.log"
+    },
+    {
+      "command": "npm run test:map-cluster-expansion",
+      "exitCode": 0,
+      "seconds": 2.44,
+      "log": "test-map-cluster-expansion.log"
+    },
+    {
+      "command": "npm run test:multi-save-tray-dismiss",
+      "exitCode": 0,
+      "seconds": 1.81,
+      "log": "test-multi-save-tray-dismiss.log"
+    },
+    {
+      "command": "npm run test:map-conservation",
+      "exitCode": 0,
+      "seconds": 7.01,
+      "log": "test-map-conservation.log"
+    },
+    {
+      "command": "npm run test:nearby-map-explorer",
+      "exitCode": 0,
+      "seconds": 2.27,
+      "log": "test-nearby-map-explorer.log"
+    },
+    {
+      "command": "npm run test:vayrin-candidate-confirmation-v2",
+      "exitCode": 0,
+      "seconds": 2.35,
+      "log": "test-vayrin-candidate-confirmation-v2.log"
+    },
+    {
+      "command": "npm run test:vayrin-multi-place-review-redesign",
+      "exitCode": 0,
+      "seconds": 3.67,
+      "log": "test-vayrin-multi-place-review-redesign.log"
+    },
+    {
+      "command": "npm run test:canonical-save-return-contract",
+      "exitCode": 0,
+      "seconds": 2.8,
+      "log": "test-canonical-save-return-contract.log"
+    },
+    {
+      "command": "npm run test:map-camera-transaction-hotfix",
+      "exitCode": 0,
+      "seconds": 16.24,
+      "log": "test-map-camera-transaction-hotfix.log"
+    },
+    {
+      "command": "npm run test:multi-place-review-interactions",
+      "exitCode": 0,
+      "seconds": 3.04,
+      "log": "test-multi-place-review-interactions.log"
+    },
+    {
+      "command": "npm run test:quick-check-density",
+      "exitCode": 0,
+      "seconds": 3.31,
+      "log": "test-quick-check-density.log"
+    },
+    {
+      "command": "npm run test:quick-check-rolodex-ux",
+      "exitCode": 0,
+      "seconds": 3.96,
+      "log": "test-quick-check-rolodex-ux.log"
+    },
+    {
+      "command": "npm run test:vayrin-quick-check-evidence-ui",
+      "exitCode": 0,
+      "seconds": 4.96,
+      "log": "test-vayrin-quick-check-evidence-ui.log"
+    },
+    {
+      "command": "npm run test:e2e:harness",
+      "exitCode": 0,
+      "seconds": 2.87,
+      "log": "test-e2e-harness.log"
+    },
+    {
+      "command": "npm run test:app-environment",
+      "exitCode": 0,
+      "seconds": 2.01,
+      "log": "test-app-environment.log"
+    },
+    {
+      "command": "npm run test:google-places-config",
+      "exitCode": 0,
+      "seconds": 1.89,
+      "log": "test-google-places-config.log"
+    },
+    {
+      "command": "npm run test:root-layout-loop",
+      "exitCode": 0,
+      "seconds": 1.5,
+      "log": "test-root-layout-loop.log"
+    },
+    {
+      "command": "npm run test:dev-db-guard",
+      "exitCode": 0,
+      "seconds": 3.17,
+      "log": "test-dev-db-guard.log"
+    },
+    {
+      "command": "npm run test:notification-tap-routing",
+      "exitCode": 0,
+      "seconds": 2.22,
+      "log": "test-notification-tap-routing.log"
+    },
+    {
+      "command": "npm run test:update-args",
+      "exitCode": 0,
+      "seconds": 2.36,
+      "log": "test-update-args.log"
+    },
+    {
+      "command": "npm run test:share-extension-env",
+      "exitCode": 0,
+      "seconds": 1.88,
+      "log": "test-share-extension-env.log"
+    },
+    {
+      "command": "npm run test:dev-login-gating",
+      "exitCode": 0,
+      "seconds": 1.85,
+      "log": "test-dev-login-gating.log"
+    },
+    {
+      "command": "npm run test:saved-place-edits",
+      "exitCode": 0,
+      "seconds": 1.79,
+      "log": "test-saved-place-edits.log"
+    },
+    {
+      "command": "npm run test:place-note",
+      "exitCode": 0,
+      "seconds": 1.84,
+      "log": "test-place-note.log"
+    },
+    {
+      "command": "npm run test:place-category",
+      "exitCode": 0,
+      "seconds": 2.08,
+      "log": "test-place-category.log"
+    },
+    {
+      "command": "npm run test:category-pipeline",
+      "exitCode": 0,
+      "seconds": 2.25,
+      "log": "test-category-pipeline.log"
+    },
+    {
+      "command": "npm run test:place-category-migration",
+      "exitCode": 0,
+      "seconds": 1.9,
+      "log": "test-place-category-migration.log"
+    },
+    {
+      "command": "npm run test:google-places-fields",
+      "exitCode": 0,
+      "seconds": 2.46,
+      "log": "test-google-places-fields.log"
+    },
+    {
+      "command": "npm run test:auto-save-undo",
+      "exitCode": 0,
+      "seconds": 1.52,
+      "log": "test-auto-save-undo.log"
+    },
+    {
+      "command": "npm run test:share-completion",
+      "exitCode": 0,
+      "seconds": 1.92,
+      "log": "test-share-completion.log"
+    },
+    {
+      "command": "npm run test:share-extension-compact",
+      "exitCode": 0,
+      "seconds": 2.4,
+      "log": "test-share-extension-compact.log"
+    },
+    {
+      "command": "npm run test:queue-inbox",
+      "exitCode": 0,
+      "seconds": 1.86,
+      "log": "test-queue-inbox.log"
+    },
+    {
+      "command": "npm run test:source-enrichment",
+      "exitCode": 0,
+      "seconds": 2.39,
+      "log": "test-source-enrichment.log"
+    },
+    {
+      "command": "npm run test:source-thumbnails",
+      "exitCode": 0,
+      "seconds": 1.99,
+      "log": "test-source-thumbnails.log"
+    },
+    {
+      "command": "npm run test:share-job-result",
+      "exitCode": 0,
+      "seconds": 2.33,
+      "log": "test-share-job-result.log"
+    },
+    {
+      "command": "npm run test:map-group-focus",
+      "exitCode": 0,
+      "seconds": 2.2,
+      "log": "test-map-group-focus.log"
+    },
+    {
+      "command": "npm run test:save-navigation",
+      "exitCode": 0,
+      "seconds": 2.05,
+      "log": "test-save-navigation.log"
+    },
+    {
+      "command": "npm run test:phase2-ui-render",
+      "exitCode": 0,
+      "seconds": 1.73,
+      "log": "test-phase2-ui-render.log"
+    },
+    {
+      "command": "npm run test:address-first",
+      "exitCode": 0,
+      "seconds": 2.95,
+      "log": "test-address-first.log"
+    },
+    {
+      "command": "npm run test:address-match",
+      "exitCode": 0,
+      "seconds": 2.21,
+      "log": "test-address-match.log"
+    },
+    {
+      "command": "npm run test:share-worker-boot",
+      "exitCode": 0,
+      "seconds": 15.67,
+      "log": "test-share-worker-boot.log"
+    },
+    {
+      "command": "npm run test:multi-address",
+      "exitCode": 0,
+      "seconds": 2.39,
+      "log": "test-multi-address.log"
+    },
+    {
+      "command": "npm run test:multi-place-batch",
+      "exitCode": 0,
+      "seconds": 2.89,
+      "log": "test-multi-place-batch.log"
+    },
+    {
+      "command": "npm run test:multi-select-places",
+      "exitCode": 0,
+      "seconds": 3.54,
+      "log": "test-multi-select-places.log"
+    },
+    {
+      "command": "npm run test:place-recommendations",
+      "exitCode": 0,
+      "seconds": 3.54,
+      "log": "test-place-recommendations.log"
+    },
+    {
+      "command": "npm run test:recovery-hints",
+      "exitCode": 0,
+      "seconds": 3.67,
+      "log": "test-recovery-hints.log"
+    },
+    {
+      "command": "npm run test:safety-description-only",
+      "exitCode": 0,
+      "seconds": 3.53,
+      "log": "test-safety-description-only.log"
+    },
+    {
+      "command": "npm run test:generic-caption-guard",
+      "exitCode": 0,
+      "seconds": 3.1,
+      "log": "test-generic-caption-guard.log"
+    },
+    {
+      "command": "npm run test:platform-noise",
+      "exitCode": 0,
+      "seconds": 2.85,
+      "log": "test-platform-noise.log"
+    },
+    {
+      "command": "npm run test:manual-fallback",
+      "exitCode": 0,
+      "seconds": 2.12,
+      "log": "test-manual-fallback.log"
+    },
+    {
+      "command": "npm run test:tiktok-url",
+      "exitCode": 0,
+      "seconds": 2.92,
+      "log": "test-tiktok-url.log"
+    },
+    {
+      "command": "npm run test:evidence-provenance",
+      "exitCode": 0,
+      "seconds": 3.67,
+      "log": "test-evidence-provenance.log"
+    },
+    {
+      "command": "npm run test:notification-dedupe",
+      "exitCode": 0,
+      "seconds": 2.34,
+      "log": "test-notification-dedupe.log"
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "seconds": 63.88,
+      "log": "typecheck.log"
+    },
+    {
+      "command": "npm run test:platform-url-classification",
+      "exitCode": 0,
+      "seconds": 10.07,
+      "log": "test-platform-url-classification.log"
+    },
+    {
+      "command": "npm run test:share-job-mapping",
+      "exitCode": 0,
+      "seconds": 1.67,
+      "log": "test-share-job-mapping.log"
+    },
+    {
+      "command": "npm run test:share-job-routing",
+      "exitCode": 0,
+      "seconds": 1.84,
+      "log": "test-share-job-routing.log"
+    },
+    {
+      "command": "npm run test:share-url-validation",
+      "exitCode": 0,
+      "seconds": 1.94,
+      "log": "test-share-url-validation.log"
+    },
+    {
+      "command": "npm run test:feature-flags",
+      "exitCode": 0,
+      "seconds": 1.84,
+      "log": "test-feature-flags.log"
+    },
+    {
+      "command": "npm run test:account",
+      "exitCode": 0,
+      "seconds": 7.13,
+      "log": "test-account.log"
+    },
+    {
+      "command": "npm run test:vayrin-presentation",
+      "exitCode": 0,
+      "seconds": 2.51,
+      "log": "test-vayrin-presentation.log"
+    },
+    {
+      "command": "npm run test:vayrin-ui",
+      "exitCode": 0,
+      "seconds": 1.85,
+      "log": "test-vayrin-ui.log"
+    },
+    {
+      "command": "npm run test:shared-auth-session",
+      "exitCode": 0,
+      "seconds": 1.6,
+      "log": "test-shared-auth-session.log"
+    },
+    {
+      "command": "npm run test:share-routes",
+      "exitCode": 0,
+      "seconds": 1.42,
+      "log": "test-share-routes.log"
+    },
+    {
+      "command": "npm run test:sanitize-error",
+      "exitCode": 0,
+      "seconds": 1.43,
+      "log": "test-sanitize-error.log"
+    },
+    {
+      "command": "npm run test:breadcrumbs",
+      "exitCode": 0,
+      "seconds": 1.46,
+      "log": "test-breadcrumbs.log"
+    },
+    {
+      "command": "npm run test:once-latch",
+      "exitCode": 0,
+      "seconds": 1.45,
+      "log": "test-once-latch.log"
+    },
+    {
+      "command": "npm run test:open-saved-place",
+      "exitCode": 0,
+      "seconds": 1.69,
+      "log": "test-open-saved-place.log"
+    },
+    {
+      "command": "npm run test:shared-auth-sync",
+      "exitCode": 0,
+      "seconds": 1.47,
+      "log": "test-shared-auth-sync.log"
+    },
+    {
+      "command": "npm run test:share-submission",
+      "exitCode": 0,
+      "seconds": 1.52,
+      "log": "test-share-submission.log"
+    },
+    {
+      "command": "npm run test:share-job-client",
+      "exitCode": 0,
+      "seconds": 1.58,
+      "log": "test-share-job-client.log"
+    },
+    {
+      "command": "npm run test:share-jobs-dedupe",
+      "exitCode": 0,
+      "seconds": 1.37,
+      "log": "test-share-jobs-dedupe.log"
+    },
+    {
+      "command": "npm run test:share-jobs-realtime",
+      "exitCode": 0,
+      "seconds": 1.59,
+      "log": "test-share-jobs-realtime.log"
+    },
+    {
+      "command": "npm run test:live-location",
+      "exitCode": 0,
+      "seconds": 1.48,
+      "log": "test-live-location.log"
+    },
+    {
+      "command": "npm run test:place-share",
+      "exitCode": 0,
+      "seconds": 1.89,
+      "log": "test-place-share.log"
+    },
+    {
+      "command": "npm run test:place-share-source",
+      "exitCode": 0,
+      "seconds": 2.05,
+      "log": "test-place-share-source.log"
+    },
+    {
+      "command": "npm run test:wrong-place",
+      "exitCode": 0,
+      "seconds": 1.94,
+      "log": "test-wrong-place.log"
+    },
+    {
+      "command": "npm run test:ai-place-note",
+      "exitCode": 0,
+      "seconds": 1.82,
+      "log": "test-ai-place-note.log"
+    },
+    {
+      "command": "npm run test:note-editor",
+      "exitCode": 0,
+      "seconds": 1.6,
+      "log": "test-note-editor.log"
+    },
+    {
+      "command": "npm run test:ai-note-integration",
+      "exitCode": 0,
+      "seconds": 2.05,
+      "log": "test-ai-note-integration.log"
+    },
+    {
+      "command": "npm run test:saved-browse",
+      "exitCode": 0,
+      "seconds": 2.02,
+      "log": "test-saved-browse.log"
+    },
+    {
+      "command": "npm run test:place-image",
+      "exitCode": 0,
+      "seconds": 1.51,
+      "log": "test-place-image.log"
+    },
+    {
+      "command": "npm run test:video-ai-note-guarantee",
+      "exitCode": 0,
+      "seconds": 4.34,
+      "log": "test-video-ai-note-guarantee.log"
+    },
+    {
+      "command": "npm run test:open-original-post",
+      "exitCode": 0,
+      "seconds": 1.87,
+      "log": "test-open-original-post.log"
+    },
+    {
+      "command": "npm run test:share-jobs-ui",
+      "exitCode": 0,
+      "seconds": 1.8,
+      "log": "test-share-jobs-ui.log"
+    },
+    {
+      "command": "npm run test:quick-check",
+      "exitCode": 0,
+      "seconds": 1.46,
+      "log": "test-quick-check.log"
+    },
+    {
+      "command": "npm run test:share-phase1-ui",
+      "exitCode": 0,
+      "seconds": 1.43,
+      "log": "test-share-phase1-ui.log"
+    },
+    {
+      "command": "npm run test:share-phase1-render",
+      "exitCode": 0,
+      "seconds": 2.33,
+      "log": "test-share-phase1-render.log"
+    },
+    {
+      "command": "npm run test:media-fallback",
+      "exitCode": 0,
+      "seconds": 1.48,
+      "log": "test-media-fallback.log"
+    },
+    {
+      "command": "npm run test:media-evidence",
+      "exitCode": 0,
+      "seconds": 1.75,
+      "log": "test-media-evidence.log"
+    },
+    {
+      "command": "npm run test:media-finalize",
+      "exitCode": 0,
+      "seconds": 1.35,
+      "log": "test-media-finalize.log"
+    },
+    {
+      "command": "npm run test:post-save-enrichment",
+      "exitCode": 0,
+      "seconds": 1.32,
+      "log": "test-post-save-enrichment.log"
+    },
+    {
+      "command": "npm run test:media-reliability",
+      "exitCode": 0,
+      "seconds": 1.89,
+      "log": "test-media-reliability.log"
+    },
+    {
+      "command": "npm run test:media-adversarial",
+      "exitCode": 0,
+      "seconds": 2.08,
+      "log": "test-media-adversarial.log"
+    },
+    {
+      "command": "npm run test:media-mentions",
+      "exitCode": 0,
+      "seconds": 2.71,
+      "log": "test-media-mentions.log"
+    },
+    {
+      "command": "npm run test:media-autosave",
+      "exitCode": 0,
+      "seconds": 2.66,
+      "log": "test-media-autosave.log"
+    },
+    {
+      "command": "npm run test:geographic-context",
+      "exitCode": 0,
+      "seconds": 2.39,
+      "log": "test-geographic-context.log"
+    },
+    {
+      "command": "npm run test:media-run-diagnostics",
+      "exitCode": 0,
+      "seconds": 1.94,
+      "log": "test-media-run-diagnostics.log"
+    },
+    {
+      "command": "npm run test:geographic-context-source",
+      "exitCode": 0,
+      "seconds": 2.94,
+      "log": "test-geographic-context-source.log"
+    },
+    {
+      "command": "npm run test:shared-geo-context",
+      "exitCode": 0,
+      "seconds": 2.97,
+      "log": "test-shared-geo-context.log"
+    },
+    {
+      "command": "npm run test:shared-city-context",
+      "exitCode": 0,
+      "seconds": 2.84,
+      "log": "test-shared-city-context.log"
+    },
+    {
+      "command": "npm run test:geographic-destinations",
+      "exitCode": 0,
+      "seconds": 3.01,
+      "log": "test-geographic-destinations.log"
+    },
+    {
+      "command": "npm run test:source-location-tag",
+      "exitCode": 0,
+      "seconds": 2.9,
+      "log": "test-source-location-tag.log"
+    },
+    {
+      "command": "npm run test:no-match-diagnostics",
+      "exitCode": 0,
+      "seconds": 2.85,
+      "log": "test-no-match-diagnostics.log"
+    },
+    {
+      "command": "npm run test:provider-api-path",
+      "exitCode": 0,
+      "seconds": 2.8,
+      "log": "test-provider-api-path.log"
+    },
+    {
+      "command": "npm run test:onboarding-routing",
+      "exitCode": 0,
+      "seconds": 1.35,
+      "log": "test-onboarding-routing.log"
+    },
+    {
+      "command": "npm run test:onboarding-demo",
+      "exitCode": 0,
+      "seconds": 1.31,
+      "log": "test-onboarding-demo.log"
+    },
+    {
+      "command": "npm run test:name-driven",
+      "exitCode": 0,
+      "seconds": 3.52,
+      "log": "test-name-driven.log"
+    },
+    {
+      "command": "npm run test:onboarding-anonymous",
+      "exitCode": 0,
+      "seconds": 1.82,
+      "log": "test-onboarding-anonymous.log"
+    },
+    {
+      "command": "npm run test:auth-deeplink",
+      "exitCode": 0,
+      "seconds": 1.54,
+      "log": "test-auth-deeplink.log"
+    },
+    {
+      "command": "npm run test:auth-account-state",
+      "exitCode": 0,
+      "seconds": 1.47,
+      "log": "test-auth-account-state.log"
+    },
+    {
+      "command": "npm run test:auth-errors",
+      "exitCode": 0,
+      "seconds": 1.4,
+      "log": "test-auth-errors.log"
+    },
+    {
+      "command": "npm run test:auth-recovery",
+      "exitCode": 0,
+      "seconds": 1.72,
+      "log": "test-auth-recovery.log"
+    },
+    {
+      "command": "npm run test:auth-screen-contracts",
+      "exitCode": 0,
+      "seconds": 1.62,
+      "log": "test-auth-screen-contracts.log"
+    },
+    {
+      "command": "npm run test:nearby-eligibility",
+      "exitCode": 0,
+      "seconds": 1.57,
+      "log": "test-nearby-eligibility.log"
+    },
+    {
+      "command": "npm run test:nearby-arbitration",
+      "exitCode": 0,
+      "seconds": 1.49,
+      "log": "test-nearby-arbitration.log"
+    },
+    {
+      "command": "npm run test:reminder-distance-cleanup",
+      "exitCode": 0,
+      "seconds": 1.36,
+      "log": "test-reminder-distance-cleanup.log"
+    },
+    {
+      "command": "npm run test:offline-mode",
+      "exitCode": 0,
+      "seconds": 1.62,
+      "log": "test-offline-mode.log"
+    },
+    {
+      "command": "npm run test:offline-reminders",
+      "exitCode": 0,
+      "seconds": 2.32,
+      "log": "test-offline-reminders.log"
+    },
+    {
+      "command": "npm run test:saved-place-snapshots",
+      "exitCode": 0,
+      "seconds": 2.24,
+      "log": "test-saved-place-snapshots.log"
+    },
+    {
+      "command": "npm run test:onboarding-v2",
+      "exitCode": 0,
+      "seconds": 11.72,
+      "log": "test-onboarding-v2.log"
+    },
+    {
+      "command": "npm run test:onboarding-google-integration",
+      "exitCode": 0,
+      "seconds": 1.9,
+      "log": "test-onboarding-google-integration.log"
+    },
+    {
+      "command": "npm run test:onboarding-fully-offline",
+      "exitCode": 0,
+      "seconds": 2,
+      "log": "test-onboarding-fully-offline.log"
+    },
+    {
+      "command": "npm run test:onboarding-no-live-services",
+      "exitCode": 0,
+      "seconds": 1.4,
+      "log": "test-onboarding-no-live-services.log"
+    },
+    {
+      "command": "npm run test:onboarding-authentic-phase2-auth",
+      "exitCode": 0,
+      "seconds": 1.96,
+      "log": "test-onboarding-authentic-phase2-auth.log"
+    },
+    {
+      "command": "npm run test:onboarding-install-lifecycle",
+      "exitCode": 0,
+      "seconds": 1.9,
+      "log": "test-onboarding-install-lifecycle.log"
+    }
+  ]
+}

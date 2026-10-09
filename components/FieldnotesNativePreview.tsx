@@ -15,6 +15,9 @@ import { useTheme } from '@/lib/theme';
 import { selectOfflineOnboardingFixture } from '@/onboarding/fixtures/offlineOnboardingFixtures';
 import publicPlaces from '../artifacts/fieldnotes-implementation/real-data/public-place-content.json';
 import type { SavedPlaceWithPlace } from '@/types';
+import { useEffect } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import { FieldnotesPracticeScene } from '@/components/onboarding/v2/FieldnotesPracticeScene';
 
 const capturedAt = new Date().toISOString();
 const saved = getDemoSeededSavedPlacesSync()[0];
@@ -46,8 +49,13 @@ const activityData: ActivityPreviewData = {
  * Auth routing, sessions and persistence services are never replaced.
  */
 export function FieldnotesNativePreview({ surface }: { surface: string }) {
-  const { colors } = useTheme();
-  if (surface === 'real-saved') return <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}><SavedPlacesLibrary savedPlaces={realPlaces} nearbyPlaces={[]} locationState="unavailable" loading={false} requestLocationPermission={async () => false} onSelectPlace={() => undefined} onSaveFromLink={() => undefined} onSearchManually={() => undefined} /></SafeAreaView>;
+  const { colors, setThemePreference } = useTheme();
+  const { theme, count } = useLocalSearchParams<{ theme?: string; count?: string }>();
+  useEffect(() => {
+    if (theme === 'light' || theme === 'dark') setThemePreference(theme);
+  }, [theme, setThemePreference]);
+  if (surface === 'practice-receipt' || surface === 'practice-place') return <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg, justifyContent: 'center', padding: 24 }}><FieldnotesPracticeScene fixtureId={localFixture.id} stage={surface === 'practice-place' ? 'place' : 'receipt'} /></SafeAreaView>;
+  if (surface === 'real-saved') return <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}><SavedPlacesLibrary savedPlaces={count === '0' ? [] : count === '1' ? realPlaces.slice(0, 1) : realPlaces} nearbyPlaces={[]} locationState="unavailable" loading={false} requestLocationPermission={async () => false} onSelectPlace={() => undefined} onSaveFromLink={() => undefined} onSearchManually={() => undefined} /></SafeAreaView>;
   if (surface === 'photo-place' || surface === 'real-place') return <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}><ScrollView><View style={{ padding: 16 }}><SelectedPlaceDetails saved={surface === 'photo-place' ? fixturePlace : realPlaces[0]} allSavedPlaces={[]} onGetDirections={() => undefined} onRequestDismiss={() => undefined} /></View></ScrollView></SafeAreaView>;
   if (surface === 'map') return <MapScreen />;
   if (surface === 'settings') return <SettingsScreen />;
