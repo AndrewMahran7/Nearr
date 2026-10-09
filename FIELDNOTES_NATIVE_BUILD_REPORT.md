@@ -12,7 +12,17 @@
 
 ## Build status
 
-Submission pending the last source checkpoint. This document will be updated with the actual build ID, source SHA, version, build number, runtime, result and installation link. This is not a claim of an available binary.
+EAS build **74a22771-5998-485b-ac16-f316caf7491d** was submitted October 9, 2026 at 21:17:38 UTC and is compiling. [Build page](https://expo.dev/accounts/andrewmahran/projects/nearr/builds/74a22771-5998-485b-ac16-f316caf7491d).
+
+| Field | EAS-recorded value |
+|---|---|
+| Version / build / runtime | `1.6.59` / `59` / `1.6.59` |
+| Source SHA | `bb2a705ceda39f0938d2a90eca88952828ba614d` |
+| Profile / channel / environment | `development` / `development` / `development` |
+| Distribution | Internal, development client |
+| Credentials | Existing host and Share Extension ad-hoc profiles reused; all registered devices included |
+
+Compilation, downloadable binary and IPA inspection remain pending at this checkpoint. No new Apple-account sign-in or provisioning change was needed.
 
 Required command: `npm run dev:build -- --yes`. It verifies the EAS Development environment before invoking the fixed iOS Development profile. The new icon, SDK51-compatible haptics/gradient modules and native Share Extension require this binary; OTA alone cannot deliver them.
 

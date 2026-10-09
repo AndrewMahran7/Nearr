@@ -9,11 +9,13 @@ const folder = process.argv[3] || `${theme}-mode`;
 const requested = (process.argv[4] || 'map,real-saved,photo-place,real-place,activity,review,account,onboarding,settings,practice-place,practice-receipt').split(',');
 const descriptions = {
   map: '10 bundled demo saved places; native Google map; signed-out Activity guard active',
-  'real-saved': '25 public business names read from verified Development saved places; no user identities; no photos invented',
+  'real-saved': '25 real public place records from verified Development, presented as read-only saved rows; no user identities; no photos invented',
   'real-place': 'Longest real public business name; unavailable image state; read-only component',
   'photo-place': 'Bundled Dorset Quarry onboarding fixture with two distinct bundled photos; read-only actual detail component',
   activity: 'Read-only Activity fixture: processing, review, recovery, and completed states',
   review: 'Read-only phase2-preview-mixed-5 fixture; candidate source thumbnails are synthetic fixture evidence',
+  'quick-check': 'Read-only vayrin-confirm-neutral single-candidate fixture; no place photo',
+  selected: 'Actual native map selection for bundled Bantam demo saved place; unavailable imagery',
   account: 'Actual account screen; no sign-in submission', onboarding: 'Actual onboarding entry screen; no mutation',
   settings: 'Actual Settings screen; no account or notification changes',
   'practice-place': 'Actual Fieldnotes practice component; scripted bundled onboarding place',
@@ -22,9 +24,12 @@ const descriptions = {
 (async () => {
   for (const surface of requested) {
     if (!(surface in descriptions)) throw new Error(`Unknown read-only surface ${surface}`);
-    const route = `nearr://dev-qa?fieldnotes=${surface}&theme=${theme}${surface === 'review' ? '&jobId=phase2-preview-mixed-5' : ''}`;
+    const owner = surface === 'quick-check' ? 'review' : surface === 'selected' ? 'map' : surface;
+    const suffix = surface === 'review' ? '&jobId=phase2-preview-mixed-5' : surface === 'quick-check' ? '&jobId=vayrin-confirm-neutral' : surface === 'selected' ? `&savedPlaceId=demo-saved-bantam&openRequestId=fieldnotes-${Date.now()}` : '';
+    const route = `nearr://dev-qa?fieldnotes=${owner}&theme=${theme}${suffix}`;
     command('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', `'${route}'`);
-    await wait(surface === 'map' ? 6500 : 2200);
+    // Cold native tiles and bundled images can take several seconds on a debug emulator.
+    await wait(surface === 'map' ? 16000 : 9000);
     const file = `${folder}/android-${surface}.png`;
     cp.execFileSync(process.execPath, [path.join(__dirname, 'captureFieldnotesAndroid.cjs'), file, route, descriptions[surface]], { encoding: 'utf8', timeout: 60000 });
     console.log(`Captured ${file}`);

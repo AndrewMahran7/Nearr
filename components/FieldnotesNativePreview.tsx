@@ -36,7 +36,7 @@ const fixturePlace: SavedPlaceWithPlace = { ...saved, id: `onboarding-scripted-s
 };
 const activityData: ActivityPreviewData = {
   jobs: [
-    buildPhase2PreviewJob('phase2-preview-mixed-5'),
+    { ...buildPhase2PreviewJob('phase2-preview-mixed-5'), created_at: capturedAt },
     { ...buildPhase2PreviewJob('phase2-preview-1'), id: 'fieldnotes-preview-processing', status: 'processing_metadata', decision: null, candidate_payload: null, created_at: capturedAt },
     { ...buildPhase2PreviewJob('phase2-preview-0'), id: 'fieldnotes-preview-recovery', status: 'failed', decision: 'failed', failure_reason: 'The original post could not be opened.', failure_category: 'media_access_required', created_at: capturedAt },
   ],
