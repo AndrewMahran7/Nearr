@@ -1,0 +1,9 @@
+# Osaka Instagram public-video capture, 2026-10-08/09 UTC
+
+The fresh Osaka lead was observed on its public Instagram page and acquired directly from that URL with unauthenticated `yt-dlp`, no cookies, and a 30 MiB limit. `ffmpeg` sampled all 13.16 seconds at two frames per second. The 26 timestamped native frames, video and frame hashes, complete caption, first-pass notes, and independent blind review are retained privately outside Git. The source-only candidate is in `instagram_new_visual_candidates.jsonl`; its public URL, duration, SHA-256, and frame count are in `instagram_visual_capture_inventory.jsonl`. No media or complete caption is committed.
+
+The first-pass review found three labeled café sequences and a pink unlabeled opening. The blind second reviewer matched the opening to the first sequence's AKICHI/Namba rooftop structure, establishing three historical depicted venues. Independent operator and photographic sources show a key caption mismatch: the first scene depicts SAKImoto Bakery Café on the AKICHI rooftop, while SAKImoto COFFEE Roastery is a separate storefront across the street and does not appear in the video.
+
+This reel is kept as a candidate because two depicted physical branches are no longer visitable. FlowerQuiche's original Tennoji branch closed before the June 2022 post, although the footage shows that former storefront; its successor moved elsewhere. PONY PONY HUNGRY's Edobori, Osaka branch later closed and the business relocated to Kanazawa. The video is valuable for historical-location and misleading-metadata review, but it should not be counted as a ready current recommendation. The normal `visual_only` view keeps on-video café-name overlays and is OCR-bearing.
+
+The independent second-pass evidence and links are in the ignored review JSON for this case. The source-only inventory deliberately remains `state:candidate` without temporary media paths or private label fields.
