@@ -65,7 +65,7 @@ export function MapBottomSheet({ mode, loading, nearbyPlaces, locationState, sav
       if (target === 'full') onRequestSavedMode(); snapTo(target);
     }, onPanResponderTerminate: () => snapTo(snapRef.current),
   }), [hiddenOffset, onRequestSavedMode, snapOffset, snapTo, translateY]);
-  return <Animated.View style={[styles.sheet, { bottom: bottomInset, height: expandedHeight, backgroundColor: colors.surface, borderColor: colors.border, transform: [{ translateY }] }, expanded && styles.expanded]}>
+  return <View pointerEvents="box-none" style={[styles.clip, { bottom: bottomInset, height: expandedHeight }, expanded && styles.expanded]}><Animated.View style={[styles.sheet, { height: expandedHeight, backgroundColor: colors.surface, borderColor: colors.border, transform: [{ translateY }] }]}>
     <View {...pan.panHandlers}>
       <Pressable onPress={() => expanded ? snapTo('partial') : openSaved()} hitSlop={10} accessibilityRole="button" accessibilityLabel={expanded ? 'Return to map' : 'Open saved places'} style={styles.handleTarget}><View style={[styles.handle, { backgroundColor: colors.border }]} /></Pressable>
       {expanded ? <View style={styles.header}>
@@ -82,10 +82,11 @@ export function MapBottomSheet({ mode, loading, nearbyPlaces, locationState, sav
         <Text style={[typography.caption, { marginTop: 4 }]}>{savedPlaces.length ? 'A little inspiration, everywhere.' : 'Share a post or find a place to save.'}</Text>
         </>}
       </Pressable>}
-  </Animated.View>;
+  </Animated.View></View>;
 }
 const styles = StyleSheet.create({
-  sheet: { position: 'absolute', left: 16, right: 16, borderRadius: 28, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 20, shadowOffset: { width: 0, height: -4 }, elevation: 8 },
+  clip: { position: 'absolute', left: 16, right: 16, borderRadius: 28, overflow: 'hidden' },
+  sheet: { position: 'absolute', left: 0, right: 0, top: 0, borderRadius: 28, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   expanded: { left: 0, right: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }, handleTarget: { height: 24, alignItems: 'center', justifyContent: 'center' }, handle: { width: 36, height: 4, borderRadius: 999 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingBottom: 16 }, flex: { flex: 1 }, icon: { width: 44, height: 44, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   peek: { paddingHorizontal: 20, paddingBottom: 16 }, eyebrow: { fontSize: 11, lineHeight: 16, fontWeight: '700', letterSpacing: 1.2, marginBottom: 8 }, peekTitle: { flexDirection: 'row', alignItems: 'center', gap: 12 },

@@ -47,12 +47,28 @@ import * as Location from 'expo-location';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // iOS uses the default provider (Apple Maps) — the Google Maps iOS SDK
 // requires the `AirGoogleMaps` Xcode subproject, which we don't link in
 // our managed/EAS build. Android keeps PROVIDER_GOOGLE since the Google
 // Maps Android SDK is wired via app.json `android.config.googleMaps`.
 const MAP_PROVIDER = Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined;
+
+const LIGHT_MAP_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#F0EEE6' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#777D6E' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#F7F4EE' }] },
+  { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#DDE7CD' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFFDF7' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#E4E0D5' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#E8DDC2' }] },
+  { featureType: 'road.highway', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#BDD8DB' }] },
+];
 
 const DARK_MAP_STYLE = [
   { elementType: 'geometry', stylers: [{ color: '#303A31' }] },
@@ -498,6 +514,7 @@ export default function MapScreen() {
     reminderSource: rawReminderSource,
     nearbyCount: rawNearbyCount,
     mapGroupId: rawMapGroupId,
+    fieldnotes: rawFieldnotesPreview,
   } = useLocalSearchParams<{
     savedPlaceId?: string | string[];
     savedPlaceGoogleId?: string | string[];
@@ -507,6 +524,7 @@ export default function MapScreen() {
     reminderSource?: string | string[];
     nearbyCount?: string | string[];
     mapGroupId?: string | string[];
+    fieldnotes?: string | string[];
   }>();
   const savedPlaceId = firstParam(rawSavedPlaceId);
   const savedPlaceGoogleId = firstParam(rawSavedPlaceGoogleId);
@@ -549,6 +567,7 @@ export default function MapScreen() {
   // Map Preview keeps the real MapView but skips Supabase / Google / location.
   // Demo Mode wins if both flags are set (it doesn't render MapView at all).
   const mapPreview = !demo && isMapPreviewMode();
+  const fieldnotesNativeCapture = __DEV__ && mapPreview && firstParam(rawFieldnotesPreview) === 'map';
   const mapPinRedesignEnabled = isMapPinRedesignEnabled();
   const configuredClusteringEnabled = isMapClusteringEnabled();
   const [debugClusteringOverride, setDebugClusteringOverride] = useState<boolean | null>(null);
@@ -3748,7 +3767,7 @@ export default function MapScreen() {
         ref={mapRef}
         provider={MAP_PROVIDER}
         style={StyleSheet.absoluteFill}
-        customMapStyle={Platform.OS === 'android' && resolvedTheme === 'dark' ? DARK_MAP_STYLE : undefined}
+        customMapStyle={Platform.OS === 'android' ? (resolvedTheme === 'dark' ? DARK_MAP_STYLE : LIGHT_MAP_STYLE) : undefined}
         userInterfaceStyle={resolvedTheme}
         showsPointsOfInterest={false}
         // Only show the user dot when we actually have a fix. Toggling
@@ -3841,7 +3860,7 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {__DEV__ && !cleanOnboardingLanding && !phase2MapActive ? (
+      {__DEV__ && !cleanOnboardingLanding && !phase2MapActive && !fieldnotesNativeCapture ? (
         <View style={[styles.mapDiagnostics, { top: safeTopInset + topChromeClearance + 8 }]}>
           {mapDiagnosticsExpanded ? <>
             <Text style={styles.mapDiagnosticsText}>
@@ -3901,7 +3920,7 @@ export default function MapScreen() {
           UI now, and it never blocks the map. */}
 
       {/* Map Preview Mode banner (dev-only) */}
-      {mapPreview ? (
+      {mapPreview && !fieldnotesNativeCapture ? (
         <View style={styles.previewBadge} pointerEvents="none">
           <View style={styles.previewBadgeDot} />
           <Text style={styles.previewBadgeText}>Map Preview Mode</Text>
@@ -4100,6 +4119,7 @@ export default function MapScreen() {
           rest of the map stays pannable underneath. Hidden while the search
           dropdown is open so there is only ever ONE visible search input. */}
       {shouldShowMapControls && (sheetSnap !== 'full' || !!selected) ? (
+        <><LinearGradient pointerEvents="none" colors={[colors.bg, `${colors.bg}F2`, `${colors.bg}00`]} locations={[0, 0.65, 1]} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: safeTopInset + 190 }} />
         <View style={styles.topChrome} pointerEvents="box-none">
           <View style={styles.brandRow}>
             <MapBrand />
@@ -4113,11 +4133,11 @@ export default function MapScreen() {
             {!phase2MapActive ? <MapCategoryFilterBar
               options={mapFilterChoices} value={mapCategoryFilter}
               onChange={handleSelectMapCategory}
-              onFitAll={visiblePlaces.length > 0 && !mapPreview ? fitVisiblePlaces : undefined}
+              onFitAll={visiblePlaces.length > 0 ? fitVisiblePlaces : undefined}
             /> : null}
           </View>
           {phase2MapActive ? <MapCategoryFilterBar options={mapFilterChoices} value={mapCategoryFilter} onChange={handleSelectMapCategory} expanded onFitAll={visiblePlaces.length > 0 && !mapPreview ? fitVisiblePlaces : undefined} /> : null}
-        </View>
+        </View></>
       ) : null}
 
       {nearbyExplorer ? (
