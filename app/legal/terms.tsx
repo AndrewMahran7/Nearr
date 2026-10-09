@@ -1,16 +1,17 @@
+import { useTheme } from '@/lib/theme';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Card, Screen } from '@/components';
 import {
-  Colors,
   LEGAL_CONTACT_EMAIL,
   LEGAL_EFFECTIVE_DATE,
   Spacing,
   TERMS_SECTIONS,
-  Typography,
 } from '@/constants';
 
 export default function TermsScreen() {
+  const { colors: Colors, typography: Typography } = useTheme();
+  const styles = createStyles(Colors);
   return (
     <Screen padded={false}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -43,7 +44,7 @@ export default function TermsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(Colors: ReturnType<typeof useTheme>['colors']) { return StyleSheet.create({
   scroll: {
     padding: Spacing.lg,
     paddingBottom: Spacing.xxl,
@@ -69,3 +70,4 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
 });
+}

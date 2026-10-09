@@ -31,7 +31,7 @@ import {
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 
-import { Button, Card, DemoModeBanner, DevModeBanner, HowNearrWorksModal, Input, Screen, SetupChecklist } from '@/components';
+import { Button, Card, DemoModeBanner, DevModeBanner, HowNearrWorksModal, IconButton, Input, Screen, SetupChecklist } from '@/components';
 import { Radius, Spacing } from '@/constants';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -765,6 +765,13 @@ export default function SettingsScreen() {
   return (
     <Screen padded={false}>
       <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.pageHeader}>
+          <View style={{ flex: 1, gap: 8 }}>
+            <Text style={typography.eyebrow}>MAKE IT YOURS</Text>
+            <Text style={typography.largeTitle}>Settings</Text>
+          </View>
+          <IconButton icon="x" label="Close settings" onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/map')} />
+        </View>
         <DevModeBanner visible={isLocalUiSession} />
         <DemoModeBanner />
         <Text style={styles.sectionLabel}>Appearance</Text>
@@ -1204,7 +1211,7 @@ function ThemeOption({
   styles: ReturnType<typeof createStyles>;
 }) {
   return (
-    <Pressable onPress={onPress} style={[styles.unitOption, active && styles.unitOptionActive]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={`${label} appearance`} accessibilityState={{ selected: active }} onPress={onPress} style={[styles.unitOption, active && styles.unitOptionActive]}>
       <Text style={[typography.label, { color: active ? colors.textInverse : colors.text }]}>
         {label}
       </Text>
@@ -1237,7 +1244,7 @@ function ToggleRow({
           </Text>
         ) : null}
       </View>
-      <Switch value={value} onValueChange={onValueChange} disabled={disabled} />
+      <Switch accessibilityLabel={label} accessibilityHint={sub} value={value} onValueChange={onValueChange} disabled={disabled} trackColor={{ false: colors.controlBorder, true: colors.primary }} />
     </View>
   );
 }
@@ -1247,7 +1254,8 @@ function createStyles(
   typography: ReturnType<typeof useTheme>['typography'],
 ) {
   return StyleSheet.create({
-    scroll: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
+    scroll: { padding: Spacing.xl, paddingBottom: 64 },
+    pageHeader: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 24 },
     center: { paddingVertical: Spacing.xxl, alignItems: 'center' },
     muted: { color: colors.textSecondary },
 
@@ -1259,8 +1267,9 @@ function createStyles(
       marginBottom: Spacing.sm,
       marginTop: Spacing.lg,
     },
-    section: { marginBottom: Spacing.sm, gap: Spacing.md },
+    section: { marginBottom: Spacing.sm, gap: Spacing.md, paddingHorizontal: 0, backgroundColor: 'transparent', borderWidth: 0, borderBottomWidth: 1, borderRadius: 0, paddingBottom: 24 },
     helpRow: {
+      minHeight: 56,
       flexDirection: 'row',
       alignItems: 'center',
     },
@@ -1275,6 +1284,7 @@ function createStyles(
       marginLeft: Spacing.md,
     },
     deleteRow: {
+      minHeight: 56,
       flexDirection: 'row',
       alignItems: 'center',
     },
@@ -1295,12 +1305,14 @@ function createStyles(
       gap: Spacing.sm,
     },
     unitOption: {
+      minHeight: 44,
+      justifyContent: 'center',
       flex: 1,
       paddingVertical: Spacing.sm,
       paddingHorizontal: Spacing.md,
       borderRadius: Radius.pill,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: colors.controlBorder,
       backgroundColor: colors.bg,
       alignItems: 'center',
     },

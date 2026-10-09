@@ -51,6 +51,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (!cancelled && isThemePreference(storedPreference)) {
           setThemePreferenceState(storedPreference);
         }
+      } catch {
+        // A storage failure must not prevent startup; Light remains usable.
       } finally {
         if (!cancelled) {
           setIsThemeReady(true);
@@ -65,7 +67,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setThemePreference = useCallback((preference: ThemePreference) => {
     setThemePreferenceState(preference);
-    void AsyncStorage.setItem(THEME_PREFERENCE_KEY, preference);
+    void AsyncStorage.setItem(THEME_PREFERENCE_KEY, preference).catch(() => undefined);
   }, []);
 
   // Fieldnotes Light is the first-install default. Existing explicit preferences persist.
@@ -103,6 +105,9 @@ export function useTheme() {
 
   return context;
 }
+
+/** Startup can render before the provider has mounted. */
+export function useOptionalTheme() { return useContext(ThemeContext); }
 
 function isThemePreference(value: string | null): value is ThemePreference {
   return value === 'system' || value === 'light' || value === 'dark';

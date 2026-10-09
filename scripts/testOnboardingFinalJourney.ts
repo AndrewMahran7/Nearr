@@ -203,14 +203,14 @@ assert.doesNotMatch(secondHalf, /router\.replace\('\/\(tabs\)\/map'\)/, 'AuthGat
 assert.match(secondHalf, /realResultHero/);
 
 const appConfig = JSON.parse(readFileSync(join(root, 'app.json'), 'utf8'));
-assert.equal(appConfig.expo.version, '1.5.58');
+assert.equal(appConfig.expo.version, '1.6.59');
 assert.equal(appConfig.expo.icon, './assets/icon.png');
 assert.equal(appConfig.expo.ios.icon, './assets/icon.png');
 assert.equal(appConfig.expo.android.adaptiveIcon.foregroundImage, './assets/icon.png');
-assert.equal(appConfig.expo.android.adaptiveIcon.backgroundColor, '#151515');
+assert.equal(appConfig.expo.android.adaptiveIcon.backgroundColor, '#F7F4EE');
 const icon = readFileSync(join(root, 'assets/icon.png'));
-assert.equal(createHash('sha256').update(icon).digest('hex').toUpperCase(), '6DC46F0AEF13561CAFE6447DD47847E8505A609FF6AFC9FAB66ED5A104E23D11');
-assert.equal(icon.readUInt32BE(16), 1254);
-assert.equal(icon.readUInt32BE(20), 1254);
+assert.equal(createHash('sha256').update(icon).digest('hex').toUpperCase(), 'AC3ED31CF494843C72C5049E480E77F2AF2FC74DCC8B9A85CE636ABA0CC2DB2A');
+assert.equal(icon.readUInt32BE(16), 1024);
+assert.equal(icon.readUInt32BE(20), 1024);
 
 console.log('Onboarding final journey: direct success, review, opt-out, existing/new account, denied permissions, restart, offline Phase 1, and native icon passed.');

@@ -1,7 +1,8 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Colors } from '@/constants';
 import type { StartupOwner } from '@/lib/startupWatchdogCore';
+import { useOptionalTheme } from '@/lib/theme';
 
 export function StartupSurface({
   owner,
@@ -12,6 +13,9 @@ export function StartupSurface({
   recovery?: boolean;
   onRetry?: () => void;
 }) {
+  const theme = useOptionalTheme();
+  const palette = theme?.colors ?? Colors;
+  const styles = createStyles(palette);
   return (
     <View
       style={styles.container}
@@ -20,7 +24,7 @@ export function StartupSurface({
       accessibilityLabel={recovery ? 'Nearr startup recovery' : 'Nearr is opening'}
       testID={recovery ? 'startup-recovery' : 'startup-loading'}
     >
-      <View style={styles.mark}><Text style={styles.markText}>N</Text></View>
+      <Image source={require('../assets/icon.png')} style={styles.mark} accessible={false} />
       <Text style={styles.title}>{recovery ? 'Nearr needs another try' : 'Opening Nearr'}</Text>
       <Text style={styles.body}>
         {recovery
@@ -40,14 +44,14 @@ export function StartupSurface({
           <Text style={styles.buttonText}>Try again</Text>
         </Pressable>
       ) : (
-        <ActivityIndicator color={Colors.primary} size="small" />
+        <ActivityIndicator color={palette.primary} size="small" />
       )}
-      <Text style={styles.owner}>STARTUP OWNER: {owner}</Text>
+      {__DEV__ && <Text style={styles.owner}>STARTUP OWNER: {owner}</Text>}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(Colors: typeof import('@/constants').Colors) { return StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -65,7 +69,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   markText: { color: Colors.textInverse, fontSize: 28, fontWeight: '900' },
-  title: { color: Colors.text, fontSize: 24, fontWeight: '800', textAlign: 'center' },
+  title: { color: Colors.text, fontSize: 23, lineHeight: 28, fontWeight: '600', textAlign: 'center' },
   body: {
     maxWidth: 330,
     marginTop: 10,
@@ -86,4 +90,4 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: Colors.textInverse, fontSize: 16, fontWeight: '800' },
   owner: { marginTop: 24, color: Colors.textMuted, fontSize: 10, letterSpacing: 1.2 },
-});
+}); }

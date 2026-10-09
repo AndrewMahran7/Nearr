@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Button, Card, Screen } from '@/components';
 import { Spacing } from '@/constants';
@@ -15,14 +15,18 @@ import { PHASE2_PREVIEW_FIXTURES } from '@/lib/phase2Preview';
 import { VAYRIN_CANDIDATE_FIXTURES } from '@/lib/vayrinCandidateFixtures';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import { getSavedPlacesCacheSnapshot } from '@/hooks/useSavedPlaces';
+import { isMapPreviewMode } from '@/lib/mapPreview';
+import { FieldnotesNativePreview } from '@/components/FieldnotesNativePreview';
 
 export default function DevelopmentQaScreen() {
+  const params = useLocalSearchParams<{ fieldnotes?: string }>();
   const router = useRouter();
   const { user } = useAuth();
   const { colors, typography } = useTheme();
   const [busy, setBusy] = useState<'onboarding_only' | 'fresh_anonymous' | null>(null);
 
   if (!isOnboardingV2DevelopmentResetAvailable()) return <Redirect href="/" />;
+  if (__DEV__ && isMapPreviewMode() && typeof params.fieldnotes === 'string') return <FieldnotesNativePreview surface={params.fieldnotes} />;
 
   async function run(mode: 'onboarding_only' | 'fresh_anonymous') {
     if (busy) return;

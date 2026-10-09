@@ -3,7 +3,7 @@
     "name": "Nearr",
     "slug": "nearr",
     "scheme": "nearr",
-    "version": "1.5.58",
+    "version": "1.6.59",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -29,7 +29,7 @@
       "package": "com.nearr.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#151515"
+        "backgroundColor": "#F7F4EE"
       },
       "permissions": [
         "ACCESS_COARSE_LOCATION",

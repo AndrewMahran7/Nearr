@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { MapSnackbar } from '@/components/map';
+import { SaveArrival } from '@/components/SaveArrival';
+import { hapticSuccess } from '@/lib/haptics';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import {
@@ -51,6 +53,7 @@ export function AutoSaveUndoToast() {
               if (!recent) return;
               upsertSavedPlaceIntoCache(recent.savedPlace);
               setItem(recent);
+              hapticSuccess();
               void trackEvent('auto_save_undo_shown', {
                 surface: 'in_app_toast',
                 category: recent.savedPlace.category ?? 'other',
@@ -85,6 +88,8 @@ export function AutoSaveUndoToast() {
   }
 
   return (
+    <>
+    <SaveArrival identity={item?.savedPlaceId ?? null} />
     <MapSnackbar
       visible={!!item}
       message={item ? `Saved ${item.savedPlace.place.name} to your map` : ''}
@@ -94,5 +99,6 @@ export function AutoSaveUndoToast() {
       onDismiss={() => setItem(null)}
       durationMs={8000}
     />
+    </>
   );
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Image,
@@ -56,7 +56,7 @@ import {
 import {
   AuthDivider,
   GoogleSignInButton,
-  OnboardingColors,
+  useOnboardingColors,
   OnboardingPasswordField,
   OnboardingPrimaryButton,
   OnboardingRadius,
@@ -118,6 +118,8 @@ const DEV_PASSWORD_LOGIN_ENABLED =
  * `resolvePostAuthRoute`, the one save-aware post-auth resolver.
  */
 export default function AccountAuthScreen() {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
   const router = useRouter();
   const params = useLocalSearchParams<{ reason?: string; intent?: string | string[] }>();
   const { session } = useAuth();
@@ -633,7 +635,6 @@ export default function AccountAuthScreen() {
         onBack={() => void handleBack()}
       >
         <View style={styles.brand}>
-          <View style={styles.glow} />
           <Image source={require('../../assets/icon.png')} style={styles.brandIcon} accessibilityLabel="Nearr logo" />
           <Text style={styles.wordmark}>Nearr</Text>
         </View>
@@ -677,7 +678,7 @@ export default function AccountAuthScreen() {
                   buttonType={
                     AppleAuthentication.AppleAuthenticationButtonType.CONTINUE
                   }
-                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+                  buttonStyle={OnboardingColors.background === '#171A18' ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
                   cornerRadius={OnboardingRadius.button}
                   style={styles.appleButton}
                   onPress={() => void handleApple()}
@@ -931,6 +932,8 @@ function LinkButton({
   disabled?: boolean;
   busy?: boolean;
 }) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
   return (
     <Pressable
       onPress={onPress}
@@ -949,7 +952,8 @@ function LinkButton({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) {
+return StyleSheet.create({
   flex: {
     flex: 1,
   },
@@ -974,23 +978,23 @@ const styles = StyleSheet.create({
   wordmark: {
     color: OnboardingColors.text,
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '600',
     letterSpacing: -0.3,
     marginTop: 12,
   },
   headline: {
     color: OnboardingColors.text,
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 32,
+    fontWeight: '600',
     letterSpacing: -0.5,
-    lineHeight: 34,
-    textAlign: 'center',
+    lineHeight: 38,
+    textAlign: 'left',
   },
   subtext: {
     color: OnboardingColors.textMuted,
     fontSize: 16,
     lineHeight: 22,
-    textAlign: 'center',
+    textAlign: 'left',
     marginTop: 10,
   },
   form: {
@@ -1020,7 +1024,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   input: {
-    height: 56,
+    minHeight: 56,
+    paddingVertical: 14,
     borderRadius: OnboardingRadius.button,
     backgroundColor: OnboardingColors.card,
     borderWidth: 1,
@@ -1033,7 +1038,7 @@ const styles = StyleSheet.create({
     color: OnboardingColors.textMuted,
     fontSize: 13,
     lineHeight: 18,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   linkButton: {
     minHeight: 44,
@@ -1102,7 +1107,7 @@ const styles = StyleSheet.create({
   developerTitle: {
     color: OnboardingColors.text,
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '600',
   },
   developerSubtitle: {
     color: OnboardingColors.textMuted,
@@ -1143,6 +1148,7 @@ const styles = StyleSheet.create({
     color: OnboardingColors.textMuted,
     fontSize: 14,
     lineHeight: 20,
-    textAlign: 'center',
+    textAlign: 'left',
   },
 });
+}

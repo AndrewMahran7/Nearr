@@ -12,6 +12,7 @@ import { Animated, Pressable, StyleSheet, Text } from 'react-native';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { TRANSIENT_MESSAGE_MS } from '@/lib/transientMessage';
+import { useReduceMotion } from '@/lib/useReduceMotion';
 
 type Props = {
   visible: boolean;
@@ -44,6 +45,7 @@ export function MapSnackbar({
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const anim = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
 
   // `onDismiss` is almost always an inline arrow from the map, so its identity
   // changes on every parent render. Holding it in a ref keeps it OUT of the
@@ -56,11 +58,17 @@ export function MapSnackbar({
 
   useEffect(() => {
     if (!visible) return;
-    Animated.spring(anim, {
+    const animation = Animated.timing(anim, {
       toValue: 1,
       useNativeDriver: true,
-      bounciness: 6,
-    }).start();
+      duration: reduceMotion ? 120 : 220,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [visible, anim, token, reduceMotion]);
+
+  useEffect(() => {
+    if (!visible) return;
     const id = setTimeout(() => dismissRef.current(), durationMs);
     // Cleanup runs on unmount and whenever the token changes, so a previous
     // message's timer can never dismiss the message that replaced it.
@@ -85,7 +93,7 @@ export function MapSnackbar({
             {
               translateY: anim.interpolate({
                 inputRange: [0, 1],
-                outputRange: [16, 0],
+                outputRange: [reduceMotion ? 0 : 16, 0],
               }),
             },
           ],
@@ -93,7 +101,7 @@ export function MapSnackbar({
       ]}
       pointerEvents="box-none"
     >
-      <Text style={styles.message} numberOfLines={1}>
+      <Text style={styles.message} accessibilityLiveRegion="polite">
         {message}
       </Text>
       {actionLabel && onAction ? (
@@ -102,6 +110,7 @@ export function MapSnackbar({
           hitSlop={10}
           accessibilityRole="button"
           accessibilityLabel={actionLabel}
+          style={{ minHeight: 44, minWidth: 44, justifyContent: 'center' }}
         >
           <Text style={styles.action}>{actionLabel}</Text>
         </Pressable>
@@ -130,10 +139,10 @@ function createStyles(
       borderWidth: 1,
       borderColor: colors.border,
       shadowColor: '#000',
-      shadowOpacity: 0.34,
-      shadowRadius: 16,
-      shadowOffset: { width: 0, height: 6 },
-      elevation: 12,
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
       zIndex: 30,
     },
     message: {

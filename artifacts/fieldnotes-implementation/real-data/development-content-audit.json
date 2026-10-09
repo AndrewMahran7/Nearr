@@ -1,0 +1,65 @@
+{
+  "recordedAt": "2026-10-09T19:45:47.454Z",
+  "target": "Nearr-Dev",
+  "ref": "qnfxnmvxpjzfydgudtvs",
+  "access": "Three REST GET requests only; no mutation, recognition or provider-photo calls",
+  "places": {
+    "total": "64",
+    "sampled": 64,
+    "names": {
+      "populated": 64,
+      "maximumCharacters": 47
+    },
+    "addresses": {
+      "populated": 64,
+      "maximumCharacters": 90
+    },
+    "missingCoordinates": 0
+  },
+  "savedPlaces": {
+    "total": "20",
+    "sampled": 20,
+    "userNotes": {
+      "populated": 0,
+      "maximumCharacters": 0
+    },
+    "generatedNotes": {
+      "populated": 11,
+      "maximumCharacters": 108
+    },
+    "sourceTypes": {
+      "manual": 4,
+      "instagram": 11,
+      "youtube": 5
+    }
+  },
+  "jobs": {
+    "total": "67",
+    "sampled": 67,
+    "statuses": {
+      "completed": 30,
+      "failed": 8,
+      "needs_help": 27,
+      "awaiting_purchase": 2
+    },
+    "platforms": {
+      "instagram": 39,
+      "youtube": 24,
+      "tiktok": 3,
+      "facebook": 1
+    },
+    "candidates": 54,
+    "candidatePhotoCounts": {
+      "zero": 54,
+      "one": 0,
+      "twoToFour": 0,
+      "fiveOrMore": 0
+    }
+  },
+  "limitations": [
+    "Sample is bounded and not exhaustive.",
+    "Candidate payload photo counts do not measure device-local snapshot caches.",
+    "No user IDs, user notes, source URLs, photo URLs, credentials or raw job payloads are written to artifacts.",
+    "This read audit is separate from native visual evidence."
+  ]
+}

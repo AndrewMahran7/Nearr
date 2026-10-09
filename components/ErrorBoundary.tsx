@@ -13,6 +13,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Colors, Spacing, Radius } from '@/constants';
 import { sanitizeErrorText, sanitizeStack } from '@/lib/sanitizeError';
 import { recordDiagnostic } from '@/lib/deviceDiagnostics';
+import { useOptionalTheme } from '@/lib/theme';
 
 type Props = {
   children: ReactNode;
@@ -56,22 +57,28 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (!this.state.hasError) return this.props.children;
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>{this.props.fallbackTitle ?? 'Something went wrong'}</Text>
-        <Text style={styles.body}>
-          {this.props.fallbackBody ?? 'This screen hit an unexpected error. Try again.'}
-        </Text>
-        <Pressable style={styles.button} onPress={this.reset} accessibilityRole="button">
-          <Text style={styles.buttonText}>Try again</Text>
-        </Pressable>
-        {__DEV__ ? <Text style={styles.detail}>{this.state.message}</Text> : null}
-      </View>
-    );
+    return <ErrorFallback title={this.props.fallbackTitle} body={this.props.fallbackBody} message={this.state.message} onRetry={this.reset} />;
   }
 }
 
-const styles = StyleSheet.create({
+function ErrorFallback({ title, body, message, onRetry }: { title?: string; body?: string; message: string; onRetry: () => void }) {
+  const theme = useOptionalTheme();
+  const styles = createStyles(theme?.colors ?? Colors);
+  return (
+      <View style={styles.container}>
+        <Text style={styles.title}>{title ?? 'Something went wrong'}</Text>
+        <Text style={styles.body}>
+          {body ?? 'This screen hit an unexpected error. Try again.'}
+        </Text>
+        <Pressable style={styles.button} onPress={onRetry} accessibilityRole="button">
+          <Text style={styles.buttonText}>Try again</Text>
+        </Pressable>
+        {__DEV__ ? <Text style={styles.detail}>{message}</Text> : null}
+      </View>
+    );
+}
+
+function createStyles(Colors: typeof import('@/constants').Colors) { return StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -82,6 +89,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '600', color: Colors.text, marginBottom: Spacing.sm },
   body: { fontSize: 14, textAlign: 'center', color: Colors.textSecondary, marginBottom: Spacing.lg },
   button: {
+    minHeight: 50,
+    justifyContent: 'center',
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     borderRadius: Radius.pill,
@@ -89,4 +98,4 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: Colors.textInverse, fontWeight: '700' },
   detail: { fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.lg },
-});
+}); }

@@ -1,9 +1,10 @@
+import { useTheme } from '@/lib/theme';
 import { useEffect, useRef } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Screen } from '@/components';
-import { Colors, Spacing, Typography } from '@/constants';
+import { Spacing } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { trackEvent } from '@/lib/analytics';
 import { initiatingScreenOwnsAuthNavigation } from '@/lib/authTransaction';
@@ -23,6 +24,8 @@ import { persistNamesFromAuthUser } from '@/services/profileService';
 const AUTH_CALLBACK_SAFETY_MS = 10000;
 
 export default function AuthCallbackScreen() {
+  const { colors: Colors, typography: Typography } = useTheme();
+  const styles = createStyles(Colors);
   const router = useRouter();
   const { session } = useAuth();
   const status = useAuthLinkStatus();
@@ -139,7 +142,7 @@ export default function AuthCallbackScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(Colors: ReturnType<typeof useTheme>['colors']) { return StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -158,3 +161,4 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 });
+}
