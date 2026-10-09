@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/lib/theme';
 
@@ -7,11 +8,12 @@ type Props = { title: string; platform?: string; thumbnail?: string | null; capt
 /** Provenance only. This component never fetches or substitutes place photography. */
 export function SourceRibbon({ title, platform, thumbnail, caption, onPress, compact, unavailable }: Props) {
   const { colors, typography } = useTheme();
+  const [failedThumbnail, setFailedThumbnail] = useState<string | null>(null);
   return (
     <Pressable accessibilityRole={onPress && !unavailable ? 'button' : undefined} accessibilityLabel={`${platform ? `${platform}. ` : ''}${title}${unavailable ? '. Original unavailable' : ''}`} accessibilityHint={onPress && !unavailable ? 'Watch the original post in its source app' : undefined} disabled={!onPress || unavailable} onPress={onPress}
       style={({ pressed }) => [styles.ribbon, { backgroundColor: colors.surfaceElevated, opacity: pressed ? 0.8 : 1 }]}>
       <View style={[styles.thumbnail, { height: compact ? 48 : 66, width: compact ? 36 : 48, backgroundColor: colors.surface }]}>
-        {thumbnail ? <Image source={{ uri: thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" accessible={false} /> : <Feather name="film" size={20} color={colors.textSecondary} />}
+        {thumbnail && thumbnail !== failedThumbnail ? <Image key={thumbnail} source={{ uri: thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" accessible={false} onError={() => setFailedThumbnail(thumbnail)} /> : <Feather name="film" size={20} color={colors.textSecondary} />}
       </View>
       <View style={styles.text}>
         <Text style={[typography.eyebrow, { color: colors.textSecondary }]}>{platform ? `FROM ${platform.toUpperCase()}` : 'FROM THE ORIGINAL POST'}</Text>

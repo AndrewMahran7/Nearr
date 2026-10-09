@@ -33,10 +33,6 @@ type Props = {
   paired?: boolean;
 };
 
-const COLORS = {
-  cream: '#F4F2EF', orange: '#FF6A1A', surface: '#17191E', border: '#303238', muted: '#A7A39D', black: '#050608',
-};
-
 /** Shared bounded source-frame gallery; multi-place uses the compact variant. */
 export function SourceEvidenceGallery({
   frames,
@@ -65,6 +61,7 @@ export function SourceEvidenceGallery({
     : Math.min(360, Math.max(280, windowWidth - 56));
   const frameHeight = paired ? (stacked ? 220 : 168) : preview ? 92 : compact && dense ? QUICK_CHECK_LAYOUT.evidenceFrameHeight : compact ? 100 : 204;
   const [resolved, setResolved] = useState<ResolvedShareEvidenceFrame[]>([]);
+  const [failedUris, setFailedUris] = useState<ReadonlySet<string>>(new Set());
   const [loading, setLoading] = useState(frames.length > 0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
@@ -73,14 +70,20 @@ export function SourceEvidenceGallery({
   useEffect(() => {
     let cancelled = false;
     setActiveIndex(0);
+    setViewerIndex(null);
+    setResolved([]);
+    setFailedUris(new Set());
     setLoading(frames.length > 0);
     void resolveShareEvidenceFrames(frames).then((next) => {
       if (!cancelled) { setResolved(next); setLoading(false); }
+    }).catch(() => {
+      if (!cancelled) { setResolved([]); setLoading(false); }
     });
     return () => { cancelled = true; };
   }, [signature]);
 
-  const available = useMemo(() => resolved.filter((frame) => !!frame.uri), [resolved]);
+  const available = useMemo(() => resolved.filter((frame) => !!frame.uri && !failedUris.has(frame.uri)), [resolved, failedUris]);
+  const safeActiveIndex = Math.min(activeIndex, Math.max(0, available.length - 1));
   const rolodexItems = useMemo(() => available.map((frame, index) => ({
     key: frame.id,
     uri: frame.uri!,
@@ -132,7 +135,8 @@ export function SourceEvidenceGallery({
                 accessibilityLabel={`Source video frame at ${formatCandidateTimestamp(item.timestampSeconds)}. Open fullscreen.`}
                 style={[styles.frame, { width: frameWidth, height: frameHeight }]}
               >
-                <Image source={{ uri: item.uri! }} style={styles.frameImage as StyleProp<ImageStyle>} resizeMode="cover" />
+                <Image source={{ uri: item.uri! }} style={styles.frameImage as StyleProp<ImageStyle>} resizeMode="cover"
+                  onError={() => setFailedUris((current) => new Set(current).add(item.uri!))} />
                 {paired ? <View style={styles.provenanceBadge}><Text style={styles.provenanceText}>From your video</Text></View> : null}
                 <View style={styles.timestampBadge}><Text style={styles.timestamp}>{formatCandidateTimestamp(item.timestampSeconds)}</Text></View>
                 <View style={styles.expandBadge}><Feather name="maximize-2" size={15} color="#F7F4EE" /></View>
@@ -140,8 +144,8 @@ export function SourceEvidenceGallery({
             )}
           />
           {!preview && available.length > 1 ? (
-            <View style={[styles.dots, dense && styles.dotsDense]} accessibilityLabel={`Frame ${activeIndex + 1} of ${available.length}`}>
-              {available.map((frame, index) => <View key={frame.id} style={[styles.dot, index === activeIndex && styles.dotActive]} />)}
+            <View style={[styles.dots, dense && styles.dotsDense]} accessibilityLabel={`Frame ${safeActiveIndex + 1} of ${available.length}`}>
+              {available.map((frame, index) => <View key={frame.id} style={[styles.dot, index === safeActiveIndex && styles.dotActive]} />)}
             </View>
           ) : null}
         </>

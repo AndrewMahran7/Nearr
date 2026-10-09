@@ -1,0 +1,62 @@
+import assert from 'node:assert/strict';
+import React from 'react';
+import { LightPalette } from '../constants/colors';
+import { Radius, Spacing } from '../constants/spacing';
+import * as density from '../lib/quickCheckDensity';
+import * as candidate from '../lib/vayrinCandidateConfirmation';
+const Module = require('node:module') as { _load: (request: string, parent: unknown, isMain: boolean) => unknown };
+const originalLoad = Module._load;
+let resolutions = 0, reject = false;
+Module._load = function(request, parent, isMain) {
+  if (request === 'react-native') return { View: 'View', Text: 'Text', Image: 'Image', ActivityIndicator: 'ActivityIndicator', Pressable: 'Pressable', FlatList: ({ data, renderItem, ...props }: any) => React.createElement('FlatList', props, data.map((item: any, index: number) => React.createElement(React.Fragment, { key: item.id }, renderItem({ item, index })))), StyleSheet: { create: (s: any) => s, hairlineWidth: 1 }, useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }) };
+  if (request === '@expo/vector-icons') return { Feather: 'Feather' };
+  if (request === '@/components/PhotoRolodex') return { PhotoRolodexModal: 'PhotoRolodexModal' };
+  if (request === '@/constants') return { Radius, Spacing };
+  if (request === '@/lib/theme') return { useTheme: () => ({ colors: LightPalette, typography: {} }) };
+  if (request === '@/lib/vayrinCandidateConfirmation') return candidate;
+  if (request === '@/lib/quickCheckDensity') return density;
+  if (request === '@/lib/shareEvidenceFrames') return { resolveShareEvidenceFrames: async (frames: any[]) => { resolutions++; if (reject) throw new Error('fixture unavailable'); return frames.map(frame => ({ ...frame, uri: frame.url })); } };
+  return originalLoad(request, parent, isMain);
+};
+const TestRenderer = require('react-test-renderer') as typeof import('react-test-renderer');
+const { SourceEvidenceGallery } = require('../components/SourceEvidenceGallery') as typeof import('../components/SourceEvidenceGallery');
+const { SourceRibbon } = require('../components/SourceRibbon') as typeof import('../components/SourceRibbon');
+const textOf = (node: any): string => typeof node === 'string' ? node : (node?.children ?? []).map(textOf).join(' ');
+async function main() {
+  try {
+    let tree!: ReturnType<typeof TestRenderer.create>;
+    const frames: any[] = [{ id: 'frame-1', url: 'https://fixture.invalid/1', timestampSeconds: 2 }, { id: 'frame-2', url: 'https://fixture.invalid/2', timestampSeconds: 5 }];
+    await TestRenderer.act(async () => { tree = TestRenderer.create(React.createElement(SourceEvidenceGallery, { frames, paired: true })); });
+    assert.equal(tree.root.findAllByType('Image' as any).length, 2);
+    TestRenderer.act(() => tree.root.findAllByType('Image' as any)[0]!.props.onError());
+    assert.equal(tree.root.findAllByType('Image' as any).length, 1);
+    TestRenderer.act(() => tree.root.findAllByType('Image' as any)[0]!.props.onError());
+    assert.equal(tree.root.findAllByType('Image' as any).length, 0);
+    assert.match(textOf(tree.toJSON()), /Video frames are unavailable/);
+    assert.equal(resolutions, 1, 'decode failures do not initiate another resolver/network request');
+    const next = [{ id: 'frame-3', url: 'https://fixture.invalid/3', timestampSeconds: 10 }] as any[];
+    await TestRenderer.act(async () => tree.update(React.createElement(SourceEvidenceGallery, { frames: next, paired: true })));
+    assert.equal(tree.root.findByType('Image' as any).props.source.uri, next[0].url, 'changed evidence identity resets the failed-image set');
+    reject = true;
+    await TestRenderer.act(async () => tree.update(React.createElement(SourceEvidenceGallery, { frames: [{ ...next[0], id: 'frame-4' }], paired: true })));
+    assert.match(textOf(tree.toJSON()), /Video frames are unavailable/);
+    assert.equal(tree.root.findAllByType('ActivityIndicator' as any).length, 0, 'resolver rejection does not leave a spinner running');
+    tree.unmount();
+    let opened = 0;
+    TestRenderer.act(() => { tree = TestRenderer.create(React.createElement(SourceRibbon, { title: 'A coastal afternoon', platform: 'Instagram', thumbnail: 'https://fixture.invalid/expired', onPress: () => opened++ })); });
+    TestRenderer.act(() => tree.root.findByType('Image' as any).props.onError());
+    assert.equal(tree.root.findAllByType('Image' as any).length, 0);
+    assert.ok(tree.root.findAllByType('Feather' as any).some(node => node.props.name === 'film'));
+    assert.match(textOf(tree.toJSON()), /A coastal afternoon/);
+    assert.match(textOf(tree.toJSON()), /Watch original/);
+    TestRenderer.act(() => tree.root.findByType('Pressable' as any).props.onPress());
+    assert.equal(opened, 1, 'expired thumbnail does not disable the original-post action');
+    TestRenderer.act(() => tree.update(React.createElement(SourceRibbon, { title: 'A coastal afternoon', thumbnail: 'https://fixture.invalid/new', unavailable: true })));
+    assert.equal(tree.root.findByType('Image' as any).props.source.uri, 'https://fixture.invalid/new');
+    assert.equal(tree.root.findByType('Pressable' as any).props.disabled, true);
+    assert.match(textOf(tree.toJSON()), /Original unavailable/);
+    tree.unmount();
+  } finally { Module._load = originalLoad; }
+  console.log('PASS actual source gallery/ribbon: partial/all decode failures, resolver rejection, stable request budget, changed-source reset, provenance and original-post actions');
+}
+void main();
