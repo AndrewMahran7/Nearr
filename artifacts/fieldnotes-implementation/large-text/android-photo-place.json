@@ -1,0 +1,29 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1.6,
+  "route": "nearr://dev-qa?fieldnotes=photo-place&theme=light",
+  "data": "Bundled Dorset Quarry onboarding fixture with two distinct bundled photos; read-only actual detail component",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:54:53.650Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "animatorDurationScale": 0,
+  "animatorDurationScaleSource": "Reported by capture operator for the cold-restarted large-text batch.",
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:59:01.088Z",
+    "imageSha256": "e9f3bde973ab276dda14862f6bd3284281c19fba0a4bce7a2c65389b8be61d23",
+    "observation": "Cold-restarted 1.6x text is visibly enlarged. Detail title, Directions and source ribbon remain readable with enlarged native text.",
+    "limitations": [
+      "Bundled source/video frames in the actual read-only component; lower reason/reminder content is below fold.",
+      "Android native fontScale1.6 after cold restart; not iOS Dynamic Type, VoiceOver, or motion timing evidence."
+    ]
+  }
+}

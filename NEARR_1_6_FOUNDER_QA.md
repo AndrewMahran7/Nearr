@@ -2,7 +2,11 @@
 
 Use the new **Development** native build and the Development backend. This is a review build; there is no Production release, Production OTA or App Store submission. Build identity and installation link are recorded in `FIELDNOTES_NATIVE_BUILD_REPORT.md`.
 
+Install [Nearr 1.6.59 (59)](https://expo.dev/accounts/andrewmahran/projects/nearr/builds/74a22771-5998-485b-ac16-f316caf7491d), then load the [initial Development update](https://expo.dev/accounts/andrewmahran/projects/nearr/updates/7cc8e190-b2a1-42e6-905a-0a6de9691ae2) for runtime `1.6.59`. Open, allow the update to load, force-quit and reopen. Sign in to Nearr-Dev in the host before sharing. The old 1.5 binary cannot validate the new icon, extension or native haptics.
+
 Compare the app with the approved Fieldnotes Light boards first, then Dark. Native Android screenshots provide additional implementation evidence; they do not approve iOS host geometry, VoiceOver, Dynamic Type or tactile feedback.
+
+Give map panning, Saved/Activity scrolling, gallery paging and search responsiveness particular attention. The debug emulator showed severe jank, and there is no matched native 1.5 baseline or physical iPhone performance acceptance yet. Exact observations and limits are in `FIELDNOTES_PERFORMANCE_REPORT.md`.
 
 | # | Check | Acceptance |
 |---|---|---|
@@ -14,7 +18,7 @@ Compare the app with the approved Fieldnotes Light boards first, then Dark. Nati
 | 6 | Apple sign-in | Native button, cancellation/error/success, existing/new account ownership intact |
 | 7 | Main map | Calm chrome, correct map camera, at most three local photo pins, readable clusters |
 | 8 | Select several pins | Exact place identity, compact photo card, stable camera and sheet dismissal |
-| 9 | Saved | One featured memory for a small unfiltered collection; compact rows without duplication |
+| 9 | Saved | One featured memory with a usable local photo for an unfiltered collection of at most 50; compact rows for missing/failed photos and larger collections, without duplication |
 | 10 | Search Saved | Exact selection, useful empty state, keyboard never hides the action |
 | 11 | Place detail | Place/photo first; Directions; original; why saved; reminders; visit; management under More |
 | 12 | Gallery | Swipe a real five-photo cached place; count is truthful; also check zero/one/two photos |
@@ -33,7 +37,7 @@ Compare the app with the approved Fieldnotes Light boards first, then Dark. Nati
 | 25 | Reduce Motion | Set before launch and while open; no curved flight/pulse; final state remains clear |
 | 26 | 20+ saves | Smooth search/scroll; test 51+ to confirm fully compact virtualized library |
 | 27 | No / one photo | Honest fallback/count; no duplicated or unrelated images |
-| 28 | Share Extension | Instagram/TikTok/Safari host height, safe areas, keyboard, error scroll, Done/Open Nearr, app appearance continuity |
+| 28 | Share Extension | Instagram/TikTok/Safari host height, safe areas, keyboard, error scroll, Done/Open Nearr; appearance follows the OS, independently of a forced host-app theme |
 | 29 | Haptics | Subtle selection/committed success/recovery feedback; no polling or repeated burst buzzes |
 | 30 | Nearby | Existing permissions, notifications, denied-state recovery, location freshness and visit/reminder behavior |
 

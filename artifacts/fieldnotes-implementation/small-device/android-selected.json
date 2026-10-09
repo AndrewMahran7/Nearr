@@ -1,0 +1,26 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 750,
+  "height": 1334,
+  "density": "Physical density: 420\r\nOverride density: 320",
+  "fontScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=map&theme=light&savedPlaceId=demo-saved-bantam&openRequestId=fieldnotes-1791582389154",
+  "data": "Actual native map selection for bundled Bantam demo saved place; unavailable imagery",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:46:39.320Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:47:37.047Z",
+    "observation": "Native selected map state shows the highlighted marker, readable Bantam preview, close affordance, note and Map/Saved dock at375x667.",
+    "limitations": [
+      "Bundled Bantam demo Saved fixture without available photo; no open/detail action exercised.",
+      "Android emulator at375x667 logical points, fontScale1; not an iPhone or VoiceOver test."
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=real-place&theme=light",
+  "data": "Longest real public business name; unavailable image state; read-only component",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T22:01:06.637Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T22:04:53.446Z",
+    "imageSha256": "0B20A86650E1A0A8CBB1EA659485E23560BCF5459354A30FF4A1EDFFA8946F1F",
+    "observation": "Actual detail component shows the long public business name across two lines, middle-dot category/location metadata, visible Directions and Share controls, and intentional unavailable-photo fallback.",
+    "limitations": [
+      "Public business record in a read-only detail fixture, not authenticated saved context.",
+      "No saved reason or source supplied by the fixture; these cannot be inferred.",
+      "Android emulator screenshot; not iOS or screen-reader evidence."
+    ]
+  }
+}

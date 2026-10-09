@@ -1,0 +1,29 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 750,
+  "height": 1334,
+  "density": "Physical density: 420\r\nOverride density: 320",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=onboarding",
+  "data": "Actual welcome route at375x667; initial viewport, no mutations",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T22:05:18.121Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T22:06:32.507Z",
+    "imageSha256": "7A7462F739E3B18653037DB294F61E7B480CAF8E0748A402D5AE74011CFF6096",
+    "observation": "At 375x667 logical points the actual welcome has one frame brand, loaded photo composition, readable heading and fixed Get started/Sign in actions.",
+    "limitations": [
+      "Decorative source overlay partly hides the beginning of the Hydra Old Town destination caption. This is retained as a known nonblocking composition limitation.",
+      "Supporting copy initially continues below the viewport; the paired scrolled frame demonstrates access.",
+      "Android emulator visual/scroll evidence only; not iOS or screen-reader evidence."
+    ]
+  }
+}

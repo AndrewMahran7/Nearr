@@ -1,0 +1,18 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=activity&theme=light",
+  "data": "Read-only Activity fixture: processing, review, recovery, and completed states",
+  "commit": "f6f6d9b624ec25e9efd31e3ed214bc8d610cfe90",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:24:56.573Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "verification": "Actual requested screen, settled native content, no tooling overlay"
+}

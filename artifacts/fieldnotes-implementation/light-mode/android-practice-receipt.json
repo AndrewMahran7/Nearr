@@ -1,0 +1,18 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=practice-receipt&theme=light",
+  "data": "Actual Fieldnotes practice component; scripted bundled onboarding receipt",
+  "commit": "bb2a705ceda39f0938d2a90eca88952828ba614d",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:21:55.476Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "verification": "Root visually inspected settled actual practice receipt component with bundled source and canonical icon. This is scripted onboarding practice, not the iOS Share Extension."
+}

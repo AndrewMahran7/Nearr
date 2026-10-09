@@ -1,0 +1,269 @@
+{
+  "generatedAt": "2026-10-09T22:08:58.311Z",
+  "designCommit": "368f8e7daea9714d292a487ace2668aee503bbfb",
+  "method": "Side-by-side resizing for layout only; original screenshots retained, no simulated native frames.",
+  "results": [
+    {
+      "surface": "map",
+      "appearance": "light",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "light-map.png",
+      "reference": "map.png",
+      "referenceSha256": "ee10a3c62791bc1b4aa08210ed84ed0594723eabe5d22d4fbb555e7a88677223",
+      "native": "light-mode\\android-map.png",
+      "nativeSha256": "513cc9443f8a63bed0baed5222d3eaa9bd4054913839ad67c12b50dc28e12dd0",
+      "nativeMetadata": "light-mode\\android-map.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "selected",
+      "appearance": "light",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "light-selected.png",
+      "reference": "selected.png",
+      "referenceSha256": "e7f39d5af71d969529cd7c81f826a3d8206fa31683bb571096e7c17e71731d1c",
+      "native": "light-mode\\android-selected.png",
+      "nativeSha256": "d15d6e1448eea057f69212998dbbaf1e9e2ae2cf484da148a42396faf9c8279a",
+      "nativeMetadata": "light-mode\\android-selected.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "photo-place",
+      "appearance": "light",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "light-photo-place.png",
+      "reference": "detail.png",
+      "referenceSha256": "ceeb5072ddeb5b86847a3e300500a5f0811f4762a76427e93ccdfcdaa264915b",
+      "native": "light-mode\\android-photo-place.png",
+      "nativeSha256": "4b068f6d0c63dda2050c2a8901bf616e38451ba3159a091921a963b0780bb32c",
+      "nativeMetadata": "light-mode\\android-photo-place.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "real-saved",
+      "appearance": "light",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "light-real-saved.png",
+      "reference": "library.png",
+      "referenceSha256": "eee8e6b9f5eb9896555afd57fc5a5ffc3b03a61712878e0d6c1f54909592c9bf",
+      "native": "light-mode\\android-real-saved.png",
+      "nativeSha256": "cf6e92104ee0c50c81fce95a4e76d787bba80d0ddff652989798cf508eda3968",
+      "nativeMetadata": "light-mode\\android-real-saved.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "activity",
+      "appearance": "light",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "light-activity.png",
+      "reference": "queue.png",
+      "referenceSha256": "347f3dae546840a8a807087ad8ada351cd2a7938ac729ecefed90979149b3033",
+      "native": "light-mode\\android-activity.png",
+      "nativeSha256": "52b8f0c1d11b7a8478fd92396a8bff8c17418c9810941b0fed11adb597f43107",
+      "nativeMetadata": "light-mode\\android-activity.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "quick-check",
+      "appearance": "light",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "light-quick-check.png",
+      "reference": "review.png",
+      "referenceSha256": "049ddf5160f40bf5253a1f414929f9272c00f6b449adbb33f00096d41da26658",
+      "native": "light-mode\\android-quick-check.png",
+      "nativeSha256": "e2026e84ab774189c2ae6e099680759408665c9dd5a94e08f31cc127f858ed24",
+      "nativeMetadata": "light-mode\\android-quick-check.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "review",
+      "appearance": "light",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "light-review.png",
+      "reference": "multi.png",
+      "referenceSha256": "6e1dfa27f1ef38e1fb78e8a8270497298b8e5ebc0befaac20f3d7bcebbe64cea",
+      "native": "light-mode\\android-review.png",
+      "nativeSha256": "4369772e5c4cd98de6a51bd4e21e650956b18c524a9b09af30f36fdb3976c939",
+      "nativeMetadata": "light-mode\\android-review.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "search",
+      "appearance": "light",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "light-search.png",
+      "reference": "search.png",
+      "referenceSha256": "0f1c29957134fe84a89274f8613b16eae2c161b0e8f3228eb3295ca33bd7bf7d",
+      "native": "light-mode\\android-search.png",
+      "nativeSha256": "c16edffaa9e6d51937172aba0bd27bbace4432fa9fe311b14df07fe5b2143761",
+      "nativeMetadata": "light-mode\\android-search.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "onboarding",
+      "appearance": "light",
+      "stageNote": "Stages differ: approved practice payoff versus actual welcome; see the separate practice component board.",
+      "board": "light-onboarding.png",
+      "reference": "onboarding.png",
+      "referenceSha256": "046fc14b7ce83cf8736a3247ba61eb564523f16ab5b5f361ab1791f79af3438f",
+      "native": "light-mode\\android-onboarding.png",
+      "nativeSha256": "c83e821537ae3f5ff635847ab444961f0092d102c62d7e5a62be7651ab34a9f4",
+      "nativeMetadata": "light-mode\\android-onboarding.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "practice-place",
+      "appearance": "light",
+      "stageNote": "Actual practice component in the Development QA host; this is not a full onboarding journey capture.",
+      "board": "light-practice-place.png",
+      "reference": "onboarding.png",
+      "referenceSha256": "046fc14b7ce83cf8736a3247ba61eb564523f16ab5b5f361ab1791f79af3438f",
+      "native": "light-mode\\android-practice-place.png",
+      "nativeSha256": "92d1d7775331be9e83b41364be2922d49ab010b71f0ba5c3b2c4e8d59051a7af",
+      "nativeMetadata": "light-mode\\android-practice-place.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "account",
+      "appearance": "light",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "light-account.png",
+      "reference": "auth.png",
+      "referenceSha256": "9066007ba1a09150bb34ded361cd1510f5bf82c7fb2e62e0bb42295c196ce945",
+      "native": "light-mode\\android-account.png",
+      "nativeSha256": "3446ada11cf8a4440c905acf401fa1b3dc2c6c023cd7b6344a444ec46453bf84",
+      "nativeMetadata": "light-mode\\android-account.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "settings",
+      "appearance": "light",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "light-settings.png",
+      "reference": "settings.png",
+      "referenceSha256": "1fa1a2a4a717c94fdd48efdfaf1c63bb4a2f9118abd7008fb9290fc61c5c4ccc",
+      "native": "light-mode\\android-settings.png",
+      "nativeSha256": "553f840cb6e83cac3064377b9882e8d45d1f86dc590339dd0e0a22daf5953c33",
+      "nativeMetadata": "light-mode\\android-settings.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "map",
+      "appearance": "dark",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "dark-map.png",
+      "reference": "map-dark.png",
+      "referenceSha256": "0058aff071cd1bca189eadb0868db8aaf8e661a25eed8476a8f76403fc046c5d",
+      "native": "dark-mode\\android-map.png",
+      "nativeSha256": "f4b73ec0a344a09b105d9cd833e618342556d0a284cbbf97107f6fba8dee1eee",
+      "nativeMetadata": "dark-mode\\android-map.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "selected",
+      "appearance": "dark",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "dark-selected.png",
+      "reference": "selected-dark.png",
+      "referenceSha256": "844aa3a78418c45181d6d1a8e26777dd3e04f8850e0c0213460a366dc7bc3d8d",
+      "native": "dark-mode\\android-selected.png",
+      "nativeSha256": "702afc9b5014cc1827afa5b0c6b537b01a3f9622a131faebfb8190149f9a5f86",
+      "nativeMetadata": "dark-mode\\android-selected.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "photo-place",
+      "appearance": "dark",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "dark-photo-place.png",
+      "reference": "detail-dark.png",
+      "referenceSha256": "95536102f254d5f237331ad443e6170eaa9eb1267901a88e33276460c2d24dab",
+      "native": "dark-mode\\android-photo-place.png",
+      "nativeSha256": "d0d0bc180fe0f90c934d897befe2ca4f2dcbcdf8dfcae15dabb9a2b604d1fc3c",
+      "nativeMetadata": "dark-mode\\android-photo-place.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "real-saved",
+      "appearance": "dark",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "dark-real-saved.png",
+      "reference": "library-dark.png",
+      "referenceSha256": "549176a5d7d9812d4c1d3bab47e35b3b650651055194e4577a76ef3111483ceb",
+      "native": "dark-mode\\android-real-saved.png",
+      "nativeSha256": "80915bae7c9679df96725091c99bf8d2af688fdfefe777e934e583a5d2c0ff66",
+      "nativeMetadata": "dark-mode\\android-real-saved.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "activity",
+      "appearance": "dark",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "dark-activity.png",
+      "reference": "queue-dark.png",
+      "referenceSha256": "f4970563404fde479db714625efa3fff6e640214acf0271aee298bbbaf5d1b13",
+      "native": "dark-mode\\android-activity.png",
+      "nativeSha256": "86e7e7de637e37c84d1b0bad3221f44fee0a0d7e77db2a6c6c703009129475ee",
+      "nativeMetadata": "dark-mode\\android-activity.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "quick-check",
+      "appearance": "dark",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "dark-quick-check.png",
+      "reference": "review-dark.png",
+      "referenceSha256": "638a3c4f6c679d3cf91c8e9d4de59d3c518d20f88736f90284888d8c861751b7",
+      "native": "dark-mode\\android-quick-check.png",
+      "nativeSha256": "fb86980c4f5e3d279ff8cfe29d17575f9ec5e47e10a9f77ba5389980a2f860ba",
+      "nativeMetadata": "dark-mode\\android-quick-check.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "review",
+      "appearance": "dark",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "dark-review.png",
+      "reference": "multi-dark.png",
+      "referenceSha256": "750de9c78bd1cfe99b8cef2fd6d472b0411501585bf7c6967f6e94a8ec9661ea",
+      "native": "dark-mode\\android-review.png",
+      "nativeSha256": "8dc006f2d8c4ecd2cd3b899bf9ca470717206bd983969e74315598614655ab4f",
+      "nativeMetadata": "dark-mode\\android-review.json",
+      "iosEvidence": false
+    },
+    {
+      "surface": "search",
+      "appearance": "dark",
+      "stageNote": "Content and platform differ; this compares hierarchy and treatment, not identical map/photo pixels.",
+      "board": "dark-search.png",
+      "reference": "search-dark.png",
+      "referenceSha256": "44a0c4ba1524cf950a7f0cc09a5ebecd01606344fff63a373b0df2f466a6d5d3",
+      "native": "dark-mode\\android-search.png",
+      "nativeSha256": "f8d825f908704bc0ce27dd0ae394d90a1b909083628aa4953ac9d0251fc99a5f",
+      "nativeMetadata": "dark-mode\\android-search.json",
+      "iosEvidence": false
+    }
+  ],
+  "skipped": [
+    {
+      "surface": "onboarding",
+      "appearance": "dark",
+      "reason": "Native capture unavailable"
+    },
+    {
+      "surface": "practice-place",
+      "appearance": "dark",
+      "reason": "Native capture unavailable"
+    },
+    {
+      "surface": "account",
+      "appearance": "dark",
+      "reason": "Approved reference variant unavailable"
+    },
+    {
+      "surface": "settings",
+      "appearance": "dark",
+      "reason": "Approved reference variant unavailable"
+    }
+  ]
+}

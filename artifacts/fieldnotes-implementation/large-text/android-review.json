@@ -1,0 +1,29 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1.6,
+  "route": "nearr://dev-qa?fieldnotes=review&theme=light&jobId=phase2-preview-mixed-5",
+  "data": "Read-only phase2-preview-mixed-5 fixture; candidate source thumbnails are synthetic fixture evidence",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:55:03.851Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "animatorDurationScale": 0,
+  "animatorDurationScaleSource": "Reported by capture operator for the cold-restarted large-text batch.",
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:59:01.093Z",
+    "imageSha256": "1b94f918cdc37fe5bfd511a6f2b1085f8c71aa1e46b926a1661de0e72e9ca0fc",
+    "observation": "Cold-restarted 1.6x text is visibly enlarged. Review source, selected rows, back chevron and gradient Save 2 places remain readable.",
+    "limitations": [
+      "Read-only candidate fixture; lower candidates continue below fold; no save mutation.",
+      "Android native fontScale1.6 after cold restart; not iOS Dynamic Type, VoiceOver, or motion timing evidence."
+    ]
+  }
+}

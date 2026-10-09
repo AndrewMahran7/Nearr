@@ -17,13 +17,15 @@ The Development iOS build **1.6.59 (59)** completed successfully, and the initia
 
 Semantic Fieldnotes Light/Dark palettes, system type roles, spacing, flat surfaces, 44-point controls, 50-point adaptive buttons, a reserved save gradient, source provenance ribbon, status rows and a live Reduce Motion hook are implemented. New installs default to Light; stored light/dark/system preferences still take precedence. SDK51-compatible `expo-haptics` and `expo-linear-gradient` require a new native binary.
 
-Haptics are foreground-only, coalesced over 600 ms and failure tolerant. The foundation test checks 30 text contrast combinations and five native-feedback behavior cases. It passes. Final integrated TypeScript also passed; the last two presentation props passed focused review/image/persistence tests and the published iOS bundle export.
+Haptics are foreground-only, coalesced over 600 ms and failure tolerant. The foundation test checks 30 text contrast combinations and five native-feedback behavior cases. It passes. Final integrated TypeScript passed again after the final product commit; focused review/image/persistence tests and the published iOS bundle export also passed.
 
 The icon winner is C, Light Fieldnotes. It is an opaque 1024×1024 PNG at `assets/icon.png`; the editable vector is `assets/brand/fieldnotes-icon.svg`. SHA-256: `ac3ed31cf494843c72c5049e480e77f2af2fc74dcc8b9a85ce636aba0cc2db2a`. Study and native generator evidence are under `artifacts/fieldnotes-implementation/icon-study/`. The generated icon study is not an installed iOS screenshot.
 
 ## Evidence discipline
 
 Native iOS visual QA requires a connected iPhone or Mac simulator. Neither was available at baseline on this Windows workstation. Build success, component contract tests, Android-native captures and design boards are distinct evidence classes and will be labeled as such. Unperformed physical-device, VoiceOver and performance measurements will not be reported as passed.
+
+Final native review produced 58 unique accepted Android frames and 20 reference comparison boards, including 375×667 layouts and genuine cold-start 1.6×/2× native text. Eight bounded performance samples completed, but the emulator showed severe jank: map samples were 91–100% janky and the 25-row Saved scroll was 22%. This is not a native performance pass, and no matched 1.5 baseline was measured. Physical iPhone visual, accessibility, extension-host and performance acceptance remains required; the completed cloud build does not close those gaps.
 
 ## Implemented screen composition
 

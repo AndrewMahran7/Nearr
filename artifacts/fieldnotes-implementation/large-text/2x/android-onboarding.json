@@ -1,0 +1,29 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 2,
+  "route": "nearr://dev-qa?fieldnotes=onboarding&theme=light",
+  "data": "Actual onboarding entry screen; no mutation",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:53:30.333Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:55:11.383Z",
+    "observation": "Cold-restarted 2.0x text visibly enlarges; loaded welcome imagery and fixed Get started/sign-in controls remain visible.",
+    "limitations": [
+      "Main heading and supporting copy continue below the scroll fold; reachability not verified by this frame alone.",
+      "Actual welcome entry only; no subsequent flow mutation.",
+      "Android native fontScale2 after cold restart; not iOS Dynamic Type, VoiceOver, or a motion timing test."
+    ]
+  },
+  "animatorDurationScale": 0,
+  "animatorDurationScaleSource": "Capture operator reported Android animator duration scale0 for both large-text batches; static screenshots do not verify animation timing."
+}

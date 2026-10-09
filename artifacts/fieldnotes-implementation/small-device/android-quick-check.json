@@ -1,0 +1,27 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 750,
+  "height": 1334,
+  "density": "Physical density: 420\r\nOverride density: 320",
+  "fontScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=review&theme=light&jobId=vayrin-confirm-neutral",
+  "data": "Read-only vayrin-confirm-neutral single-candidate fixture; no place photo",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:46:09.288Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:47:37.027Z",
+    "observation": "Actual Quick Check renders readable candidate content and the corrected gradient Save Stari Most action at375x667.",
+    "limitations": [
+      "Read-only single-candidate fixture with intentionally unavailable images; secondary alternatives continue below the scroll fold.",
+      "No save mutation or interaction was performed.",
+      "Android emulator at375x667 logical points, fontScale1; not an iPhone or VoiceOver test."
+    ]
+  }
+}

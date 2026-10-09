@@ -1,0 +1,28 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=map&theme=light (local search pizza)",
+  "data": "Local saved-note search; bundled Bantam result; native keyboard",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:59:46.743Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T22:00:55.917Z",
+    "imageSha256": "95643c05d3b747faec50eabb44e121263a898981250e3eaaeb4565d48f7ab8c2",
+    "observation": "Actual saved-place search shows pizza query, one Bantam result and native keyboard without overlap or tooling overlay.",
+    "limitations": [
+      "Read-only fixture/native Android debug rendering; no production or iOS evidence.",
+      "Static visual acceptance does not establish acceptable frame performance, memory use, or speedup."
+    ]
+  }
+}

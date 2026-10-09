@@ -1,0 +1,26 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 750,
+  "height": 1334,
+  "density": "Physical density: 420\r\nOverride density: 320",
+  "fontScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=real-saved&theme=light",
+  "data": "25 real public place records from verified Development, presented as read-only saved rows; no user identities; no photos invented",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:45:38.235Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:46:24.633Z",
+    "observation": "Compact no-photo lead and saved rows remain readable at 375x667; long title wraps without horizontal clipping.",
+    "limitations": [
+      "Read-only Saved component preview using 25 real public place records and fixture Saved wrappers; no authenticated full Saved shell.",
+      "Android emulator at375x667 logical points, fontScale1; not an iPhone or VoiceOver test."
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1.6,
+  "route": "nearr://dev-qa?fieldnotes=onboarding&theme=light",
+  "data": "Actual onboarding entry screen; no mutation",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:55:24.375Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "animatorDurationScale": 0,
+  "animatorDurationScaleSource": "Reported by capture operator for the cold-restarted large-text batch.",
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:59:01.087Z",
+    "imageSha256": "62f2ddb3555194830920159a02ec3b8ba5e98c732b3d28f24cb6889cb83023e7",
+    "observation": "Cold-restarted 1.6x text is visibly enlarged. Welcome shows enlarged heading and visible fixed Get started/sign-in actions.",
+    "limitations": [
+      "Supporting copy continues below scroll fold; this frame does not establish scroll reachability.",
+      "Android native fontScale1.6 after cold restart; not iOS Dynamic Type, VoiceOver, or motion timing evidence."
+    ]
+  }
+}

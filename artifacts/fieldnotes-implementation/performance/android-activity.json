@@ -1,0 +1,28 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=activity&theme=light",
+  "data": "Processing/review/recovery/completed fixtures",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:58:49.914Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T22:00:55.912Z",
+    "imageSha256": "ab470baa3ca1e36d81bca354dfdd16add480460c6a538b3383e7d9b36c03ed63",
+    "observation": "Actual Activity fixture screen shows review, recovery, processing and completed groups without tooling overlay.",
+    "limitations": [
+      "Read-only fixture/native Android debug rendering; no production or iOS evidence.",
+      "Static visual acceptance does not establish acceptable frame performance, memory use, or speedup."
+    ]
+  }
+}

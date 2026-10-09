@@ -4,7 +4,7 @@
   "evidence": "Exit codes and PASS output observed directly in root tool sessions after native visual corrections. Phase reports record additional agent-run targeted checks.",
   "fullPrebuildCommandSet": { "resultFile": "results.json", "passed": 132, "failed": 0, "note": "Full command set preceded the final narrowly scoped visual corrections; do not imply it was rerun at the product commit above." },
   "finalChecks": [
-    { "command": "node node_modules/typescript/bin/tsc --noEmit", "exitCode": 0, "note": "Passed at c3687dd before the final two prop-only edits: known Button save variant and numeric placeholder minimum height." },
+    { "command": "node node_modules/typescript/bin/tsc --noEmit", "exitCode": 0, "note": "Passed again after the final product commit 4dd5aa7, during final evidence review at HEAD 38e2849. No product source changed between that commit and this final check." },
     { "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testFieldnotesReviewComponents.ts", "exitCode": 0, "summary": "24 actual renders across appearances, widths/text settings and 0/1/5 photos; independent controls, provenance, disabled save, motion, Activity virtualization" },
     { "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testSourceEvidenceGalleryFallback.ts", "exitCode": 0, "summary": "Partial/all image decode failures, resolver rejection, stable request budget, changed-source reset and preserved source actions" },
     { "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOneTapFallbackSave.ts", "exitCode": 0, "summary": "Auto-search, selection, explicit canonical persistence, recovery, layout and copy" }

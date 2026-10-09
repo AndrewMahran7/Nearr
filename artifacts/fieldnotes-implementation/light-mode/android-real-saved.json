@@ -1,0 +1,28 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=real-saved&theme=light",
+  "data": "25 real public place records from verified Development, presented as read-only saved rows; no user identities; no photos invented",
+  "commit": "f6f6d9b624ec25e9efd31e3ed214bc8d610cfe90",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:24:22.041Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:27:31.011Z",
+    "observation": "Actual Saved library renders the compact no-photo lead and compact rows without clipping.",
+    "limitations": [
+      "Read-only component preview using 25 verified public business names with fixture Saved wrappers; not an authenticated collection or full Saved shell.",
+      "No locally available photos; neutral placeholders are expected.",
+      "Android native rendering only; this does not establish iOS or VoiceOver behavior.",
+      "Single viewport visual review; scrolling, focus order, and live actions were not exercised."
+    ]
+  }
+}

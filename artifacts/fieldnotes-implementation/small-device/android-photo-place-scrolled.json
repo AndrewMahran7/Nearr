@@ -1,0 +1,29 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 750,
+  "height": 1334,
+  "density": "Physical density: 420\r\nOverride density: 320",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=photo-place&theme=light (scrolled)",
+  "data": "Actual two-photo detail component at375x667; scrolled source/reason content; reminder and visited controls not covered",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T22:04:18.175Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T22:06:00.928Z",
+    "imageSha256": "0E8E4DBBFD38314653F4FF4DD4CD1D430F24A76986F794DDF98490499A23B4E5",
+    "observation": "The scrolled 375x667 detail exposes the full source ribbon including Watch original and the complete Why you saved it paragraph. Text wraps cleanly and controls remain separated.",
+    "limitations": [
+      "This scroll position does not show reminder or visited controls, and does not verify their reachability.",
+      "Read-only detail fixture with bundled video/source frames; not independent destination photos or authenticated saved data.",
+      "Android emulator evidence only."
+    ]
+  }
+}

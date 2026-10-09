@@ -1,0 +1,29 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 750,
+  "height": 1334,
+  "density": "Physical density: 420\r\nOverride density: 320",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=photo-place&theme=light",
+  "data": "Bundled Dorset Quarry onboarding fixture with two distinct bundled photos; read-only actual detail component",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T22:03:51.136Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T22:06:00.925Z",
+    "imageSha256": "8A06320347FC7922D0E154CC381440E900910617C1C3AD85042B273A47C64645",
+    "observation": "At 375x667 logical points the native detail shows both loaded gallery frames, correctly separated category/location, readable Dorset Quarry title, Directions and Share controls without overlap.",
+    "limitations": [
+      "The source ribbon continues below the initial viewport; see paired scrolled frame.",
+      "Read-only detail fixture with bundled video/source frames; not independent destination photos or authenticated saved data.",
+      "Android emulator evidence only."
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=review&theme=dark&jobId=phase2-preview-mixed-5",
+  "data": "Read-only phase2-preview-mixed-5 fixture; candidate source thumbnails are synthetic fixture evidence",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T22:00:36.081Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T22:01:57.107Z",
+    "imageSha256": "8dc006f2d8c4ecd2cd3b899bf9ca470717206bd983969e74315598614655ab4f",
+    "observation": "Dark multi-place Review is settled with visible source ribbon, candidate selection and gradient Save 2 places action; no LogBox overlay.",
+    "limitations": [
+      "Read-only fixtures; no live processing or save mutation exercised.",
+      "Android native default-scale viewport; not iOS or screen-reader evidence."
+    ]
+  }
+}

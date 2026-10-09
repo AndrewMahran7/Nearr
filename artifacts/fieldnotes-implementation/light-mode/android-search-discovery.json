@@ -1,0 +1,18 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=map > Find somewhere new > pizza",
+  "data": "Actual discovery UI using bundled map-preview pizza results; no remote provider request or save",
+  "commit": "c3687dda973fdf2775ba2876a7f05de21d6191d5",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:28:24.610Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "verification": "Actual requested screen, settled native content, no tooling overlay"
+}

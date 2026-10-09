@@ -1,0 +1,27 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=account&theme=dark",
+  "data": "Actual account screen; no sign-in submission",
+  "commit": "bb2a705ceda39f0938d2a90eca88952828ba614d",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:23:42.356Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:27:31.011Z",
+    "observation": "Actual dark account entry renders cleanly with readable heading and Google action; no visible clipping.",
+    "limitations": [
+      "Signed-out entry only; no sign-in submission or expanded More options state was exercised.",
+      "Android native rendering only; this does not establish iOS or VoiceOver behavior.",
+      "Single viewport visual review; scrolling, focus order, and live actions were not exercised."
+    ]
+  }
+}

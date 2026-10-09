@@ -1,0 +1,28 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 750,
+  "height": 1334,
+  "density": "Physical density: 420\r\nOverride density: 320",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=onboarding (scrolled)",
+  "data": "Actual welcome route at375x667; body scrolled to verify remaining copy and persistent actions",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T22:05:51.422Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T22:06:32.510Z",
+    "imageSha256": "E6E9626E04E57578C3B499A72D8984029086241719219EB9BE67C5848C723F04",
+    "observation": "After scrolling the actual welcome, the complete supporting paragraph, four platform chips and privacy/saved-place line are visible. Get started and Sign in remain visible in their fixed footer without overlapping this content.",
+    "limitations": [
+      "Decorative source overlay still partly hides the beginning of the destination caption. This is a known nonblocking composition limitation.",
+      "Android emulator visual/scroll evidence only; not iOS or screen-reader evidence."
+    ]
+  }
+}

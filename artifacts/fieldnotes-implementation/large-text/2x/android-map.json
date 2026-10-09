@@ -1,0 +1,29 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 2,
+  "route": "nearr://dev-qa?fieldnotes=map&theme=light",
+  "data": "10 bundled demo saved places; native Google map; signed-out Activity guard active",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:52:40.727Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:55:11.377Z",
+    "observation": "Cold-restarted 2.0x text visibly enlarges; map, filter, peek and dock remain usable without primary control overlap.",
+    "limitations": [
+      "Nonblocking: the map summary ellipsizes to 10 places to... at this scale.",
+      "Ten-place fixture with signed-out Activity guard.",
+      "Android native fontScale2 after cold restart; not iOS Dynamic Type, VoiceOver, or a motion timing test."
+    ]
+  },
+  "animatorDurationScale": 0,
+  "animatorDurationScaleSource": "Capture operator reported Android animator duration scale0 for both large-text batches; static screenshots do not verify animation timing."
+}

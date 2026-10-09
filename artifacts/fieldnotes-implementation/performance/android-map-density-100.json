@@ -1,0 +1,29 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=map&theme=light&fieldnotesCount=100",
+  "data": "Synthetic 100-save density fixture; visible header verified in native UI tree",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:58:09.975Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:59:43.811Z",
+    "imageSha256": "eb8007eb0777ee5fa97e8c32d7e06dca94eec1c3186219ed805d09f7cbbdea1c",
+    "observation": "Native map and peek visibly show the expected 100 saved-place count with no tooling overlay.",
+    "limitations": [
+      "Synthetic density fixture; screenshot verifies visible count and route only, not every record or marker conservation.",
+      "Static visual acceptance does not establish acceptable frame performance, memory use, or a speedup.",
+      "Android debug emulator evidence only."
+    ]
+  }
+}

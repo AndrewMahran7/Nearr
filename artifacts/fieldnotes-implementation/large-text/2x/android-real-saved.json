@@ -1,0 +1,29 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 2,
+  "route": "nearr://dev-qa?fieldnotes=real-saved&theme=light",
+  "data": "25 real public place records from verified Development, presented as read-only saved rows; no user identities; no photos invented",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:52:50.391Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:55:11.380Z",
+    "observation": "Cold-restarted 2.0x text visibly enlarges; long Saved names wrap to multiple lines without row overlap.",
+    "limitations": [
+      "Search placeholder is horizontally clipped at 2.0x; the input remains visible.",
+      "Read-only public-place component preview with fixture Saved wrappers; lower rows require scrolling.",
+      "Android native fontScale2 after cold restart; not iOS Dynamic Type, VoiceOver, or a motion timing test."
+    ]
+  },
+  "animatorDurationScale": 0,
+  "animatorDurationScaleSource": "Capture operator reported Android animator duration scale0 for both large-text batches; static screenshots do not verify animation timing."
+}

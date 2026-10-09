@@ -18,6 +18,7 @@ const metadata = {
   platform: 'Android', device: 'Pixel 8a AVD', deviceId: device,
   width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20),
   density: readAdb('shell', 'wm', 'density'), fontScale: Number(readAdb('shell', 'settings', 'get', 'system', 'font_scale')),
+  animatorDurationScale: Number(readAdb('shell', 'settings', 'get', 'global', 'animator_duration_scale')),
   route: process.argv[3] || 'unspecified', data: process.argv[4] || 'development read-only fixture',
   commit: cp.execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', cwd: path.resolve(__dirname, '..') }).trim(),
   nativeBuild: 'Android debug; generated before JS version 1.6.59 bump',

@@ -1,0 +1,26 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 750,
+  "height": 1334,
+  "density": "Physical density: 420\r\nOverride density: 320",
+  "fontScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=review&theme=light&jobId=phase2-preview-mixed-5",
+  "data": "Read-only phase2-preview-mixed-5 fixture; candidate source thumbnails are synthetic fixture evidence",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:45:59.525Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:46:24.634Z",
+    "observation": "Review header, source ribbon, selection summary and selected row fit at 375x667; sticky Save2places action remains fully visible.",
+    "limitations": [
+      "Read-only mixed-five candidate fixture; candidate content continues below the scroll viewport; no save mutation performed.",
+      "Android emulator at375x667 logical points, fontScale1; not an iPhone or VoiceOver test."
+    ]
+  }
+}

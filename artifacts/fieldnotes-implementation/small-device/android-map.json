@@ -1,0 +1,26 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 750,
+  "height": 1334,
+  "density": "Physical density: 420\r\nOverride density: 320",
+  "fontScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=map&theme=light",
+  "data": "10 bundled demo saved places; native Google map; signed-out Activity guard active",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:45:09.490Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:46:24.631Z",
+    "observation": "Settled 375x667 native map, header, map peek and dock fit without visible overlap.",
+    "limitations": [
+      "Ten-place demo fixture; signed-out Activity guard active.",
+      "Android emulator at375x667 logical points, fontScale1; not an iPhone or VoiceOver test."
+    ]
+  }
+}

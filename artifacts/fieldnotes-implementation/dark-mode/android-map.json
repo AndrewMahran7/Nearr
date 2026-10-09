@@ -1,0 +1,30 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=map&theme=dark",
+  "data": "10 bundled demo saved places; native Google map; signed-out Activity guard active",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T22:07:49.074Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T22:08:33.496Z",
+    "imageSha256": "F4B73EC0A344A09B105D9CD833E618342556D0A284CBBF97107F6FBA8DEE1EEE",
+    "observation": "Cold normal-scale native map with settled tiles/markers, correct Dark theme, visible count of 10 places, current Saved peek, Search/filter/location controls and Map/Saved dock. No clipping, tooling overlay or loading state.",
+    "limitations": [
+      "Bundled demo places, not authenticated user data.",
+      "Activity is hidden by its existing signed-out guard.",
+      "Static screenshot does not establish marker conservation, gesture behavior or performance.",
+      "Android emulator evidence only; not iOS or VoiceOver evidence."
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=map&theme=dark (local Search open; query pizza)",
+  "data": "Actual native local saved-note search with bundled Bantam demo result; no provider query",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T22:00:16.581Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "surfaceState": "Local search remained open after map deep-link; retained under accurate search filename",
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T22:04:53.448Z",
+    "imageSha256": "F8D825F908704BC0CE27DD0AE394D90A1B909083628AA4953AC9D0251FC99A5F",
+    "observation": "Correct dark local Search state with pizza query, Your places selected and one Bantam saved-note result. No tooling overlay.",
+    "limitations": [
+      "The original requested selected route retained Search state; this frame is labeled as the Search evidence it actually shows.",
+      "Local demo result; no provider-query result or native keyboard visible.",
+      "Android emulator screenshot; not iOS or screen-reader evidence."
+    ]
+  }
+}

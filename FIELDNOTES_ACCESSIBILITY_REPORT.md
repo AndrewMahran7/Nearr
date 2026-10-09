@@ -2,6 +2,8 @@
 
 This report records implementation and automated evidence for the Fieldnotes worktree. It is not a blanket WCAG conformance or iOS accessibility acceptance claim. Native VoiceOver, maximum Dynamic Type, keyboard/focus behavior and the iOS Share Extension host still require device validation. The native comparison and build reports own any later device evidence.
 
+The subsequent Development iOS build **1.6.59 (59)** compiled successfully, including the Share Extension. IPA inspection confirms its embedded controller/bundle and automatic appearance. Compilation establishes native integration; it does not establish VoiceOver, host geometry or physical haptic behavior.
+
 ## What is implemented
 
 | Area | Implemented behavior | Evidence and remaining boundary |
@@ -15,7 +17,7 @@ This report records implementation and automated evidence for the Fieldnotes wor
 | Truthful state | Activity status uses text and icons, not color alone. Possible/area matches, unavailable source media, failed photos, pending recognition and duplicate outcomes remain visible. Practice is labelled and real queue results are not simulated by animation. | Check announcement frequency under a changing real job and ensure important updates are discoverable without repeated interruptions. |
 | Reduce Motion | The shared preference hook starts conservatively reduced, reads the OS setting and follows live changes. Gallery/detail transitions, review disclosure and programmatic paging use reduced alternatives. The onboarding helper delegates to that same hook. Local practice video stops autoplay; its poster remains. The 900ms practice thumbnail/pin/card choreography resolves immediately when reduced. | Component tests prove that the practice scene starts no choreography under Reduce Motion. Device checks must verify OS toggles, interruptions and all native transitions. Direct manipulation gestures intentionally remain. |
 | Haptics | Shared feedback is native-only, foreground-only and coalesced within 600ms. Receipt success is tied to durable acknowledgement and guarded after terminal actions/unmount. Polling and review checkbox changes do not add repeated feedback. | Five foundation behavior checks plus extension acknowledgement tests pass. Real device availability/intensity is not verified by mocks. Information is also presented visually/textually. |
-| Share Extension | React receipt scrolls. Swift startup/recovery uses dynamic colors and scalable fonts; failure controls scroll and respect host height. Standard compact presentation stays bounded, with more room requested for accessibility categories. | Generated Swift matches the authoritative plugin source. This is not a Swift compiler result or a VoiceOver/host geometry test. Instagram, TikTok, Safari and other hosts need actual iOS testing. |
+| Share Extension | React receipt scrolls. Swift startup/recovery uses dynamic colors and scalable fonts; failure controls scroll and respect host height. Standard compact presentation stays bounded, with more room requested for accessibility categories. | Generated Swift matches the authoritative plugin source and compiled in Development build 59. Compilation does not establish VoiceOver or host geometry. Instagram, TikTok, Safari and other hosts need actual iOS testing. |
 
 ## Automated checks completed
 
@@ -28,6 +30,14 @@ This report records implementation and automated evidence for the Fieldnotes wor
 - Integrated TypeScript passed at the phase checkpoint. Exact commands and results are in [detail-saved-onboarding-tests.json](artifacts/fieldnotes-implementation/detail-saved-onboarding-tests.json) and [review-extension-phase.json](artifacts/fieldnotes-implementation/review-extension-phase.json).
 
 Contrast tests use the standard relative-luminance calculation on solid semantic colors. They cover Light and Dark text/secondary/accent against canvas, surface and elevated surface; primary-action text; both save-gradient endpoints; and success, warning and danger pairs. They do not establish all non-text boundary, image-overlay or native-system contrast requirements. Disabled styling is not counted as normal readable text evidence.
+
+## Native small-phone observations
+
+Eight actual Android captures at **375 × 667 logical points** were independently reviewed: map, selected place, photo detail, Saved, Quick Check, multi-place review, account and welcome. Visible primary actions fit without blocking overlap; Saved titles wrap and both review save buttons remain visible. These are Android framebuffer observations, not iPhone safe-area or VoiceOver results. Lower detail content was not all visible in the initial frames. The welcome's decorative source overlay partly obscures its destination caption; this is recorded as a nonblocking visual limitation.
+
+Two additional small-device scroll captures bring that set to ten. They show the full welcome body, platform chips and privacy line reachable while both footer actions remain visible, and the detail source ribbon plus full saved reason. They do not establish the detail reminder/visited controls or every keyboard interaction.
+
+The initial enlarged-text batch changed Android `font_scale` and activated responsive layout branches, but pixel comparison found unchanged app glyph sizes. A cold restart resolved the emulator's stale React Native font metrics; replacement captures visibly enlarge the app's native text. All **eight 1.6×** and **seven 2×** captures were independently reviewed. At 2×, Account, Saved, detail, Quick Check and multi-place review retain their visible primary actions. Long Saved names and the detail title wrap. The map's secondary count summary and Review's secondary alternatives subtitle can ellipsize, the search placeholder can clip, and welcome copy requires scrolling. Final accepted evidence is recorded in `artifacts/fieldnotes-implementation/large-text/` with per-capture metadata. Static frames do not establish reachability of every below-fold control, and this does not establish maximum iOS Dynamic Type behavior.
 
 ## Native acceptance still required
 

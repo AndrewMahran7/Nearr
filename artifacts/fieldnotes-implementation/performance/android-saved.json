@@ -1,0 +1,28 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=real-saved&theme=light",
+  "data": "Actual 25-public-name Development component fixture; visible Oliver featured row verified",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:58:31.851Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T22:00:55.916Z",
+    "imageSha256": "d1c108a5bf76f7600719451daf08fc597e97cfb3765cdb4d177ef0a562bac573",
+    "observation": "Actual Saved component shows compact no-photo lead and compact public-place rows without tooling overlay.",
+    "limitations": [
+      "Read-only fixture/native Android debug rendering; no production or iOS evidence.",
+      "Static visual acceptance does not establish acceptable frame performance, memory use, or speedup."
+    ]
+  }
+}

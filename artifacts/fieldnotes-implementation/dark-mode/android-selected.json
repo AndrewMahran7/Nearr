@@ -1,0 +1,28 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=map&theme=dark&savedPlaceId=demo-saved-bantam&openRequestId=fieldnotes-1791583331255",
+  "data": "Actual native map selection for bundled Bantam demo saved place; unavailable imagery",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T22:02:20.934Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T22:04:53.447Z",
+    "imageSha256": "702AFC9B5014CC1827AFA5B0C6B537B01A3F9622A131FAEBFB8190149F9A5F86",
+    "observation": "Correct dark native map with selected peach marker and Bantam preview card, title, address, saved note, close/open controls and Map/Saved dock. No tooling overlay or overlapping controls.",
+    "limitations": [
+      "Bundled demo map fixture; signed-out Activity entry guard remains active.",
+      "Android emulator screenshot; not iOS or screen-reader evidence."
+    ]
+  }
+}

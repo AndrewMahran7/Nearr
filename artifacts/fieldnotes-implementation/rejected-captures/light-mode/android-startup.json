@@ -1,0 +1,13 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "capturedAt": "2026-10-09T19:50:51.667Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": false,
+  "rejectionReason": "Initial Expo startup loader; no settled product route.",
+  "rejectionReviewer": "client_inventory"
+}

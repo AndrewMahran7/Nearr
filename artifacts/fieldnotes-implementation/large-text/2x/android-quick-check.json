@@ -1,0 +1,30 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 2,
+  "route": "nearr://dev-qa?fieldnotes=review&theme=light&jobId=vayrin-confirm-neutral",
+  "data": "Read-only vayrin-confirm-neutral single-candidate fixture; no place photo",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:53:20.420Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T21:57:55.359Z",
+    "imageSha256": "24b39bfd5aeff2c2d13685eaa6b4546d4cda6b68cb633ac0f2a57d7fd10f25b5",
+    "observation": "Cold-restarted 2.0x native text visibly enlarges; back chevron is present and the gradient Save Stari Most action remains fully visible. Verified again from a unique-path byte-identical copy.",
+    "limitations": [
+      "Read-only single-candidate fixture with unavailable-image explanations; candidate address and alternatives continue below the scroll fold.",
+      "No save mutation or scroll interaction performed.",
+      "Android fontScale2; not iOS Dynamic Type or VoiceOver evidence."
+    ]
+  },
+  "animatorDurationScale": 0,
+  "animatorDurationScaleSource": "Capture operator reported Android animator duration scale0 for both large-text batches; static screenshots do not verify animation timing."
+}

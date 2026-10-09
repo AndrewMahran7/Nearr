@@ -1,0 +1,28 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=activity&theme=dark",
+  "data": "Read-only Activity fixture: processing, review, recovery, and completed states",
+  "commit": "38e28495d0ab99146459a96756e1115e46f3d5ef",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T22:00:26.285Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "visualVerification": {
+    "reviewer": "client_inventory",
+    "reviewedAt": "2026-10-09T22:01:57.105Z",
+    "imageSha256": "86e7e7de637e37c84d1b0bad3221f44fee0a0d7e77db2a6c6c703009129475ee",
+    "observation": "Dark Activity fixture shows processing, review, recovery and completed groups; no refresh or tooling overlay.",
+    "limitations": [
+      "Read-only fixtures; no live processing or save mutation exercised.",
+      "Android native default-scale viewport; not iOS or screen-reader evidence."
+    ]
+  }
+}

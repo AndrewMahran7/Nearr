@@ -1,0 +1,18 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=map&theme=light > Search > pizza",
+  "data": "Actual local saved-place search for pizza; no provider search submitted; keyboard visible",
+  "commit": "c3687dda973fdf2775ba2876a7f05de21d6191d5",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-09T21:27:24.947Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false,
+  "visuallyVerified": true,
+  "verification": "Actual requested screen, settled native content, no tooling overlay"
+}
