@@ -33,6 +33,7 @@ import * as Location from 'expo-location';
 import { Button, ErrorBoundary, Input, ShareJobsHeader } from '@/components';
 import { SourceRibbon } from '@/components/SourceRibbon';
 import { useReduceMotion } from '@/lib/useReduceMotion';
+import { ShareJobLoadingState } from '@/components/ShareJobLoadingState';
 import { hapticSuccess } from '@/lib/haptics';
 import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
 import { PlaceBrowseCarousel, type PlaceBrowseCarouselItem } from '@/components/PlaceBrowseCarousel';
@@ -377,6 +378,8 @@ function ShareJobDetailScreen() {
   >({});
   const [hydratedPrimarySaved, setHydratedPrimarySaved] = useState<SavedPlaceWithPlace | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const pendingLoadsRef = useRef(0);
   const [loadFailure, setLoadFailure] = useState<DetailLoadFailure | null>(null);
   const [busy, setBusy] = useState(false);
   const areaMatchIncompleteTrackedRef = useRef<string | null>(null);
@@ -558,6 +561,8 @@ function ShareJobDetailScreen() {
       }
       return;
     }
+    pendingLoadsRef.current += 1;
+    if (mountedRef.current) setRefreshing(true);
     try {
       const previewSaved = getSavedPlacesCacheSnapshot()?.find(
         (saved) => saved.place?.google_place_id,
@@ -621,7 +626,11 @@ function ShareJobDetailScreen() {
       recordBreadcrumb('candidate_loaded', { jobId: id, result: `load_failed:${failure}` });
       setLoadFailure(failure);
     } finally {
-      if (mountedRef.current) setLoading(false);
+      pendingLoadsRef.current = Math.max(0, pendingLoadsRef.current - 1);
+      if (mountedRef.current) {
+        setLoading(false);
+        setRefreshing(pendingLoadsRef.current > 0);
+      }
     }
   }, [routeJobId]);
 
@@ -2139,13 +2148,11 @@ function ShareJobDetailScreen() {
     );
   }
 
-  if (loading) {
+  if (loading && !job) {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" />
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.primary} />
-        </View>
+        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
+        <ShareJobLoadingState />
       </ShareJobsSheet>
     );
   }
@@ -2156,7 +2163,7 @@ function ShareJobDetailScreen() {
     const retryable = isRetryableLoadFailure(loadFailure);
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" />
+        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
         <View style={styles.centered}>
           <Text style={[typography.body, styles.help]}>
             {retryable
@@ -2203,7 +2210,7 @@ function ShareJobDetailScreen() {
     if (!resultModel) {
       return (
         <ShareJobsSheet onDismiss={backToQueue} size="detail">
-          <ShareJobsHeader title="Saved place" onBack={backToQueue} backLabel="Back to Activity" />
+          <ShareJobsHeader title="Saved place" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
           <View style={styles.centered} testID="saved-place-unavailable">
             <Text style={[typography.heading, styles.centeredTitle]}>This save is no longer available</Text>
             <Text style={[typography.body, styles.help, { textAlign: 'center' }]}>It may have been removed from your map.</Text>
@@ -2216,7 +2223,7 @@ function ShareJobDetailScreen() {
     const originalPlan = planOpenOriginal(sourceUrl);
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Saved place" onBack={backToQueue} backLabel="Back to Activity" />
+        <ShareJobsHeader title="Saved place" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
         <SavedPlaceResult
           primary={resultModel}
           sourceAvailable={originalPlan.kind === 'open'}
@@ -2268,7 +2275,7 @@ function ShareJobDetailScreen() {
   if (detail.kind === 'dismissed') {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" />
+        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
         <View style={styles.centered}>
           <Text style={[typography.body, styles.help]}>
             This item is no longer in Activity.
@@ -2351,11 +2358,9 @@ function ShareJobDetailScreen() {
     const recoveryCount = batch ? recoverableBatchRowCount(batch) : 0;
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Review places" onBack={backToQueue} backLabel="Back to Activity" />
+        <ShareJobsHeader title="Review places" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
         {!batch ? (
-          <View style={styles.centered}>
-            <ActivityIndicator color={colors.primary} />
-          </View>
+          <ShareJobLoadingState />
         ) : (
           <KeyboardAvoidingView
             style={styles.batchKeyboardSurface}
@@ -2450,7 +2455,7 @@ function ShareJobDetailScreen() {
   if (isCandidatePicker) {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" compact />
+        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} compact />
         <ScrollView
           contentContainerStyle={[styles.content, styles.quickCheckContent]}
           contentInsetAdjustmentBehavior="automatic"
@@ -2594,7 +2599,7 @@ function ShareJobDetailScreen() {
 
   return (
     <ShareJobsSheet onDismiss={backToQueue} size="detail">
-      <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" />
+      <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
       <ScrollView
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"

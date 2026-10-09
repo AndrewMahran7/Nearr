@@ -11,7 +11,7 @@
  * it needs no inset math of its own.
  */
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { Spacing } from '@/constants';
@@ -27,6 +27,9 @@ type Props = {
   icon?: 'back' | 'close';
   /** Optional small actionable-count badge shown on the right. */
   count?: number;
+  /** Uses the existing trailing slot so refreshing never moves review content. */
+  refreshing?: boolean;
+  reduceMotion?: boolean;
   /** Optional overflow action used for infrequent queue-wide operations. */
   rightAction?: {
     accessibilityLabel: string;
@@ -42,6 +45,8 @@ export function ShareJobsHeader({
   backLabel = 'Back',
   icon = 'back',
   count,
+  refreshing = false,
+  reduceMotion = false,
   rightAction,
 }: Props) {
   const { colors, typography } = useTheme();
@@ -85,7 +90,10 @@ export function ShareJobsHeader({
           <Text style={styles.badgeText}>{count}</Text>
         </View>
       ) : (
-        <View style={styles.spacer} />
+        <View style={styles.spacer} accessible={refreshing} accessibilityRole={refreshing ? 'progressbar' : undefined}
+          accessibilityLabel={refreshing ? 'Updating this find' : undefined}>
+          {refreshing ? reduceMotion ? <Feather name="refresh-cw" size={18} color={colors.textSecondary} /> : <ActivityIndicator size="small" color={colors.primary} /> : null}
+        </View>
       )}
     </View>
   );
@@ -122,7 +130,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     actionBtnDisabled: { opacity: 0.45 },
     title: { flex: 1, color: colors.text },
-    spacer: { width: 44, height: 44 },
+    spacer: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
     badge: {
       minWidth: 28,
       height: 28,
