@@ -2829,6 +2829,7 @@ function ShareJobDetailScreen() {
       ) : confirmationSingle && !broadSingle && !searchExpanded && !isManual && !isProcessing ? (
         <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
           <Button
+            variant="save"
             title={busy ? 'Saving…' : fallbackSaveLabel(confirmationSingle.name)}
             accessibilityLabel={`Save ${confirmationSingle.name}`}
             onPress={() => { if (single) void handleSaveStored(single); }}

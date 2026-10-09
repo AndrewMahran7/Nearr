@@ -150,7 +150,7 @@ export function SourceEvidenceGallery({
           ) : null}
         </>
       ) : (
-        <View style={[styles.missing, { width: frameWidth, minHeight: compact ? 92 : 112 }]}>
+        <View style={[styles.missing, { width: frameWidth, minHeight: paired ? frameHeight : compact ? 92 : 112 }]}>
           <Feather name="film" size={22} color={COLORS.muted} />
           <Text style={styles.missingText}>Video frames are unavailable. You can still watch the original post.</Text>
         </View>
