@@ -1,6 +1,6 @@
 # Nearr 1.6 app icon build verification
 
-Status: source and installed Expo generator verified; final Development IPA and installed iPhone appearance pending.
+Status: source, installed Expo generator, and completed Development IPA verified. Physical iPhone appearance remains unobserved.
 
 ## Selected source
 
@@ -35,6 +35,39 @@ This uses SDK51's supported string icon path. No modern `ios.icon.light/dark/tin
 
 ## Final Development binary
 
-Pending the root build's final IPA. The final inspection must record its build ID, Git SHA, version/build number and archive hash; read the host and extension Info.plist; enumerate compiled app icon resources; decode those resources and compare their pixels with the canonical source at each compiled size. PNG file hashes alone cannot establish a mismatch because native tools may re-encode or optimize them.
+The downloaded Development IPA was inspected directly with `zipfile` and `plistlib`. Only public bundle metadata and icon assets were extracted; no provisioning profiles, device identifiers, signing material or credential URLs are included in this evidence.
 
-An asset catalog generated in an evidence directory is not proof that an IPA includes it. An IPA comparison is not proof of the installed iPhone home-screen presentation. Neither of those stronger claims is made at this stage. The founder device check must verify the icon after installing the new native build; an OTA does not replace it.
+| Check | Actual IPA result |
+| --- | --- |
+| EAS build ID | `74a22771-5998-485b-ac16-f316caf7491d` |
+| Native build source commit | `bb2a705ceda39f0938d2a90eca88952828ba614d` |
+| Archive size | 32,650,170 bytes |
+| Archive SHA-256 | `c8aba16fb9ccaf2b9b61b1a5a2b6dce6bcc2460771704b202fea6b374228c910` |
+| Host bundle | `com.nearr.ios`, Nearr, version `1.6.59`, build `59` |
+| Embedded Expo runtime | `1.6.59`, updates enabled |
+| Host primary icon | `AppIcon`; iPhone `AppIcon60x60`, iPad `AppIcon60x60` / `AppIcon76x76` |
+| Appearance | Host and extension `UIUserInterfaceStyle = Automatic` |
+| Compiled icon files | `AppIcon60x60@2x.png` (120 px), `AppIcon76x76@2x~ipad.png` (152 px), plus compiled `Assets.car` |
+| Share Extension | `PlugIns/NearrShareExtension.appex` exists; `com.nearr.ios.ShareExtension`, version `1.6.59`, extension build `1` |
+| Extension registration | `com.apple.share-services`; principal class `NearrShareExtension.ShareExtensionViewController`; text / one web URL activation |
+| Embedded extension JavaScript | Own `main.jsbundle` exists, 4,092,398 bytes; SHA-256 `d3427e3c16d9e0407da32ba57e27bcf828e5cd44787acc63f2ba585829ef2009` |
+| Extension receipt artwork | `assets/assets/icon.png`, opaque 1024 px, byte-identical and RGB-identical to canonical source |
+
+The build ID and build source commit are the successful EAS build identity supplied by the build owner. Bundle versions, runtime, resource presence, hashes and pixel measurements above were independently read from the downloaded archive. Extension build `1` is the actual plugin-generated value; it is not represented as build `59`.
+
+Both directly emitted compiled app-icon PNGs use Apple's CgBI optimization. The inspection script decodes raw DEFLATE, reverses PNG row filters and converts premultiplied BGRA into ordinary RGBA. The decoded images were opened and visually inspected: both contain the selected botanical pin, orange spark and warm ivory full-square background, with no unexpected padding or earlier black icon. Both have alpha extrema `[255, 255]`, and all four corners are the expected RGB `[247, 244, 238]`.
+
+| Compiled size | Mean absolute RGB channel difference from bicubic source resize (0–255) | Pixels exactly equal | Pixels within 8/channel |
+| --- | --- | --- | --- |
+| 120 × 120 | 0.852 | 92.89% | 97.42% |
+| 152 × 152 | 0.642 | 94.54% | 98.01% |
+
+Native resampling differs from Pillow's bicubic kernel around edges, so these downscaled icon pixels are not asserted to be identical. The complete metrics include nearest, bilinear, bicubic and Lanczos comparisons. The extension's 1024 px receipt asset is an exact match without resampling.
+
+- [Reproducible IPA inspection script](artifacts/fieldnotes-implementation/icon-build-proof/verify-ipa.py)
+- [Sanitized machine-readable archive proof](artifacts/fieldnotes-implementation/icon-build-proof/ipa/ipa-verification.json)
+- [Compiled icon visual comparison](artifacts/fieldnotes-implementation/icon-build-proof/ipa/compiled-icon-comparison.png)
+- [Decoded 120 px compiled icon](artifacts/fieldnotes-implementation/icon-build-proof/ipa/AppIcon60x60@2x-decoded.png)
+- [Decoded 152 px compiled icon](artifacts/fieldnotes-implementation/icon-build-proof/ipa/AppIcon76x76@2x~ipad-decoded.png)
+
+`Assets.car` is present and hashed in the JSON, but its catalog-only renditions, including any 3x icon, were not individually decoded on this Windows host. Archive inspection establishes packaging of the selected artwork; it does not establish installed iPhone home-screen, Settings or share-sheet presentation. Those physical-device checks remain pending. The founder must install this native build to receive its app icon; an OTA does not replace it. The later JS-only Quick Check loading commit `f6e9bbd` is intended for the initial Development OTA and is not the native build's source commit.

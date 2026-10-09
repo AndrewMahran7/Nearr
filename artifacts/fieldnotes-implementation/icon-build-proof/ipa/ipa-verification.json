@@ -1,0 +1,278 @@
+{
+  "buildId": "74a22771-5998-485b-ac16-f316caf7491d",
+  "buildSourceCommit": "bb2a705ceda39f0938d2a90eca88952828ba614d",
+  "buildIdentityOrigin": "Successful EAS build identity supplied by root; bundle versions below independently read from IPA",
+  "ipaFilename": "fieldnotes-development-59.ipa",
+  "ipaBytes": 32650170,
+  "ipaSHA256": "c8aba16fb9ccaf2b9b61b1a5a2b6dce6bcc2460771704b202fea6b374228c910",
+  "sourceSHA256": "ac3ed31cf494843c72c5049e480e77f2af2fc74dcc8b9a85ce636aba0cc2db2a",
+  "sourceDecodedRGBSHA256": "51b4074c121482b01e35c8494c85a1a5723b388b0a6ce212a0fe291e4fe3059d",
+  "sourceDimensions": [
+    1024,
+    1024
+  ],
+  "hostInfo": {
+    "CFBundleIdentifier": "com.nearr.ios",
+    "CFBundleName": "Nearr",
+    "CFBundleDisplayName": "Nearr",
+    "CFBundleShortVersionString": "1.6.59",
+    "CFBundleVersion": "59",
+    "MinimumOSVersion": "13.4",
+    "CFBundleIcons": {
+      "CFBundlePrimaryIcon": {
+        "CFBundleIconFiles": [
+          "AppIcon60x60"
+        ],
+        "CFBundleIconName": "AppIcon"
+      }
+    },
+    "CFBundleIcons~ipad": {
+      "CFBundlePrimaryIcon": {
+        "CFBundleIconFiles": [
+          "AppIcon60x60",
+          "AppIcon76x76"
+        ]
+      }
+    },
+    "UIUserInterfaceStyle": "Automatic"
+  },
+  "extensionInfo": {
+    "CFBundleIdentifier": "com.nearr.ios.ShareExtension",
+    "CFBundleName": "NearrShareExtension",
+    "CFBundleDisplayName": "NearrShareExtension Share Extension",
+    "CFBundleShortVersionString": "1.6.59",
+    "CFBundleVersion": "1",
+    "MinimumOSVersion": "13.4",
+    "UIUserInterfaceStyle": "Automatic",
+    "NSExtension": {
+      "NSExtensionAttributes": {
+        "NSExtensionActivationRule": {
+          "NSExtensionActivationSupportsText": true,
+          "NSExtensionActivationSupportsWebURLWithMaxCount": 1
+        }
+      },
+      "NSExtensionPointIdentifier": "com.apple.share-services",
+      "NSExtensionPrincipalClass": "NearrShareExtension.ShareExtensionViewController"
+    },
+    "ShareExtensionHeight": 360,
+    "AppGroup": "group.com.nearr.ios"
+  },
+  "expoInfo": {
+    "EXUpdatesRuntimeVersion": "1.6.59",
+    "EXUpdatesEnabled": true
+  },
+  "extensionEmbeddedBundle": {
+    "archivePath": "Payload/Nearr.app/PlugIns/NearrShareExtension.appex/main.jsbundle",
+    "bytes": 4092398,
+    "sha256": "d3427e3c16d9e0407da32ba57e27bcf828e5cd44787acc63f2ba585829ef2009"
+  },
+  "compiledAssetCatalog": {
+    "archivePath": "Payload/Nearr.app/Assets.car",
+    "bytes": 41768,
+    "sha256": "87a81c4f990f5cf6f4425ddca0a054643a1bd7003b1d78b4bdf566f091d9dfe9",
+    "individualRenditionsDecoded": false
+  },
+  "compiledIconResources": [
+    "Payload/Nearr.app/AppIcon60x60@2x.png",
+    "Payload/Nearr.app/AppIcon76x76@2x~ipad.png"
+  ],
+  "icons": [
+    {
+      "archivePath": "Payload/Nearr.app/AppIcon60x60@2x.png",
+      "bytes": 3941,
+      "sha256": "9fe9ab843af79baa56fa344cd570295153483e5ff570a6b000ce61e8e1a7b07a",
+      "dimensions": [
+        120,
+        120
+      ],
+      "decoder": "CgBI raw-deflate / PNG unfilter / BGRA unpremultiply",
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "decodedRGBSha256": "ccb4e0f78c07270ef8c297290be6d1b65e4038586c1dd80b59903706a7da61e6",
+      "cornerRGB": [
+        [
+          247,
+          244,
+          238
+        ],
+        [
+          247,
+          244,
+          238
+        ],
+        [
+          247,
+          244,
+          238
+        ],
+        [
+          247,
+          244,
+          238
+        ]
+      ],
+      "sourceResamplingComparisons": {
+        "NEAREST": {
+          "meanAbsoluteChannelDifference255": 1.2167592592592593,
+          "maxAbsoluteChannelDifference255": 146,
+          "exactPixelFraction": 0.9289583333333333,
+          "within8PerChannelPixelFraction": 0.9701388888888889
+        },
+        "BILINEAR": {
+          "meanAbsoluteChannelDifference255": 0.9271296296296296,
+          "maxAbsoluteChannelDifference255": 63,
+          "exactPixelFraction": 0.9284027777777778,
+          "within8PerChannelPixelFraction": 0.9634027777777778
+        },
+        "BICUBIC": {
+          "meanAbsoluteChannelDifference255": 0.8519907407407408,
+          "maxAbsoluteChannelDifference255": 66,
+          "exactPixelFraction": 0.9288888888888889,
+          "within8PerChannelPixelFraction": 0.9741666666666666
+        },
+        "LANCZOS": {
+          "meanAbsoluteChannelDifference255": 0.9991203703703704,
+          "maxAbsoluteChannelDifference255": 69,
+          "exactPixelFraction": 0.8989583333333333,
+          "within8PerChannelPixelFraction": 0.9683333333333334
+        }
+      },
+      "exactSourceRGBMatch": false
+    },
+    {
+      "archivePath": "Payload/Nearr.app/AppIcon76x76@2x~ipad.png",
+      "bytes": 4877,
+      "sha256": "9ffbe8cb8506ae54d31e0aa8a14a3c206098a27c532a7d15d8d4de822df2a2bb",
+      "dimensions": [
+        152,
+        152
+      ],
+      "decoder": "CgBI raw-deflate / PNG unfilter / BGRA unpremultiply",
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "decodedRGBSha256": "ad9dad8d51bdc7f021998909f81f0640b588e93d0b2ea6f26ee3bf6cfa25bc66",
+      "cornerRGB": [
+        [
+          247,
+          244,
+          238
+        ],
+        [
+          247,
+          244,
+          238
+        ],
+        [
+          247,
+          244,
+          238
+        ],
+        [
+          247,
+          244,
+          238
+        ]
+      ],
+      "sourceResamplingComparisons": {
+        "NEAREST": {
+          "meanAbsoluteChannelDifference255": 1.002207409972299,
+          "maxAbsoluteChannelDifference255": 155,
+          "exactPixelFraction": 0.944165512465374,
+          "within8PerChannelPixelFraction": 0.9763244459833795
+        },
+        "BILINEAR": {
+          "meanAbsoluteChannelDifference255": 0.7150854108956602,
+          "maxAbsoluteChannelDifference255": 61,
+          "exactPixelFraction": 0.9446849030470914,
+          "within8PerChannelPixelFraction": 0.9712171052631579
+        },
+        "BICUBIC": {
+          "meanAbsoluteChannelDifference255": 0.642053324099723,
+          "maxAbsoluteChannelDifference255": 64,
+          "exactPixelFraction": 0.9453774238227147,
+          "within8PerChannelPixelFraction": 0.980090027700831
+        },
+        "LANCZOS": {
+          "meanAbsoluteChannelDifference255": 0.7552948984302862,
+          "maxAbsoluteChannelDifference255": 68,
+          "exactPixelFraction": 0.9193213296398892,
+          "within8PerChannelPixelFraction": 0.9775363573407202
+        }
+      },
+      "exactSourceRGBMatch": false
+    },
+    {
+      "archivePath": "Payload/Nearr.app/PlugIns/NearrShareExtension.appex/assets/assets/icon.png",
+      "bytes": 36232,
+      "sha256": "ac3ed31cf494843c72c5049e480e77f2af2fc74dcc8b9a85ce636aba0cc2db2a",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "decoder": "ordinary PNG",
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "decodedRGBSha256": "51b4074c121482b01e35c8494c85a1a5723b388b0a6ce212a0fe291e4fe3059d",
+      "cornerRGB": [
+        [
+          247,
+          244,
+          238
+        ],
+        [
+          247,
+          244,
+          238
+        ],
+        [
+          247,
+          244,
+          238
+        ],
+        [
+          247,
+          244,
+          238
+        ]
+      ],
+      "sourceResamplingComparisons": {
+        "NEAREST": {
+          "meanAbsoluteChannelDifference255": 0.0,
+          "maxAbsoluteChannelDifference255": 0,
+          "exactPixelFraction": 1.0,
+          "within8PerChannelPixelFraction": 1.0
+        },
+        "BILINEAR": {
+          "meanAbsoluteChannelDifference255": 0.0,
+          "maxAbsoluteChannelDifference255": 0,
+          "exactPixelFraction": 1.0,
+          "within8PerChannelPixelFraction": 1.0
+        },
+        "BICUBIC": {
+          "meanAbsoluteChannelDifference255": 0.0,
+          "maxAbsoluteChannelDifference255": 0,
+          "exactPixelFraction": 1.0,
+          "within8PerChannelPixelFraction": 1.0
+        },
+        "LANCZOS": {
+          "meanAbsoluteChannelDifference255": 0.0,
+          "maxAbsoluteChannelDifference255": 0,
+          "exactPixelFraction": 1.0,
+          "within8PerChannelPixelFraction": 1.0
+        }
+      },
+      "exactSourceRGBMatch": true
+    }
+  ],
+  "limitations": [
+    "Compiled 120px and 152px PNG renditions decoded; catalog-only renditions inside Assets.car not individually decoded on this Windows host.",
+    "No physical iPhone installation, launcher, Settings, share-sheet geometry, VoiceOver or haptic test is established by archive inspection.",
+    "Source commit f6e9bbd is a later JS-only loading treatment intended for Development OTA and is not the native IPA source commit."
+  ]
+}
