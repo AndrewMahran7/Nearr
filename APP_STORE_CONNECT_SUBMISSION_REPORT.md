@@ -1,4 +1,6 @@
-# App Store Connect status — HOLD
+# App Store Connect status — HOLD (2026-10-09)
+
+2026-10-09 signed-in Edge read: Nearr public iOS 1.4.55 is Ready for Distribution; an existing 1.4.55.1 draft is Prepare for Submission, with automatic release selected on that draft. Build 58 is not in TestFlight or uploaded. No App Store Connect setting or declaration was changed. The new isolated V2 candidate failed a two-session ownership race, so no upload, submission, or manual-release setup may proceed. The existing draft's automatic setting must not be mistaken for the required eventual 1.5.58 manual release setting.
 
 2026-10-08 unblocker update: no upload, TestFlight processing, build attachment, or App Review submission was attempted after the backup rehearsal. The pre-existing Production saved-place-source ownership mismatch and unproven V2/security/notification/client gates keep this report on HOLD. No legal/compliance answer or release setting was guessed.
 

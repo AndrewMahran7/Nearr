@@ -1,3 +1,7 @@
-# V2 transfer concurrency — BLOCKED
+# V2 transfer concurrency — FAILED / ABSOLUTE STOP
 
-No safe V2 candidate exists, so the zero/unique/duplicate/multiple-source matrix, retry, concurrent callback, lost response, and mid-transaction failure tests were **not run**. The Development SQL remains excluded. No claim of idempotency or atomic duplicate merge is made.
+On 2026-10-09 a new, non-Development V2 candidate was applied **only** to an isolated PostgreSQL 18 restore of the post-repair Production backup. It was never applied to Production. `scripts/testSafeOnboardingV2Concurrency.ps1` used separate database sessions and fresh local clones.
+
+Three scenarios passed: simultaneous duplicate requests for the same grant, two separate anonymous saves merging into one destination save, and an independent destination insert of the same source identity during transfer. The fourth failed twice: while a unique anonymous save transferred to the destination, another session inserted a source child against that save. The committed local graph was `late_a=1`, `late_b=0`, `original_b=1`, `parent_owner_b=1`, `global_mismatch=1`. The late child retained the anonymous owner after its parent moved. Parent row locking in this candidate was insufficient.
+
+This is the explicit **“new V2 creates ownership mismatch”** and **“concurrency produces inconsistent graph”** stop condition. No fix or further deployment was attempted. The rejected SQL is quarantined at `V2_TRANSFER_REJECTED_CANDIDATE.sql`, outside `supabase/migrations`; never deploy it. The failed clone and post-repair local test database were dropped. Production's repaired mismatch count was zero on the immediate post-repair and backup reads; this race happened only in an isolated local clone.

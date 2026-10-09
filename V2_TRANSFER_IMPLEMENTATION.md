@@ -1,0 +1,7 @@
+# V2 transfer implementation status — REJECTED, NOT DEPLOYABLE
+
+The 2026-10-09 candidate was a new additive V2 implementation, not the unsafe Development migration. It retained V1 RPCs, did not delete duplicate anonymous saved places, transferred unique saves with their child sources, merged missing source identities into an existing destination save, retained anonymous duplicate-source rows, copied notes only into an empty destination field, and deferred anonymous cleanup while retained relationships existed. The source was applied only to an isolated post-repair Production restore.
+
+Local core tests passed unique save with multiple sources, duplicate destination with one present and one missing source identity, retries/replay, notes, retained anonymous graph, RLS, and zero-real-save tutorial IDs. This is **not** a passing implementation: a concurrent late source insert against a transferring unique save committed with the old owner while the parent and original source moved. The isolated clone had one source/save owner mismatch. No fix was attempted after that absolute stop.
+
+The exact rejected candidate is `V2_TRANSFER_REJECTED_CANDIDATE.sql`, deliberately outside `supabase/migrations`, with a DO NOT DEPLOY header. `rg --files supabase/migrations | rg 20261009` found no deployable candidate. Any successor requires a new design/review and the entire release-gate rerun, including a deterministic version of this two-session race. Production has no V2 candidate from this work.

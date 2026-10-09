@@ -1,5 +1,7 @@
 # Ownership repair and V2 transfer test matrix
 
+**2026-10-09 superseding result:** The prior fixture-only table below is historical. A new additive V2 candidate was exercised on a post-repair isolated restore: core, adversarial/RLS, and failure-injection tests passed locally, but the fourth real two-session concurrency case created a source/save ownership mismatch in a local clone. See `V2_TRANSFER_CONCURRENCY_REPORT.md`, `V2_TRANSFER_SECURITY_REPORT.md`, and `V2_TRANSFER_FAILURE_INJECTION.md`. The candidate is rejected outside migrations; Production V2 remains unmodified. This is an absolute release stop, not an outstanding test to waive.
+
 All PASS entries below ran against an **isolated PostgreSQL 18 restore of the Production schema/data** in a transaction that rolled back. No Production test performed a write. The fixture scripts use synthetic UUIDs and `example.invalid` sources. They test ownership semantics and a proposed merge shape, **not** a completed V2 RPC.
 
 | Scenario | Result / evidence |
