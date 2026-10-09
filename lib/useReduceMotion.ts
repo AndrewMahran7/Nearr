@@ -1,14 +1,27 @@
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 
-/** Conservative until the accessibility setting is known; responds to live changes. */
-export function useReduceMotion(): boolean {
-  const [reduced, setReduced] = useState(true);
+/** Readiness lets one-shot effects wait without consuming their pending identity. */
+export function useReduceMotionPreference(): { reduced: boolean; ready: boolean } {
+  const [preference, setPreference] = useState({ reduced: true, ready: false });
   useEffect(() => {
     let mounted = true;
-    void AccessibilityInfo.isReduceMotionEnabled().then(value => { if (mounted) setReduced(value); }).catch(() => undefined);
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduced);
+    let receivedLiveChange = false;
+    void AccessibilityInfo.isReduceMotionEnabled().then(value => {
+      if (mounted && !receivedLiveChange) setPreference({ reduced: value, ready: true });
+    }).catch(() => {
+      if (mounted && !receivedLiveChange) setPreference({ reduced: true, ready: true });
+    });
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', reduced => {
+      receivedLiveChange = true;
+      if (mounted) setPreference({ reduced, ready: true });
+    });
     return () => { mounted = false; subscription.remove(); };
   }, []);
-  return reduced;
+  return preference;
+}
+
+/** Conservative until the accessibility setting is known; responds to live changes. */
+export function useReduceMotion(): boolean {
+  return useReduceMotionPreference().reduced;
 }

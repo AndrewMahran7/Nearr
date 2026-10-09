@@ -36,7 +36,7 @@ This inventory describes the React Native implementation in `feat/nearr-1.6-fiel
 
 ## Motion, data and QA boundaries
 
-`SaveArrival.tsx` is a local cue for an already-persisted save and does not move the map camera. Practice uses a bundled illustrative map; it is labelled as practice and is not presented as a live geographic view. Receipt entrance, review disclosure and programmatic photo paging honor the shared reduced-motion setting. Direct touch gestures remain available.
+`SaveArrival.tsx` is a local cue for an already-persisted save and does not move the map camera. It waits for the shared motion preference to become ready before consuming a save identity, and each identity is processed once during the component lifetime. Reduced motion uses only a stationary pin with a short opacity cue; the ring and spark are absent. Practice uses a bundled illustrative map; it is labelled as practice and is not presented as a live geographic view. Receipt entrance, review disclosure and programmatic photo paging honor the shared reduced-motion setting. Direct touch gestures remain available.
 
 The implementation uses existing saved-place, source, reminder, job and auth contracts. This phase does not change recognition prompts/models, backend schemas, production projects or provider cost policy. Displaying a source ribbon or opening Saved does not add a thumbnail lookup. The feature cutoff and compact rows preserve the large-library intent.
 
@@ -47,6 +47,7 @@ The implementation uses existing saved-place, source, reminder, job and auth con
 | Evidence | Verified scope | Limit |
 | --- | --- | --- |
 | `scripts/testFieldnotesFoundation.ts` | 35 checks: 30 semantic foreground/background contrast combinations and five feedback gating/coalescing assertions. | Does not audit every composed pixel or measure hardware feedback. |
+| `scripts/testFieldnotesSaveArrival.ts` | Actual hook/component lifecycle: pending preference, one-shot identities, setting races/errors, reduced-motion visuals, background suppression and unmount cleanup. | Deterministic native and animation boundaries; not native frame timing evidence. |
 | `scripts/testFieldnotesSavedComponents.ts` | 42 assertions across 0/1/5/20/50/51/100 places; feature cutoff; search/empty states; exact selection; three font-scale branches; snapshot policy. | Actual React components with native host doubles; no native row performance or clipping measurement. |
 | `scripts/testOnboardingV2MagicRender.ts` | 24 practice-scene combinations across Light/Dark, 100/150/200% font scales, normal/reduced motion and receipt/place; local assets, text invariant, deterministic processing and resume. | Native-host mocks do not produce native screenshots. |
 | `artifacts/fieldnotes-implementation/onboarding-tests/summary.json` | All 29 onboarding contract suites passed, including offline/no-live-service, lifecycle, auth, Phase 2 and navigation contracts. | Source assertions and reducers are not a device journey. |
