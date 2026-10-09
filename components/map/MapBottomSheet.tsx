@@ -22,8 +22,9 @@ type Props = {
   onSaveFromLink: () => void; onSearchManually: () => void;
   requestLocationPermission: () => Promise<boolean>; offline?: boolean;
 };
-export function getSheetPartialHeight(areaHeight: number): number {
-  return Math.min(176, Math.max(144, Math.round(areaHeight * 0.2)));
+export function getSheetPartialHeight(areaHeight: number, fontScale = 1, compactWidth = false): number {
+  const base = compactWidth ? 160 : 144;
+  return Math.min(Math.round(areaHeight * 0.4), Math.round(base * Math.max(1, fontScale)));
 }
 const MINIMIZED_VISIBLE = 58;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));

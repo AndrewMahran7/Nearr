@@ -515,6 +515,7 @@ export default function MapScreen() {
     nearbyCount: rawNearbyCount,
     mapGroupId: rawMapGroupId,
     fieldnotes: rawFieldnotesPreview,
+    fieldnotesCount: rawFieldnotesCount,
   } = useLocalSearchParams<{
     savedPlaceId?: string | string[];
     savedPlaceGoogleId?: string | string[];
@@ -525,6 +526,7 @@ export default function MapScreen() {
     nearbyCount?: string | string[];
     mapGroupId?: string | string[];
     fieldnotes?: string | string[];
+    fieldnotesCount?: string | string[];
   }>();
   const savedPlaceId = firstParam(rawSavedPlaceId);
   const savedPlaceGoogleId = firstParam(rawSavedPlaceGoogleId);
@@ -596,8 +598,21 @@ export default function MapScreen() {
   // In Map Preview Mode, render against the synchronous seeded dataset so the
   // first frame already has markers — no async race, no loading state.
   const previewData = useMemo<SavedPlaceWithPlace[]>(
-    () => (mapPreview ? getDemoSeededSavedPlacesSync() : []),
-    [mapPreview],
+    () => {
+      if (!mapPreview) return [];
+      const source = getDemoSeededSavedPlacesSync();
+      const count = Number(firstParam(rawFieldnotesCount));
+      if (!fieldnotesNativeCapture || ![0, 1, 5, 20, 100].includes(count) || !firstParam(rawFieldnotesCount)) return source;
+      // Explicit synthetic density fixtures used only by the Development QA owner.
+      return Array.from({ length: count }, (_, index) => {
+        const item = source[index % source.length];
+        return { ...item, id: `fieldnotes-map-fixture-${index}`, place_id: `fieldnotes-map-place-${index}`,
+          place: { ...item.place, id: `fieldnotes-map-place-${index}`, google_place_id: `fieldnotes-map-google-${index}`,
+            latitude: PREVIEW_INITIAL_REGION.latitude + ((index % 10) - 4.5) * 0.003,
+            longitude: PREVIEW_INITIAL_REGION.longitude + (Math.floor(index / 10) - 4.5) * 0.003 } };
+      });
+    },
+    [fieldnotesNativeCapture, mapPreview, rawFieldnotesCount],
   );
   const fixtureSavedPlace = useMemo<SavedPlaceWithPlace | null>(() => {
     if (!shouldShowLocalTutorialPlace(onboardingV2State)) return null;
@@ -1192,8 +1207,8 @@ export default function MapScreen() {
   const [mapGroupSelectorHeight, setMapGroupSelectorHeight] = useState(0);
   const availableHeight = mapAreaHeight || windowHeight;
   const sheetPartialHeight = useMemo(
-    () => getSheetPartialHeight(availableHeight),
-    [availableHeight],
+    () => getSheetPartialHeight(availableHeight, fontScale, windowWidth < 380),
+    [availableHeight, fontScale, windowWidth],
   );
   /**
    * Expanded Place Detail height.
