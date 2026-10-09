@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import './testFieldnotesReviewComponents';
 
 import {
   fallbackCorrectionLabel,
@@ -47,7 +48,8 @@ assert.match(screen, /onPress=\{\(\) => void handleSaveCanonicalCandidates\(/);
 const manualSearch = screen.slice(screen.indexOf('const runManualSearch'), screen.indexOf('function changeManualQuery'));
 assert.doesNotMatch(manualSearch, /persistCandidate|handleSaveCanonicalCandidates|handleSaveStored/);
 assert.match(screen, /onPress=\{\(\) => setManualSelectedIds\([\s\S]*selectFallbackCandidate/);
-assert.match(card, /testID="compact-candidate-row"[\s\S]*onPress=\{selectable \? onPress : undefined\}|onPress=\{selectable \? onPress : undefined\}[\s\S]*testID="compact-candidate-row"/);
+assert.match(card, /const selection = selectable && onPress \? \(/);
+assert.match(card, /testID="candidate-selection-control"/);
 
 // 7-9: rank 1 is selected for multiple results, selecting rank 2 is exclusive,
 // and the selected array is what the CTA commits.

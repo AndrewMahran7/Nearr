@@ -33,6 +33,7 @@ import * as Location from 'expo-location';
 import { Button, ErrorBoundary, Input, ShareJobsHeader } from '@/components';
 import { SourceRibbon } from '@/components/SourceRibbon';
 import { useReduceMotion } from '@/lib/useReduceMotion';
+import { hapticSuccess } from '@/lib/haptics';
 import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
 import { PlaceBrowseCarousel, type PlaceBrowseCarouselItem } from '@/components/PlaceBrowseCarousel';
 import { PlaceImage } from '@/components/PlaceImage';
@@ -1238,6 +1239,7 @@ function ShareJobDetailScreen() {
         placeCandidate,
         candidate.aiNote ?? null,
       );
+      if (mountedRef.current) hapticSuccess();
       await resolveJobWith(job.id, savedPlaceId, duplicate);
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
@@ -1290,6 +1292,7 @@ function ShareJobDetailScreen() {
       const resolutionId = created[0] ?? duplicates[0] ?? null;
       if (resolutionId) await markShareJobResolved(job.id, resolutionId);
       if (resolutionId) {
+        if (mountedRef.current) hapticSuccess();
         void trackEvent('vayrin_saved', {
           job_id: job.id,
           source,
@@ -1356,6 +1359,7 @@ function ShareJobDetailScreen() {
       });
       const completion = planShareSaveCompletion(outcomes);
       const nextBatch = applyBatchSaveOutcomes(activeBatch, outcomes);
+      if (mountedRef.current && outcomes.some((outcome) => outcome.status !== 'failed')) hapticSuccess();
       if (mountedRef.current) setBatch(nextBatch);
       const remainingRecovery = recoverableBatchRowCount(nextBatch);
       if (completion.failedCandidateIds.length > 0 || remainingRecovery > 0) {
@@ -1641,6 +1645,7 @@ function ShareJobDetailScreen() {
           if (mountedRef.current) {
             setBatch(nextBatch);
             setExpandedMentionId(logicalPlaceId);
+            hapticSuccess();
           }
           if (persisted.duplicate) {
             void trackEvent('existing_place_source_attached', {

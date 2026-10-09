@@ -7,14 +7,14 @@ import { LightPalette, DarkPalette } from '../constants/colors';
 // This exercises completion/latch behavior without a network or an iOS host.
 const Module = require('node:module') as { _load: (request: string, parent: unknown, isMain: boolean) => unknown };
 const originalLoad = Module._load;
-let appearance = 'light', reduced = false, success = 0, errors = 0, closes = 0, opens = 0, submits = 0;
+let appearance = 'light', reduced = false, success = 0, errors = 0, closes = 0, opens = 0, submits = 0, animations = 0;
 let auth = 'submit', blocked = false;
 let result: any = { ok: true, duplicate: false, jobId: 'fixture-job', status: 'queued' };
 let pending: Promise<any> | null = null;
 const Pressable = ({ children, style, ...props }: any) => React.createElement('Pressable', { ...props, style: typeof style === 'function' ? style({ pressed: false }) : style }, children);
 class Value { constructor(public value: number) {} setValue(value: number) { this.value = value; } interpolate() { return this.value; } }
 Module._load = function(request, parent, isMain) {
-  if (request === 'react-native') return { Pressable, View: 'View', Text: 'Text', Image: 'Image', SafeAreaView: 'SafeAreaView', ScrollView: 'ScrollView', ActivityIndicator: 'ActivityIndicator', useColorScheme: () => appearance, StyleSheet: { create: (s: any) => s, hairlineWidth: 1 }, Animated: { Value, View: 'AnimatedView', timing: (value: Value) => ({ start: () => value.setValue(1), stop() {} }) } };
+  if (request === 'react-native') return { Pressable, View: 'View', Text: 'Text', Image: 'Image', SafeAreaView: 'SafeAreaView', ScrollView: 'ScrollView', ActivityIndicator: 'ActivityIndicator', useColorScheme: () => appearance, StyleSheet: { create: (s: any) => s, hairlineWidth: 1 }, Animated: { Value, View: 'AnimatedView', timing: (value: Value) => ({ start: () => { animations++; value.setValue(1); }, stop() {} }) } };
   if (request === 'expo-share-extension') return { close: () => closes++, openHostApp: () => opens++ };
   if (request === './lib/useReduceMotion') return { useReduceMotion: () => reduced };
   if (request === './lib/haptics') return { hapticSuccess: () => success++, hapticError: () => errors++ };
@@ -60,6 +60,14 @@ async function main() {
       assert.ok(images.some(node => node.props.source?.uri === 'file:///local.jpg'));
       assert.ok(!images.some(node => /^https?:/.test(node.props.source?.uri ?? '')), 'receipt never fetches remote imagery');
       assert.equal(tree.root.findAllByType('AnimatedView' as any).filter(node => node.props.pointerEvents === 'none').length, reduced ? 0 : 1, 'Reduce Motion has no animated pulse');
+      if (!reduced) {
+        const beforeAnimations = animations;
+        reduced = true;
+        TestRenderer.act(() => tree.update(React.createElement(ShareExtension, { url: 'https://instagram.com/reel/fixture' })));
+        reduced = false;
+        TestRenderer.act(() => tree.update(React.createElement(ShareExtension, { url: 'https://instagram.com/reel/fixture' })));
+        assert.equal(animations, beforeAnimations, 'changing the OS preference does not replay a completed receipt entrance');
+      }
       const beforeCloses = closes;
       TestRenderer.act(() => { button.props.onPress(); button.props.onPress(); });
       assert.equal(closes, beforeCloses + 1, 'Done stays terminal and idempotent');

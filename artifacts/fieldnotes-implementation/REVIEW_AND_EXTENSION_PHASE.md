@@ -22,7 +22,7 @@ Implemented against the approved Fieldnotes direction in the isolated 1.6 worktr
 | Share receipt icon | One 220ms opacity/0.96-to-1 scale entrance and small local pulse. | Static final icon, no pulse. Live OS changes use the shared conservative preference hook. |
 | Share accepted | One success feedback call after the durable result; guarded per invocation. | No replay after Close, Open Nearr, or unmount. Shared helper coalesces feedback and tolerates unsupported hardware/module availability. |
 | Share failed | One optional error feedback call after a direct share attempt exhausts recovery. | No step-by-step or intermediate automatic-retry feedback. |
-| Review save | Existing success occurs after saved state is accepted. | No checkbox haptic and no poll haptic introduced. |
+| Review save | One optional success call after a single save, canonical selected group, batch outcomes, or explicit one-tap correction has persisted. Batch feedback is outside the per-candidate work. | Mounted-state guard; all-failed batches emit no success. No checkbox, poll, or reopening-result haptic. |
 
 No source-to-pin flight or native shared-element transition was added by this phase. No recognition timing is represented as a percent or fixed promise. Native feedback strength/availability remains a device check.
 

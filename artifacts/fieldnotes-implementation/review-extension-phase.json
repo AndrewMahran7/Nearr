@@ -20,6 +20,7 @@
     "reduceMotion": "static icon; no pulse; disclosure and programmatic paging nonanimated",
     "acceptedFeedback": "once after durable acknowledgement, suppressed after terminal action or unmount",
     "errorFeedback": "once after direct attempt exhausts recovery",
+    "reviewFeedback": "once per persisted single/group/correction action while mounted; no all-failed success or result-reopen replay",
     "checkboxOrPollingFeedback": false
   },
   "remainingNativeAcceptance": [

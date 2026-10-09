@@ -620,13 +620,15 @@ function SavedMark() {
   const { asyncStyles } = useExtensionStyles();
   const reduceMotion = useReduceMotion();
   const progress = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
+  const entrancePlayedRef = useRef(false);
 
   useEffect(() => {
     const motion = shareCompletionMotion(reduceMotion);
-    if (!motion.animate) {
+    if (!motion.animate || entrancePlayedRef.current) {
       progress.setValue(1);
       return;
     }
+    entrancePlayedRef.current = true;
     progress.setValue(0);
     const animation = Animated.timing(progress, {
       toValue: 1,
