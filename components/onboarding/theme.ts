@@ -1,47 +1,53 @@
-/**
- * Fixed dark design palette for the Nearr onboarding flow.
- *
- * Onboarding deliberately does NOT use the app-wide `useTheme()` palette.
- * It always renders on a premium dark background regardless of the user's
- * light/dark OS preference, so these values are intentionally hardcoded
- * here and reused by every `components/onboarding/*` component.
- *
- * Keep all colors in this one place so the whole flow can be re-skinned by
- * editing a single file.
- */
+import { useMemo } from 'react';
+import { LightPalette } from '@/constants';
+import { useTheme } from '@/lib/theme';
+
+/** Legacy asset fallback; live onboarding surfaces use useOnboardingColors. */
 export const OnboardingColors = {
   /** Screen background. */
-  background: '#080808',
-  /** Standard charcoal card. */
-  card: '#161616',
+  background: LightPalette.bg,
+  /** Standard paper or dark surface. */
+  card: LightPalette.surface,
+  action: LightPalette.primary,
+  controlBorder: LightPalette.controlBorder,
   /** Slightly lighter elevated card (rows, previews). */
-  cardElevated: '#1E1E1E',
+  cardElevated: LightPalette.surfaceElevated,
   /** Hairline border for cards and rows. */
-  border: '#2A2A2A',
-  /** Primary white text (headlines, titles). */
-  text: '#FFFFFF',
+  border: LightPalette.border,
+  /** Primary text (headlines, titles). */
+  text: LightPalette.text,
   /** Muted gray secondary text. */
-  textMuted: '#888888',
-  /** Orange accent + primary CTA. */
-  orange: '#FF6B00',
+  textMuted: LightPalette.textSecondary,
+  /** Accessible warm accent for text and details. */
+  orange: LightPalette.accent,
   /** Inline validation / failure text. */
-  error: '#FF7A7A',
-  /** Dark text used on top of the orange CTA. */
-  onOrange: '#080808',
+  error: LightPalette.danger,
+  /** Foreground on filled controls. */
+  onOrange: LightPalette.textInverse,
   /** Muted segment for the progress indicator. */
-  progressInactive: '#2A2A2A',
+  progressInactive: LightPalette.border,
 } as const;
+
+export function useOnboardingColors() {
+  const { colors } = useTheme();
+  return useMemo(() => ({
+    background: colors.bg, card: colors.surface, action: colors.primary, controlBorder: colors.controlBorder, cardElevated: colors.surfaceElevated,
+    border: colors.border, text: colors.text, textMuted: colors.textSecondary,
+    orange: colors.accent, error: colors.danger, onOrange: colors.textInverse,
+    progressInactive: colors.border,
+  }), [colors]);
+}
 
 /** Corner radii used across onboarding. */
 export const OnboardingRadius = {
-  card: 20,
-  button: 18,
+  card: 12,
+  button: 12,
   pill: 999,
 } as const;
 
 /** Fixed control sizes. */
 export const OnboardingSizes = {
-  primaryButtonHeight: 60,
+  primaryButtonHeight: 50,
   iconBadge: 44,
   numberBadge: 32,
 } as const;

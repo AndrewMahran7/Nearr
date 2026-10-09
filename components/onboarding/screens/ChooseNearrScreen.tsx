@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useRef, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -14,7 +15,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { Spacing } from '@/constants';
 import { NearrFavoritesHelp, ShareSheetMock } from '../demo';
-import { OnboardingColors } from '../theme';
+import { OnboardingColors, useOnboardingColors } from '../theme';
 import { ScreenHeading } from './ScreenHeading';
 
 type Props = {
@@ -38,6 +39,9 @@ export function ChooseNearrScreen({
   onHelpStepViewed,
   onHelpClosed,
 }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const { width } = useWindowDimensions();
   const sheetWidth = width - Spacing.xl * 2;
 
@@ -109,7 +113,7 @@ export function ChooseNearrScreen({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   container: {
     flex: 1,
     overflow: 'hidden',
@@ -135,4 +139,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-});
+}); }

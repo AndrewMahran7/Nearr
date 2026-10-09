@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useEffect, useRef } from 'react';
 import {
   AccessibilityInfo,
@@ -12,7 +13,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { Spacing } from '@/constants';
 import { InstagramReelMock, NearrAppIcon } from '../demo';
-import { OnboardingColors, OnboardingRadius } from '../theme';
+import { OnboardingColors, OnboardingRadius , useOnboardingColors } from '../theme';
 import { ScreenHeading } from './ScreenHeading';
 
 const ORB = 70;
@@ -25,6 +26,9 @@ const ORB = 70;
  * iPhones but never clips on small ones.
  */
 export function ValuePropScreen() {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const { width } = useWindowDimensions();
   const reelEntrance = useRef(new Animated.Value(0)).current;
   const transformPulse = useRef(new Animated.Value(0)).current;
@@ -147,6 +151,9 @@ function MapPinCard({
   pinTranslate: Animated.AnimatedInterpolation<string | number>;
   pinScale: Animated.AnimatedInterpolation<string | number>;
 }) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View style={[styles.mapCard, { width }]}>
       <View style={[styles.mapTile, { height: tileHeight }]}>
@@ -171,7 +178,7 @@ function MapPinCard({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -255,4 +262,4 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
   },
-});
+}); }

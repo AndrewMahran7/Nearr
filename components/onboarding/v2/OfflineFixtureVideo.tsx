@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useReduceMotion } from '@/lib/useReduceMotion';
 import { Video, ResizeMode } from 'expo-av';
 import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
@@ -12,9 +13,10 @@ type Props = {
   testID?: string;
 };
 
-/** Local-only, silent, looping playback. No runtime URL is accepted by design. */
+/** Local-only, silent playback. Reduce Motion keeps the bundled poster still. No runtime URL is accepted by design. */
 export function OfflineFixtureVideo({ assetKey, style, accessibilityLabel, testID }: Props) {
   const media = offlineOnboardingMedia(assetKey);
+  const reduceMotion = useReduceMotion();
   const [videoReady, setVideoReady] = useState(false);
   return (
     <View style={[styles.frame, style]} accessibilityLabel={accessibilityLabel} testID={testID}>

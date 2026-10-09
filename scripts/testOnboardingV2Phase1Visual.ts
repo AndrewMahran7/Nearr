@@ -14,8 +14,10 @@ const settings = read('app/(tabs)/settings.tsx');
 const index = read('app/index.tsx');
 const map = read('app/(tabs)/map.tsx');
 
-assert.match(frame, /background: '#F7F4EE'/);
-assert.match(frame, /orange: '#FF5B24'/);
+assert.match(frame, /background: LightPalette\.bg/);
+assert.match(frame, /useTheme\(\)/);
+assert.match(frame, /fontScale >= 1\.5/);
+assert.match(frame, /action: colors\.primary/);
 assert.match(frame, /accessibilityRole="progressbar"/);
 assert.match(frame, /<ScrollView/);
 console.log('PASS bright shared frame preserves accessible progress and large-text scrolling');
@@ -41,8 +43,11 @@ console.log('PASS bundled source video uses neutral Nearr framing rather than fa
 assert.match(preAuth, /1 PLACE FOUND/);
 assert.match(preAuth, /Social apps save the video\. Nearr saves the place/);
 assert.match(visualLanguage, /AccessibilityInfo\.isReduceMotionEnabled/);
-assert.match(preAuth, /Saved for this walkthrough/);
-assert.match(preAuth, /localScanner/);
+const practiceScene = read('components/onboarding/v2/FieldnotesPracticeScene.tsx');
+assert.match(preAuth, /<FieldnotesPracticeScene/);
+assert.match(practiceScene, /Saved for this walkthrough/);
+assert.match(practiceScene, /offlineOnboardingMedia/);
+assert.match(practiceScene, /useReduceMotion/);
 console.log('PASS processing, progressive reveal, save proof, and Reduce Motion are integrated');
 
 assert.match(secondHalf, /YOUR SAVES HAVE A HOME/);
@@ -60,7 +65,7 @@ assert.match(authIntent, /Back up your map/);
 assert.match(authIntent, /Sign in to Nearr/);
 assert.match(secondHalf, /Phase1PrimaryButton title="Explore my map"/);
 assert.match(secondHalf, /private practice example/);
-assert.match(secondHalf, /real app use Nearr's live recognition/);
+assert.match(secondHalf, /real share will use Nearr's live recognition/);
 assert.match(settings, /Back up your map/);
 assert.match(index, /stage === 'onboarding_complete'/);
 console.log('PASS final activation clearly hands off from scripted practice to the real app');

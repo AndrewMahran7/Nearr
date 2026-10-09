@@ -137,7 +137,7 @@ pass(10, 'failed existing-account auth leaves the onboarding checkpoint untouche
 
 // 11-18: map ownership, local place continuity, chrome and viewport.
 assert.match(welcomeSource, /fixture_map_payoff/);
-assert.match(welcomeSource, /saved place card open/);
+assert.match(welcomeSource, /<FieldnotesPracticeScene[^>]*stage="place" onClose=\{closeCard\}/);
 pass(11, 'Phase 1 payoff focuses the correct tutorial place and open card');
 const payoff = phase2State('fixture_map_payoff');
 assert.equal(closePlaceTour(payoff, tutorialSave.savedPlaceId, at(13)).state.stage, 'phase2_intro');

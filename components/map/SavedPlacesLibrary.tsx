@@ -14,7 +14,7 @@ import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Input, SavedPlaceBrowseCard } from '@/components';
-import { Radius, Spacing } from '@/constants';
+import { Fieldnotes, Radius, Spacing } from '@/constants';
 import type { NearbyLocationState, NearbyPlace } from '@/hooks/useNearbyPlaces';
 import { CATEGORY_LABELS, type NearrCategory } from '@/lib/placeCategory';
 import {
@@ -78,7 +78,7 @@ export function SavedPlacesLibrary({
   const filterCount = browseFilterCount(filters);
   // One recent memory leads the unfiltered collection; all remaining saves
   // retain virtualized compact rows. Searching/sorting never duplicates it.
-  const featuredPlace = !query.trim() && filterCount === 0 && sort === 'recent'
+  const featuredPlace = currentPlaces.length <= Fieldnotes.featureLibraryLimit && !query.trim() && filterCount === 0 && sort === 'recent'
     ? results[0] ?? null
     : null;
   const listPlaces = featuredPlace ? results.slice(1) : results;

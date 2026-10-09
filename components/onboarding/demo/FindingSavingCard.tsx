@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -10,7 +11,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { OnboardingColors, OnboardingRadius } from '../theme';
+import { OnboardingColors, OnboardingRadius , useOnboardingColors } from '../theme';
 
 type Props = {
   /** Bump this key to replay the sequence (e.g. when the screen re-focuses). */
@@ -40,6 +41,9 @@ const SAVE_DELAY = 550;
  * anything real. Respects Reduce Motion by jumping straight to the saved state.
  */
 export function FindingSavingCard({ playKey = 0, onSaved, style }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const progress = useRef(new Animated.Value(0)).current;
   const reveal = useRef(new Animated.Value(0)).current;
   const savedReveal = useRef(new Animated.Value(0)).current;
@@ -219,7 +223,7 @@ export function FindingSavingCard({ playKey = 0, onSaved, style }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   card: {
     borderRadius: OnboardingRadius.card,
     borderWidth: 1,
@@ -368,4 +372,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-});
+}); }

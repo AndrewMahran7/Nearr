@@ -1,9 +1,10 @@
+import { useMemo } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-import { Phase1Colors, Phase1Frame, Phase1PrimaryButton } from '@/components/onboarding/v2/Phase1Visuals';
+import { Phase1Colors, Phase1Frame, Phase1PrimaryButton, usePhase1Colors } from '@/components/onboarding/v2/Phase1Visuals';
 import { useOnboardingTutorialJobs } from '@/hooks/useOnboardingTutorialJobs';
 import {
   continueOnboardingV2PracticeInBackground,
@@ -21,6 +22,9 @@ import { openOnboardingPracticePost } from '@/services/onboardingPracticeLaunche
 
 /** One route-owned surface for the real Phase 2 share, return, processing, and review states. */
 export function OnboardingV2RealPractice({ state }: { state: OnboardingV2State }) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+
   const router = useRouter();
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -209,26 +213,26 @@ export function OnboardingV2RealPractice({ state }: { state: OnboardingV2State }
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(Phase1Colors: ReturnType<typeof usePhase1Colors>) { return StyleSheet.create({
   actions: { gap: 3 },
   secondary: { minHeight: 46, alignItems: 'center', justifyContent: 'center' },
-  secondaryText: { color: Phase1Colors.text, fontSize: 14, fontWeight: '800' },
-  eyebrow: { color: Phase1Colors.orange, fontSize: 11, fontWeight: '900', letterSpacing: 1.7, marginBottom: 10 },
-  title: { color: Phase1Colors.text, fontSize: 35, lineHeight: 39, fontWeight: '900', letterSpacing: -1.1 },
+  secondaryText: { color: Phase1Colors.text, fontSize: 14, fontWeight: '600' },
+  eyebrow: { color: Phase1Colors.orange, fontSize: 11, fontWeight: '600', letterSpacing: 1.7, marginBottom: 10 },
+  title: { color: Phase1Colors.text, fontSize: 35, lineHeight: 39, fontWeight: '600', letterSpacing: -1.1 },
   body: { color: Phase1Colors.textMuted, fontSize: 16, lineHeight: 23, marginTop: 12 },
-  previewCard: { height: 270, marginTop: 24, borderRadius: 28, overflow: 'hidden', backgroundColor: '#2D2925', borderWidth: 4, borderColor: '#FFFFFF' },
+  previewCard: { height: 270, marginTop: 24, borderRadius: 28, overflow: 'hidden', backgroundColor: '#2D2925', borderWidth: 4, borderColor: Phase1Colors.surface },
   preview: { width: '100%', height: '100%' },
   previewShade: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.24)' },
   sourceBadge: { position: 'absolute', top: 14, left: 14, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: 'rgba(16,14,12,0.78)' },
-  sourceBadgeText: { color: '#FFFFFF', fontSize: 9, letterSpacing: 1.1, fontWeight: '900' },
+  sourceBadgeText: { color: '#FFFFFF', fontSize: 9, letterSpacing: 1.1, fontWeight: '600' },
   previewCopy: { position: 'absolute', left: 18, right: 18, bottom: 17 },
-  placeName: { color: '#FFFFFF', fontSize: 24, lineHeight: 28, fontWeight: '900', textShadowColor: '#000000', textShadowRadius: 8 },
+  placeName: { color: '#FFFFFF', fontSize: 24, lineHeight: 28, fontWeight: '600', textShadowColor: '#000000', textShadowRadius: 8 },
   category: { color: '#FFFFFF', fontSize: 12, lineHeight: 17, fontWeight: '700', marginTop: 3, textShadowColor: '#000000', textShadowRadius: 8 },
   statusCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16, padding: 13, borderRadius: 18, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border },
   statusIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.orange },
   statusIconActive: { backgroundColor: Phase1Colors.success },
   statusCopy: { flex: 1 },
-  statusLabel: { color: Phase1Colors.text, fontSize: 12, fontWeight: '900' },
+  statusLabel: { color: Phase1Colors.text, fontSize: 12, fontWeight: '600' },
   statusText: { color: Phase1Colors.textMuted, fontSize: 11, lineHeight: 16, marginTop: 3 },
-  error: { color: '#A33A25', fontSize: 12, lineHeight: 17, fontWeight: '700', marginTop: 12 },
-});
+  error: { color: Phase1Colors.danger, fontSize: 12, lineHeight: 17, fontWeight: '700', marginTop: 12 },
+}); }

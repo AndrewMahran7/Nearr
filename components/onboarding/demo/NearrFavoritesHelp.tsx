@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import {
   Modal,
@@ -9,7 +10,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { OnboardingColors, OnboardingRadius } from '../theme';
+import { OnboardingColors, OnboardingRadius , useOnboardingColors } from '../theme';
 import { OnboardingPrimaryButton } from '../OnboardingPrimaryButton';
 import { NearrAppIcon } from './NearrAppIcon';
 
@@ -35,6 +36,9 @@ const STEPS = [
 ] as const;
 
 export function NearrFavoritesHelp({ visible, onClose, onStepViewed }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const [step, setStep] = useState(0);
   const viewedRef = useRef<Set<number>>(new Set());
 
@@ -112,6 +116,9 @@ export function NearrFavoritesHelp({ visible, onClose, onStepViewed }: Props) {
 }
 
 function MoreStep() {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View>
       <View style={styles.sheetGrabber} />
@@ -136,6 +143,9 @@ function MoreStep() {
 }
 
 function SuggestionsStep() {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View>
       <AppsEditorHeader />
@@ -149,6 +159,9 @@ function SuggestionsStep() {
 }
 
 function FavoritesStep() {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View>
       <AppsEditorHeader doneHighlighted />
@@ -165,6 +178,9 @@ function FavoritesStep() {
 }
 
 function AppsEditorHeader({ doneHighlighted = false }: { doneHighlighted?: boolean }) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View style={styles.editorHeader}>
       <View style={styles.headerSpacer} />
@@ -189,6 +205,9 @@ function EditorRow({
   favorite?: boolean;
   highlighted?: boolean;
 }) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View style={[styles.editorRow, highlighted && styles.editorRowHighlighted]}>
       <View style={[styles.addButton, favorite && styles.removeButton]}>
@@ -216,6 +235,9 @@ function AppTile({
   label: string;
   color: string;
 }) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View style={styles.appTile}>
       <View style={[styles.appIcon, { backgroundColor: color }]}>
@@ -226,7 +248,7 @@ function AppTile({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: OnboardingColors.background,
@@ -272,13 +294,13 @@ const styles = StyleSheet.create({
   eyebrow: {
     color: OnboardingColors.orange,
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '600',
   },
   title: {
     color: OnboardingColors.text,
     fontSize: 28,
     lineHeight: 34,
-    fontWeight: '800',
+    fontWeight: '600',
     marginTop: 6,
   },
   body: {
@@ -348,7 +370,7 @@ const styles = StyleSheet.create({
   },
   instructionPillText: {
     color: OnboardingColors.onOrange,
-    fontWeight: '800',
+    fontWeight: '600',
   },
   editorHeader: {
     minHeight: 48,
@@ -363,7 +385,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#1C1C1E',
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '600',
     textAlign: 'center',
   },
   doneButton: {
@@ -446,4 +468,4 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 16,
   },
-});
+}); }

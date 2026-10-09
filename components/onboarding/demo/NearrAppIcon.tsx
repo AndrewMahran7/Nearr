@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { Image, StyleSheet, View, ViewStyle } from 'react-native';
 
-import { OnboardingColors } from '../theme';
+import { OnboardingColors, useOnboardingColors } from '../theme';
 
 type Props = {
   /** Square edge length in px. Corner radius scales with it (iOS squircle-ish). */
@@ -17,6 +18,9 @@ type Props = {
  * the iOS Share Sheet — no recreation, no bundled screenshot.
  */
 export function NearrAppIcon({ size = 56, highlighted = false, style }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const radius = Math.round(size * 0.225);
   const icon = (
     <Image
@@ -47,7 +51,7 @@ export function NearrAppIcon({ size = 56, highlighted = false, style }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   ring: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -55,4 +59,4 @@ const styles = StyleSheet.create({
     borderColor: OnboardingColors.orange,
     backgroundColor: 'rgba(255, 107, 0, 0.10)',
   },
-});
+}); }

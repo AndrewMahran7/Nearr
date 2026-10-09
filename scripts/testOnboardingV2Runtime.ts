@@ -170,14 +170,14 @@ function dispatchedNavigationCount(
   const shared = advanceSimulatedTutorial(tutorialReady(), 'share', tutorialInput, now()).state;
   const state = apply(shared, backOnboardingV2);
   assert.equal(state.stage, 'tutorial_ready');
-  assert.equal(dispatchedNavigationCount('/activate', state.stage, 20), 0);
+  assert.equal(dispatchedNavigationCount('/(onboarding)', state.stage, 20), 0);
   assertBounded('tutorial step Back', shared.revision, state.revision, 1);
 }
 
 // 7. A persisted Learn step resumes with one route edge, even across 20 renders.
 {
   const state = JSON.parse(JSON.stringify(tutorialReady())) as OnboardingV2State;
-  assert.equal(dispatchedNavigationCount('/(onboarding)', state.stage, 20), 1);
+  assert.equal(dispatchedNavigationCount('/activate', state.stage, 20), 1);
   assertBounded('resume persisted Learn step', state.revision, state.revision, 0);
 }
 
@@ -252,8 +252,8 @@ function dispatchedNavigationCount(
 
 // 14. A converged route never replaces itself; an uncommitted edge dispatches once.
 {
-  assert.equal(dispatchedNavigationCount('/activate', 'tutorial_ready', 50), 0);
-  assert.equal(dispatchedNavigationCount('/(onboarding)', 'tutorial_ready', 50), 1);
+  assert.equal(dispatchedNavigationCount('/(onboarding)', 'tutorial_ready', 50), 0);
+  assert.equal(dispatchedNavigationCount('/activate', 'tutorial_ready', 50), 1);
   assert.equal(onboardingRouteKey(['(onboarding)']), '/(onboarding)');
   assert.equal(onboardingRouteKey(['(onboarding)', 'account']), '/(onboarding)/account');
   assert.equal(onboardingRouteKey(['activate']), '/activate');
@@ -282,7 +282,7 @@ function dispatchedNavigationCount(
     false,
     'signed-out AuthGate remains converged while anonymous auth restores',
   );
-  assert.equal(dispatchedNavigationCount('/(onboarding)', 'tutorial_ready', 20), 1);
+  assert.equal(dispatchedNavigationCount('/(onboarding)', 'tutorial_ready', 20), 0);
   console.log('PASS signed-out hydration race cannot ping-pong routes (legacy=20, repaired=0/1)');
 }
 

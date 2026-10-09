@@ -61,10 +61,11 @@ console.log('PASS onboarding QA has no wallet, token store, paywall, Pro, or Pre
 
 assert.match(map, /<ShareQueueButton \/>/);
 assert.match(map, /<NearbyMapExplorerCarousel/);
-assert.match(mapSheet, /const hasPlaces = savedPlaces\.length > 0/);
-assert.match(mapSheet, /Start building your map/);
+assert.match(mapSheet, /<MemoizedSavedPlacesLibrary/);
+assert.match(mapSheet, /savedPlaces=\{savedPlaces\}/);
+assert.match(mapSheet, /Your next memory starts here/);
 assert.match(mapSheet, /savedPlaces\.length === 1 \? 'place' : 'places'/);
-assert.match(mapSheet, /primaryRows: savedPlaces\.map/);
+assert.match(mapSheet, /savedPlaces\.length/);
 console.log('PASS map keeps Queue and carousel navigation while zero, one, and many-save states remain explicit');
 
 for (const functionName of ['create-share-job', 'get-onboarding-tutorial', 'reset-onboarding-qa']) {

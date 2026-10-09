@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Spacing } from '@/constants';
-import { OnboardingColors } from '../theme';
+import { OnboardingColors, useOnboardingColors } from '../theme';
 
 type Props = {
   headline: string;
@@ -14,6 +15,9 @@ type Props = {
  * it stays editable at the call site.
  */
 export function ScreenHeading({ headline, subtext }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.headline}>{headline}</Text>
@@ -22,14 +26,14 @@ export function ScreenHeading({ headline, subtext }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   container: {
     marginBottom: Spacing.xl,
   },
   headline: {
     color: OnboardingColors.text,
     fontSize: 28,
-    fontWeight: '800',
+    fontWeight: '600',
     letterSpacing: -0.5,
     lineHeight: 34,
   },
@@ -39,4 +43,4 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginTop: Spacing.md,
   },
-});
+}); }

@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { ReactNode } from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 
 import { Spacing } from '@/constants';
-import { OnboardingColors, OnboardingRadius } from './theme';
+import { OnboardingColors, OnboardingRadius , useOnboardingColors } from './theme';
 
 type Props = {
   children: ReactNode;
@@ -16,6 +17,9 @@ type Props = {
  * when `elevated` is set. Hairline border, ~20px corners.
  */
 export function OnboardingCard({ children, elevated, style }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View
       style={[
@@ -29,11 +33,11 @@ export function OnboardingCard({ children, elevated, style }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   card: {
     borderRadius: OnboardingRadius.card,
     borderWidth: 1,
     borderColor: OnboardingColors.border,
     padding: Spacing.lg,
   },
-});
+}); }

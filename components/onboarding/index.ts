@@ -2,6 +2,7 @@ export {
   OnboardingColors,
   OnboardingRadius,
   OnboardingSizes,
+  useOnboardingColors,
 } from './theme';
 export { OnboardingScreenShell } from './OnboardingScreenShell';
 export { OnboardingProgress } from './OnboardingProgress';

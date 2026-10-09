@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 
-import { OnboardingColors, OnboardingRadius, OnboardingSizes } from './theme';
+import { OnboardingColors, OnboardingRadius, OnboardingSizes, useOnboardingColors } from './theme';
 
 /** Google Blue, used for the mark only — never for the Nearr CTA. */
 const GOOGLE_BLUE = '#4285F4';
@@ -21,6 +22,9 @@ type Props = {
  * pulling in an SVG/brand-icon package.
  */
 export function GoogleSignInButton({ onPress, loading, disabled }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const blocked = disabled || loading;
   return (
     <Pressable
@@ -47,9 +51,12 @@ export function GoogleSignInButton({ onPress, loading, disabled }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   button: {
-    height: OnboardingSizes.primaryButtonHeight,
+    minHeight: OnboardingSizes.primaryButtonHeight,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: OnboardingColors.border,
     borderRadius: OnboardingRadius.button,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
@@ -72,10 +79,11 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
   },
-});
+}); }
 
 /** Thin "or" rule separating the provider buttons from the email form. */
 export function AuthDivider({ label = 'or' }: { label?: string }) {
+  const dividerStyles = createDividerStyles(useOnboardingColors());
   return (
     <View style={dividerStyles.row} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <View style={dividerStyles.rule} />
@@ -85,7 +93,7 @@ export function AuthDivider({ label = 'or' }: { label?: string }) {
   );
 }
 
-const dividerStyles = StyleSheet.create({
+function createDividerStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -101,4 +109,4 @@ const dividerStyles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-});
+}); }

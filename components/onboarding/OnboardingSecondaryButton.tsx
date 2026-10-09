@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 
 import { Spacing } from '@/constants';
-import { OnboardingColors } from './theme';
+import { OnboardingColors, useOnboardingColors } from './theme';
 
 type Props = {
   title: string;
@@ -24,6 +25,9 @@ export function OnboardingSecondaryButton({
   disabled,
   style,
 }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <Pressable
       onPress={onPress}
@@ -45,8 +49,9 @@ export function OnboardingSecondaryButton({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   button: {
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: Spacing.md,
@@ -58,6 +63,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   label: {
+    textAlign: 'center',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -67,4 +73,4 @@ const styles = StyleSheet.create({
   emphasis: {
     color: OnboardingColors.orange,
   },
-});
+}); }

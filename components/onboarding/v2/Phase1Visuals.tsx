@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import {
   Pressable,
   Image,
@@ -8,24 +8,45 @@ import {
   Text,
   View,
   ViewStyle,
+  useWindowDimensions,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OnboardingPrimaryButton } from '@/components/onboarding';
+import { LightPalette } from '@/constants';
+import { useTheme } from '@/lib/theme';
 
 export const Phase1Colors = {
-  background: '#F7F4EE',
-  surface: '#FFFFFF',
-  surfaceRaised: '#EFE9DF',
-  border: '#E3DCCF',
-  text: '#191815',
-  textMuted: '#6D6860',
-  orange: '#FF5B24',
-  onOrange: '#17110E',
-  success: '#2C9B69',
+  background: LightPalette.bg,
+  surface: LightPalette.surface,
+  surfaceRaised: LightPalette.surfaceElevated,
+  border: LightPalette.border,
+  text: LightPalette.text,
+  textMuted: LightPalette.textSecondary,
+  orange: LightPalette.accent,
+  onOrange: LightPalette.textInverse,
+  success: LightPalette.success,
+  successSurface: LightPalette.successSurface,
+  danger: LightPalette.danger,
+  action: LightPalette.primary,
+  onAction: LightPalette.textInverse,
+  mapLand: '#EEEBDF',
+  mapWater: '#B8D5D9',
 } as const;
+
+export function usePhase1Colors() {
+  const { colors, resolvedTheme } = useTheme();
+  return useMemo(() => ({
+    background: colors.bg, surface: colors.surface, surfaceRaised: colors.surfaceElevated,
+    border: colors.border, text: colors.text, textMuted: colors.textSecondary,
+    orange: colors.accent, onOrange: colors.textInverse, success: colors.success,
+    successSurface: colors.successSurface, danger: colors.danger, action: colors.primary, onAction: colors.textInverse,
+    mapLand: resolvedTheme === 'dark' ? '#303A31' : '#EEEBDF',
+    mapWater: resolvedTheme === 'dark' ? '#203B42' : '#B8D5D9',
+  }), [colors, resolvedTheme]);
+}
 
 type FrameProps = {
   children: ReactNode;
@@ -48,7 +69,12 @@ export function Phase1Frame({
   scroll = true,
   contentStyle,
 }: FrameProps) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+
   const insets = useSafeAreaInsets();
+  const { resolvedTheme } = useTheme();
+  const { fontScale, height } = useWindowDimensions();
   const content = (
     <View style={[styles.content, immersive && styles.immersiveContent, contentStyle]}>
       {children}
@@ -57,7 +83,7 @@ export function Phase1Frame({
 
   return (
     <View style={[styles.frame, { paddingTop: insets.top }]}>
-      <StatusBar style="dark" />
+      <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
       <View style={styles.topBar}>
         {onBack ? (
           <Pressable
@@ -81,7 +107,7 @@ export function Phase1Frame({
         <View style={styles.topBarBalance} />
       </View>
 
-      {scroll ? (
+      {scroll || fontScale >= 1.5 || height < 700 ? (
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[styles.scrollContent, !!footer && styles.scrollContentWithFooter]}
@@ -100,6 +126,9 @@ export function Phase1Frame({
 }
 
 export function Phase1Progress({ value, label }: { value: number; label: string }) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+
   const clamped = Math.max(0, Math.min(1, value));
   return (
     <View
@@ -123,6 +152,9 @@ export function Phase1Prompt({
   children: ReactNode;
   light?: boolean;
 }) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+
   return (
     <View style={[styles.prompt, light && styles.promptLight]} accessibilityRole="text">
       <View style={styles.promptIcon}><Feather name={icon} size={14} color={Phase1Colors.onOrange} /></View>
@@ -132,10 +164,13 @@ export function Phase1Prompt({
 }
 
 export function Phase1PrimaryButton(props: React.ComponentProps<typeof OnboardingPrimaryButton>) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+
   return <OnboardingPrimaryButton {...props} style={StyleSheet.flatten([styles.primaryButton, props.style])} />;
 }
 
-const styles = StyleSheet.create({
+function createStyles(Phase1Colors: ReturnType<typeof usePhase1Colors>) { return StyleSheet.create({
   frame: { flex: 1, backgroundColor: Phase1Colors.background },
   topBar: {
     height: 64,
@@ -150,20 +185,22 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Phase1Colors.surface,
     borderWidth: 1,
     borderColor: Phase1Colors.border,
   },
   brandMark: { minWidth: 88, height: 44, flexDirection: 'row', alignItems: 'center', gap: 8 },
   brandLogo: { width: 30, height: 30, borderRadius: 10 },
-  brandText: { color: Phase1Colors.text, fontSize: 13, fontWeight: '900', letterSpacing: 1.4 },
+  brandText: { color: Phase1Colors.text, fontSize: 13, fontWeight: '600', letterSpacing: 1.4 },
   topBarBalance: { width: 44 },
   progressTrack: {
     width: 152,
+    flexShrink: 1,
+    marginHorizontal: 12,
     height: 6,
     overflow: 'hidden',
     borderRadius: 99,
-    backgroundColor: '#DED7CB',
+    backgroundColor: Phase1Colors.border,
   },
   progressFill: { height: 6, borderRadius: 99, backgroundColor: Phase1Colors.orange },
   scroll: { flex: 1 },
@@ -189,7 +226,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: Phase1Colors.text,
   },
-  promptLight: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Phase1Colors.border },
+  promptLight: { backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border },
   promptIcon: {
     width: 28,
     height: 28,
@@ -198,8 +235,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Phase1Colors.orange,
   },
-  promptText: { color: Phase1Colors.onOrange, fontSize: 14, fontWeight: '900' },
+  promptText: { color: Phase1Colors.surface, fontSize: 14, fontWeight: '600', flexShrink: 1 },
   promptTextLight: { color: Phase1Colors.text },
-  primaryButton: { backgroundColor: Phase1Colors.orange, minHeight: 60 },
-  pressed: { opacity: 0.72, transform: [{ scale: 0.96 }] },
-});
+  primaryButton: { backgroundColor: Phase1Colors.action, minHeight: 50 },
+  pressed: { opacity: 0.72,  },
+}); }

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ReactNode } from 'react';
 import {
   Pressable,
@@ -5,12 +6,13 @@ import {
   StyleSheet,
   View,
   ViewStyle,
+  useWindowDimensions,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants';
-import { OnboardingColors } from './theme';
+import { OnboardingColors, useOnboardingColors } from './theme';
 import { OnboardingProgress } from './OnboardingProgress';
 
 type Props = {
@@ -51,7 +53,11 @@ export function OnboardingScreenShell({
   scroll = true,
   contentStyle,
 }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const insets = useSafeAreaInsets();
+  const { fontScale, height } = useWindowDimensions();
 
   const hasTopRow = !!onBack || !!headerRight || !!progress;
 
@@ -89,7 +95,7 @@ export function OnboardingScreenShell({
         </View>
       ) : null}
 
-      {scroll ? (
+      {scroll || fontScale >= 1.5 || height < 700 ? (
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
@@ -118,7 +124,7 @@ export function OnboardingScreenShell({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: OnboardingColors.background,
@@ -171,4 +177,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.md,
   },
-});
+}); }

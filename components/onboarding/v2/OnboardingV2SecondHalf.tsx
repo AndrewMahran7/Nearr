@@ -1,9 +1,10 @@
+import { useMemo } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { MapFormationIllustration, NearrSparkleMark } from './OnboardingVisualLanguage';
-import { Phase1Colors, Phase1Frame, Phase1PrimaryButton } from './Phase1Visuals';
+import { Phase1Colors, Phase1Frame, Phase1PrimaryButton, usePhase1Colors } from './Phase1Visuals';
 import {
   completeOnboardingV2SecondHalf,
   continueOnboardingV2AfterAuth,
@@ -41,6 +42,9 @@ export function OnboardingV2SecondHalf({ state }: { state: OnboardingV2State }) 
 }
 
 function ShareEducationScreen({ state }: { state: OnboardingV2State }) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+
   return <Phase1Frame progress={0.73} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title="Set up nearby reminders" onPress={() => void continueOnboardingV2ToNearbyValue()} />}>
     <View style={styles.platformHero}><Feather name="map" size={35} color="#FFFFFF" /></View>
     <Text style={styles.eyebrow}>YOUR SAVES HAVE A HOME</Text>
@@ -51,6 +55,9 @@ function ShareEducationScreen({ state }: { state: OnboardingV2State }) {
 }
 
 function NearbyPermissionScreen({ state }: { state: OnboardingV2State }) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+
   const [requestingOsPermission, setRequestingOsPermission] = useState(false);
   const operationRef = useRef(false);
   const choose = async (request: boolean) => {
@@ -83,6 +90,9 @@ function NearbyPermissionScreen({ state }: { state: OnboardingV2State }) {
 }
 
 function BackgroundLocationScreen({ state }: { state: OnboardingV2State }) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+
   const [busy, setBusy] = useState(false);
   const operationRef = useRef(false);
   const settingsOpenedRef = useRef(false);
@@ -146,6 +156,9 @@ function BackgroundLocationScreen({ state }: { state: OnboardingV2State }) {
 }
 
 function NotificationEducationScreen({ state }: { state: OnboardingV2State }) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+
   const [requestingOsPermission, setRequestingOsPermission] = useState(false);
   const operationRef = useRef(false);
   const choose = async (request: boolean) => {
@@ -173,6 +186,9 @@ function NotificationEducationScreen({ state }: { state: OnboardingV2State }) {
 }
 
 function MakingNearrYoursScreen({ state }: { state: OnboardingV2State }) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+
   const startedRef = useRef(false);
   useEffect(() => {
     if (startedRef.current) return;
@@ -198,9 +214,15 @@ function MakingNearrYoursScreen({ state }: { state: OnboardingV2State }) {
   </Phase1Frame>;
 }
 
-function LegacyGrowingMapAdvance() { useEffect(() => { void continueOnboardingV2AfterMakingNearrYours(); }, []); return <Phase1Frame contentStyle={styles.centered}><Text style={styles.bodyCentered}>Opening your map…</Text></Phase1Frame>; }
+function LegacyGrowingMapAdvance() {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+ useEffect(() => { void continueOnboardingV2AfterMakingNearrYours(); }, []); return <Phase1Frame contentStyle={styles.centered}><Text style={styles.bodyCentered}>Opening your map…</Text></Phase1Frame>; }
 
 function FinalActivationScreen({ state }: { state: OnboardingV2State }) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+
   const [busy, setBusy] = useState(false);
   const { data: savedPlaces } = useSavedPlaces();
   useEffect(() => { if (state.stage !== 'auth_success') return; void continueOnboardingV2AfterAuth(); }, [state.stage]);
@@ -233,8 +255,14 @@ function FinalActivationScreen({ state }: { state: OnboardingV2State }) {
   </Phase1Frame></View>;
 }
 
-function SetupRow({ label, ready, neutral }: { label: string; ready: boolean; neutral?: boolean }) { return <View style={styles.setupRow}><View style={[styles.setupIcon, neutral && styles.setupIconNeutral]}><Feather name={ready ? 'check' : 'minus'} size={15} color={neutral ? Phase1Colors.textMuted : '#FFFFFF'} /></View><Text style={[styles.setupLabel, neutral && styles.setupLabelNeutral]}>{label}</Text></View>; }
-function PermissionResultNote({ text }: { text: string }) { return <View style={styles.permissionResult}><Feather name="info" size={17} color={Phase1Colors.orange} /><Text style={styles.permissionResultText}>{text}</Text></View>; }
+function SetupRow({ label, ready, neutral }: { label: string; ready: boolean; neutral?: boolean }) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+ return <View style={styles.setupRow}><View style={[styles.setupIcon, neutral && styles.setupIconNeutral]}><Feather name={ready ? 'check' : 'minus'} size={15} color={neutral ? Phase1Colors.textMuted : '#FFFFFF'} /></View><Text style={[styles.setupLabel, neutral && styles.setupLabelNeutral]}>{label}</Text></View>; }
+function PermissionResultNote({ text }: { text: string }) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+ return <View style={styles.permissionResult}><Feather name="info" size={17} color={Phase1Colors.orange} /><Text style={styles.permissionResultText}>{text}</Text></View>; }
 function reminderInitializationLabel(result: OnboardingReminderInitializationResult | null): string {
   if (result === 'ready') return 'Background reminder service ready';
   if (result === 'partial') return 'Reminder service partially ready';
@@ -250,15 +278,15 @@ function mapHandoffLabel(result: OnboardingV2State['mapHandoffResult']): string 
   return 'Saved cards loading';
 }
 
-const styles = StyleSheet.create({
+function createStyles(Phase1Colors: ReturnType<typeof usePhase1Colors>) { return StyleSheet.create({
   flex: { flex: 1 }, centered: { justifyContent: 'center', paddingBottom: 48 }, makingContent: { justifyContent: 'center', paddingBottom: 32 },
-  eyebrow: { color: Phase1Colors.orange, fontSize: 11, fontWeight: '900', letterSpacing: 1.6, marginBottom: 10 }, eyebrowCentered: { color: Phase1Colors.orange, fontSize: 11, fontWeight: '900', letterSpacing: 1.6, marginBottom: 10, textAlign: 'center' }, headline: { color: Phase1Colors.text, fontSize: 34, lineHeight: 38, fontWeight: '900', letterSpacing: -1.1 }, headlineCentered: { color: Phase1Colors.text, fontSize: 31, lineHeight: 36, fontWeight: '900', letterSpacing: -1, textAlign: 'center' }, body: { color: Phase1Colors.textMuted, fontSize: 16, lineHeight: 23, marginTop: 12 }, bodyCentered: { color: Phase1Colors.textMuted, fontSize: 16, textAlign: 'center' }, microcopy: { color: Phase1Colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 12 },
-  platformHero: { width: 70, height: 70, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.orange, marginBottom: 24, shadowColor: '#61311E', shadowOpacity: 0.2, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 3 }, sharePath: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 28 }, shareStep: { width: 76, minHeight: 84, alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 19, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, shareIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF0E9' }, shareLogo: { width: 38, height: 38, borderRadius: 12 }, shareLabel: { color: Phase1Colors.text, fontSize: 11, fontWeight: '900' },
-  valueCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 11, marginTop: 24, padding: 15, borderRadius: 18, backgroundColor: '#EAF6EF', borderWidth: 1, borderColor: '#CEE9DA' }, valueTitle: { color: '#1E644A', fontSize: 14, lineHeight: 19, fontWeight: '900' }, valueBody: { color: '#4D6F60', fontSize: 12, lineHeight: 17, marginTop: 4 },
-  actions: { gap: 7 }, skipButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center' }, skipText: { color: Phase1Colors.textMuted, fontSize: 14, fontWeight: '800' }, radar: { height: 276, marginTop: 26, borderRadius: 29, overflow: 'hidden', backgroundColor: '#DCEAE3', borderWidth: 5, borderColor: '#FFFFFF', shadowColor: '#30473C', shadowOpacity: 0.12, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 3 }, radarRingLarge: { position: 'absolute', width: 250, height: 250, borderRadius: 125, left: -52, top: 54, borderWidth: 1, borderColor: 'rgba(44,155,105,0.25)' }, radarRingSmall: { position: 'absolute', width: 145, height: 145, borderRadius: 73, left: 1, top: 106, borderWidth: 1, borderColor: 'rgba(44,155,105,0.42)' }, youDot: { position: 'absolute', left: 57, top: 160, width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.success }, savedNearby: { position: 'absolute', right: 18, top: 54, maxWidth: 180, padding: 13, borderRadius: 18, backgroundColor: Phase1Colors.orange }, savedNearbyText: { color: '#FFFFFF', fontSize: 13, fontWeight: '900', marginTop: 5 }, savedNearbyMeta: { color: '#FFF1EA', fontSize: 10, fontWeight: '800', marginTop: 3 }, privacyCard: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginTop: 14, padding: 14, borderRadius: 17, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, privacyText: { flex: 1, color: Phase1Colors.textMuted, fontSize: 12, lineHeight: 18 },
-  exampleBadge: { position: 'absolute', left: 12, top: 12, zIndex: 2, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.9)' }, exampleBadgeText: { color: '#496457', fontSize: 9, fontWeight: '900', letterSpacing: 0.7 },
-  heroIcon: { width: 70, height: 70, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.orange, marginBottom: 26 }, permissionResult: { flexDirection: 'row', gap: 9, marginTop: 17, padding: 12, borderRadius: 15, backgroundColor: '#FFF1E8' }, permissionResultText: { flex: 1, color: '#75503B', fontSize: 12, lineHeight: 18 }, notificationCard: { marginTop: 28, padding: 16, borderRadius: 23, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Phase1Colors.border, shadowColor: '#41352D', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 3 }, notificationHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 }, notificationLogo: { width: 27, height: 27, borderRadius: 8 }, notificationApp: { flex: 1, color: Phase1Colors.textMuted, fontSize: 10, fontWeight: '900' }, notificationTime: { color: '#989187', fontSize: 10 }, notificationTitle: { color: Phase1Colors.text, fontSize: 15, fontWeight: '900', marginTop: 13 }, notificationBody: { color: Phase1Colors.textMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
-  checklist: { gap: 8, marginTop: 18 }, setupRow: { minHeight: 43, flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 13, borderRadius: 14, backgroundColor: '#FFFFFF' }, setupIcon: { width: 25, height: 25, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.success }, setupIconNeutral: { backgroundColor: '#EAE5DD' }, setupLabel: { flex: 1, color: Phase1Colors.text, fontSize: 13, fontWeight: '800' }, setupLabelNeutral: { color: Phase1Colors.textMuted },
-  finalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }, successMark: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.success }, progressPill: { paddingHorizontal: 11, paddingVertical: 7, borderRadius: 12, backgroundColor: Phase1Colors.surface }, progressText: { color: Phase1Colors.textMuted, fontSize: 10, fontWeight: '800' }, personalCopy: { color: Phase1Colors.text, fontSize: 14, lineHeight: 20, fontWeight: '800', marginTop: 17 }, finalActions: { gap: 9, marginTop: 22 }, secondaryAction: { minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 18, borderWidth: 1, borderColor: Phase1Colors.border, backgroundColor: '#FFFFFF' }, secondaryText: { color: Phase1Colors.text, fontSize: 14, fontWeight: '900' }, backupNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 14, paddingBottom: 14 }, backupText: { color: Phase1Colors.textMuted, fontSize: 11, fontWeight: '700' }, mapTransition: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#171615' },
+  eyebrow: { color: Phase1Colors.orange, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, marginBottom: 10 }, eyebrowCentered: { color: Phase1Colors.orange, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, marginBottom: 10, textAlign: 'center' }, headline: { color: Phase1Colors.text, fontSize: 34, lineHeight: 38, fontWeight: '600', letterSpacing: -1.1 }, headlineCentered: { color: Phase1Colors.text, fontSize: 31, lineHeight: 36, fontWeight: '600', letterSpacing: -1, textAlign: 'center' }, body: { color: Phase1Colors.textMuted, fontSize: 16, lineHeight: 23, marginTop: 12 }, bodyCentered: { color: Phase1Colors.textMuted, fontSize: 16, textAlign: 'center' }, microcopy: { color: Phase1Colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 12 },
+  platformHero: { width: 70, height: 70, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.orange, marginBottom: 24, shadowColor: '#61311E', shadowOpacity: 0.2, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 3 }, sharePath: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 28 }, shareStep: { width: 76, minHeight: 84, alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 19, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, shareIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.surfaceRaised }, shareLogo: { width: 38, height: 38, borderRadius: 12 }, shareLabel: { color: Phase1Colors.text, fontSize: 11, fontWeight: '600' },
+  valueCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 11, marginTop: 24, padding: 15, borderRadius: 18, backgroundColor: Phase1Colors.successSurface, borderWidth: 1, borderColor: Phase1Colors.border }, valueTitle: { color: Phase1Colors.textMuted, fontSize: 14, lineHeight: 19, fontWeight: '600' }, valueBody: { color: Phase1Colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 4 },
+  actions: { gap: 7 }, skipButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center' }, skipText: { color: Phase1Colors.textMuted, fontSize: 14, fontWeight: '600' }, radar: { height: 276, marginTop: 26, borderRadius: 29, overflow: 'hidden', backgroundColor: Phase1Colors.mapLand, borderWidth: 5, borderColor: Phase1Colors.surface, shadowColor: '#30473C', shadowOpacity: 0.12, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 3 }, radarRingLarge: { position: 'absolute', width: 250, height: 250, borderRadius: 125, left: -52, top: 54, borderWidth: 1, borderColor: 'rgba(44,155,105,0.25)' }, radarRingSmall: { position: 'absolute', width: 145, height: 145, borderRadius: 73, left: 1, top: 106, borderWidth: 1, borderColor: 'rgba(44,155,105,0.42)' }, youDot: { position: 'absolute', left: 57, top: 160, width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.success }, savedNearby: { position: 'absolute', right: 18, top: 54, maxWidth: 180, padding: 13, borderRadius: 18, backgroundColor: Phase1Colors.orange }, savedNearbyText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600', marginTop: 5 }, savedNearbyMeta: { color: '#FFF1EA', fontSize: 10, fontWeight: '600', marginTop: 3 }, privacyCard: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginTop: 14, padding: 14, borderRadius: 17, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, privacyText: { flex: 1, color: Phase1Colors.textMuted, fontSize: 12, lineHeight: 18 },
+  exampleBadge: { position: 'absolute', left: 12, top: 12, zIndex: 2, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.9)' }, exampleBadgeText: { color: Phase1Colors.textMuted, fontSize: 9, fontWeight: '600', letterSpacing: 0.7 },
+  heroIcon: { width: 70, height: 70, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.orange, marginBottom: 26 }, permissionResult: { flexDirection: 'row', gap: 9, marginTop: 17, padding: 12, borderRadius: 15, backgroundColor: Phase1Colors.surfaceRaised }, permissionResultText: { flex: 1, color: Phase1Colors.textMuted, fontSize: 12, lineHeight: 18 }, notificationCard: { marginTop: 28, padding: 16, borderRadius: 23, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border, shadowColor: '#41352D', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 3 }, notificationHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 }, notificationLogo: { width: 27, height: 27, borderRadius: 8 }, notificationApp: { flex: 1, color: Phase1Colors.textMuted, fontSize: 10, fontWeight: '600' }, notificationTime: { color: Phase1Colors.textMuted, fontSize: 10 }, notificationTitle: { color: Phase1Colors.text, fontSize: 15, fontWeight: '600', marginTop: 13 }, notificationBody: { color: Phase1Colors.textMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
+  checklist: { gap: 8, marginTop: 18 }, setupRow: { minHeight: 43, flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 13, borderRadius: 14, backgroundColor: Phase1Colors.surface }, setupIcon: { width: 25, height: 25, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.success }, setupIconNeutral: { backgroundColor: Phase1Colors.surfaceRaised }, setupLabel: { flex: 1, color: Phase1Colors.text, fontSize: 13, fontWeight: '600' }, setupLabelNeutral: { color: Phase1Colors.textMuted },
+  finalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }, successMark: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.success }, progressPill: { paddingHorizontal: 11, paddingVertical: 7, borderRadius: 12, backgroundColor: Phase1Colors.surface }, progressText: { color: Phase1Colors.textMuted, fontSize: 10, fontWeight: '600' }, personalCopy: { color: Phase1Colors.text, fontSize: 14, lineHeight: 20, fontWeight: '600', marginTop: 17 }, finalActions: { gap: 9, marginTop: 22 }, secondaryAction: { minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 18, borderWidth: 1, borderColor: Phase1Colors.border, backgroundColor: Phase1Colors.surface }, secondaryText: { color: Phase1Colors.text, fontSize: 14, fontWeight: '600' }, backupNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 14, paddingBottom: 14 }, backupText: { color: Phase1Colors.textMuted, fontSize: 11, fontWeight: '700' }, mapTransition: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#171615' },
   realResultHero: { width: '100%', height: 210, marginTop: 22, borderRadius: 24, backgroundColor: Phase1Colors.surface },
-});
+}); }

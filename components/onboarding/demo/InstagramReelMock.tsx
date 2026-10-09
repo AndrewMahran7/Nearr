@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useEffect, useRef } from 'react';
 import {
   AccessibilityInfo,
@@ -13,7 +14,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { OnboardingColors, OnboardingRadius } from '../theme';
+import { OnboardingColors, OnboardingRadius , useOnboardingColors } from '../theme';
 
 type Props = {
   /** Card width in px. Height is derived from a reel-ish aspect ratio. */
@@ -54,6 +55,9 @@ export function InstagramReelMock({
   media,
   style,
 }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const mediaHeight = Math.round(width * (compact ? 0.82 : 1.02));
   const interactive = highlightShare && !!onSharePress;
 
@@ -107,6 +111,9 @@ export function InstagramReelMock({
 
 /** Native, tasteful cafe-storefront scene (no gradient lib, no photo asset). */
 function FauxStorefront() {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View style={styles.scene}>
       <View style={styles.windowRow}>
@@ -137,6 +144,9 @@ function RailAction({
   label: string;
   compact?: boolean;
 }) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View style={styles.railAction}>
       <Feather name={icon} size={compact ? 18 : 24} color={OnboardingColors.text} />
@@ -161,6 +171,9 @@ function ShareAction({
   interactive?: boolean;
   onPress?: () => void;
 }) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const pulse = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
   const firedRef = useRef(false);
@@ -249,7 +262,7 @@ function ShareAction({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   card: {
     backgroundColor: '#101010',
     borderRadius: OnboardingRadius.card,
@@ -412,4 +425,4 @@ const styles = StyleSheet.create({
     color: OnboardingColors.textMuted,
     fontSize: 12,
   },
-});
+}); }

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -13,7 +14,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { Spacing } from '@/constants';
 import { InstagramReelMock } from '../demo';
-import { OnboardingColors, OnboardingRadius } from '../theme';
+import { OnboardingColors, OnboardingRadius , useOnboardingColors } from '../theme';
 import { ScreenHeading } from './ScreenHeading';
 
 type Props = {
@@ -32,6 +33,9 @@ const RECIPIENTS = ['Mia', 'Leo', 'Noor'] as const;
  * Everything is drawn natively — no network or Instagram dependency.
  */
 export function TapShareScreen({ onShareTap, onShareToTap }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const { width } = useWindowDimensions();
   const reelWidth = Math.min(300, width - Spacing.xl * 2);
   const panelSlide = useRef(new Animated.Value(1)).current;
@@ -185,6 +189,9 @@ function ActionItem({
   icon: keyof typeof Feather.glyphMap;
   label: string;
 }) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View style={styles.actionItem} accessibilityElementsHidden>
       <View style={styles.actionIcon}>
@@ -202,7 +209,7 @@ const stylesTokens = {
   panelMuted: '#A8ADB2',
 } as const;
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -286,7 +293,7 @@ const styles = StyleSheet.create({
   avatarText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '600',
   },
   recipientName: {
     color: stylesTokens.panelText,
@@ -338,8 +345,8 @@ const styles = StyleSheet.create({
   shareToText: {
     color: OnboardingColors.orange,
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '600',
     marginTop: 5,
     flexShrink: 0,
   },
-});
+}); }

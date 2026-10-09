@@ -46,7 +46,7 @@ const fixture = (index: number) => ({
 const text = (node: any): string => node == null ? '' : typeof node === 'string' ? node : Array.isArray(node) ? node.map(text).join(' ') : text(node.children);
 async function main() {
   let assertions = 0;
-  for (const count of [0, 1, 5, 20, 100]) {
+  for (const count of [0, 1, 5, 20, 50, 51, 100]) {
     let renderer!: ReturnType<typeof TestRenderer.create>;
     const places = Array.from({ length: count }, (_v, index) => fixture(index));
     await TestRenderer.act(async () => { renderer = TestRenderer.create(React.createElement(SavedPlacesLibrary, {
@@ -54,8 +54,8 @@ async function main() {
       requestLocationPermission: async () => false, onSelectPlace() {}, onSaveFromLink() {}, onSearchManually() {},
     })); });
     const list = renderer.root.findByType('FlatList' as any);
-    assert.equal(list.props.data.length, Math.max(0, count - 1)); assertions++;
-    assert.equal(renderer.root.findAll((node) => node.type === SavedPlaceBrowseCardView && node.props.featured).length, count > 0 ? 1 : 0); assertions++;
+    assert.equal(list.props.data.length, count > 0 && count <= 50 ? count - 1 : count); assertions++;
+    assert.equal(renderer.root.findAll((node) => node.type === SavedPlaceBrowseCardView && node.props.featured).length, count > 0 && count <= 50 ? 1 : 0); assertions++;
     if (count === 0) { assert.match(text(renderer.toJSON()), /No saved places yet/); assertions++; }
     if (count > 1) {
       await TestRenderer.act(async () => renderer.root.findByType('Input' as any).props.onChangeText('Place 1'));
@@ -80,6 +80,6 @@ async function main() {
     assert.equal(renderer.root.findByType('PlaceImage' as any).props.hydrationPolicy, 'saved_snapshot'); assertions++;
     await TestRenderer.act(async () => renderer.unmount());
   }
-  console.log(`PASS Fieldnotes Saved components (${assertions} assertions): 0/1/5/20/100 places, no duplicate lead, search/empty, exact selection, 3 text scales, snapshot photo policy`);
+  console.log(`PASS Fieldnotes Saved components (${assertions} assertions): 0/1/5/20/50/51/100 places, no duplicate lead, search/empty, exact selection, 3 text scales, snapshot photo policy`);
 }
 main().finally(() => { Module._load = originalLoad; }).catch((error) => { console.error(error); process.exitCode = 1; });

@@ -145,7 +145,7 @@ assert.match(coach, /deferOnboardingV2Practice/);
 assert.doesNotMatch(coach, /loadOnboardingPracticeFixture/);
 assert.match(coach, /useOnboardingTutorialJobs/);
 assert.match(coach, /openOnboardingPracticePost\(fixture\)/);
-assert.match(coach, /style=\{\[styles\.dock, \{ top: topOffset \}\]\}/);
+assert.match(coach, /style=\{\[styles\.dock, \{ top: topOffset, maxHeight:/);
 assert.doesNotMatch(coach, /useSafeAreaInsets|PHASE2_MAP_CHROME_CLEARANCE/);
 
 const phase1Checkpoint: OnboardingV2State = {

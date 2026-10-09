@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 
-import { OnboardingColors, OnboardingRadius } from './theme';
+import { OnboardingColors, OnboardingRadius , useOnboardingColors } from './theme';
 
 type Props = {
   /** Total number of steps in the flow. */
@@ -15,6 +16,9 @@ type Props = {
  * with the orange accent; remaining segments render muted.
  */
 export function OnboardingProgress({ total, current, style }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const count = Math.max(0, total);
   return (
     <View style={[styles.row, style]} accessibilityLabel={`Step ${current + 1} of ${count}`}>
@@ -31,7 +35,7 @@ export function OnboardingProgress({ total, current, style }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -49,4 +53,4 @@ const styles = StyleSheet.create({
   segmentInactive: {
     backgroundColor: OnboardingColors.progressInactive,
   },
-});
+}); }

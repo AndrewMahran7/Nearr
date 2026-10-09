@@ -177,7 +177,8 @@ for (const fixture of [
 // Verify the production component wiring, not just helper outputs.
 assert.match(mapSource, /shouldShowOnboardingStarterFilters\(onboardingV2State\)/);
 assert.match(mapSource, /<MapCategoryFilterBar\s+options=\{mapFilterChoices\}/);
-assert.match(mapSource, /!searchVisible && !nearbyExplorer \? \([\s\S]{0,700}<ShareQueueButton \/>/);
+assert.match(mapSource, /<ShareQueueButton \/>/);
+assert.match(mapSource, /!searchVisible && !nearbyExplorer && \(sheetSnap !== 'full' \|\| !!selected\)/);
 assert.match(mapSource, /<OnboardingV2MapCoachmark topOffset=\{phase2MapLayout\.dockTop\} \/>/);
 assert.match(coachSource, /state\?\.realPracticeSession/);
 assert.match(coachSource, /deferOnboardingV2Practice/);

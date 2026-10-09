@@ -1,0 +1,225 @@
+{
+  "phase": "detail-saved-onboarding",
+  "runStatus": "pass",
+  "typecheck": {
+    "command": "npm run typecheck",
+    "exitCode": 0
+  },
+  "onboardingContractSuites": {
+    "count": 29,
+    "passed": 29,
+    "failed": 0,
+    "commands": [
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testAnonymousOnboardingV2.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testAnonymousOnboardingV2.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingCleanBaseline.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingCleanBaseline.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingAuthenticPhase2Auth.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingAuthenticPhase2Auth.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboarding1259Regressions.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboarding1259Regressions.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingDemoCopy.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingDemoCopy.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingFinalJourney.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingFinalJourney.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingFullyOffline.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingFullyOffline.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingNoLiveServices.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingNoLiveServices.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingGoogleCostIntegration.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingGoogleCostIntegration.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingInstallLifecycle.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingInstallLifecycle.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingPhase2AuthMapHardening.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingPhase2AuthMapHardening.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingRouting.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingRouting.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingPhysicalQaRegressions.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingPhysicalQaRegressions.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2DeletedAccount.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2DeletedAccount.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2DevReset.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2DevReset.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2HandsOnActivation.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2HandsOnActivation.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2Immersive.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2Immersive.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2FirstMagicMoment.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2FirstMagicMoment.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2MapSettingsNavigation.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2MapSettingsNavigation.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2Phase1Visual.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2Phase1Visual.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2P0ProductionFixture.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2P0ProductionFixture.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2Phase1Production.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2Phase1Production.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2Phase2Map.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2Phase2Map.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2Phase2Practice.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2Phase2Practice.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2PostDeleteBootstrap.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2PostDeleteBootstrap.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2Runtime.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2Runtime.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2SecondHalf.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2SecondHalf.ts.log"
+      },
+      {
+        "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2TryAnother.ts",
+        "exitCode": 0,
+        "log": "onboarding-tests/testOnboardingV2TryAnother.ts.log"
+      }
+    ]
+  },
+  "componentChecks": [
+    {
+      "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testOnboardingV2MagicRender.ts",
+      "exitCode": 0,
+      "sceneRenderCases": 24,
+      "coverage": [
+        "light/dark",
+        "100/150/200% font-scale branch",
+        "normal/reduced motion",
+        "receipt/place stages",
+        "local-only media",
+        "native text host invariant",
+        "deterministic processing timers",
+        "persisted offline result resume"
+      ]
+    },
+    {
+      "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testFieldnotesSavedComponents.ts",
+      "exitCode": 0,
+      "assertionCount": 42,
+      "coverage": [
+        "0/1/5/20/50/51/100 collections",
+        "50/51 feature cutoff",
+        "no duplicate lead",
+        "search and no matches",
+        "exact callback identity",
+        "100/150/220% branch",
+        "saved_snapshot photo policy"
+      ]
+    }
+  ],
+  "baselineAssertionMigrations": {
+    "verifiedUsing": "git show ca08c154:<file>",
+    "proofs": [
+      {
+        "file": "components/onboarding/v2/OnboardingV2MapCoachmark.tsx",
+        "assertion": "AppState.addEventListener",
+        "existedAtBase": false
+      },
+      {
+        "file": "components/onboarding/v2/OnboardingV2MapCoachmark.tsx",
+        "assertion": "Linking.openURL",
+        "existedAtBase": false
+      },
+      {
+        "file": "components/onboarding/v2/OnboardingV2SecondHalf.tsx",
+        "assertion": "router.replace('/(tabs)/map')",
+        "existedAtBase": false
+      },
+      {
+        "file": "components/onboarding/v2/OnboardingV2SecondHalf.tsx",
+        "assertion": "real app use Nearr's live recognition",
+        "existedAtBase": false
+      }
+    ],
+    "changes": [
+      "Legacy testOnboardingV2 coaching assertions now follow existing durable job reconciliation and exact source launcher",
+      "HandsOnActivation now asserts existing completeOnboardingV2SecondHalf and prohibits duplicate router.replace",
+      "Runtime expectations now use existing tutorial_ready owner /(onboarding), preserving bounded navigation assertions; routing implementation unchanged",
+      "Old magic/source-photo source-text checks now follow extracted FieldnotesPracticeScene and retain local fixture/photo checks",
+      "Map composition regex follows MemoizedSavedPlacesLibrary and collapsed-map Activity gate; route/filter behavior assertions retained",
+      "Old hardcoded cream/orange appearance assertions now test shared semantic palette and adaptive motion/scaling"
+    ]
+  },
+  "visualEvidence": "No native screenshot claim from these host tests; root owns native capture and comparison."
+}

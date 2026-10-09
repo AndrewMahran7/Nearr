@@ -1,0 +1,114 @@
+{
+  "phase": "detail-saved-onboarding",
+  "base": "ca08c154",
+  "detailSavedCommit": "0921895",
+  "onboardingCommit": "pending",
+  "changedComponents": {
+    "detail": [
+      "components/map/SelectedPlaceDetails.tsx",
+      "components/map/RecommendedPlaceDetails.tsx",
+      "components/PhotoRolodex.tsx",
+      "components/map/place/PlaceCardRow.tsx"
+    ],
+    "saved": [
+      "components/map/SavedPlacesLibrary.tsx",
+      "components/SavedPlaceBrowseCard.tsx",
+      "components/map/CompactPlaceRow.tsx"
+    ],
+    "onboarding": [
+      "components/onboarding/GoogleSignInButton.tsx",
+      "components/onboarding/OnboardingActionCard.tsx",
+      "components/onboarding/OnboardingCard.tsx",
+      "components/onboarding/OnboardingFeatureCard.tsx",
+      "components/onboarding/OnboardingPasswordField.tsx",
+      "components/onboarding/OnboardingPrimaryButton.tsx",
+      "components/onboarding/OnboardingProgress.tsx",
+      "components/onboarding/OnboardingSavedPlacePreview.tsx",
+      "components/onboarding/OnboardingScreenShell.tsx",
+      "components/onboarding/OnboardingSecondaryButton.tsx",
+      "components/onboarding/OnboardingStepRow.tsx",
+      "components/onboarding/demo/DemoMapCard.tsx",
+      "components/onboarding/demo/FindingSavingCard.tsx",
+      "components/onboarding/demo/InstagramReelMock.tsx",
+      "components/onboarding/demo/NearrAppIcon.tsx",
+      "components/onboarding/demo/NearrFavoritesHelp.tsx",
+      "components/onboarding/demo/ShareSheetMock.tsx",
+      "components/onboarding/index.ts",
+      "components/onboarding/screens/ChooseNearrScreen.tsx",
+      "components/onboarding/screens/ScreenHeading.tsx",
+      "components/onboarding/screens/TapShareScreen.tsx",
+      "components/onboarding/screens/ValuePropScreen.tsx",
+      "components/onboarding/theme.ts",
+      "components/onboarding/v2/ImmersiveGuidedSave.tsx",
+      "components/onboarding/v2/OfflineFixtureVideo.tsx",
+      "components/onboarding/v2/OnboardingV2Activation.tsx",
+      "components/onboarding/v2/OnboardingV2MapCoachmark.tsx",
+      "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "components/onboarding/v2/OnboardingV2RealPractice.tsx",
+      "components/onboarding/v2/OnboardingV2SecondHalf.tsx",
+      "components/onboarding/v2/OnboardingVisualLanguage.tsx",
+      "components/onboarding/v2/Phase1Visuals.tsx"
+    ],
+    "newScene": "components/onboarding/v2/FieldnotesPracticeScene.tsx"
+  },
+  "features": [
+    "Destination photo and title lead; Directions is botanical utility action, Share secondary; actual source provenance uses SourceRibbon",
+    "Existing note/caption/related-media/data/photo-cache callbacks retained; More groups note, share, visited, correction and removal actions",
+    "Reminder switch persists via existing updateSavedPlace after existing permission helpers; rejected save leaves prior value",
+    "Full gallery uses contain fit, bounded hydration/prefetch, indexed counter, manual previous/next, and Reduce Motion",
+    "Saved shows one feature only for unfiltered recent collections <= Fieldnotes.featureLibraryLimit (50); larger collections are all compact virtualized rows",
+    "Onboarding shared primitives and Phase 1/2 surfaces adapt from ThemeProvider; color/style objects are memoized",
+    "Photo-led welcome uses the bundled true place image, with original-source thumbnail",
+    "Current fixture_map_payoff uses 900ms bundled thumbnail flight, pin settlement and destination reveal, or immediate final state under Reduce Motion",
+    "Local silent practice video does not autoplay under Reduce Motion; scrollable frames/sheets and 44pt close/back controls improve large-text reachability"
+  ],
+  "preservedContracts": [
+    "Phase 1 controller/reducer and local fixture/media ownership unchanged; no auth, provider, maps or recognition calls added",
+    "Phase 2 real durable queue matching, job identity, source launching, optional deferral, auth handoff and sole AuthGate route ownership unchanged",
+    "No backend, package, cost-control, environment, deployment or production project edits"
+  ],
+  "nativeCaptureTargets": [
+    {
+      "component": "FieldnotesPracticeScene",
+      "props": {
+        "fixtureId": "selectOfflineOnboardingFixture(platform, interest).id",
+        "stage": "receipt"
+      },
+      "timeMs": 250
+    },
+    {
+      "component": "FieldnotesPracticeScene",
+      "props": {
+        "fixtureId": "selectOfflineOnboardingFixture(platform, interest).id",
+        "stage": "place"
+      },
+      "timeMs": 500
+    },
+    {
+      "component": "FieldnotesPracticeScene",
+      "props": {
+        "fixtureId": "selectOfflineOnboardingFixture(platform, interest).id",
+        "stage": "place"
+      },
+      "timeMs": 950
+    },
+    {
+      "component": "SavedPlacesLibrary",
+      "cases": [
+        0,
+        1,
+        5,
+        20,
+        50,
+        51,
+        100
+      ],
+      "include": "0-photo saved rows and long real business names"
+    }
+  ],
+  "evidenceLimitations": [
+    "Host mocks render actual React components and assert contracts, but do not measure native pixels, clipping, VoiceOver, scroll performance, animation frames, or touch dispatch.",
+    "100/150/200% scene and 100/150/220% Saved host props exercise responsive branches only; physical/simulator visual validation remains with root native QA.",
+    "This phase does not claim native screenshot or production deployment evidence."
+  ]
+}

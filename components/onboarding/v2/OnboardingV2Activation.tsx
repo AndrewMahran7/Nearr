@@ -1,10 +1,11 @@
+import { useMemo } from 'react';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 import { ImmersiveGuidedSave } from '@/components/onboarding/v2/ImmersiveGuidedSave';
-import { Phase1Colors, Phase1Frame, Phase1PrimaryButton } from '@/components/onboarding/v2/Phase1Visuals';
+import { Phase1Colors, Phase1Frame, Phase1PrimaryButton, usePhase1Colors } from '@/components/onboarding/v2/Phase1Visuals';
 import { platformLabel, starterContentById } from '@/constants/onboardingStarterContent';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { hapticSelection, hapticSuccess } from '@/lib/haptics';
@@ -23,6 +24,9 @@ const LEARN_PROGRESS: Partial<Record<OnboardingV2Stage, number>> = {
 };
 
 export function OnboardingV2Activation() {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+
   const router = useRouter();
   const { state } = useOnboardingV2();
   const [saving, setSaving] = useState(false);
@@ -151,6 +155,9 @@ export function OnboardingV2Activation() {
 }
 
 function FoundPlaceHero({ name, locality }: { name: string; locality: string }) {
+  const Phase1Colors = usePhase1Colors();
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+
   return (
     <View style={styles.foundHero} accessible accessibilityLabel={`Place found: ${name}, ${locality}`}>
       <View style={styles.heroGlow} />
@@ -165,9 +172,9 @@ function FoundPlaceHero({ name, locality }: { name: string; locality: string }) 
   );
 }
 
-const styles = StyleSheet.create({
-  eyebrow: { color: Phase1Colors.orange, fontSize: 11, fontWeight: '900', letterSpacing: 1.7, marginBottom: 9 },
-  headline: { color: Phase1Colors.text, fontSize: 31, lineHeight: 35, fontWeight: '900', letterSpacing: -0.9 },
+function createStyles(Phase1Colors: ReturnType<typeof usePhase1Colors>) { return StyleSheet.create({
+  eyebrow: { color: Phase1Colors.orange, fontSize: 11, fontWeight: '600', letterSpacing: 1.7, marginBottom: 9 },
+  headline: { color: Phase1Colors.text, fontSize: 31, lineHeight: 35, fontWeight: '600', letterSpacing: -0.9 },
   body: { color: Phase1Colors.textMuted, fontSize: 16, lineHeight: 22, marginTop: 10 },
   centerText: { textAlign: 'center' },
   processingContent: { alignItems: 'center', justifyContent: 'center', paddingBottom: 58 },
@@ -180,7 +187,7 @@ const styles = StyleSheet.create({
   finderPin: { width: 68, height: 68, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.orange },
   finderSpinner: { position: 'absolute', right: 38, bottom: 48 },
   resultCopy: { marginTop: 24 },
-  resultHeadline: { color: Phase1Colors.text, fontSize: 34, lineHeight: 37, fontWeight: '900', letterSpacing: -1 },
+  resultHeadline: { color: Phase1Colors.text, fontSize: 34, lineHeight: 37, fontWeight: '600', letterSpacing: -1 },
   addressLine: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 12 },
   addressCopy: { flex: 1 },
   addressText: { color: Phase1Colors.text, fontSize: 14, lineHeight: 20, fontWeight: '700' },
@@ -194,8 +201,8 @@ const styles = StyleSheet.create({
   heroYolk: { position: 'absolute', width: 57, height: 48, borderRadius: 25, left: 136, top: 187, backgroundColor: '#F6A313' },
   heroBase: { position: 'absolute', width: 210, height: 55, borderRadius: 26, left: 61, top: 225, backgroundColor: '#BD6D30', borderTopWidth: 8, borderTopColor: '#754021', transform: [{ rotate: '-7deg' }] },
   foundBadge: { position: 'absolute', top: 16, left: 16, minHeight: 34, paddingHorizontal: 11, borderRadius: 17, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Phase1Colors.orange },
-  foundBadgeText: { color: Phase1Colors.onOrange, fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
+  foundBadgeText: { color: Phase1Colors.onOrange, fontSize: 10, fontWeight: '600', letterSpacing: 1.2 },
   foundCard: { position: 'absolute', left: 15, right: 15, bottom: 15, minHeight: 82, justifyContent: 'center', paddingHorizontal: 17, borderRadius: 20, backgroundColor: 'rgba(10,9,8,0.86)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.13)' },
-  foundCardName: { color: '#FFFFFF', fontSize: 22, fontWeight: '900' },
+  foundCardName: { color: '#FFFFFF', fontSize: 22, fontWeight: '600' },
   foundCardLocality: { color: '#D3CBC2', fontSize: 12, fontWeight: '700', marginTop: 5 },
-});
+}); }

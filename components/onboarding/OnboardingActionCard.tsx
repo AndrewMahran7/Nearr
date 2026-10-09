@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { Spacing } from '@/constants';
-import { OnboardingColors, OnboardingRadius, OnboardingSizes } from './theme';
+import { OnboardingColors, OnboardingRadius, OnboardingSizes, useOnboardingColors } from './theme';
 
 type FeatherIcon = keyof typeof Feather.glyphMap;
 
@@ -38,6 +39,9 @@ export function OnboardingActionCard({
   disabled,
   style,
 }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const resolvedIconColor =
     iconColor ?? (emphasized ? OnboardingColors.onOrange : OnboardingColors.orange);
   return (
@@ -59,13 +63,13 @@ export function OnboardingActionCard({
       </View>
 
       <View style={styles.textWrap}>
-        <Text style={[styles.title, emphasized && styles.titleEmphasized]} numberOfLines={1}>
+        <Text style={[styles.title, emphasized && styles.titleEmphasized]}>
           {title}
         </Text>
         {subtitle ? (
           <Text
             style={[styles.subtitle, emphasized && styles.subtitleEmphasized]}
-            numberOfLines={1}
+
           >
             {subtitle}
           </Text>
@@ -81,7 +85,7 @@ export function OnboardingActionCard({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -94,7 +98,7 @@ const styles = StyleSheet.create({
     minHeight: 64,
   },
   cardEmphasized: {
-    backgroundColor: OnboardingColors.orange,
+    backgroundColor: OnboardingColors.action,
     borderColor: OnboardingColors.orange,
   },
   pressed: {
@@ -133,6 +137,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   subtitleEmphasized: {
-    color: 'rgba(8, 8, 8, 0.7)',
+    color: OnboardingColors.onOrange,
   },
-});
+}); }

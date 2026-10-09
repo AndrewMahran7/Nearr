@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { Spacing } from '@/constants';
-import { OnboardingColors, OnboardingRadius, OnboardingSizes } from './theme';
+import { OnboardingColors, OnboardingRadius, OnboardingSizes, useOnboardingColors } from './theme';
 
 type FeatherIcon = keyof typeof Feather.glyphMap;
 
@@ -22,6 +23,9 @@ type Props = {
  * inside an `OnboardingCard`.
  */
 export function OnboardingStepRow({ number, title, subtitle, icon, style }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View style={[styles.row, style]}>
       <View style={styles.badge}>
@@ -40,7 +44,7 @@ export function OnboardingStepRow({ number, title, subtitle, icon, style }: Prop
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -78,4 +82,4 @@ const styles = StyleSheet.create({
   icon: {
     marginLeft: Spacing.md,
   },
-});
+}); }

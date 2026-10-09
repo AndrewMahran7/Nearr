@@ -69,9 +69,9 @@ assert.match(activationSource, /saveOnboardingV2TutorialPlace/, 'the explicit CT
 for (const action of ['share', 'more', 'nearr', 'favorite', 'process', 'result']) {
   assert.ok(activationSource.includes(`'${action}'`), `interactive tutorial wires ${action}`);
 }
-assert.match(mapCoachmarkSource, /AppState\.addEventListener/, 'Practice detects a return without sharing');
-assert.match(mapCoachmarkSource, /TRY THIS ONE/, 'Practice previews a place before opening the source');
-assert.match(mapCoachmarkSource, /ONBOARDING_PRACTICE_HELP_VIDEO/, 'Practice exposes the future help-video hook');
+assert.match(mapCoachmarkSource, /reconcileOnboardingV2PracticeJob/, 'Practice observes the durable queue result');
+assert.match(mapCoachmarkSource, /offlineOnboardingAsset\(practiceSource\.localPreviewAssetKey\)/, 'Practice previews the bundled source before opening it');
+assert.match(mapCoachmarkSource, /openOnboardingPracticePost\(fixture\)/, 'Practice launches the exact selected real post');
 const finderStart = activationSource.indexOf("if (stage === 'tutorial_processing')");
 const finderEnd = activationSource.indexOf("if (stage === 'tutorial_result_seen')", finderStart);
 assert.ok(finderStart > -1 && finderEnd > finderStart, 'the finder stage is explicit');

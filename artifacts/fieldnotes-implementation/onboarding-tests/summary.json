@@ -1,0 +1,118 @@
+[
+  {
+    "file": "testAnonymousOnboardingV2.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingCleanBaseline.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingAuthenticPhase2Auth.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboarding1259Regressions.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingDemoCopy.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingFinalJourney.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingFullyOffline.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingNoLiveServices.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingGoogleCostIntegration.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingInstallLifecycle.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingPhase2AuthMapHardening.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingRouting.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingPhysicalQaRegressions.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2DeletedAccount.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2DevReset.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2HandsOnActivation.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2Immersive.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2FirstMagicMoment.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2MapSettingsNavigation.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2Phase1Visual.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2P0ProductionFixture.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2Phase1Production.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2Phase2Map.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2Phase2Practice.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2PostDeleteBootstrap.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2Runtime.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2SecondHalf.ts",
+    "code": 0
+  },
+  {
+    "file": "testOnboardingV2TryAnother.ts",
+    "code": 0
+  }
+]

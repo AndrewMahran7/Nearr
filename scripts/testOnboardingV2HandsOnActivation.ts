@@ -64,9 +64,10 @@ for (const marker of ['progress={0.38}', 'progress={0.6}', 'progress={0.68}']) a
 for (const marker of ['tutorial_ready: 0.44', 'tutorial_share_tapped: 0.5', 'tutorial_more_tapped: 0.56']) assert.match(immersive, new RegExp(marker.replace('.', '\\.')));
 for (const marker of ['progress={0.73}', 'progress={0.8}', 'progress={0.84}', 'progress={0.87}', 'progress={0.93}', 'progress={1}']) assert.match(secondHalf, new RegExp(marker.replace(/[{}\.]/g, '\\$&')));
 assert.doesNotMatch(secondHalf, /Linking\.openURL\(url\)|instagram\.com\/['"]/i, 'final activation never opens a generic social feed');
-assert.match(secondHalf, /router\.replace\('\/\(tabs\)\/map'\)/, 'final exit opens the ordinary map without a repeated focus instruction');
+assert.match(secondHalf, /completeOnboardingV2SecondHalf\('explore_map'\)/, 'final exit persists the map handoff for AuthGate');
+assert.doesNotMatch(secondHalf, /router\.replace\('\/\(tabs\)\/map'\)/, 'AuthGate keeps sole navigation ownership');
 assert.match(coach, /REAL SAVE .* OPTIONAL/);
-assert.match(coach, /Linking\.openURL/);
+assert.match(coach, /openOnboardingPracticePost\(fixture\)/);
 assert.doesNotMatch(coach, /loadOnboardingPracticeFixture/);
 assert.match(coach, /useOnboardingTutorialJobs/);
 assert.match(map, /recordOnboardingV2MapEntered\(liveData\.some/);

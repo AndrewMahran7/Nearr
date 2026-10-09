@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useEffect, useRef } from 'react';
 import {
   AccessibilityInfo,
@@ -10,7 +11,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { OnboardingColors, OnboardingRadius } from '../theme';
+import { OnboardingColors, OnboardingRadius , useOnboardingColors } from '../theme';
 
 type Props = {
   name?: string;
@@ -38,6 +39,9 @@ export function DemoMapCard({
   onPinShown,
   style,
 }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const drop = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
   const shownRef = useRef(false);
@@ -130,7 +134,7 @@ export function DemoMapCard({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   card: {
     borderRadius: OnboardingRadius.card,
     borderWidth: 1,
@@ -245,4 +249,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-});
+}); }

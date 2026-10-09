@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { OnboardingColors } from '../theme';
+import { OnboardingColors, useOnboardingColors } from '../theme';
 import { NearrAppIcon } from './NearrAppIcon';
 
 /**
@@ -48,6 +49,9 @@ type Props = {
 };
 
 export function ShareSheetMock({ width, onNearrPress, style }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const innerWidth = Math.max(200, width - H_PADDING * 2);
   const recipientSlot = innerWidth / 5;
   const appSlot = innerWidth / 4;
@@ -154,6 +158,9 @@ function NearrTile({
   nearrSize: number;
   onPress?: () => void;
 }) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   const scale = useRef(new Animated.Value(1)).current;
   const firedRef = useRef(false);
 
@@ -196,6 +203,9 @@ function ActionRow({
   icon: keyof typeof Feather.glyphMap;
   label: string;
 }) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View style={styles.actionRow}>
       <Text style={styles.actionLabel}>{label}</Text>
@@ -206,7 +216,7 @@ function ActionRow({
 
 const SHEET_BG = '#F4F4F6';
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   sheet: {
     backgroundColor: SHEET_BG,
     borderRadius: 18,
@@ -329,4 +339,4 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#D9D9DE',
   },
-});
+}); }

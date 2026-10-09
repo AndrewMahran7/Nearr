@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { Spacing } from '@/constants';
-import { OnboardingColors, OnboardingRadius } from './theme';
+import { OnboardingColors, OnboardingRadius , useOnboardingColors } from './theme';
 
 type Props = {
   /** Sample place name, e.g. "Blue Bottle Coffee". */
@@ -26,6 +27,9 @@ export function OnboardingSavedPlacePreview({
   detail = 'Coffee shop · Tokyo, Japan',
   style,
 }: Props) {
+  const OnboardingColors = useOnboardingColors();
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+
   return (
     <View style={[styles.card, style]}>
       <View style={styles.mapTile}>
@@ -54,7 +58,7 @@ export function OnboardingSavedPlacePreview({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -125,4 +129,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 4,
   },
-});
+}); }

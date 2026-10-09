@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { forwardRef } from 'react';
 import {
   Pressable,
@@ -8,7 +9,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { OnboardingColors, OnboardingRadius } from './theme';
+import { OnboardingColors, OnboardingRadius , useOnboardingColors } from './theme';
 
 type Props = Omit<TextInputProps, 'secureTextEntry'> & {
   /** Current visibility, owned by the screen so several fields can share it. */
@@ -30,6 +31,8 @@ export const OnboardingPasswordField = forwardRef<TextInput, Props>(
     { visible, onToggleVisible, accessibilityLabel, style, editable, ...rest },
     ref,
   ) {
+    const OnboardingColors = useOnboardingColors();
+    const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
     return (
       <View style={styles.field}>
         <TextInput
@@ -64,19 +67,20 @@ export const OnboardingPasswordField = forwardRef<TextInput, Props>(
   },
 );
 
-const styles = StyleSheet.create({
+function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) { return StyleSheet.create({
   field: {
-    height: 56,
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: OnboardingRadius.button,
     backgroundColor: OnboardingColors.card,
     borderWidth: 1,
-    borderColor: OnboardingColors.border,
+    borderColor: OnboardingColors.controlBorder,
   },
   input: {
     flex: 1,
-    height: 54,
+    minHeight: 54,
+    paddingVertical: 12,
     paddingLeft: 18,
     color: OnboardingColors.text,
     fontSize: 16,
@@ -87,4 +91,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}); }

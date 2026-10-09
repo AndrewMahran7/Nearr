@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import React from 'react';
+import { LightPalette, DarkPalette } from '../constants/colors';
 
 import {
   beginOnboardingInAppTutorialResolution,
@@ -22,6 +23,11 @@ const Module = require('node:module') as { _load: (request: string, parent: unkn
 const originalLoad = Module._load;
 const host = (name: string) => name;
 let reduceMotion = false;
+let theme: 'light' | 'dark' = 'light';
+let fontScale = 1;
+let animations = 0;
+const getColors = () => theme === 'light' ? LightPalette : DarkPalette;
+const getPhaseColors = () => { const c = getColors(); return { background: c.bg, surface: c.surface, surfaceRaised: c.surfaceElevated, border: c.border, text: c.text, textMuted: c.textSecondary, orange: c.accent, onOrange: c.textInverse, success: c.success, successSurface: c.successSurface, danger: c.danger, action: c.primary, onAction: c.textInverse }; };
 const Pressable = ({ children, ...props }: any) => React.createElement(
   'Pressable',
   props,
@@ -39,19 +45,25 @@ Module._load = function mockedLoad(request, parent, isMain) {
     Animated: {
       View: host('Animated.View'), Value: AnimatedValue,
       loop: () => inertAnimation, parallel: () => inertAnimation,
-      sequence: () => inertAnimation, spring: () => inertAnimation, timing: () => inertAnimation,
+      sequence: () => inertAnimation, spring: () => inertAnimation, timing: () => { animations += 1; return inertAnimation; },
     },
     Image: host('Image'), Linking: { openURL: async () => undefined }, Pressable,
     StyleSheet: { create: (styles: unknown) => styles, absoluteFill: {}, absoluteFillObject: {} },
     Text: host('Text'), View: host('View'),
+    useWindowDimensions: () => ({ width: 375, height: 667, fontScale }),
   };
+  if (/\.(png|jpg|jpeg)$/.test(request)) return { uri: `bundle:${request}` };
+  if (request === '@/lib/useReduceMotion') return { useReduceMotion: () => reduceMotion };
+  if (request === '@/lib/theme') return { useTheme: () => ({ colors: getColors(), resolvedTheme: theme, typography: { title: { color: getColors().text }, body: { color: getColors().text }, eyebrow: { color: getColors().accent }, metadata: { color: getColors().textSecondary }, caption: { color: getColors().textSecondary } } }) };
+  if (request === '@/components/onboarding/v2/FieldnotesPracticeScene') return originalLoad.call(this, '../components/onboarding/v2/FieldnotesPracticeScene.tsx', module, isMain);
   if (request === '@expo/vector-icons') return { Feather: host('Feather'), Ionicons: host('Ionicons') };
   if (request === 'expo-router') return { useRouter: () => ({ replace() {} }) };
   if (request === 'react-native-maps') return { __esModule: true, default: host('MapView'), Marker: host('Marker') };
   if (request === '@/components/PlaceImage') return { PlaceImage: host('PlaceImage') };
   if (request === '@/components/StartupSurface') return { StartupSurface: host('StartupSurface') };
   if (request === '@/components/onboarding/v2/Phase1Visuals') return {
-    Phase1Colors: { background: '#F7F4EE', surface: '#FFFFFF', border: '#E3DCCF', text: '#191815', textMuted: '#6D6860', orange: '#FF5B24', success: '#2C9B69' },
+    Phase1Colors: getPhaseColors(),
+    usePhase1Colors: getPhaseColors,
     Phase1Frame: ({ children, footer, ...props }: any) => React.createElement('Phase1Frame', props, children, footer),
     Phase1PrimaryButton: (props: any) => React.createElement('Phase1PrimaryButton', props),
   };
@@ -66,6 +78,7 @@ Module._load = function mockedLoad(request, parent, isMain) {
   };
   if (request === '@/onboarding/assets/offlineOnboardingAssets') return {
     offlineOnboardingAsset: (key: string) => ({ uri: `bundle:${key}` }),
+    offlineOnboardingMedia: (key: string) => ({ sourcePosterAsset: { uri: `bundle:${key}-poster` }, sourceVideoAsset: { uri: `bundle:${key}-video` }, placePhotoAssets: [{ uri: `bundle:${key}-place1` }, { uri: `bundle:${key}-place2` }] }),
   };
   if (request === '@/onboarding/fixtures/offlineOnboardingFixtures') return offlineFixtures;
   if (request.startsWith('@/')) return new Proxy({}, { get: () => () => undefined });
@@ -182,6 +195,25 @@ try {
   const result = offlineFixtures.buildOfflineOnboardingResult(renderedOfflineFixture);
   assert.equal(resolveOnboardingTutorialResult(pending, result, '2026-09-10T12:00:03.200Z').state.stage, 'fixture_map_payoff', 'fast scripted completion opens the authentic map payoff');
   assert.equal(resolveOnboardingTutorialResult(resumed, result, '2026-09-10T12:00:21.000Z').state.stage, 'fixture_map_payoff', 'persisted resume opens the same authentic map payoff');
+
+  // Host rendering exercises the actual scene at dynamic text sizes. This is
+  // a component contract check, not native pixel or VoiceOver evidence.
+  const { FieldnotesPracticeScene } = require('../components/onboarding/v2/FieldnotesPracticeScene.tsx');
+  for (theme of ['light', 'dark'] as const) for (fontScale of [1, 1.5, 2]) for (reduceMotion of [false, true]) {
+    for (const stage of ['receipt', 'place'] as const) {
+      const before = animations;
+      let scene!: ReturnType<typeof TestRenderer.create>;
+      TestRenderer.act(() => { scene = TestRenderer.create(React.createElement(FieldnotesPracticeScene, { fixtureId: renderedOfflineFixture.id, stage })); });
+      assertNativeTextInvariant(scene.toJSON());
+      const surface = scene.root.findByProps({ testID: 'fieldnotes-practice-' + stage });
+      assert.equal(surface.props.style[1].backgroundColor, getColors().surface);
+      assert.match(textContent(scene.toJSON()), stage === 'receipt' ? /Sent to Nearr/ : /Saved for this walkthrough/);
+      for (const img of scene.root.findAllByType('Image' as any)) assert.match(img.props.source.uri, /^bundle:/, 'practice scene uses only local bundled media');
+      assert.equal(animations - before, reduceMotion ? 0 : 1, 'Reduce Motion does not start the scene choreography');
+      TestRenderer.act(() => scene.unmount());
+    }
+  }
+
 } finally {
   global.setTimeout = realSetTimeout;
   global.clearTimeout = realClearTimeout;
