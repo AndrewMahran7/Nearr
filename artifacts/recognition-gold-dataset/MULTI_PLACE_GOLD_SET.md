@@ -1,7 +1,7 @@
-# Multi-place subset
+# Multi-place set
 
-**Complete verified real multi-place sets: 0. Depicted place appearances in complete sets: 0.** Six distinct real posts are research candidates: five Instagram reels and one YouTube Short. A caption or itinerary list is not a complete set of places actually depicted. Several Instagram reels show on-screen place names, but no retained frames, full segment-by-segment review, or independent adjudication exists. All six remain `UNVERIFIED`; none contributes to strict multi-place accuracy.
+Accepted count: **15**. Target: 30; remaining: **15**. Snapshot 2026-10-09T21:14:03.025Z.
 
-The queue includes [a Mallorca three-beach Short](https://www.youtube.com/shorts/jPqDmtOdLRo), [a Mallorca beach-list reel](https://www.instagram.com/p/DGJk6zKvZro/), and the other Instagram cases with `multi_place_candidate` in the manifest. The latter retain only caption excerpts or place lists, not complete captions. The `proposed_places` field in local private labels is a research hypothesis and must never be scored as the accepted depicted set.
+Accepted depicted appearances: 61. See [full collection report](MULTI_PLACE_COLLECTION_REPORT.md).
 
-To promote a case, a reviewer must inspect the entire post, record each **depicted** versus **mentioned-only** place, approximate start/end segments, accepted branch/place identity and aliases, independent corroboration, and an explicit `complete_set_established:true` decision. The target remains at least 40 complete videos and about 150 depicted appearances. No multi baseline should be reported before that set exists.
+Per-case truth and adjudication are private. All current cases are development; no sealed-holdout or baseline performance claim. See [completion gate](DATASET_COMPLETION_GATE.md).

@@ -113,6 +113,7 @@ export function holdoutEligibility(record, label) {
   if (record.mask_review?.answer_fields_checked !== true || record.mask_review?.permitted_media_derivative !== true || !record.mask_review?.reviewer || !record.mask_review?.reviewed_at) reasons.push('visual_mask_review_missing');
   if (array(record.evidence?.frame_sha256).length !== array(record.evidence?.frame_paths).length || !array(record.evidence?.frame_sha256).every((x) => /^[a-f0-9]{64}$/.test(x))) reasons.push('frame_hashes_missing');
   if (record.exposure !== 'new_unscored') reasons.push('historical_outcome_exposed');
+  if (record.public_label_exposure === true || record.dataset_split_eligibility === 'development_or_calibration_only') reasons.push('public_truth_or_split_restriction');
   if (!record.retrieval_date) reasons.push('source_not_retrieved');
   if (!label || ['UNVERIFIED', 'AMBIGUOUS'].includes(label.label_class)) reasons.push('truth_not_adjudicated');
   if (label?.confidence !== 'HIGH') reasons.push('high_confidence_missing');
@@ -145,11 +146,12 @@ export function benchmarkReadiness(manifest, labels) {
     outdoor: ready.filter(outdoor).length,
     description_hidden: ready.filter((r) => r.view_eligibility.description_hidden).length,
     visual_only: ready.filter((r) => r.view_eligibility.visual_only).length,
+    strong_visual_only: ready.filter((r) => r.view_eligibility.visual_only && r.scene_only_visual_usable === true && ['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI'].includes(byId.get(r.case_id)?.label_class)).length,
     misleading_metadata: ready.filter((r) => r.misleading_metadata === true || (Array.isArray(r.misleading_metadata) && r.misleading_metadata.length > 0)).length,
     branch_disambiguation: ready.filter((r) => r.categories.includes('branch_disambiguation') || array(byId.get(r.case_id)?.expected_places).some((p) => p.branch_disambiguation === true)).length,
     verified_negative: ready.filter((r) => byId.get(r.case_id)?.label_class === 'KNOWN_NEGATIVE').length,
   };
-  const targets = { ready: 200, complete_multi: 30, outdoor: 50, description_hidden: 50, visual_only: 30, misleading_metadata: 25, branch_disambiguation: 25, verified_negative: 25 };
+  const targets = { ready: 200, complete_multi: 30, outdoor: 50, description_hidden: 50, strong_visual_only: 30, misleading_metadata: 25, branch_disambiguation: 25, verified_negative: 25 };
   const remaining = Object.fromEntries(Object.entries(targets).map(([key, minimum]) => [key, Math.max(0, minimum - counts[key])]));
   return { eligible: Object.values(remaining).every((n) => n === 0), counts, targets, remaining };
 }

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "status": "not_run",
-  "reason": "no_eligible_sealed_holdout",
+  "reason": "completion_gates_failed_and_no_sealed_holdout",
   "seal_created": false,
   "held_out_cases": 0,
   "baseline_observations": 0,

@@ -1,11 +1,7 @@
-# Misleading and conflicting metadata
+# Misleading metadata set
 
-There are **four research candidates** where text could point away from, broaden, or conflate the depicted place. **Strong independently adjudicated misleading-metadata cases: 0** of the 30–40 target. None is mask-ready.
+Accepted count: **8**. Target: 25; remaining: **17**. Snapshot 2026-10-09T21:14:03.025Z.
 
-| Pattern | Candidate evidence | Open adjudication |
-| --- | --- | --- |
-| Named cove versus nearby jump/bridge | Instagram `Cw73Hb8MYC7`, `C7v9FjitBMw` | Determine the exact depicted formation; a municipality also uses the broader Cala Varques bridge name, so the caption cannot simply be called false. |
-| Other activity named in caption | Instagram `DFhWpdIx3Iq` | Distinguish the depicted Pino Blanco rappel from a La Fortuna zipline mentioned in text. |
-| Conflicting third-party location | Instagram `DZ3Du8vtx6G` | Resolve third-party claim against source visuals and independent location evidence. |
+Accepted only when the depicted identity or justified no-place conclusion is independently established. Suspicious but unresolved captions remain candidates.
 
-Metadata classification must be frozen before seeing model output. A broad geographic tag, sponsor, mentioned excursion, or nearby place may be useful context but is not a depicted exact venue. A candidate should be counted as **misleading** only after its depicted location and the metadata relationship are independently reviewed.
+Per-case truth and adjudication are private. All current cases are development; no sealed-holdout or baseline performance claim. See [completion gate](DATASET_COMPLETION_GATE.md).

@@ -1,5 +1,7 @@
-# Business and branch disambiguation
+# Exact branch set
 
-**Four candidate posts** have a branch-disambiguation tag; **zero** are ready full-video benchmark cases, against the 30+ target. The [Blue Bottle Kiyosumi Short](https://www.youtube.com/shorts/-DLFACl8vmA) carries a branch-specific location tag and exterior cues, corroborated by the [official branch page](https://store.bluebottlecoffee.jp/pages/kiyosumi). Its current local exact label is source-audited, but the post remains a candidate without permitted frames or independent held-out review. The [Shinjuku Short](https://www.youtube.com/shorts/SEwv2w18wXI) names a branch while showing generic pour-over footage; it is `UNVERIFIED`, even though that branch exists. Two Instagram café montages still need place-by-place depicted/mentioned review.
+Accepted count: **11**. Target: 25; remaining: **14**. Snapshot 2026-10-09T21:14:03.025Z.
 
-The scorer requires provider-qualified place identity or geographic/address/coordinate evidence that distinguishes branches. A brand match alone is not exact. Future collection should include same-name businesses and chain branches in different cities and record the accepted branch address and stable place group for each depicted venue.
+Exact address/facade/official branch corroboration is required. A brand handle or chain name alone is insufficient. Historical branches keep source-date identity.
+
+Per-case truth and adjudication are private. All current cases are development; no sealed-holdout or baseline performance claim. See [completion gate](DATASET_COMPLETION_GATE.md).

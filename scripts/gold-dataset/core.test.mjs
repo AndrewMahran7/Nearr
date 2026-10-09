@@ -150,12 +150,16 @@ test('completion gate counts benchmark-ready cases and reports exact slice defic
   const rows = Array.from({ length: 200 }, (_, i) => ({
     case_id: `case-${i}`, state: 'ready', view_eligibility: { full: true, description_hidden: i < 50, visual_only: i < 30 },
     evidence: { frame_paths: ['open', 'middle', 'end'] }, categories: [i < 50 ? 'waterfall' : 'food', ...(i < 25 ? ['branch_disambiguation'] : [])],
-    misleading_metadata: i < 25,
+    misleading_metadata: i < 25, scene_only_visual_usable: i < 30,
   }));
   const labels = rows.map((r, i) => ({ case_id: r.case_id, confidence: 'HIGH', label_class: i < 30 ? 'VERIFIED_MULTI' : i < 55 ? 'KNOWN_NEGATIVE' : 'VERIFIED_EXACT_SINGLE', complete_set_established: true }));
   const complete = benchmarkReadiness(rows, labels);
   assert.equal(complete.eligible, true);
-  assert.deepEqual(complete.remaining, { ready: 0, complete_multi: 0, outdoor: 0, description_hidden: 0, visual_only: 0, misleading_metadata: 0, branch_disambiguation: 0, verified_negative: 0 });
+  assert.deepEqual(complete.remaining, { ready: 0, complete_multi: 0, outdoor: 0, description_hidden: 0, strong_visual_only: 0, misleading_metadata: 0, branch_disambiguation: 0, verified_negative: 0 });
+  rows[0].scene_only_visual_usable = false;
+  assert.equal(benchmarkReadiness(rows, labels).remaining.strong_visual_only, 1);
+  assert.equal(benchmarkReadiness(rows, labels).counts.visual_only, 30);
+  rows[0].scene_only_visual_usable = true;
   rows[199].state = 'candidate';
   rows[24].misleading_metadata = false;
   const short = benchmarkReadiness(rows, labels);
@@ -167,6 +171,7 @@ test('completion gate counts benchmark-ready cases and reports exact slice defic
 test('historical, unreviewed and weakly verified cases cannot enter holdout', () => {
   assert.deepEqual(holdoutEligibility(manifest(), label()), { eligible: true, reasons: [] });
   assert.ok(holdoutEligibility(manifest({ exposure: 'historical_outcomes_already_exposed' }), label()).reasons.includes('historical_outcome_exposed'));
+  assert.ok(holdoutEligibility(manifest({ public_label_exposure: true }), label()).reasons.includes('public_truth_or_split_restriction'));
   assert.ok(holdoutEligibility(manifest(), label({ review: { decision: 'accept' } })).reasons.includes('independent_manual_review_missing'));
   assert.ok(holdoutEligibility(manifest(), label({ provenance: [{ kind: 'source_caption', reference: 'source' }] })).reasons.includes('independent_provenance_missing'));
   assert.ok(holdoutEligibility(manifest(), label({ review: { decision: 'negative', reviewer: 'reviewer-b', reviewed_at: '2026-10-08T00:00:00Z', independent: true } })).reasons.includes('review_label_mismatch'));

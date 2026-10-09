@@ -1,0 +1,13 @@
+# Held-out review and exposure audit
+
+**Sealed holdout: 0 cases / 0 source-place groups.** All 207 canonical records are assigned development; calibration is zero. Seen-place and unseen-place counts are therefore both zero/not applicable. No seal, one-time milestone ledger, baseline inference or per-case holdout failure inspection occurred.
+
+All 109 accepted cases have at least two recorded review passes (2: 102, 3: 7). 95 explicitly record an independent second pass blind to the first-pass file. Older historical reviews preserve honest prior identity exposure; separate agent review is not equivalent to a blind human panel. No independence flags were invented to make those records holdout-eligible.
+
+93 accepted cases are excluded from holdout because of exposed historical outcomes or a public source/label inventory. The publicly described YouTube no-place batch is explicitly development/calibration only. Publishing source identities with answer-bearing discovery context is not compatible with a newly sealed source inventory. Private fresh source packets are the only potential future holdout pool; 16 accepted cases currently pass preliminary eligibility, before final component/near-duplicate and slice review.
+
+Source groups join reposts; accepted place groups join repeated sites and branches. Current accepted records form 100 source/place components under recorded identities. All components are in one split, so none currently crosses a split. This does not prove that every unrecorded near-duplicate has been found. A perceptual cross-source audit and reviewed alias/branch group reconciliation remain required before sealing.
+
+Inference receives only the allowlisted materialized `input.json` and neutral, metadata-stripped numbered JPEGs. Source IDs/URLs, original paths, case IDs, labels, provenance, split assignments, review notes and mappings stay outside that directory. Candidate-cache access is disabled. FULL and TEXT_ONLY intentionally retain creator evidence that may name places; VISUAL_ONLY removes all social metadata and transcripts while retaining original pixel text. These are accidental-leakage controls, not an operating-system sandbox. The future runner must have filesystem access limited to materialized inputs.
+
+The gate now distinguishes strong scene-only exact cases from merely eligible visual-only inputs and rejects publicly exposed truth/source restrictions. Dataset tooling checks passed; final schema/hash/materialization audit evidence is private, with an aggregate record in the completion report. No claim of sealed benchmark safety is made while the holdout is empty.

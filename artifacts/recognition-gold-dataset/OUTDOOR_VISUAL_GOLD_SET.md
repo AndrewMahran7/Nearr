@@ -1,7 +1,9 @@
-# Outdoor visual-geography subset
+# Outdoor visual set
 
-The manifest flags **63 candidate posts** across cliffs, beaches, coves, hikes, waterfalls, natural settings, or related outdoor views. That is a discovery queue, not 63 verified visual examples: most are historical references with unconfirmed current public access, and **zero** have permitted local frames or a visual-only view. The newly inspected waterfall Shorts have independently corroborated source-level labels, but remain candidates until media and separate review are available.
+Accepted count: **31**. Target: 50; remaining: **19**. Snapshot 2026-10-09T21:14:03.025Z.
 
-The current queue includes Mallorca cliffs and beaches, Costa Rican waterfalls/rappel, Bali waterfall, and earlier US cliff/natural references. The [Instagram collection notes](collection/INSTAGRAM_COLLECTION.md) document neighboring cove/bridge ambiguities. Similar scenery must not be treated as matching a caption by default. For each hard visual pair, retain specific comparison cues—coastline or cave geometry, bridge form, trail signs, building facade, waterfall ravine—and record why alternatives were excluded. Do not infer an exact beach from a broad island tag.
+Subtype tags overlap: cliffs: 14, beaches: 3, hikes: 3, waterfalls: 11, other_natural: 8. Strong scene-only exact cases across all categories: 22.
 
-Next capture should prioritize permitted, temporary frames and independent reviews for fresh public cases across Mediterranean coves, California/Hawaii coasts, US swimming holes, and alpine hikes. The original target is 50+ **usable visual** cases; current usable count is zero.
+Per-case truth and adjudication are private. All current cases are development; no sealed-holdout or baseline performance claim. See [completion gate](DATASET_COMPLETION_GATE.md).
+
+The outdoor count includes 2 region-only cases; the remainder have exact single/complete-set truth. Subtype counts overlap.

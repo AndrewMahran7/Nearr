@@ -1,40 +1,46 @@
-# Nearr recognition gold-dataset card — candidate inventory v0
+# Nearr recognition dataset — visual collection snapshot
 
-**Verdict (2026-10-08): not yet a gold benchmark and not strong enough to optimize recognition against.** This branch delivers a source inventory, separated provisional labels, split/masking/review/scoring infrastructure, and explicit gates for a future sealed benchmark. It does **not** claim a completed 300–400-post dataset. The honest runnable full-video and held-out counts are zero.
+**NOT READY FOR OPTIMIZATION — 2026-10-09T21:14:03.025Z.** The original zero-ready inventory has become 109 accepted cases with retained visual evidence, private truth, independent agent review and actual sanitized inputs. The requested complete benchmark is unfinished. See the exact deficits in [DATASET_COMPLETION_GATE.md](DATASET_COMPLETION_GATE.md).
 
-## Current inventory
+| Measure | Count |
+| --- | --- |
+| Distinct source posts / source groups | 207 / 206 |
+| Complete-timeline visual reviews | 196 |
+| HIGH READY | 109 |
+| READY classes | VERIFIED_EXACT_SINGLE: 53, VERIFIED_MULTI: 15, KNOWN_NEGATIVE: 39, VERIFIED_REGION_ONLY: 2 |
+| Remaining candidate classes | UNVERIFIED: 91, AMBIGUOUS: 6, KNOWN_NEGATIVE: 1 |
+| Retained reviewed frames / READY frames | 3231 / 1451 |
+| Actual sanitized inference inputs | 452 |
+| Calibration / sealed holdout / baseline calls | 0 / 0 / 0 |
+| Paid provider/API spend | $0.00 |
 
-| Measure | Count / state |
-| --- | ---: |
-| Distinct real social posts | 124, in 123 source groups |
-| Freshly inspected public posts | 21 (15 Instagram, 6 YouTube) |
-| Historical references without fresh public-access confirmation | 103 |
-| Cases with historically exposed outcomes | 105, including two also found during new Instagram research |
-| Local provisional `VERIFIED_EXACT_SINGLE` labels | 19 (15 historically reviewed, four new source-audited) |
-| Complete `VERIFIED_MULTI` sets / depicted appearances therein | 0 / 0 |
-| Provisional `KNOWN_NEGATIVE` / `AMBIGUOUS` / `UNVERIFIED` | 3 / 1 / 101 |
-| Ready full-video cases / calibration / sealed held-out | 0 / 0 / 0 |
-| Mask eligibility: full / description-hidden / location-hidden / visual-only / text-only | 0 / 0 / 0 / 0 / 38 |
-| New paid dataset acquisition / recognition-label calls | $0 / 0 |
+The original 124-row `dataset_manifest.jsonl` and its split file remain the preserved source-history inventory. The current runnable corpus is the ignored `.local/recognition-gold-dataset/benchmark_manifest_private.jsonl`, `benchmark_labels_private.jsonl`, and `benchmark_splits_private.json`. These include full source evidence and private truth; do not commit them. A recovery copy and all collection overlays live in the external private evaluation folder.
 
-All 124 source rows are `state:candidate`. A provisional exact label documents a defensible *source-level* claim, not a benchmark-ready full-video case. The 15 historical exact labels have previously exposed recognition outcomes, and their sources have not been freshly verified accessible. The four new source-audited exact labels have official/operator corroboration but no independent human held-out review or permitted retained visual frames. The private label store is intentionally absent from Git.
+Reviewers were separate agent contexts, not independent human annotators. They inspected complete 1 fps or 2 fps contact-sheet timelines, including opening, middle, ending and scene changes; this is not a claim of continuous audiovisual playback. Rapid events between samples remain a limitation. Case promotion required source-specific visual observations and independent place corroboration, not caption agreement alone.
 
-Platforms: Instagram 108, YouTube 11, TikTok 2, Facebook 2, and other 1. Candidate category tags overlap; examples include natural 48, cliff 40, restaurant 30, business 30, beach 7, waterfall 5, and hike 2. Only 30 rows have an adjudicated/source-researched country: United States 13, Spain 7, Costa Rica 4, Japan 3, France 1, Indonesia 1, Jordan 1. The remaining 94 have no reliable country in this inventory. These counts are **discovery distribution**, not verified gold category coverage. See the [bias audit](DATASET_BIAS_AUDIT.md).
+Normal visual-only preserves legitimate pixel text. Strong scene-only exact cases are counted separately (22); generic no-place frames are not counted as strong place-recognition cases. Source categories overlap and candidate tags are never accepted labels. Geography below counts accepted cases per adjudicated country; a multi-country video appears in both countries, and no-place cases have no justified country.
 
-## Acquisition and labeling boundary
+| Country | Accepted case appearances |
+| --- | --- |
+| Indonesia | 2 |
+| Costa Rica | 2 |
+| Japan | 3 |
+| Jordan | 1 |
+| United States | 43 |
+| Singapore | 2 |
+| not_established | 39 |
+| Italy | 3 |
+| Australia | 2 |
+| Spain | 2 |
+| France | 3 |
+| Albania | 1 |
+| Mexico | 2 |
+| Portugal | 1 |
+| South Africa | 1 |
+| New Zealand | 1 |
+| Vatican City | 1 |
+| Iceland | 1 |
 
-Historical cases came from Nearr's existing v2 recognition input corpus, founder/regression/onboarding fixtures, and bounded read-only Development/Production correction audit. Two constructed composites and 28 Wikimedia Commons media controls were excluded from the real-social count. Production-only action URLs were retained only in an ignored restricted review queue because public status was unconfirmed. A Wrong Place event without a replacement target, an autosave, or silence after a result never supplies exact ground truth. Two demonstrably conflicting old classifications were downgraded to `UNVERIFIED`.
+Temporary source MP4s, complete captions, frame/contact-sheet evidence, hashes, audio sidecars and private labels live at `C:\Users\andre\Desktop\Nearr-gold-private-2026-10-08`. Ignored `.local/recognition-gold-dataset` contains combined private files, second-pass review packets, neutral materialized inputs and case mappings. No video, original frame, full caption or private label is committed. Historical retention ends 2026-11-07; newer caches end 2026-11-08. Use the earlier date for a combined archive unless rights are re-reviewed. Cleanup is documented, not scheduled or performed.
 
-The new search inspected public Instagram posts in an existing browser session and six public YouTube Shorts. It recorded public source IDs, limited observed text, category/geography research, offset-only answer spans, and uncertainty. No social-media actions or mass scraping occurred. No copyrighted video or frame was committed or retained as a permanent dataset asset. See the [collection log](DATASET_COLLECTION_LOG.md), [Instagram collection notes](collection/INSTAGRAM_COLLECTION.md), [historical inventory](../recognition-gold-existing/README.md), and [sources](SOURCES.md).
-
-`dataset_manifest.jsonl` is source-only. `dataset_labels_private.jsonl` holds provisional answers, aliases, depicted-versus-mentioned roles, place groups, confidence, provenance, and reviews. For unresolved posts, `proposed_places` is a review hypothesis; `expected_places` is empty. The private labels are in this worktree's ignored dataset directory and a local backup at `C:\Users\andre\Desktop\Nearr-gold-private-2026-10-08\dataset_labels_private.jsonl` (SHA-256 `EFEB6FAE4B022C9E72AAF3340247486E6E462146E5BFAD27759C86A4D4E190A1`). The backup includes manifest/split snapshots; it is local, not a team archival store. Transfer and hash-verify it in access-controlled durable storage before another machine or worktree is expected to reproduce labels. No held-out labels exist yet.
-
-## Benchmark design and current gate
-
-The [tooling](../../scripts/gold-dataset/README.md) validates IDs and source/place grouping, proposes connected-component splits, materializes five sanitized views, generates a local review page, scores outcome observations, and seals only an eligible private combined manifest. Inference input uses opaque IDs and neutral re-encoded frame names. It excludes source URLs/IDs, label data, original paths, answer annotations, split, and candidate cache. Mask eligibility requires human answer/overlay review; visual evidence requires permitted local frames and hashes. A seal requires 250+ total, 60–80 held-out posts from 60+ source groups, full visual evidence, independent human label review, and coverage gates. Historical exposed cases are forced into development. The current [split proposal](dataset_splits.json) has 124 development, zero calibration, zero held-out; a seal correctly refuses it.
-
-The scorer handles exact singles, complete multi sets, no-place abstention, region-only geography, autonomous resolution, wrong-confident outcomes, time, and measured cost. A baseline can run only when a recognition adapter produces observations from materialized inputs; there is no permitted full-video input in this inventory and no calibration cases. Thus the [development](baseline_results_development.csv), [calibration](baseline_results_calibration.csv), and [held-out](HELDOUT_BASELINE_V1.json) baseline artifacts explicitly record `not_run`; they contain no invented metrics. The held-out one-time marker has not been created.
-
-## Promotion path
-
-First, recheck public access and rights for promising historical sources; collect permitted temporary frames for new and historical posts; independently review every exact and negative; finish all depicted/mentioned multi-place sets and temporal segments; audit text and visual overlays; and merge repost, creator-series, and place groups. Fill the absent slices deliberately: 40+ complete multi posts, 75–100 description-revealed posts with paired masks, 30–40 adjudicated misleading-metadata posts, 30+ branch cases, 30+ negatives, 50+ usable hard outdoor visual posts, and enough non-Instagram/geographic diversity. Then freeze a meaningful development/calibration split and a private, independently reviewed 60–80-case holdout. Run a bounded baseline only on ready development/calibration; the first held-out baseline should occur once after a valid seal. Do not optimize recognition on this candidate inventory.
+The local directory is not durable recovery storage. Its Windows ACL grants the user, administrators, SYSTEM and the local Codex sandbox group access. No approved private archival bucket/team folder was established. Follow [PRIVATE_STORAGE_RECOVERY.md](PRIVATE_STORAGE_RECOVERY.md) for the required founder storage decision and restore check. Application/recognition behavior, Development and Production were not changed. Only dataset evidence, documentation and necessary dataset gate corrections changed.

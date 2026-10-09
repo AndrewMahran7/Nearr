@@ -1,5 +1,7 @@
-# No-exact-place and abstention subset
+# Verified no-place set
 
-The private label file contains **three candidate `KNOWN_NEGATIVE` labels**: two historically exposed documented controls and one newly inspected Instagram product/talking-head style case. **Benchmark-ready negatives: 0** of the 30+ target. The historical references need fresh public-access and visual-evidence review; the new case needs independent human review. The scorer distinguishes a clean no-place result from a review that still presents unsupported exact candidates.
+Accepted count: **39**. Target: 25; remaining: **0**. Snapshot 2026-10-09T21:14:03.025Z.
 
-Negative does not mean “we failed to recognize it.” It means no specific physical place can reliably be established from the content and context. A generic ocean or room, product ad, car/airplane interior, or talking head may qualify after review, but a distinctive landmark or source label can override the generic appearance. The old `jNQXAC9IVRw` regression negative is explicitly **excluded** from this count because another retained Nearr record identifies the video as San Diego Zoo. Preserve that conflict as `UNVERIFIED` until its source is rechecked. An absent user correction or an autosave is not negative proof.
+Mostly instructional/product close-up videos; category bias is explicit. Ordinary failure to identify a distinctive site does not establish a negative.
+
+Per-case truth and adjudication are private. All current cases are development; no sealed-holdout or baseline performance claim. See [completion gate](DATASET_COMPLETION_GATE.md).

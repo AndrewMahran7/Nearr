@@ -1,15 +1,13 @@
-# Bias and readiness audit
+# Remaining dataset bias
 
-This is an inventory-biased **candidate** corpus. It must not be advertised as a representative gold benchmark or used to choose recognition models.
+The 109 accepted cases are useful development evidence, but this is not a representative frozen benchmark. Collection favored short, accessible public posts and independently verifiable destinations.
 
-| Dimension | Current evidence | Consequence |
-| --- | --- | --- |
-| Source history | 105/124 posts have historically exposed outcomes; 103 source rows lack fresh public-access confirmation. | Historical rows are development-only; sampling them as holdout would leak prior outcomes. |
-| Platform | Instagram 108, YouTube 11, TikTok 2, Facebook 2, other 1. | Instagram is 87% of the inventory; cross-platform conclusions would be weak. |
-| Geography | Only 30 rows have a country from source research or accepted draft label (US 13, Spain 7, Costa Rica 4, Japan 3, France/Indonesia/Jordan 1 each). | Geography is unknown for 94; country coverage is sparse and uneven. |
-| Category | Candidate tags include natural 48, cliff 40, restaurant 30, business 30, beach 7, waterfall 5, hike 2. Tags overlap and many derive from old source metadata. | Outdoor, food, and branch targets are not met as verified, runnable slices; hotels/nightlife are absent. |
-| Hard cases | Six multi-place candidates, four misleading/nearby-confusion candidates, three candidate negatives, four branch candidates. | Complete multi sets, strong misleading cases, and broad negatives are absent. |
-| Evidence | Full/description-hidden/location-hidden/visual-only each 0; text-only 38. | No visual recognition or description-ablation result can yet be measured. |
-| Split | Development 124; calibration 0; held-out 0. | No threshold tuning or sealed evaluation is authorized by this dataset. |
+- Platforms: inventory youtube: 71, instagram: 126, facebook: 2, tiktok: 7, other: 1; accepted youtube: 49, instagram: 52, facebook: 2, tiktok: 6. Fresh YouTube tutorials increase negative coverage, not hard place coverage.
+- Geography: Indonesia: 2, Costa Rica: 2, Japan: 3, Jordan: 1, United States: 43, Singapore: 2, not_established: 39, Italy: 3, Australia: 2, Spain: 2, France: 3, Albania: 1, Mexico: 2, Portugal: 1, South Africa: 1, New Zealand: 1, Vatican City: 1, Iceland: 1. Country appearances overlap for multi-country videos; no-place cases do not have an inferred country. United States businesses remain prominent. Africa, South America, Northern Europe and many Asian regions are sparse.
+- Negatives: 39 accepted, mostly tabletop drawing, nails, craft, makeup and product unboxing. This does not represent all ambiguous forests, hotel rooms, beaches, airplanes or street footage.
+- Outdoors: 31 accepted; subtype tags overlap: cliffs: 14, beaches: 3, hikes: 3, waterfalls: 11, other_natural: 8. Cliff/activity examples outnumber hard beaches and hikes. Some famous landmark examples are much easier than obscure, confusable natural sites.
+- Multi/branch/misleading: 15 / 11 / 8 accepted. Hotel, nightlife, exact-branch and full itinerary coverage remain thin. Candidate metadata is not verified coverage.
+- Evidence: ordinary visual-only includes creator pixel text. Only 22 qualify for strong scene-only exact recognition; only four audio sidecars exist. Sampling cannot exclude every event between frames.
+- Review/splits: agent adjudication, exposed historical outcomes and public source inventories reduce the future holdout pool. There is no sealed holdout or independent human validation sample yet.
 
-Some public-source titles plainly name famous places. Those help discover and verify candidates but will inflate an unmasked text-only impression. The requested visual test requires retained rights-permitted frames, complete answer-bearing text/overlay review, and paired evidence views. The next collection should deliberately fill verified multi-place, generic negative, misleading-metadata, branch, and non-Instagram/geographic slices before freezing any split. Even the 19 provisional exact-single labels are on `candidate` records, not runnable gold cases.
+The next acquisition should prioritize new private-source outdoor/multi/branch/misleading cases and geographic diversity, not additional easy tutorial negatives. Keep rejected or unresolved sources as explicit research cases; never call an unidentified distinctive landmark a known negative just to grow a slice.
