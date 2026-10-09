@@ -8,13 +8,15 @@
  */
 
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import type { SavedPlaceWithPlace } from '@/types';
 import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
+import { PlaceImage } from '@/components/PlaceImage';
+import { placeSourceCards } from '@/lib/placeSources';
 
 type Props = {
   place: SavedPlaceWithPlace;
@@ -44,6 +46,8 @@ function iconName(
 
 export function CompactPlaceRow({ place, status, onPress }: Props) {
   const { colors, typography } = useTheme();
+  const { fontScale } = useWindowDimensions();
+  const sourceImage = placeSourceCards(place).find((source) => source.thumbnailUrl)?.thumbnailUrl;
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
 
   return (
@@ -53,15 +57,13 @@ export function CompactPlaceRow({ place, status, onPress }: Props) {
       accessibilityLabel={`Focus ${place.place.name} on map`}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
-      <View style={styles.iconTile}>
-        <Feather name={iconName(place)} size={16} color={colors.accent} />
-      </View>
+      <PlaceImage googlePlaceId={place.place.google_place_id} hydrationPolicy="compact_known_only" sourceUri={sourceImage} size={56} borderRadius={Radius.sm} />
       <View style={styles.copy}>
-        <Text style={typography.bodyStrong} numberOfLines={1}>
+        <Text style={typography.bodyStrong} numberOfLines={fontScale >= 1.5 ? undefined : 2}>
           {place.place.name}
         </Text>
         {place.place.formatted_address ? (
-          <Text style={[typography.caption, styles.address]} numberOfLines={1}>
+          <Text style={[typography.caption, styles.address]} numberOfLines={fontScale >= 1.5 ? undefined : 1}>
             {place.place.formatted_address}
           </Text>
         ) : null}
@@ -70,11 +72,7 @@ export function CompactPlaceRow({ place, status, onPress }: Props) {
             {status}
           </Text>
         ) : null}
-      </View>
-      <View style={styles.categoryChip}>
-        <Text style={styles.categoryChipText} numberOfLines={1}>
-          {CATEGORY_LABELS[savedPlaceCategory(place)]}
-        </Text>
+        <Text style={styles.categoryChipText}>{CATEGORY_LABELS[savedPlaceCategory(place)]}</Text>
       </View>
       <Feather name="chevron-right" size={18} color={colors.textMuted} />
     </Pressable>
@@ -90,9 +88,11 @@ function createStyles(
       flexDirection: 'row',
       alignItems: 'center',
       gap: Spacing.md,
-      paddingVertical: Spacing.sm,
+      minHeight: 80,
+      paddingVertical: Spacing.md,
       paddingHorizontal: Spacing.sm,
-      borderRadius: Radius.md,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
     },
     pressed: {
       backgroundColor: colors.surfaceElevated,

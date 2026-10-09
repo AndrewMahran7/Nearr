@@ -68,16 +68,9 @@ import {
   assert.ok(body.includes('updateSavedPlace(saved.id, { notes: nextNotes })'), 'writes notes');
   assert.ok(!body.includes('ai_note'), 'an edit never writes or clears ai_note');
 
-  // And exactly one visible "why" surface — not an AI block plus a user block.
-  // The heading is derived once (source → "Saved because…", manual save →
-  // "Your note") and rendered from that single variable, so a second section
-  // cannot reappear by accident.
-  assert.ok(detail.includes("'Saved because…'"), 'the single surface is present');
-  assert.equal(
-    detail.split('savedBecauseLabel').length - 1,
-    2,
-    'the heading is computed once and rendered once',
-  );
+  // Fieldnotes keeps one reason with explicit provenance, independent of the source ribbon.
+  assert.equal(detail.split('WHY YOU SAVED IT').length - 1, 1);
+  assert.ok(detail.includes("whySaved.origin === 'user' ? 'Your note' : 'From the post'"));
   assert.equal(
     detail.split('const hasReason = !!whySaved.text').length - 1,
     1,
@@ -163,14 +156,14 @@ import {
 {
   const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
   assert.ok(detail.includes('resolvePlaceSource'), 'uses the shared attribution resolver');
-  assert.ok(detail.includes('sourceAttribution.brandIcon'), 'renders the brand mark');
+  assert.ok(detail.includes('<SourceRibbon'), 'shared provenance component renders source');
   assert.ok(detail.includes('Ionicons'), 'uses the icon family that has logo-tiktok');
   // The old generic-glyph mapping is gone for good.
   assert.ok(!detail.includes("case 'tiktok':\n      return 'video'"), 'no generic TikTok glyph');
   assert.ok(!detail.includes('sourceActionIcon'), 'the Feather-only mapping is removed');
   // The logo is never the only cue for what tapping does.
-  assert.ok(detail.includes('sourceAttribution.actionLabel'), 'a text label accompanies the logo');
-  assert.ok(detail.includes('sourceAttribution.actionA11yLabel'), 'icon actions are labelled');
+  assert.ok(detail.includes('platform={sourceAttribution.platformName}'), 'platform is explicit');
+  assert.ok(detail.includes('capabilities.canWatchSource ? () => void openSource()'), 'ribbon invokes exact-source handler only when supported');
 }
 
 // Watch original opens the EXACT stored source URL — never a rebuilt one.
@@ -399,106 +392,24 @@ import {
 // 4. The production visual target: Saved because, Did you go yet, Also nearby
 // ---------------------------------------------------------------------------
 
-// "Saved because…" degrades honestly. No source ⇒ no watch action, no platform
-// row, and no empty creator/avatar shell — just the user's own note.
+// Real source fields feed the shared ribbon; manual saves have no fake platform.
 {
   const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
-
-  // Every source-bearing element is gated on a real, openable source.
-  // Exactly ONE Watch post affordance for a social save: the action row. The
-  // full-width CTA that used to sit inside this card repeated it and made the
-  // card the tallest thing on the screen.
-  assert.ok(!detail.includes('watchButton'), 'the duplicate CTA inside Saved because is gone');
-  assert.equal(
-    detail.split('sourceAttribution.actionLabel').length - 1,
-    1,
-    'the source action label is rendered exactly once, in the action row',
-  );
-  {
-    const actionRow = detail.indexOf('styles.actionRow');
-    const card = detail.indexOf('styles.savedBecauseCard');
-    assert.ok(
-      detail.indexOf('sourceAttribution.actionLabel') < card,
-      'and that one lives above Saved because, in the action row',
-    );
-    assert.ok(actionRow > -1 && card > actionRow);
-  }
-  // The tile still opens the post, so direct interaction survives the removal.
-  {
-    const tile = detail.indexOf('styles.sourceTile');
-    const around = detail.slice(Math.max(0, tile - 700), tile);
-    assert.ok(around.includes('void openSource()'), 'tapping the source tile opens the post');
-  }
-
-  for (const gated of ['styles.sourceTile']) {
-    const index = detail.indexOf(gated);
-    assert.ok(index > -1, `${gated} exists`);
-    const preceding = detail.slice(Math.max(0, index - 900), index);
-    assert.ok(
-      preceding.includes('sourceUrl && sourceAttribution'),
-      `${gated} only renders when a real source URL is stored`,
-    );
-  }
-  // The platform is credited from resolved attribution, never hardcoded —
-  // either on its own line beside a reason, or folded into the heading when
-  // there is no reason yet (so the card never says "Instagram" twice).
-  const attribution = detail.indexOf('styles.attributionRow');
-  assert.ok(attribution > -1);
-  assert.ok(
-    detail.slice(attribution - 500, attribution).includes('sourceAttribution && hasReason ? ('),
-    'the platform line needs attribution, not a hardcoded platform',
-  );
-  assert.ok(
-    detail.includes('`Saved from ${sourceAttribution.platformName}`'),
-    'the no-reason heading states the fact we have, from the resolver',
-  );
-  assert.ok(
-    !detail.includes('Why did you save this?'),
-    'an unanswered question is no longer the centrepiece of the card',
-  );
-  assert.ok(detail.includes('Add a note'), 'writing one is offered as a quiet link');
-
-  // The primary source card does not invent visual media or a creator. Current
-  // multi-source rows may render persisted thumbnails / creator attribution,
-  // so scope this contract to the primary card instead of banning those valid
-  // fields component-wide.
-  const primarySourceStart = detail.indexOf('{sourceUrl && sourceAttribution ? (');
-  const primarySourceEnd = detail.indexOf('<View style={styles.savedBecauseCopy}>', primarySourceStart);
-  assert.ok(primarySourceStart > -1 && primarySourceEnd > primarySourceStart);
-  const primarySourceCard = detail.slice(primarySourceStart, primarySourceEnd);
-  assert.ok(
-    !/item\.creator|avatarUrl|thumbnailUrl|posterUrl/i.test(primarySourceCard),
-    'the primary source card does not fabricate creator or media fields',
-  );
-  assert.ok(
-    detail.includes('item.creator') && detail.includes('item.thumbnailUrl'),
-    'persisted multi-source creator and thumbnail attribution remain supported',
-  );
-  // The copy is category-neutral: nothing assumes the place is a restaurant.
-  assert.ok(
-    !/\b(menu|dish|eat here|the food|reservation|table for)\b/i.test(detail),
-    'Place Detail copy never assumes a restaurant',
-  );
-}
-
-// Category neutrality: every Nearr category has a glyph, and a place with no
-// street address (a city, an island) drops the locality line instead of
-// rendering an empty one.
-{
-  const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
-  const start = detail.indexOf('const CATEGORY_ICONS');
-  const block = detail.slice(start, detail.indexOf('};', start));
-  for (const category of [
-    'restaurant', 'cafe', 'hotel', 'beach', 'island', 'park', 'museum',
-    'hiking_trail', 'scenic_spot', 'shopping', 'transportation', 'other',
-  ]) {
-    assert.ok(block.includes(`${category}:`), `${category} has a glyph`);
-  }
-  assert.ok(detail.includes('{locality ? ('), 'no address → no locality row');
-  assert.ok(
-    detail.includes('CATEGORY_ICONS[categoryKey]'),
-    'the glyph follows the normalized Nearr category, never a raw provider type',
-  );
+  assert.equal(detail.split('<SourceRibbon').length - 1, 1, 'one primary source ribbon');
+  const ribbon = detail.indexOf('<SourceRibbon');
+  assert.ok(detail.slice(ribbon - 25, ribbon).includes('sourceAttribution ?'));
+  assert.ok(ribbon < detail.indexOf('styles.savedBecauseCard'));
+  assert.ok(detail.includes('platform={sourceAttribution.platformName}'));
+  assert.ok(detail.includes('primarySource?.creator'));
+  assert.ok(detail.includes('primarySource?.caption ?? undefined'));
+  assert.ok(detail.includes('primarySource.thumbnailUrl'));
+  assert.ok(detail.includes('capabilities.canWatchSource ? () => void openSource()'));
+  assert.ok(detail.includes('unavailable={!sourceUrl}'));
+  assert.ok(detail.includes('Add a note'), 'optional blank note stays editable');
+  assert.ok(detail.includes('item.creator') && detail.includes('item.thumbnailUrl'), 'multi-source metadata survives');
+  assert.ok(detail.includes('[categoryLabel, locality].filter(Boolean)'), 'unknown address creates no empty separator');
+  assert.ok(detail.includes('CATEGORY_LABELS[categoryKey]'), 'normalized category remains visible');
+  assert.ok(!/\b(menu|dish|eat here|the food|reservation|table for)\b/i.test(detail), 'category-neutral copy');
 }
 
 // "Did you go yet?" is a compact feedback card, not gamification, and the
@@ -567,49 +478,21 @@ import {
   const theme = readFileSync(join(process.cwd(), 'lib/theme.tsx'), 'utf8');
   const constants = readFileSync(join(process.cwd(), 'constants/colors.ts'), 'utf8');
   assert.ok(constants.includes('accentSoft') && constants.includes('accentBorder'), 'dark palette defines them');
-  assert.ok(theme.includes('accentSoft') && theme.includes('accentBorder'), 'light palette defines them');
+  assert.ok(theme.includes('LightPalette') && theme.includes('DarkPalette'), 'both appearances use canonical palettes');
 }
 
-// Small screens: the action row fits at every supported width, with no
-// breakpoint and no truncation. The previous pass had a `viewportWidth < 390`
-// fallback and still shipped "Watch p…" on a 390pt iPhone, because 390 < 390
-// is false. The fix was to cut the fixed cost, not to move the threshold.
+// Native reminder is now independent of the Directions row; large text grows.
 {
   const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
-  const toggle = readFileSync(join(process.cwd(), 'components/map/place/ReminderToggle.tsx'), 'utf8');
-
-  assert.ok(
-    !detail.includes('compactActionRow'),
-    'no width breakpoint to get wrong by one point',
-  );
-  assert.ok(
-    !/<Switch\b/.test(detail),
-    'the fixed ~51pt system Switch is gone — it was the reason the row overflowed',
-  );
-  assert.ok(detail.includes('<ReminderToggle'), 'replaced by the compact toggle');
-  assert.match(toggle, /TRACK_WIDTH = 40/, 'which is 40pt, not 51');
-  assert.match(toggle, /accessibilityRole="switch"/, 'and still a switch to VoiceOver');
-  assert.match(toggle, /accessibilityState=\{\{ checked: value \}\}/);
-  assert.match(toggle, /hitSlop=\{10\}/, 'with a real touch target');
-  assert.ok(!/react-native-\w/.test(toggle), 'pure RN — no native dependency');
-
-  assert.match(detail, /actionButtonText: \{[\s\S]*fontSize: 11/, 'labels stay readable');
-  assert.ok(detail.includes('numberOfLines={1}'), 'and never wrap the row');
-
-  // The budget itself, at the three widths that matter. `Watch post` and
-  // `Directions` are ~61pt at 11pt semibold; anything under that truncates.
-  const SHEET_PADDING = 32; // Spacing.lg each side
-  const DIVIDER = 9; // hairline + Spacing.xs margins
-  const BELL_CLUSTER = 68; // bell + "1 mi" + chevron + padding
-  const TOGGLE = 40;
-  const WIDEST_LABEL = 61;
-  for (const width of [375, 390, 430]) {
-    const perAction = (width - SHEET_PADDING - DIVIDER - BELL_CLUSTER - TOGGLE) / 3;
-    assert.ok(
-      perAction >= WIDEST_LABEL + 8,
-      `${width}pt: ${perAction.toFixed(0)}pt per action clears "Watch post" (${WIDEST_LABEL}pt) with margin`,
-    );
-  }
+  assert.ok(detail.includes('<Switch value={notifyOn}'));
+  assert.ok(detail.includes('accessibilityLabel={`Nearby reminder for ${saved.place.name}`}'));
+  assert.ok(detail.includes('largeText && styles.reminderRowLarge'));
+  assert.ok(detail.includes('largeText && styles.destinationActionsLarge'));
+  assert.ok(detail.includes('await updateSavedPlace(saved.id, { notifications_enabled: next })'));
+  assert.ok(detail.indexOf('await updateSavedPlace(saved.id, { notifications_enabled: next })') < detail.indexOf('setNotifyOn(next)'));
+  assert.ok(detail.includes('await ensureNotificationPermission()'));
+  assert.ok(detail.includes('await ensureBackgroundLocationPermission()'));
+  assert.ok(detail.includes('Your previous reminder setting is unchanged'));
 }
 
 // Also Nearby: three compact cards previewable, plus the See map affordance.

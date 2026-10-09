@@ -7,16 +7,9 @@
  * and an "Also nearby" card. `/place/[id]` and `/opportunity/[id]` are thin
  * redirects into this same sheet, so there is exactly one presentation owner.
  *
- * Composition, top to bottom:
- *   action row (Directions · Watch post · Share │ nearby reminder)
- *   hero photo, with name / category / locality over it
- *   today's hours, in the VENUE's timezone or omitted
- *   Saved because…  (or "Your note" for a manual save)
- *   Did you go yet?
- *   Saved nearby
- *   Also nearby
- *   More videos from this place
- *   management footer (Wrong place? · Remove)
+ * Fieldnotes hierarchy: destination photo, identity, Directions, original
+ * source, saved reason, nearby reminder, visit state, related places.
+ * Management stays in More; all entry points retain this single owner.
  *
  * Things that are deliberately true here:
  *   - It reuses the SAME services + shared-cache API as every other surface
@@ -43,8 +36,12 @@ import {
   FlatList,
   Image,
   Linking,
+  Modal,
+  Switch,
+  useWindowDimensions,
   Platform,
   Pressable,
+  ScrollView,
   Share,
   StyleSheet,
   Text,
@@ -54,13 +51,16 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 import { Button, Input } from '@/components';
+import { SourceRibbon } from '@/components/SourceRibbon';
+import { ensureNotificationPermission, ensureBackgroundLocationPermission } from '@/lib/notifications';
+import { hapticSelection } from '@/lib/haptics';
+import { useReduceMotion } from '@/lib/useReduceMotion';
 import { PhotoRolodexModal } from '@/components/PhotoRolodex';
 import { PlaceVideoGalleryStrip } from '@/components/PlaceVideoGalleryStrip';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
 import { NoteEditorModal } from '@/components/map/NoteEditorModal';
 import { RecommendedPlaceDetails } from '@/components/map/RecommendedPlaceDetails';
 import { PlaceCardRow } from '@/components/map/place/PlaceCardRow';
-import { ReminderToggle } from '@/components/map/place/ReminderToggle';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/hooks/useAuth';
@@ -126,53 +126,6 @@ import { logDebug } from '@/lib/logger';
 import { placeCapabilities } from '@/lib/placeCapabilities';
 import { offlineFixtureByPlaceId } from '@/onboarding/fixtures/offlineOnboardingFixtures';
 import { offlineOnboardingMedia } from '@/onboarding/assets/offlineOnboardingAssets';
-
-/**
- * Category glyphs for the hero's context line. Ionicons only (already bundled
- * via @expo/vector-icons — no new dependency), and every Nearr category is
- * mapped, because Place Detail must read as well for an island or a city as it
- * does for a restaurant.
- */
-const CATEGORY_ICONS: Record<NearrCategory, string> = {
-  restaurant: 'restaurant-outline',
-  cafe: 'cafe-outline',
-  bakery: 'restaurant-outline',
-  bar: 'beer-outline',
-  brewery: 'beer-outline',
-  winery: 'wine-outline',
-  dessert: 'ice-cream-outline',
-  hotel: 'bed-outline',
-  resort: 'bed-outline',
-  hiking_trail: 'trail-sign-outline',
-  park: 'leaf-outline',
-  beach: 'sunny-outline',
-  waterfall: 'water-outline',
-  lake: 'water-outline',
-  marina: 'boat-outline',
-  island: 'earth-outline',
-  scenic_spot: 'telescope-outline',
-  attraction: 'sparkles-outline',
-  museum: 'color-palette-outline',
-  entertainment: 'film-outline',
-  shopping: 'bag-handle-outline',
-  nightlife: 'musical-notes-outline',
-  sports: 'football-outline',
-  fitness: 'barbell-outline',
-  wellness: 'flower-outline',
-  transportation: 'train-outline',
-  education: 'school-outline',
-  service: 'construct-outline',
-  other: 'location-outline',
-};
-
-/** Shared geometry for one band of the hero's stacked-band scrim. */
-const heroScrimBand = {
-  position: 'absolute' as const,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: 'rgba(0,0,0,0.09)',
-};
 
 type RadiusMode = 'default' | 'miles' | 'minutes';
 
@@ -241,6 +194,11 @@ export function SelectedPlaceDetails({
 }: Props) {
   const { colors, typography } = useTheme();
   const router = useRouter();
+  const { fontScale } = useWindowDimensions();
+  const largeText = fontScale >= 1.5;
+  const reduceMotion = useReduceMotion();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [reminderBusy, setReminderBusy] = useState(false);
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const { session } = useAuth();
   const { state: onboardingState } = useOnboardingV2();
@@ -554,6 +512,7 @@ export function SelectedPlaceDetails({
     key: uri,
     uri,
     accessibilityLabel: `${saved.place.name}, photo ${index + 1} of ${photoUrls.length}`,
+    footerLabel: `Destination photo ? ${saved.place.name}`,
   })), [photoUrls, saved.place.name]);
 
   // Owner media is requested first; the privacy-filtered community page is a
@@ -756,72 +715,35 @@ export function SelectedPlaceDetails({
   // not visibly shove the rest of the sheet down a beat later.
   const hoursPending = detailsLoading && !!googlePlaceId && !todayHours;
 
-  // ONE surface, headed by where it came from. A manual save has no post to
-  // credit, so it is honestly labelled as the user's own note instead of
-  // wearing a "saved because" frame with nothing behind it — and when there IS
-  // a post but no reason yet, the heading states the fact we actually have
-  // ("Saved from Instagram") rather than making an unanswered question the
-  // centrepiece of the card.
-  const savedBecauseLabel = !sourceAttribution
-    ? 'Your note'
-    : whySaved.text
-      ? 'Saved because…'
-      : `Saved from ${sourceAttribution.platformName}`;
-  // Decided ONCE from the shared helper, so the heading's Edit affordance and
-  // the body can never disagree about whether there is a note to show.
   const hasReason = !!whySaved.text;
 
-  /**
-   * The action row fits at every supported width WITHOUT a fallback layout.
-   *
-   * The previous pass used a `viewportWidth < 390` breakpoint and shipped
-   * "Watch p…" plus a switch hanging off the right edge — on a 390pt iPhone,
-   * where `390 < 390` is false and the inline layout ran anyway. Rather than
-   * move the breakpoint, the fixed cost came down: the 51pt system `Switch`
-   * became a 40pt `ReminderToggle`, the divider margins shrank, and the row
-   * gap went to zero (each action carries its own padding).
-   *
-   * Remaining budget for the three actions, after 9pt divider + ~68pt bell
-   * cluster + 40pt toggle:
-   *   375pt viewport → 343 content → ~75pt each
-   *   390pt          → 358         → ~80pt each
-   *   430pt          → 398         → ~93pt each
-   * The widest label, "Directions"/"Watch post" at 11pt semibold, measures
-   * ~61pt. There is real headroom at the narrowest size, not one spare point.
-   */
-  const reminderCluster = (
-    <>
-      <Pressable
-        onPress={() => {
-          if (notifyOn) setReminderSettingsExpanded((value) => !value);
-        }}
-        disabled={!notifyOn}
-        accessibilityRole={notifyOn ? 'button' : undefined}
-        accessibilityLabel={
-          notifyOn ? `Nearby reminder, ${reminderStatus}. Change distance` : undefined
+  async function changeReminderEnabled(next: boolean) {
+    if (reminderBusy) return;
+    setReminderBusy(true);
+    try {
+      if (next) {
+        const notificationsAllowed = await ensureNotificationPermission();
+        const locationAllowed = notificationsAllowed && await ensureBackgroundLocationPermission();
+        if (!notificationsAllowed || !locationAllowed) {
+          Alert.alert('Allow nearby reminders', 'Notifications and background location are needed to remind you when you are near this place.', [
+            { text: 'Not now', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => { void Linking.openSettings(); } },
+          ]);
+          return;
         }
-        accessibilityState={{ expanded: reminderSettingsExpanded }}
-        style={({ pressed }) => [styles.reminderControl, pressed && notifyOn && styles.pressed]}
-      >
-        <Feather name="bell" size={16} color={notifyOn ? colors.accent : colors.textMuted} />
-        <Text style={styles.reminderDistanceText} numberOfLines={1}>
-          {notifyOn ? reminderDistance : 'Off'}
-        </Text>
-        {notifyOn ? (
-          <Feather
-            name={reminderSettingsExpanded ? 'chevron-down' : 'chevron-right'}
-            size={13}
-            color={colors.textMuted}
-          />
-        ) : null}
-      </Pressable>
-      <ReminderToggle
-        value={notifyOn}
-        onValueChange={setNotifyOn}
-        accessibilityLabel={`Nearby reminder for ${saved.place.name}`}
-      />
-    </>
-  );
+      }
+      await updateSavedPlace(saved.id, { notifications_enabled: next });
+      const updated = applySavedPlaceEdit(saved, { notifications_enabled: next });
+      updateSavedPlacesCache((current) => current.map((row) => row.id === saved.id ? updated : row));
+      setNotifyOn(next);
+      onSaved?.(updated);
+      if (next) hapticSelection();
+    } catch {
+      Alert.alert('Couldn?t update reminder', 'Your previous reminder setting is unchanged. Check your connection and try again.');
+    } finally {
+      setReminderBusy(false);
+    }
+  }
 
   async function openExternalUrl(args: {
     rawUrl: string | null;
@@ -978,7 +900,7 @@ export function SelectedPlaceDetails({
     } catch (e: any) {
       // Offline mutations throw OfflineMutationError whose message is the
       // friendly "Internet required to update saved places." string.
-      Alert.alert('Save failed', e?.message ?? 'Unknown error.');
+      Alert.alert('Couldn?t save changes', 'Your previous settings are unchanged. Check your connection and try again.');
     } finally {
       setSaving(false);
     }
@@ -1083,7 +1005,7 @@ export function SelectedPlaceDetails({
               else onRequestDismiss();
             } catch (e: any) {
               restoreSavedPlacesCache(snapshot);
-              Alert.alert('Delete failed', e?.message ?? 'Unknown error.');
+              Alert.alert('Couldn?t remove place', 'Your saved place is still here. Check your connection and try again.');
             } finally {
               setDeleting(false);
             }
@@ -1095,103 +1017,12 @@ export function SelectedPlaceDetails({
 
   return (
     <View style={styles.wrap}>
-      {/* Action row. Going there is the point of the page, so Directions leads;
-          the nearby reminder sits behind a divider as a setting rather than a
-          verb, exactly as compact as the other three. */}
-      <View style={styles.actionRow}>
-        <ActionButton
-          icon="navigation"
-          label="Directions"
-          a11yLabel={`Get directions to ${saved.place.name}`}
-          onPress={onGetDirections}
-          styles={styles}
-          tint={colors.accent}
-        />
-        {capabilities.canWatchSource && sourceUrl && sourceAttribution ? (
-          <Pressable
-            onPress={() => {
-              void openSource();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={`${sourceAttribution.actionA11yLabel} for ${saved.place.name}`}
-            style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
-          >
-            {/* Ionicons carries real brand marks for BOTH TikTok and Instagram,
-                so neither platform is reduced to a generic play/video glyph. */}
-            <Ionicons
-              name={sourceAttribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}
-              size={20}
-              color={colors.text}
-            />
-            <Text style={styles.actionButtonText} numberOfLines={1}>
-              {sourceAttribution.actionLabel}
-            </Text>
-          </Pressable>
-        ) : null}
-        <ActionButton
-          icon="share"
-          label="Share"
-          a11yLabel={`Share ${saved.place.name}`}
-          onPress={() => {
-            void sharePlace();
-          }}
-          styles={styles}
-          tint={colors.text}
-        />
-
-        {capabilities.canSetReminder ? <View style={styles.actionDivider} /> : null}
-        {capabilities.canSetReminder ? reminderCluster : null}
+      <View style={styles.detailNavigation}>
+        <Text style={styles.detailNavigationLabel}>Your saved place</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={`More options for ${saved.place.name}`} onPress={() => setMoreOpen(true)} style={styles.moreButton}>
+          <Feather name="more-horizontal" size={22} color={colors.text} />
+        </Pressable>
       </View>
-
-      {onboardingTourStep && ['source', 'directions', 'close'].includes(onboardingTourStep) ? (
-        <PlaceTourCallout
-          step={onboardingTourStep}
-          placeName={saved.place.name}
-          onContinue={onboardingTourStep === 'close' ? skipOnboardingTour : advanceOnboardingTour}
-          onSkip={skipOnboardingTour}
-        />
-      ) : null}
-
-      {/* Reminder distance settings — unchanged behaviour, just no longer a
-          permanently-open card competing with the place itself. */}
-      {capabilities.canSetReminder && notifyOn && reminderSettingsExpanded ? (
-        <View style={styles.reminderSettings}>
-          <View style={styles.radiusGroup}>
-            <RadiusOption label="Auto" active={mode === 'default'} onPress={() => setMode('default')} />
-            <RadiusOption label="Distance" active={mode === 'miles'} onPress={() => setMode('miles')} />
-            <RadiusOption label="Time" active={mode === 'minutes'} onPress={() => setMode('minutes')} />
-          </View>
-          {mode === 'miles' ? (
-            <Input
-              value={milesText}
-              onChangeText={setMilesText}
-              keyboardType="decimal-pad"
-              placeholder="e.g. 1.5"
-              style={styles.numberInput}
-            />
-          ) : null}
-          {mode === 'minutes' ? (
-            <Input
-              value={minutesText}
-              onChangeText={setMinutesText}
-              keyboardType="number-pad"
-              placeholder="e.g. 10"
-              style={styles.numberInput}
-            />
-          ) : null}
-          <Text style={[typography.caption, styles.helperText]}>{radiusHelperText}</Text>
-        </View>
-      ) : null}
-
-      {dirty ? (
-        <Button
-          title="Save changes"
-          variant="secondary"
-          onPress={handleSave}
-          loading={saving}
-          style={styles.saveBtn}
-        />
-      ) : null}
 
       {/* Hero: the photo carries the page. Name + context sit ON the image
           under a layered scrim so the first thing read is the place itself,
@@ -1220,25 +1051,15 @@ export function SelectedPlaceDetails({
             {detailsLoading ? (
               <ActivityIndicator size="small" color={colors.accent} />
             ) : (
-              <Feather name="map-pin" size={34} color={colors.accent} />
+              <><Feather name="image" size={28} color={colors.textSecondary} /><Text style={styles.noPhotoLabel}>No destination photo yet</Text></>
             )}
           </View>
         )}
 
-        {/* Stacked bands stand in for a gradient (no gradient dependency in
-            this project). Six thin steps instead of three thick ones, so the
-            ramp reads as a fade rather than as stripes across the photo. */}
-        <View pointerEvents="none" style={styles.heroScrim6} />
-        <View pointerEvents="none" style={styles.heroScrim5} />
-        <View pointerEvents="none" style={styles.heroScrim4} />
-        <View pointerEvents="none" style={styles.heroScrim3} />
-        <View pointerEvents="none" style={styles.heroScrim2} />
-        <View pointerEvents="none" style={styles.heroScrim1} />
-
-        {photoUrls.length > 1 ? (
+        {photoUrls.length > 0 ? (
           <View style={styles.photoCountPill}>
             <Feather name="image" size={13} color="#FFFFFF" />
-            <Text style={styles.photoCountText}>{photoUrls.length}</Text>
+            <Text style={styles.photoCountText}>1 / {photoUrls.length}</Text>
           </View>
         ) : null}
 
@@ -1249,41 +1070,35 @@ export function SelectedPlaceDetails({
           </View>
         ) : null}
 
-        <View pointerEvents="none" style={styles.heroCaption}>
-          <Text accessibilityRole="header" style={styles.placeName} numberOfLines={3}>
-            {saved.place.name}
-          </Text>
-          <View style={styles.heroMetaRow}>
-            <Ionicons
-              name={CATEGORY_ICONS[categoryKey] as React.ComponentProps<typeof Ionicons>['name']}
-              size={14}
-              color="rgba(255,255,255,0.92)"
-            />
-            <Text style={styles.heroMetaText} numberOfLines={1}>{categoryLabel}</Text>
-          </View>
-          {/* Omitted rather than faked when the place has no street address —
-              a saved city or island legitimately has none. */}
-          {locality ? (
-            <View style={styles.heroMetaRow}>
-              <Feather name="map-pin" size={14} color="rgba(255,255,255,0.92)" />
-              <Text style={styles.heroMetaText} numberOfLines={1}>{locality}</Text>
-            </View>
-          ) : null}
-        </View>
+        {!videoHero && heroUri ? <View style={styles.videoHeroPill}><Text style={styles.photoCountText}>From your post</Text></View> : null}
       </Pressable>
 
-      {videoGalleryEnabled ? (
-        <PlaceVideoGalleryStrip
-          placeName={saved.place.name}
-          providerPhotos={photoUrls}
-          ownerVideos={ownerPlaceVideos}
-          communityVideos={communityPlaceVideos}
-          totalVideoCount={placeVideoCount}
-          onOpenProvider={openGalleryAt}
-          onOpenVideo={(video) => { void openPlaceVideo(video); }}
-          onSeeAll={() => router.push({ pathname: '/place/[id]/videos', params: { id: saved.place.id } })}
-        />
+      {photoUrls.length > 1 && !largeText ? (
+        <View style={styles.photoThumbnails} accessibilityLabel={`${photoUrls.length} destination photos`}>
+          {photoUrls.map((uri, index) => <Pressable key={uri} onPress={() => openGalleryAt(index)} accessibilityRole="button" accessibilityLabel={`View destination photo ${index + 1} of ${photoUrls.length}`} style={styles.photoThumbnailButton}>
+            <Image source={{ uri }} resizeMode="cover" style={styles.photoThumbnail} />
+          </Pressable>)}
+        </View>
       ) : null}
+      {photoUrls.length > 1 && largeText ? <Button title={`View ${photoUrls.length} photos`} variant="text" onPress={() => openGalleryAt(0)} /> : null}
+
+      <View style={styles.heroCaption}>
+        <Text accessibilityRole="header" style={styles.placeName}>{saved.place.name}</Text>
+        <Text style={styles.heroMetaText}>{[categoryLabel, locality].filter(Boolean).join(' ? ')}</Text>
+      </View>
+      <View style={[styles.destinationActions, largeText && styles.destinationActionsLarge]}>
+        <Button title="Directions" icon="navigation" accessibilityLabel={`Get directions to ${saved.place.name}`} onPress={onGetDirections} style={styles.directionsButton} />
+        {!largeText ? <Pressable onPress={() => void sharePlace()} accessibilityRole="button" accessibilityLabel={`Share ${saved.place.name}`} style={styles.shareButton}><Feather name="share" size={21} color={colors.text} /></Pressable> : null}
+      </View>
+      {onboardingTourStep && ['source', 'directions', 'close'].includes(onboardingTourStep) ? <PlaceTourCallout step={onboardingTourStep} placeName={saved.place.name} onContinue={onboardingTourStep === 'close' ? skipOnboardingTour : advanceOnboardingTour} onSkip={skipOnboardingTour} /> : null}
+      {sourceAttribution ? <SourceRibbon
+        title={primarySource?.creator ? `@${primarySource.creator.replace(/^@/, '')}` : 'Your original post'}
+        platform={sourceAttribution.platformName}
+        thumbnail={primarySource ? placeSourcePreviewCandidates(sourceEvidencePreviewUrls[primarySource.key], primarySource.thumbnailUrl).find((url) => !failedSourcePreviewUrls[url]) ?? null : null}
+        caption={primarySource?.caption ?? undefined}
+        onPress={sourceUrl && capabilities.canWatchSource ? () => void openSource() : undefined}
+        unavailable={!sourceUrl}
+      /> : null}
 
       {onboardingTourStep && ['found', 'ai_note'].includes(onboardingTourStep) ? (
         <PlaceTourCallout
@@ -1327,98 +1142,68 @@ export function SelectedPlaceDetails({
         onClose={closeGallery}
         prefetchAdjacent={false}
         loadOnlyVisited
+        resizeMode="contain"
       />
 
-      {/* Why this place is on the user's map at all.
-          ONE surface, not an "AI note" card stacked on a "Your note" card.
-          What is shown is `notes ?? ai_note`; any edit writes to `notes` and
-          leaves `ai_note` provenance untouched (see lib/placeDetailUi). The
-          heading, the media tile, the attribution and the watch action all
-          appear only when a real source backs them. */}
       <View style={styles.savedBecauseCard} accessibilityLiveRegion="polite">
         <View style={styles.savedBecauseHeader}>
-          <Feather name="bookmark" size={15} color={colors.accent} />
-          <Text style={styles.savedBecauseTitle}>{savedBecauseLabel}</Text>
-          {hasReason && capabilities.canEdit ? (
-            <Pressable
-              onPress={() => beginNoteEdit(whySaved.seedFromSourceNote)}
-              accessibilityRole="button"
-              accessibilityLabel="Edit why you saved this place"
-              hitSlop={8}
-              style={styles.textAction}
-            >
-              <Text style={styles.changeLink}>Edit</Text>
-            </Pressable>
-          ) : null}
+          <Text style={styles.savedBecauseTitle}>WHY YOU SAVED IT</Text>
+          {hasReason && capabilities.canEdit ? <Pressable onPress={() => beginNoteEdit(whySaved.seedFromSourceNote)} accessibilityRole="button" accessibilityLabel="Edit why you saved this place" style={styles.textAction}><Text style={styles.changeLink}>Edit</Text></Pressable> : null}
         </View>
-
-        <View style={styles.savedBecauseBody}>
-          {sourceUrl && sourceAttribution ? (
-            // Nearr does not store the post's own thumbnail, so this is a
-            // branded platform tile rather than a fake video still — honest
-            // about what it is, and it opens the real post.
-            <Pressable
-              onPress={() => {
-                void openSource();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={sourceAttribution.actionA11yLabel}
-              style={({ pressed }) => [styles.sourceTile, pressed && styles.pressed]}
-            >
-              <Ionicons
-                name={sourceAttribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}
-                size={26}
-                color={colors.text}
-              />
-              <View style={styles.sourcePlayBadge}>
-                <Feather name="play" size={11} color={colors.textInverse} />
-              </View>
-            </Pressable>
-          ) : null}
-
-          <View style={styles.savedBecauseCopy}>
-            {hasReason ? (
-              <Text style={styles.reasonText}>{`“${whySaved.text}”`}</Text>
-            ) : !hasReason && capabilities.canEdit ? (
-              // No note and none was extracted. Nothing is invented; the offer
-              // to write one is a quiet link, not the headline.
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Add why you saved this place"
-                onPress={() => beginNoteEdit()}
-                hitSlop={8}
-                style={styles.textAction}
-              >
-                <Text style={styles.addNoteLink}>Add a note</Text>
-              </Pressable>
-            ) : null}
-            {/* The platform is already in the heading when there is no reason,
-                so this line would just repeat it. */}
-            {sourceAttribution && hasReason ? (
-              <View
-                style={styles.attributionRow}
-                accessible
-                accessibilityLabel={sourceAttribution.sourceA11yLabel}
-              >
-                <Ionicons
-                  name={sourceAttribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}
-                  size={13}
-                  color={colors.textSecondary}
-                />
-                <Text style={styles.attributionText} numberOfLines={1}>
-                  {sourceAttribution.platformName}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-        </View>
-
-        {/* No second "Watch post" button here. The action row at the top of
-            the sheet is the one guaranteed source-opening affordance; a
-            full-width CTA repeating it made this card the tallest thing on the
-            screen for no added capability. The tile above still opens the
-            post, and carries a play badge so that is not a secret. */}
+        {hasReason ? <>
+          <Text style={styles.reasonText}>{whySaved.text}</Text>
+          <Text style={styles.attributionText}>{whySaved.origin === 'user' ? 'Your note' : 'From the post'}</Text>
+        </> : capabilities.canEdit ? <Pressable onPress={() => beginNoteEdit()} accessibilityRole="button" accessibilityLabel="Add why you saved this place" style={styles.textAction}><Text style={styles.addNoteLink}>Add a note for someday</Text></Pressable> : null}
       </View>
+      {capabilities.canSetReminder ? <View style={[styles.reminderRow, largeText && styles.reminderRowLarge]}>
+        <View style={styles.reminderCopy}>
+          <Text style={styles.reminderTitle}>Remind me nearby</Text>
+          <Text style={styles.reminderDescription}>A little nudge when you?re close.</Text>
+          {notifyOn ? <Pressable onPress={() => setReminderSettingsExpanded((value) => !value)} accessibilityRole="button" accessibilityLabel={`Nearby reminder, ${reminderStatus}. Change distance`} accessibilityState={{ expanded: reminderSettingsExpanded }} style={styles.reminderControl}><Text style={styles.reminderDistanceText}>{reminderDistance} ? Change distance</Text><Feather name={reminderSettingsExpanded ? 'chevron-down' : 'chevron-right'} size={16} color={colors.textSecondary} /></Pressable> : null}
+        </View>
+        {reminderBusy ? <ActivityIndicator accessibilityLabel="Updating reminder" color={colors.primary} /> : <Switch value={notifyOn} onValueChange={(next) => void changeReminderEnabled(next)} accessibilityLabel={`Nearby reminder for ${saved.place.name}`} trackColor={{ false: colors.controlBorder, true: colors.primary }} />}
+      </View> : null}
+
+      {/* Reminder distance settings — unchanged behaviour, just no longer a
+          permanently-open card competing with the place itself. */}
+      {capabilities.canSetReminder && notifyOn && reminderSettingsExpanded ? (
+        <View style={styles.reminderSettings}>
+          <View style={styles.radiusGroup}>
+            <RadiusOption label="Auto" active={mode === 'default'} onPress={() => setMode('default')} />
+            <RadiusOption label="Distance" active={mode === 'miles'} onPress={() => setMode('miles')} />
+            <RadiusOption label="Time" active={mode === 'minutes'} onPress={() => setMode('minutes')} />
+          </View>
+          {mode === 'miles' ? (
+            <Input
+              value={milesText}
+              onChangeText={setMilesText}
+              keyboardType="decimal-pad"
+              placeholder="e.g. 1.5"
+              style={styles.numberInput}
+            />
+          ) : null}
+          {mode === 'minutes' ? (
+            <Input
+              value={minutesText}
+              onChangeText={setMinutesText}
+              keyboardType="number-pad"
+              placeholder="e.g. 10"
+              style={styles.numberInput}
+            />
+          ) : null}
+          <Text style={[typography.caption, styles.helperText]}>{radiusHelperText}</Text>
+        </View>
+      ) : null}
+
+      {dirty ? (
+        <Button
+          title="Save changes"
+          variant="secondary"
+          onPress={handleSave}
+          loading={saving}
+          style={styles.saveBtn}
+        />
+      ) : null}
 
       {/* Have I gone yet? A saved place can be BOTH saved and visited —
           answering this never removes the place from the map, and the answer
@@ -1432,10 +1217,10 @@ export function SelectedPlaceDetails({
           />
         </View>
         <View style={styles.visitCopy}>
-          <Text style={styles.visitTitle} numberOfLines={1}>
+          <Text style={styles.visitTitle}>
             {visited.visited ? 'You went here' : visited.prompt}
           </Text>
-          <Text style={styles.visitSupport} numberOfLines={2}>
+          <Text style={styles.visitSupport}>
             {visited.visited ? 'Nearby reminders are paused.' : visited.supportCopy}
           </Text>
         </View>
@@ -1609,32 +1394,33 @@ export function SelectedPlaceDetails({
         </View>
       ) : null}
 
-      {/* Management actions stay reachable but never compete with the place
-          or with Directions. */}
-      {capabilities.canReportWrongPlace || capabilities.canDelete ? <View style={styles.manageRow}>
-        {capabilities.canReportWrongPlace ? <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Wrong place? Correct this saved place"
-          onPress={() => setWrongPlaceOpen(true)}
-          style={({ pressed }) => [styles.manageAction, pressed && styles.pressed]}
-        >
-          <Text style={styles.manageText}>Wrong place?</Text>
-        </Pressable> : null}
-        {capabilities.canReportWrongPlace && capabilities.canDelete ? <View style={styles.manageDivider} /> : null}
-        {capabilities.canDelete ? <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Remove ${saved.place.name} from saved places`}
-          onPress={confirmDelete}
-          disabled={deleting}
-          style={({ pressed }) => [styles.manageAction, pressed && styles.pressed]}
-        >
-          {deleting ? (
-            <ActivityIndicator size="small" color={colors.textMuted} />
-          ) : (
-            <Text style={styles.manageText}>Remove</Text>
-          )}
-        </Pressable> : null}
-      </View> : null}
+      {videoGalleryEnabled ? (
+        <PlaceVideoGalleryStrip
+          placeName={saved.place.name}
+          providerPhotos={photoUrls}
+          ownerVideos={ownerPlaceVideos}
+          communityVideos={communityPlaceVideos}
+          totalVideoCount={placeVideoCount}
+          onOpenProvider={openGalleryAt}
+          onOpenVideo={(video) => { void openPlaceVideo(video); }}
+          onSeeAll={() => router.push({ pathname: '/place/[id]/videos', params: { id: saved.place.id } })}
+        />
+      ) : null}
+
+      <Modal visible={moreOpen} transparent animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={() => setMoreOpen(false)}>
+        <View style={styles.moreBackdrop}>
+          <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Close place options" onPress={() => setMoreOpen(false)} />
+          <ScrollView style={styles.moreMenu} contentContainerStyle={styles.moreMenuContent} accessibilityViewIsModal>
+            <Text accessibilityRole="header" style={styles.moreTitle}>{saved.place.name}</Text>
+            {capabilities.canEdit ? <Button title="Edit note" variant="text" icon="edit-3" onPress={() => { setMoreOpen(false); beginNoteEdit(whySaved.seedFromSourceNote); }} /> : null}
+            <Button title="Share place" variant="text" icon="share" onPress={() => { setMoreOpen(false); void sharePlace(); }} />
+            {capabilities.canMarkVisited && !visited.visited ? <Button title="Mark as visited" variant="text" icon="check-circle" onPress={() => { setMoreOpen(false); void handleMarkVisited(); }} /> : null}
+            {capabilities.canReportWrongPlace ? <Button title="Wrong place?" accessibilityLabel="Wrong place? Correct this saved place" variant="text" icon="map-pin" onPress={() => { setMoreOpen(false); setWrongPlaceOpen(true); }} /> : null}
+            {capabilities.canDelete ? <Button title="Remove saved place" accessibilityLabel={`Remove ${saved.place.name} from saved places`} variant="destructive" disabled={deleting} onPress={() => { setMoreOpen(false); confirmDelete(); }} /> : null}
+            <Button title="Done" variant="secondary" onPress={() => setMoreOpen(false)} />
+          </ScrollView>
+        </View>
+      </Modal>
 
       {capabilities.canReportWrongPlace ? <WrongPlaceSheet
         visible={wrongPlaceOpen}
@@ -1668,37 +1454,6 @@ export function SelectedPlaceDetails({
           : undefined}
       />
     </View>
-  );
-}
-
-/** One icon-over-label action in the top row. */
-function ActionButton({
-  label,
-  a11yLabel,
-  icon,
-  tint,
-  onPress,
-  styles,
-}: {
-  label: string;
-  a11yLabel?: string;
-  icon: keyof typeof Feather.glyphMap;
-  tint: string;
-  onPress: () => void;
-  styles: ReturnType<typeof createStyles>;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={a11yLabel ?? label}
-      style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
-    >
-      <Feather name={icon} size={21} color={tint} />
-      <Text style={styles.actionButtonText} numberOfLines={1}>
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 
@@ -1872,10 +1627,29 @@ function createStyles(
     // past the sheet's own padding so the photo — not the margin — is what the
     // eye lands on. Height follows width, so it stays proportional at every
     // device size instead of being a fixed 250pt slab on a small screen.
+    detailNavigation: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
+    detailNavigationLabel: { ...typography.caption, color: colors.textSecondary },
+    moreButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.pill, backgroundColor: colors.surface },
+    destinationActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+    destinationActionsLarge: { flexDirection: 'column', alignItems: 'stretch' },
+    directionsButton: { flex: 1 },
+    shareButton: { width: 50, minHeight: 50, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.md, backgroundColor: colors.surfaceElevated },
+    photoThumbnails: { flexDirection: 'row', gap: Spacing.xs },
+    photoThumbnailButton: { flex: 1, minHeight: 44, maxWidth: 72, padding: 2 },
+    photoThumbnail: { width: '100%', height: 44, borderRadius: Radius.sm },
+    noPhotoLabel: { ...typography.caption, color: colors.textSecondary, marginTop: Spacing.sm },
+    reminderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg, paddingVertical: Spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+    reminderRowLarge: { flexWrap: 'wrap' },
+    reminderCopy: { flex: 1, minWidth: 160 },
+    reminderTitle: { ...typography.bodyStrong, color: colors.text },
+    reminderDescription: { ...typography.caption, color: colors.textSecondary, marginTop: Spacing.xs },
+    moreBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.modalBackdrop },
+    moreMenu: { maxHeight: '85%', flexGrow: 0, borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: colors.surface },
+    moreMenuContent: { gap: Spacing.xs, padding: Spacing.xl, paddingBottom: 40 },
+    moreTitle: { ...typography.heading, color: colors.text, marginBottom: Spacing.sm },
     hero: {
-      marginHorizontal: -Spacing.sm,
-      aspectRatio: 1.9,
-      borderRadius: 18,
+      aspectRatio: 4 / 3,
+      borderRadius: Radius.md,
       overflow: 'hidden',
       backgroundColor: colors.surface,
       justifyContent: 'flex-end',
@@ -1890,33 +1664,17 @@ function createStyles(
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
-    // Stacked bands approximate a bottom-up gradient without pulling in a
-    // native gradient dependency.
-    //
-    // The previous version used three bands at 0.18 / 0.32 / 0.45, which
-    // compounded to ~0.69 over the bottom fifth and left two hard horizontal
-    // seams straight across the photo — clearly visible on device, and the
-    // reason the lower hero read as a black slab. This is six thin bands at
-    // 0.09 each: the same legibility floor (~0.54 behind the text) reached in
-    // steps small enough not to draw an edge, and it stops well short of the
-    // solid darkness the old ramp produced.
-    heroScrim6: { ...heroScrimBand, height: '58%' },
-    heroScrim5: { ...heroScrimBand, height: '48%' },
-    heroScrim4: { ...heroScrimBand, height: '39%' },
-    heroScrim3: { ...heroScrimBand, height: '30%' },
-    heroScrim2: { ...heroScrimBand, height: '21%' },
-    heroScrim1: { ...heroScrimBand, height: '12%' },
     photoCountPill: {
       position: 'absolute',
       right: Spacing.md,
-      top: Spacing.md,
+      bottom: Spacing.md,
       minHeight: 30,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 5,
       paddingHorizontal: 10,
       borderRadius: Radius.pill,
-      backgroundColor: 'rgba(0,0,0,0.55)',
+      backgroundColor: 'rgba(0,0,0,0.72)',
     },
     photoCountText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
     videoHeroPill: {
@@ -1925,19 +1683,15 @@ function createStyles(
       borderRadius: Radius.pill, backgroundColor: 'rgba(0,0,0,0.64)',
     },
     heroCaption: {
-      paddingHorizontal: Spacing.lg,
-      paddingBottom: Spacing.md,
-      gap: 3,
+      paddingTop: Spacing.sm,
+      gap: Spacing.sm,
     },
     placeName: {
       ...typography.title,
-      color: '#FFFFFF',
-      fontSize: 24,
-      lineHeight: 28,
-      marginBottom: 2,
-      textShadowColor: 'rgba(0,0,0,0.45)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 6,
+      color: colors.text,
+      fontSize: 32,
+      lineHeight: 38,
+      fontWeight: '600',
     },
     heroMetaRow: {
       flexDirection: 'row',
@@ -1949,10 +1703,7 @@ function createStyles(
       flexShrink: 1,
       fontSize: 13,
       fontWeight: '600',
-      color: 'rgba(255,255,255,0.92)',
-      textShadowColor: 'rgba(0,0,0,0.4)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 4,
+      color: colors.textSecondary,
     },
 
     // ----- today's hours ---------------------------------------------------
@@ -1984,11 +1735,9 @@ function createStyles(
     // ----- saved because ---------------------------------------------------
     savedBecauseCard: {
       gap: Spacing.sm,
-      padding: Spacing.md - 2,
-      borderRadius: Radius.md,
-      backgroundColor: colors.accentSoft,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.accentBorder,
+      paddingVertical: Spacing.lg,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
     },
     savedBecauseHeader: {
       flexDirection: 'row',
@@ -2000,7 +1749,9 @@ function createStyles(
       ...typography.bodyStrong,
       flex: 1,
       minWidth: 0,
-      fontSize: 14,
+      fontSize: 11,
+      lineHeight: 15,
+      letterSpacing: 1.2,
       color: colors.accent,
     },
     savedBecauseBody: {
@@ -2033,8 +1784,8 @@ function createStyles(
     reasonText: {
       ...typography.body,
       color: colors.text,
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: 17,
+      lineHeight: 24,
     },
     addNoteLink: { ...typography.bodyStrong, fontSize: 14, color: colors.accent },
     attributionRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -2095,6 +1846,7 @@ function createStyles(
     // roughly twice this tall.
     visitCard: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
       alignItems: 'center',
       gap: Spacing.sm + 2,
       paddingVertical: Spacing.sm + 2,

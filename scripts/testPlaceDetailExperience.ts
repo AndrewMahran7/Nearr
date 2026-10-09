@@ -65,7 +65,7 @@ assert.ok(
 // Expanded, the sheet meets the bottom edge with a rounded top only, so it
 // reads as part of the map rather than a floating page.
 assert.match(map, /previewWrapExpanded: \{[\s\S]*bottom: 0/);
-assert.match(map, /previewCardExpanded: \{[\s\S]*borderTopLeftRadius: 26/);
+assert.match(map, /previewCardExpanded: \{[\s\S]*borderTopLeftRadius: 28/);
 // ...and its content clears the tab bar instead of sliding under it.
 assert.match(map, /previewScrollContent: \{[\s\S]*paddingBottom: Spacing\.xxl/);
 
@@ -74,87 +74,29 @@ assert.match(fallback, /<Redirect/);
 assert.match(fallback, /pathname: '\/\(tabs\)\/map'/);
 assert.match(fallback, /params: \{ savedPlaceId: id \}/);
 
-// Hero and identity are visual-first: the photo carries the page and the
-// name/context sit on it under a scrim. Category stays compact and normalized.
-assert.match(detail, /style=\{styles\.heroImage\}/);
-// Cinematic, not boxy: the hero is a wide 1.9:1 band that bleeds past the
-// sheet's own padding, and its height follows the device width instead of
-// being a fixed slab that eats a small screen.
-assert.match(detail, /hero: \{[\s\S]*aspectRatio: 1\.9/, 'the hero is wide, not tall');
-assert.match(detail, /hero: \{[\s\S]*marginHorizontal: -Spacing\.sm/, 'it bleeds past the padding');
-assert.ok(!/hero: \{[\s\S]*height: 250/.test(detail), 'the fixed 250pt box is gone');
-// The scrim is a ramp, not three thick steps that printed seams across the
-// photo and turned the lower third into a black slab.
-assert.match(detail, /heroScrim6/, 'the ramp has fine steps');
-assert.ok(!detail.includes('heroScrimStrong'), 'the 0.45 slab band is gone');
-{
-  const band = detail.slice(detail.indexOf('const heroScrimBand'), detail.indexOf('type RadiusMode'));
-  const alpha = Number(band.match(/rgba\(0,0,0,([\d.]+)\)/)?.[1]);
-  assert.ok(alpha <= 0.1, `each band is a small step (${alpha})`);
-  assert.ok(alpha * 6 < 0.6, 'and six of them stay short of a solid black bottom');
-}
-assert.match(detail, /styles\.heroScrim1/, 'title legibility over photography is deliberate');
-assert.match(detail, /styles\.heroCaption/, 'name + context are part of the hero, not a separate block');
-assert.match(detail, /splitPlaceAddress\(saved\.place\.formatted_address\)\.locality/);
+// Fieldnotes intentionally replaces the previous utility-first cinematic strip.
+assert.match(detail, /hero: \{[\s\S]*aspectRatio: 4 \/ 3/);
+assert.doesNotMatch(detail, /styles\.heroScrim/, 'identity is readable on canvas, not on photography');
+assert.match(detail, /splitPlaceAddress\(saved.place.formatted_address\).locality/);
 assert.match(detail, /CATEGORY_LABELS\[categoryKey\]/);
-// Category and locality are icon-led context lines on the hero, not a pill and
-// not a metadata table. Locality is conditional because a saved city or island
-// legitimately has no street address.
-assert.match(detail, /styles\.heroMetaText/);
-assert.match(detail, /CATEGORY_ICONS\[categoryKey\]/, 'every Nearr category has a glyph');
-assert.match(detail, /\{locality \? \(/, 'no locality → one less line, never an empty row');
-assert.ok(!detail.includes('>Category</Text>'), 'Category must not be a standalone section');
-
-// The action row leads the sheet: Directions first, then the source post, then
-// Share, then the reminder behind a divider.
-assert.match(detail, /styles\.actionRow/);
-assert.match(detail, /label="Directions"/);
-assert.ok(detail.includes('label="Share"'));
-assert.ok(
-  detail.indexOf('styles.actionRow') < detail.indexOf('styles.hero,'),
-  'the action row sits above the hero, as the reference lays it out',
-);
-assert.ok(
-  detail.indexOf('label="Directions"') < detail.indexOf('label="Share"'),
-  'Directions leads',
-);
-// Source-post access is a first-class action. The label/brand now come from
-// the shared attribution resolver so Instagram and TikTok stay peers.
-assert.match(
-  detail,
-  /sourceAttribution\.actionLabel/,
-  'source-post access is a first-class action',
-);
+assert.match(detail, /\[categoryLabel, locality\].filter\(Boolean\)/, 'absent context creates no empty separator');
 assert.match(detail, /buildSavedPlaceShareContent\([\s\S]{0,160}referralId/);
 assert.match(detail, /void openSource\(\)/);
-assert.match(detail, /actionButton: \{[\s\S]*minHeight: 48/, 'comfortable touch targets');
-
-// Section order, top to bottom, exactly as the production reference lays it
-// out: action row → hero → today's hours → Saved because → Did you go yet? →
-// Saved nearby → Also nearby → More videos → management footer.
-{
-  const order = [
-    'styles.actionRow',
-    'styles.hero,',
-    '{todayHours ? (',
-    'styles.savedBecauseCard',
-    'styles.visitCard',
-    'title="Saved nearby"',
-    'title="Also nearby"',
-    'styles.moreVideosSection',
-    'styles.manageRow',
-  ].map((marker) => {
-    const index = detail.indexOf(marker);
-    assert.ok(index > -1, `${marker} is present`);
-    return { marker, index };
-  });
-  for (let i = 1; i < order.length; i += 1) {
-    assert.ok(
-      order[i].index > order[i - 1].index,
-      `${order[i].marker} follows ${order[i - 1].marker}`,
-    );
-  }
+const sequence = ['styles.hero,', 'styles.heroCaption', 'styles.destinationActions,', '<SourceRibbon', 'styles.savedBecauseCard', 'styles.reminderRow,', 'styles.visitCard', 'title="Saved nearby"', 'title="Also nearby"'];
+let previous = -1;
+for (const marker of sequence) {
+  const position = detail.indexOf(marker);
+  assert.ok(position > previous, `${marker} follows the preceding Fieldnotes section`);
+  previous = position;
 }
+assert.match(detail, /title="Directions"[\s\S]*onPress=\{onGetDirections\}/);
+assert.match(detail, /photoUrls.length > 0[\s\S]*1 \/ \{photoUrls.length\}/, 'truthful count includes one image');
+assert.match(detail, /prefetchAdjacent=\{false\}[\s\S]*loadOnlyVisited/, 'gallery retains bounded loading');
+assert.match(detail, /<Modal visible=\{moreOpen\}/, 'More owns management');
+assert.match(detail, /title="Edit note"/);
+assert.match(detail, /title="Share place"/);
+assert.match(detail, /title="Wrong place\?"/);
+assert.match(detail, /title="Remove saved place"[\s\S]*confirmDelete\(\)/);
 
 // Personal context stays ONE surface (notes ?? ai_note) rather than a cue block
 // stacked on a user block, and it is still live from the saved row.

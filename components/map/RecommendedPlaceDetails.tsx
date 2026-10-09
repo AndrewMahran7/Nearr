@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useReduceMotion } from '@/lib/useReduceMotion';
 
 import { Button } from '@/components';
 import { Radius, Spacing } from '@/constants';
@@ -49,6 +50,7 @@ export function RecommendedPlaceDetails({
 }: Props) {
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReduceMotion();
   const { width: viewportWidth } = useWindowDimensions();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const [saving, setSaving] = useState(false);
@@ -125,7 +127,7 @@ export function RecommendedPlaceDetails({
   return (
     <Modal
       visible
-      animationType="slide"
+      animationType={reduceMotion ? 'none' : 'slide'}
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
@@ -204,7 +206,7 @@ export function RecommendedPlaceDetails({
               </View>
             )}
 
-            {photoUrls.length > 1 ? (
+            {photoUrls.length > 0 ? (
               <>
                 <View pointerEvents="none" style={styles.counterPill}>
                   <Feather name="image" size={13} color="#FFFFFF" />
@@ -225,7 +227,7 @@ export function RecommendedPlaceDetails({
           </View>
 
           <View style={styles.placeDetails}>
-            <Text accessibilityRole="header" style={styles.name} numberOfLines={3}>
+            <Text accessibilityRole="header" style={styles.name}>
               {recommendation.name}
             </Text>
             {metaLabel ? <Text style={styles.meta}>{metaLabel}</Text> : null}
@@ -238,10 +240,11 @@ export function RecommendedPlaceDetails({
           </View>
 
           <View style={styles.actions}>
-            <Button title="Directions" variant="secondary" onPress={handleDirections} style={styles.action} />
+            <Button title="Directions" icon="navigation" onPress={handleDirections} style={styles.action} />
             {onSave ? (
               <Button
                 title="Save place"
+                variant="save"
                 onPress={() => void handleSave()}
                 loading={saving}
                 disabled={saving}
@@ -272,8 +275,8 @@ function createStyles(
     },
     headerTitle: { ...typography.bodyStrong, color: colors.text, fontSize: 16 },
     iconButton: {
-      width: 40,
-      height: 40,
+      width: 44,
+      height: 44,
       borderRadius: Radius.pill,
       alignItems: 'center',
       justifyContent: 'center',
@@ -285,7 +288,7 @@ function createStyles(
     content: { padding: Spacing.lg, gap: Spacing.xl, paddingBottom: Spacing.xl * 2 },
     hero: {
       overflow: 'hidden',
-      borderRadius: Radius.lg,
+      borderRadius: Radius.md,
       backgroundColor: colors.surfaceElevated,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
@@ -348,10 +351,10 @@ function createStyles(
     name: {
       ...typography.title,
       color: colors.text,
-      fontSize: 28,
-      lineHeight: 33,
+      fontSize: 32,
+      lineHeight: 38,
     },
-    meta: { ...typography.bodyStrong, color: colors.accent, fontSize: 15 },
+    meta: { ...typography.caption, color: colors.textSecondary },
     addressRow: {
       flexDirection: 'row',
       alignItems: 'flex-start',
@@ -364,7 +367,7 @@ function createStyles(
       color: colors.textSecondary,
       lineHeight: 21,
     },
-    actions: { flexDirection: 'row', gap: Spacing.md, paddingTop: Spacing.xs },
-    action: { flex: 1, minHeight: 52 },
+    actions: { gap: Spacing.md, paddingTop: Spacing.xs },
+    action: { minHeight: 50 },
   });
 }

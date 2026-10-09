@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { PlaceImage } from './PlaceImage';
@@ -19,6 +19,7 @@ import type { SavedPlaceWithPlace } from '@/types';
 type Props = {
   saved: SavedPlaceWithPlace & { distanceMeters?: number };
   onPress: (saved: SavedPlaceWithPlace) => void;
+  featured?: boolean;
 };
 
 function savedDate(value: string): string | null {
@@ -27,8 +28,11 @@ function savedDate(value: string): string | null {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function SavedPlaceBrowseCardView({ saved, onPress }: Props) {
+export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: Props) {
   const { colors, typography } = useTheme();
+  const { width, fontScale } = useWindowDimensions();
+  const largeText = fontScale >= 1.5;
+  const imageSize = featured ? Math.max(240, width - 48) : 72;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const category = CATEGORY_LABELS[savedPlaceCategory(saved)];
   const locality = splitPlaceAddress(saved.place.formatted_address).locality;
@@ -70,17 +74,17 @@ function SavedPlaceBrowseCardView({ saved, onPress }: Props) {
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint="Opens saved place details"
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, featured && styles.featured, largeText && styles.largeTextCard, pressed && styles.pressed]}
     >
-      <View style={styles.imageWrap}>
+      <View style={[styles.imageWrap, featured && styles.featuredImageWrap]}>
         <PlaceImage
           googlePlaceId={saved.place.google_place_id}
           hydrationPolicy="saved_snapshot"
           initialPhotoUrls={savedImageUri ? [savedImageUri] : undefined}
           sourceUri={sourceImageUri}
-          size={124}
+          size={imageSize}
           borderRadius={Radius.md}
-          style={styles.image}
+          style={[styles.image, featured && styles.featuredImage]}
         />
         {hasSource ? (
           <View style={styles.sourceBadge} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -90,29 +94,24 @@ function SavedPlaceBrowseCardView({ saved, onPress }: Props) {
       </View>
 
       <View style={styles.copy}>
-        <Text style={[typography.bodyStrong, styles.name]} numberOfLines={2}>
+        <Text style={[typography.bodyStrong, styles.name, featured && styles.featuredName]} numberOfLines={largeText ? undefined : 2}>
           {saved.place.name}
         </Text>
         {locality ? (
-          <Text style={[typography.caption, styles.locality]} numberOfLines={1}>{locality}</Text>
+          <Text style={[typography.caption, styles.locality]} numberOfLines={largeText ? undefined : 1}>{locality}</Text>
         ) : null}
         {note ? (
           <View style={styles.noteRow}>
-            <Feather
-              name={note.kind === 'user' ? 'message-circle' : 'zap'}
-              size={13}
-              color={note.kind === 'user' ? colors.textSecondary : colors.accent}
-            />
-            <Text style={[typography.caption, styles.note]} numberOfLines={1}>{note.text}</Text>
+            <Text style={[typography.caption, styles.note]} numberOfLines={largeText || featured ? 2 : 1}>{note.text}</Text>
           </View>
         ) : null}
         <View style={styles.footer}>
           <View style={styles.categoryPill}>
-            <Text style={styles.categoryText} numberOfLines={1}>{category}</Text>
+            <Text style={styles.categoryText}>{category}</Text>
           </View>
           <View style={styles.footerMeta}>
             {distance ? <Text style={[typography.caption, styles.distance]}>{distance}</Text> : null}
-            {date ? <Text style={[typography.caption, styles.date]}>{date}</Text> : null}
+            {featured && date ? <Text style={[typography.caption, styles.date]}>{date}</Text> : null}
           </View>
         </View>
       </View>
@@ -125,56 +124,54 @@ export const SavedPlaceBrowseCard = memo(SavedPlaceBrowseCardView);
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
     card: {
-      height: 148,
+      minHeight: 106,
       flexDirection: 'row',
-      gap: Spacing.md,
-      padding: Spacing.md,
-      marginBottom: Spacing.md,
-      borderRadius: Radius.lg,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
+      gap: Spacing.lg,
+      paddingVertical: Spacing.md,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+      backgroundColor: colors.bg,
     },
-    pressed: { opacity: 0.78, transform: [{ scale: 0.995 }] },
-    imageWrap: { width: 124, height: 124 },
-    image: { borderWidth: 0 },
+    featured: { flexDirection: 'column', gap: Spacing.md, paddingTop: Spacing.sm, paddingBottom: Spacing.xl, marginBottom: Spacing.sm },
+    largeTextCard: { flexWrap: 'wrap' },
+    featuredImageWrap: { width: '100%', height: undefined, aspectRatio: 1.55 },
+    featuredImage: { width: '100%', height: '100%' },
+    featuredName: { fontSize: 23, lineHeight: 28 },
+    pressed: { backgroundColor: colors.surfaceElevated },
+    imageWrap: { width: 72, height: 82 },
+    image: { borderWidth: 0, width: '100%', height: '100%' },
     sourceBadge: {
       position: 'absolute',
       right: 7,
       bottom: 7,
-      width: 28,
-      height: 28,
-      borderRadius: 9,
+      width: 24,
+      height: 24,
+      borderRadius: 8,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: colors.primary,
       borderWidth: 2,
       borderColor: colors.surface,
     },
-    copy: { flex: 1, minWidth: 0, paddingVertical: 2 },
+    copy: { flex: 1, minWidth: 140, paddingVertical: 2 },
     name: { color: colors.text, lineHeight: 21 },
     locality: { color: colors.textSecondary, marginTop: 3 },
     noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: Spacing.sm },
     note: { color: colors.textSecondary, flex: 1, lineHeight: 18 },
     footer: {
-      flex: 1,
-      minHeight: 28,
-      marginTop: Spacing.sm,
+      marginTop: Spacing.xs,
       flexDirection: 'row',
-      alignItems: 'flex-end',
+      flexWrap: 'wrap',
+      alignItems: 'center',
       justifyContent: 'space-between',
       gap: Spacing.sm,
     },
     categoryPill: {
-      maxWidth: '58%',
-      paddingHorizontal: 9,
-      paddingVertical: 4,
-      borderRadius: Radius.pill,
-      backgroundColor: 'rgba(255,106,26,0.13)',
+      flexShrink: 1,
     },
-    categoryText: { color: colors.accent, fontSize: 12, fontWeight: '700' },
+    categoryText: { color: colors.textSecondary, fontSize: 13, lineHeight: 18 },
     footerMeta: { alignItems: 'flex-end', gap: 2 },
     distance: { color: colors.textSecondary, fontWeight: '600' },
-    date: { color: colors.textMuted, fontSize: 11 },
+    date: { color: colors.textSecondary, fontSize: 12 },
   });
 }

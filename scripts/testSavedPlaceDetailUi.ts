@@ -116,21 +116,16 @@ const sheet = readFileSync(
 // the shared helper, so the display rule stays unit-testable.
 assert.match(sheet, /whySavedDisplay\(/, 'the sheet derives its notes from the shared helper');
 assert.match(sheet, /hasReason = !!whySaved\.text/, 'the surface is gated on the helper');
-// The heading names the ORIGIN of the save, and falls back to the user's own
-// note when there is no post to credit — one surface either way.
-// Three honest headings from one derivation: a reason from a post, a post with
-// no reason yet, and a manual save.
-assert.match(sheet, /'Saved because…'/, 'consumer-facing label for the source cue');
-assert.match(sheet, /const savedBecauseLabel = !sourceAttribution/);
-assert.match(sheet, /\? 'Your note'/, 'a manual save is the user’s own note');
-assert.match(sheet, /`Saved from \$\{sourceAttribution\.platformName\}`/);
+assert.match(sheet, /WHY YOU SAVED IT/, 'one explicit reason heading');
+assert.match(sheet, /whySaved.origin === 'user' \? 'Your note' : 'From the post'/, 'visible origin is accurate');
+assert.match(sheet, /<SourceRibbon[\s\S]*platform=\{sourceAttribution.platformName\}/, 'source is independently labeled');
 // The label must never expose how the cue was produced.
 assert.doesNotMatch(
   sheet,
   /AI summary|AI note<|generated description|model output|extraction|No AI note/i,
   'the cue is never described as model output to the user',
 );
-assert.match(sheet, /a11yLabel=\{`Get directions to \$\{saved\.place\.name\}`\}/);
+assert.match(sheet, /accessibilityLabel=\{`Get directions to \$\{saved\.place\.name\}`\}/);
 assert.match(sheet, /reminderStatus/, 'compact reminder still surfaces its status');
 assert.match(
   sheet,
@@ -138,6 +133,7 @@ assert.match(
   'the toggle keeps a label, naming the place it controls',
 );
 assert.match(sheet, /minHeight: 44/, 'management actions keep an accessible target');
-assert.match(sheet, /styles\.manageRow/, 'destructive actions live in the low-emphasis footer');
+assert.match(sheet, /<Modal visible=\{moreOpen\}/, 'management is in More');
+assert.match(sheet, /title="Remove saved place"[\s\S]*confirmDelete\(\)/, 'removal retains confirmation');
 
 console.log('PASS saved-place detail notes, reminder status, and sheet contracts');

@@ -76,6 +76,12 @@ export function SavedPlacesLibrary({
     [filters, locationState, nearbyPlaces, query, savedPlaces, sort],
   );
   const filterCount = browseFilterCount(filters);
+  // One recent memory leads the unfiltered collection; all remaining saves
+  // retain virtualized compact rows. Searching/sorting never duplicates it.
+  const featuredPlace = !query.trim() && filterCount === 0 && sort === 'recent'
+    ? results[0] ?? null
+    : null;
+  const listPlaces = featuredPlace ? results.slice(1) : results;
 
   useEffect(() => {
     if (
@@ -191,6 +197,13 @@ export function SavedPlacesLibrary({
           </Pressable>
         </View>
       ) : null}
+      {featuredPlace ? (
+        <View style={styles.featureSection}>
+          <Text style={styles.eyebrow}>SAVED FOR SOMEDAY</Text>
+          <SavedPlaceBrowseCard saved={featuredPlace} onPress={onSelectPlace} featured />
+          {listPlaces.length > 0 ? <Text accessibilityRole="header" style={[typography.heading, styles.recentHeading]}>More from your world</Text> : null}
+        </View>
+      ) : null}
     </View>
   );
 
@@ -238,11 +251,11 @@ export function SavedPlacesLibrary({
   return (
     <View style={styles.root}>
       <FlatList
-        data={results}
+        data={listPlaces}
         keyExtractor={(saved) => saved.id}
         renderItem={renderCard}
         ListHeaderComponent={listHeader}
-        ListEmptyComponent={emptyState()}
+        ListEmptyComponent={featuredPlace ? null : emptyState()}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + Spacing.xl }]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -389,8 +402,11 @@ export const MemoizedSavedPlacesLibrary = memo(SavedPlacesLibrary);
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
     root: { flex: 1 },
-    listContent: { paddingHorizontal: Spacing.lg },
+    listContent: { paddingHorizontal: Spacing.xl },
     header: { paddingBottom: Spacing.sm },
+    featureSection: { paddingTop: Spacing.xl },
+    eyebrow: { color: colors.accent, fontSize: 11, lineHeight: 15, fontWeight: '700', letterSpacing: 1.2 },
+    recentHeading: { color: colors.text, marginTop: Spacing.sm },
     searchWrap: { position: 'relative', marginTop: Spacing.xs, marginBottom: Spacing.sm },
     searchIcon: { position: 'absolute', left: Spacing.md, top: 17, zIndex: 1 },
     searchInput: { paddingLeft: 44, backgroundColor: colors.surfaceElevated },
@@ -408,7 +424,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderColor: colors.border,
       backgroundColor: colors.surfaceElevated,
     },
-    controlButtonActive: { borderColor: colors.accent, backgroundColor: 'rgba(255,106,26,0.10)' },
+    controlButtonActive: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
     controlLabel: { color: colors.text },
     pressed: { opacity: 0.72 },
     locationNotice: {
@@ -455,16 +471,16 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     filterSection: { marginBottom: Spacing.md },
     sectionLabel: { color: colors.textSecondary, marginBottom: Spacing.sm },
     categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-    categoryOption: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 12, borderRadius: Radius.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, backgroundColor: colors.surfaceElevated },
+    categoryOption: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, borderRadius: Radius.pill, borderWidth: 1, borderColor: colors.controlBorder, backgroundColor: colors.surfaceElevated },
     categoryOptionSelected: { borderColor: colors.accent, backgroundColor: colors.primary },
     categoryOptionText: { color: colors.textSecondary, fontWeight: '600' },
     categoryOptionTextSelected: { color: colors.textInverse },
     sourceOption: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.md },
-    sourceIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,106,26,0.12)' },
+    sourceIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated },
     sourceCopy: { flex: 1 },
     sourceTitle: { color: colors.text },
     sourceBody: { color: colors.textMuted, marginTop: 3 },
-    checkbox: { width: 24, height: 24, borderRadius: 7, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+    checkbox: { width: 24, height: 24, borderRadius: 8, borderWidth: 1.5, borderColor: colors.controlBorder, alignItems: 'center', justifyContent: 'center' },
     checkboxSelected: { borderColor: colors.primary, backgroundColor: colors.primary },
     modalActions: { flexDirection: 'row', gap: Spacing.sm, paddingTop: Spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
     clearButton: { minHeight: 48, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.md, borderWidth: 1, borderColor: colors.border },

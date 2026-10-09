@@ -20,7 +20,7 @@ assert.match(sheet, /mode === 'saved'\) snapTo\('full'\)/);
 assert.ok(!tabs.includes('name="places"'), 'hidden presentation-only Places route must not survive');
 
 // The real main hierarchy is compact and virtualized.
-for (const copy of ['Saved Places', 'Search saved places', 'Sort', 'Filter']) {
+for (const copy of ['Saved', 'Search saved places', 'Sort', 'Filter']) {
   assert.ok(`${sheet}\n${library}`.includes(copy), `runtime Saved Places hierarchy must include ${copy}`);
 }
 assert.match(library, /<FlatList[\s\S]*keyExtractor=\{\(saved\) => saved\.id\}/);
@@ -50,9 +50,12 @@ assert.ok(!library.includes('coffee_shop'));
 
 // Cards have prominent fixed images, bounded copy, normalized category, one
 // note preview, original-post affordance, and one full-card navigation target.
-assert.match(card, /<PlaceImage[\s\S]*size=\{124\}/);
-assert.match(card, /saved\.place\.name[\s\S]*numberOfLines=\{2\}/);
-assert.ok(card.includes('numberOfLines={1}>{note.text}</Text>'));
+assert.match(card, /<PlaceImage[\s\S]*size=\{imageSize\}/);
+assert.match(card, /numberOfLines=\{largeText \? undefined : 2\}/);
+assert.ok(card.includes('numberOfLines={largeText || featured ? 2 : 1}>{note.text}</Text>'));
+assert.match(library, /featuredPlace \? results.slice\(1\) : results/, 'feature removed from compact data');
+assert.match(library, /saved=\{featuredPlace\}[\s\S]*featured/, 'one recent feature uses real row');
+assert.doesNotMatch(card, /height: 148/, 'rows grow with text');
 assert.ok(card.includes('CATEGORY_LABELS[savedPlaceCategory(saved)]'));
 assert.ok(card.includes("hasSource ? 'Original post attached'"));
 assert.ok(card.includes('accessibilityHint="Opens saved place details"'));

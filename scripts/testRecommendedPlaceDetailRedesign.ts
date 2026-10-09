@@ -109,7 +109,7 @@ assert.doesNotMatch(component, /Not saved until you choose Save place/);
 // the scrollable sheet with deliberate wrapping.
 assert.match(component, /filter\(Boolean\)\.join\(' · '\)/);
 assert.match(component, /formattedAddress\?\.trim\(\) \|\| null/);
-assert.match(component, /numberOfLines=\{3\}/);
+assert.match(component, /<Text accessibilityRole="header" style=\{styles.name\}>/, 'full name wraps without fixed line cap');
 assert.match(component, /<Text style=\{styles\.address\}>\{address\}<\/Text>/);
 assert.match(component, /<ScrollView/);
 

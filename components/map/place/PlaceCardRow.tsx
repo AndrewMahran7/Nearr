@@ -19,7 +19,7 @@
  */
 
 import { memo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { PlaceImage } from '@/components/PlaceImage';
@@ -57,6 +57,7 @@ function PlaceCardRowImpl({
   onAction?: () => void;
 }) {
   const { colors, typography } = useTheme();
+  const { fontScale } = useWindowDimensions();
   if (entries.length === 0) return null;
 
   return (
@@ -130,7 +131,7 @@ function PlaceCardRowImpl({
             <View style={styles.body}>
               <Text
                 style={[typography.caption, styles.name, { color: colors.text }]}
-                numberOfLines={2}
+                numberOfLines={fontScale >= 1.5 ? undefined : 2}
               >
                 {entry.name}
               </Text>
@@ -139,7 +140,7 @@ function PlaceCardRowImpl({
                   <Feather name="map-pin" size={10} color={colors.textMuted} />
                   <Text
                     style={[typography.caption, styles.meta, { color: colors.textMuted }]}
-                    numberOfLines={1}
+                    numberOfLines={fontScale >= 1.5 ? undefined : 1}
                   >
                     {entry.meta}
                   </Text>
@@ -162,10 +163,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: Spacing.sm,
-    minHeight: 30,
+    minHeight: 44,
   },
-  title: { fontSize: 16 },
-  action: { flexDirection: 'row', alignItems: 'center', gap: 1 },
+  title: { fontSize: 17, flex: 1 },
+  action: { flexDirection: 'row', alignItems: 'center', minHeight: 44, gap: 1 },
   actionText: { fontSize: 13, fontWeight: '700' },
   row: { gap: 10, paddingRight: Spacing.lg },
   card: {
@@ -190,7 +191,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   body: { paddingHorizontal: Spacing.sm, paddingVertical: 7, gap: 2 },
-  name: { fontWeight: '700', fontSize: 12, lineHeight: 15 },
+  name: { fontWeight: '600', fontSize: 13, lineHeight: 18 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  meta: { fontSize: 11 },
+  meta: { fontSize: 12, flexShrink: 1 },
 });

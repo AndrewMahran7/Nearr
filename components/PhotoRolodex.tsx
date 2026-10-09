@@ -27,6 +27,7 @@ import Reanimated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useReduceMotion } from '@/lib/useReduceMotion';
 
 import { Spacing } from '@/constants';
 import { createOnceLatch, type OnceLatch } from '@/lib/onceLatch';
@@ -77,16 +78,18 @@ export function PhotoRolodexModal({
   items,
   initialIndex = 0,
   onClose,
-  resizeMode = 'cover',
+  resizeMode = 'contain',
   loadOnlyVisited = false,
   prefetchAdjacent = true,
   onPhotoLoadStart,
 }: Props) {
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReduceMotion();
   const [activeIndex, setActiveIndex] = useState(0);
   const [openSeed, setOpenSeed] = useState(0);
   const [visitedIndexes, setVisitedIndexes] = useState<ReadonlySet<number>>(new Set());
+  const [failedUris, setFailedUris] = useState<ReadonlySet<string>>(new Set());
   const listRef = useRef<FlatList<PhotoRolodexItem> | null>(null);
   const visibleRef = useRef(false);
   const dismissLatchRef = useRef<OnceLatch | null>(null);
@@ -102,7 +105,7 @@ export function PhotoRolodexModal({
   const safeActiveIndex = items.length === 0
     ? 0
     : Math.max(0, Math.min(activeIndex, items.length - 1));
-  const cardWidth = Math.max(220, Math.round(viewportWidth * 0.76));
+  const cardWidth = Math.max(220, viewportWidth - 32);
   const cardHeight = Math.max(220, Math.round(viewportHeight * 0.54));
   const sideSpacing = Math.max(0, Math.round((viewportWidth - cardWidth) / 2));
   const snapInterval = cardWidth + CARD_GAP;
@@ -118,6 +121,7 @@ export function PhotoRolodexModal({
     visibleRef.current = true;
     setActiveIndex(safeInitialIndex);
     setVisitedIndexes(new Set([safeInitialIndex]));
+    setFailedUris(new Set());
     scrollX.setValue(safeInitialIndex * snapInterval);
     dragY.value = 0;
     dismissLatchRef.current = createOnceLatch();
@@ -187,17 +191,17 @@ export function PhotoRolodexModal({
           vy: event.velocityY,
         });
         if (dismissing) {
-          dragY.value = withTiming(viewportHeight, { duration: DISMISS_EXIT_MS }, (finished) => {
+          dragY.value = withTiming(viewportHeight, { duration: reduceMotion ? 0 : DISMISS_EXIT_MS }, (finished) => {
             if (finished) runOnJS(close)();
           });
         } else {
-          dragY.value = withSpring(0, DISMISS_SPRING);
+          dragY.value = reduceMotion ? 0 : withSpring(0, DISMISS_SPRING);
         }
       })
       .onFinalize((_event, success) => {
-        if (!success) dragY.value = withSpring(0, DISMISS_SPRING);
+        if (!success) dragY.value = reduceMotion ? 0 : withSpring(0, DISMISS_SPRING);
       }),
-    [close, dragY, scrollGesture, viewportHeight],
+    [close, dragY, scrollGesture, viewportHeight, reduceMotion],
   );
   const contentStyle = useAnimatedStyle(() => ({ transform: [{ translateY: dragY.value }] }));
   const backdropStyle = useAnimatedStyle(() => ({
@@ -206,11 +210,17 @@ export function PhotoRolodexModal({
 
   if (items.length === 0) return null;
   const activeItem = items[safeActiveIndex] ?? null;
+  const goToPhoto = (index: number) => {
+    const next = Math.max(0, Math.min(index, items.length - 1));
+    setActiveIndex(next);
+    setVisitedIndexes((current) => new Set([...current, next]));
+    listRef.current?.scrollToOffset({ offset: next * snapInterval, animated: !reduceMotion });
+  };
 
   return (
     <Modal
       visible={visible}
-      animationType="fade"
+      animationType={reduceMotion ? 'none' : 'fade'}
       transparent
       onRequestClose={close}
       statusBarTranslucent
@@ -291,18 +301,19 @@ export function PhotoRolodexModal({
                           styles.item,
                           {
                             opacity,
-                            transform: [{ scale }],
+                            transform: [{ scale: reduceMotion ? 1 : scale }],
                             width: cardWidth,
                             marginRight: index === items.length - 1 ? 0 : CARD_GAP,
                           },
                         ]}>
                           <View style={[styles.photoShell, { width: cardWidth, height: cardHeight }]}>
-                            {!loadOnlyVisited || visitedIndexes.has(index) ? (
+                            {failedUris.has(item.uri) ? <View style={styles.unvisitedPhoto}><Feather name="image" size={28} color="#FFFFFF" /><Text style={styles.counterText}>Photo unavailable</Text></View> : !loadOnlyVisited || visitedIndexes.has(index) ? (
                               <Image
                                 source={{ uri: item.uri }}
                                 style={styles.image}
                                 resizeMode={resizeMode}
                                 onLoadStart={() => onPhotoLoadStart?.(index, item.uri)}
+                                onError={() => setFailedUris((current) => new Set([...current, item.uri]))}
                                 accessible
                                 accessibilityLabel={item.accessibilityLabel}
                               />
@@ -318,12 +329,14 @@ export function PhotoRolodexModal({
                   />
                 </GestureDetector>
               </View>
-              <View style={styles.dots} accessible accessibilityLabel={`Photo ${safeActiveIndex + 1} of ${items.length}`}>
+              <View style={[styles.dots, { bottom: insets.bottom + 64 }]}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Previous photo" accessibilityState={{ disabled: safeActiveIndex === 0 }} disabled={safeActiveIndex === 0} onPress={() => goToPhoto(safeActiveIndex - 1)} style={styles.pagingButton}><Feather name="chevron-left" size={22} color={safeActiveIndex === 0 ? '#777777' : '#FFFFFF'} /></Pressable>
                 {items.map((item, index) => (
                   <View key={`dot-${item.key}`} style={[styles.dot, index === safeActiveIndex && styles.dotActive]} />
                 ))}
+                <Pressable accessibilityRole="button" accessibilityLabel="Next photo" accessibilityState={{ disabled: safeActiveIndex === items.length - 1 }} disabled={safeActiveIndex === items.length - 1} onPress={() => goToPhoto(safeActiveIndex + 1)} style={styles.pagingButton}><Feather name="chevron-right" size={22} color={safeActiveIndex === items.length - 1 ? '#777777' : '#FFFFFF'} /></Pressable>
               </View>
-              <Text style={styles.hint}>{activeItem?.footerLabel || '↓ Swipe down to close'}</Text>
+              <Text style={[styles.hint, { bottom: insets.bottom + 16 }]}>{activeItem?.footerLabel || 'Swipe down to close'}</Text>
             </Reanimated.View>
           </View>
         </GestureDetector>
@@ -360,8 +373,9 @@ const styles = StyleSheet.create({
   },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.35)' },
   dotActive: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#FFFFFF' },
+  pagingButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginHorizontal: 12 },
   hint: {
     position: 'absolute', bottom: 48, left: 0, right: 0, zIndex: 4,
-    textAlign: 'center', color: 'rgba(255,255,255,0.65)', fontSize: 13, lineHeight: 18,
+    textAlign: 'center', color: '#D7DDD4', fontSize: 13, lineHeight: 18, paddingHorizontal: 24,
   },
 });
