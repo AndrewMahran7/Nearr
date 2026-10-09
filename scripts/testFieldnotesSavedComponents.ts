@@ -7,6 +7,8 @@ import React from 'react';
 const Module = require('node:module');
 const originalLoad = Module._load;
 let fontScale = 1;
+let hydratedPhotoUris = ['file:///saved-place.jpg'];
+const hydrationRequests: Array<{ trigger: string }> = [];
 const colors = new Proxy({}, { get: (_target, key) => key === 'textInverse' ? '#FFFFFF' : '#263A32' });
 const typography = { bodyStrong: {}, body: {}, caption: {}, label: {}, heading: {} };
 const Pressable = ({ children, style, ...props }: any) => React.createElement('Pressable', {
@@ -27,7 +29,9 @@ Module._load = function(request: string, parent: unknown, isMain: boolean) {
   if (request === '@expo/vector-icons') return { Feather: 'Feather' };
   if (request === 'react-native-safe-area-context') return { useSafeAreaInsets: () => ({ top: 20, bottom: 0, left: 0, right: 0 }) };
   if (request === '@/lib/theme') return { useTheme: () => ({ colors, typography }) };
-  if (request === '@/lib/savedPlaceHydration') return { hydrateSavedPlace: async () => ({ details: { photoUrls: ['file:///saved-place.jpg'] } }) };
+  if (request === '@/lib/savedPlaceHydration') return { hydrateSavedPlace: async (args: { trigger: string }) => {
+    hydrationRequests.push(args); return { details: { photoUrls: hydratedPhotoUris } };
+  } };
   if (request === './PlaceImage') return { PlaceImage: 'PlaceImage' };
   if (request === '@/components') return { Button, Input: 'Input', SavedPlaceBrowseCard: originalLoad(path.resolve(__dirname, '../components/SavedPlaceBrowseCard.tsx'), parent, isMain).SavedPlaceBrowseCard };
   if (request.startsWith('@/')) return originalLoad(path.resolve(__dirname, '..', request.slice(2)), parent, isMain);
@@ -80,6 +84,29 @@ async function main() {
     assert.equal(renderer.root.findByType('PlaceImage' as any).props.hydrationPolicy, 'saved_snapshot'); assertions++;
     await TestRenderer.act(async () => renderer.unmount());
   }
-  console.log(`PASS Fieldnotes Saved components (${assertions} assertions): 0/1/5/20/50/51/100 places, no duplicate lead, search/empty, exact selection, 3 text scales, snapshot photo policy`);
+  fontScale = 1;
+  const flatten = (style: any): any => Array.isArray(style) ? Object.assign({}, ...style.filter(Boolean).map(flatten)) : style ?? {};
+  for (const hasPhoto of [false, true]) {
+    hydratedPhotoUris = hasPhoto ? ['file:///saved-place.jpg'] : [];
+    const beforeRequests = hydrationRequests.length;
+    const saved = fixture(0);
+    let renderer!: ReturnType<typeof TestRenderer.create>;
+    await TestRenderer.act(async () => { renderer = TestRenderer.create(React.createElement(SavedPlaceBrowseCard, { saved, featured: true, onPress() {} })); });
+    const image = renderer.root.findByType('PlaceImage' as any);
+    const button = renderer.root.findByType('Pressable' as any);
+    assert.equal(image.props.size, hasPhoto ? 327 : 72, 'missing imagery cannot reserve a full-width hero'); assertions++;
+    assert.equal(flatten(button.props.style).flexDirection, hasPhoto ? 'column' : 'row'); assertions++;
+    assert.ok(text(renderer.toJSON()).includes(saved.place.name), 'real title survives the compact fallback'); assertions++;
+    assert.equal(image.props.hydrationPolicy, 'saved_snapshot'); assertions++;
+    assert.equal(hydrationRequests.length - beforeRequests, 1, 'visual fallback does not add hydration'); assertions++;
+    assert.equal(hydrationRequests.at(-1)?.trigger, 'saved_library'); assertions++;
+    if (hasPhoto) {
+      await TestRenderer.act(async () => image.props.onResolvedKind('neutral'));
+      assert.equal(renderer.root.findByType('PlaceImage' as any).props.size, 72, 'failed known photo collapses to compact fallback'); assertions++;
+      assert.equal(hydrationRequests.length - beforeRequests, 1, 'image failure does not trigger new provider hydration'); assertions++;
+    }
+    await TestRenderer.act(async () => renderer.unmount());
+  }
+  console.log(`PASS Fieldnotes Saved components (${assertions} assertions): 0/1/5/20/50/51/100 places, no duplicate lead, search/empty, exact selection, 3 text scales, compact no-photo/failed-photo fallback, snapshot photo policy`);
 }
 main().finally(() => { Module._load = originalLoad; }).catch((error) => { console.error(error); process.exitCode = 1; });

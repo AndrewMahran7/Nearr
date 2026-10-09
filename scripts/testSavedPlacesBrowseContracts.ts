@@ -52,7 +52,7 @@ assert.ok(!library.includes('coffee_shop'));
 // note preview, original-post affordance, and one full-card navigation target.
 assert.match(card, /<PlaceImage[\s\S]*size=\{imageSize\}/);
 assert.match(card, /numberOfLines=\{largeText \? undefined : 2\}/);
-assert.ok(card.includes('numberOfLines={largeText || featured ? 2 : 1}>{note.text}</Text>'));
+assert.ok(card.includes('numberOfLines={largeText || showFeature ? 2 : 1}>{note.text}</Text>'));
 assert.match(library, /featuredPlace \? results.slice\(1\) : results/, 'feature removed from compact data');
 assert.match(library, /saved=\{featuredPlace\}[\s\S]*featured/, 'one recent feature uses real row');
 assert.doesNotMatch(card, /height: 148/, 'rows grow with text');

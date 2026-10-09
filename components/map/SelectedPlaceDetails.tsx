@@ -1084,7 +1084,7 @@ export function SelectedPlaceDetails({
 
       <View style={styles.heroCaption}>
         <Text accessibilityRole="header" style={styles.placeName}>{saved.place.name}</Text>
-        <Text style={styles.heroMetaText}>{[categoryLabel, locality].filter(Boolean).join(' ? ')}</Text>
+        <Text style={styles.heroMetaText}>{[categoryLabel, locality].filter(Boolean).join(' · ')}</Text>
       </View>
       <View style={[styles.destinationActions, largeText && styles.destinationActionsLarge]}>
         <Button title="Directions" icon="navigation" accessibilityLabel={`Get directions to ${saved.place.name}`} onPress={onGetDirections} style={styles.directionsButton} />

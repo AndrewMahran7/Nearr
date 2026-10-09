@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { PlaceImage } from './PlaceImage';
+import { PlaceImage, type PlaceImageResolutionKind } from './PlaceImage';
 import { Radius, Spacing } from '@/constants';
 import {
   formatBrowseDistance,
@@ -32,7 +32,6 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
   const { colors, typography } = useTheme();
   const { width, fontScale } = useWindowDimensions();
   const largeText = fontScale >= 1.5;
-  const imageSize = featured ? Math.max(240, width - 48) : 72;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const category = CATEGORY_LABELS[savedPlaceCategory(saved)];
   const locality = splitPlaceAddress(saved.place.formatted_address).locality;
@@ -45,10 +44,16 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
     [saved],
   );
   const [savedImageUri, setSavedImageUri] = useState<string | null>(null);
+  const [imageResolution, setImageResolution] = useState<PlaceImageResolutionKind | null>(null);
+  // A feature earns its space with a known saved photo. Missing or failed
+  // imagery keeps the same compact, useful destination row as the collection.
+  const showFeature = featured && !!savedImageUri && imageResolution !== 'neutral';
+  const imageSize = showFeature ? Math.max(240, width - 48) : 72;
 
   useEffect(() => {
     let cancelled = false;
     setSavedImageUri(null);
+    setImageResolution(null);
     void hydrateSavedPlace({
       userId: saved.user_id,
       saved,
@@ -74,17 +79,18 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint="Opens saved place details"
-      style={({ pressed }) => [styles.card, featured && styles.featured, largeText && styles.largeTextCard, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, showFeature && styles.featured, largeText && styles.largeTextCard, pressed && styles.pressed]}
     >
-      <View style={[styles.imageWrap, featured && styles.featuredImageWrap]}>
+      <View style={[styles.imageWrap, showFeature && styles.featuredImageWrap]}>
         <PlaceImage
           googlePlaceId={saved.place.google_place_id}
           hydrationPolicy="saved_snapshot"
           initialPhotoUrls={savedImageUri ? [savedImageUri] : undefined}
           sourceUri={sourceImageUri}
+          onResolvedKind={setImageResolution}
           size={imageSize}
           borderRadius={Radius.md}
-          style={[styles.image, featured && styles.featuredImage]}
+          style={[styles.image, showFeature && styles.featuredImage]}
         />
         {hasSource ? (
           <View style={styles.sourceBadge} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -94,7 +100,7 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
       </View>
 
       <View style={styles.copy}>
-        <Text style={[typography.bodyStrong, styles.name, featured && styles.featuredName]} numberOfLines={largeText ? undefined : 2}>
+        <Text style={[typography.bodyStrong, styles.name, showFeature && styles.featuredName]} numberOfLines={largeText ? undefined : 2}>
           {saved.place.name}
         </Text>
         {locality ? (
@@ -102,7 +108,7 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
         ) : null}
         {note ? (
           <View style={styles.noteRow}>
-            <Text style={[typography.caption, styles.note]} numberOfLines={largeText || featured ? 2 : 1}>{note.text}</Text>
+            <Text style={[typography.caption, styles.note]} numberOfLines={largeText || showFeature ? 2 : 1}>{note.text}</Text>
           </View>
         ) : null}
         <View style={styles.footer}>
@@ -111,7 +117,7 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
           </View>
           <View style={styles.footerMeta}>
             {distance ? <Text style={[typography.caption, styles.distance]}>{distance}</Text> : null}
-            {featured && date ? <Text style={[typography.caption, styles.date]}>{date}</Text> : null}
+            {showFeature && date ? <Text style={[typography.caption, styles.date]}>{date}</Text> : null}
           </View>
         </View>
       </View>

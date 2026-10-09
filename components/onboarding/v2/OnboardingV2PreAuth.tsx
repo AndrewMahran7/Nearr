@@ -197,7 +197,6 @@ function WelcomeScreen({ onContinue, showNewAccountNotice }: { onContinue: () =>
     router.push({ pathname: '/(onboarding)/account', params: { intent: 'existing' } });
   };
   return <Phase1Frame footer={<View style={styles.welcomeFooter}><Phase1PrimaryButton title="Get started" onPress={onContinue} /><Pressable onPress={() => void signIn()} accessibilityRole="button" accessibilityLabel="Already have an account? Sign in" style={styles.signInLink}><Text style={styles.signInLinkText}>Already have an account? Sign in</Text></Pressable></View>}>
-    <View style={styles.welcomeBrand}><NearrSparkleMark size={54} /><Text style={styles.wordmark}>NEARR</Text></View>
     <SocialToMapIllustration />
     <Text style={styles.headlineXL}>Your inspiration, out in the world.</Text>
     <Text style={styles.body}>Share something you want to visit. Nearr turns the post into a real place on your map.</Text>

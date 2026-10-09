@@ -176,7 +176,7 @@
     {
       "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testFieldnotesSavedComponents.ts",
       "exitCode": 0,
-      "assertionCount": 42,
+      "assertionCount": 56,
       "coverage": [
         "0/1/5/20/50/51/100 collections",
         "50/51 feature cutoff",
@@ -184,7 +184,9 @@
         "search and no matches",
         "exact callback identity",
         "100/150/220% branch",
-        "saved_snapshot photo policy"
+        "saved_snapshot photo policy",
+        "compact no-photo feature fallback",
+        "failed known photo collapses to compact without extra hydration"
       ]
     }
   ],
@@ -228,5 +230,9 @@
     "phase1Visual": "pass",
     "practiceSceneCombinations": 24,
     "sharedReduceMotion": "conservative until OS preference known; live changes observed"
-  }
+  },
+  "nativeObservedCorrections": [
+    "Native detail category/locality question-mark separator corrected to middle dot",
+    "Native Saved empty hero replaced with compact locally-known-photo fallback"
+  ]
 }
