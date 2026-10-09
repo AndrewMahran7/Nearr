@@ -1,6 +1,6 @@
 {
   "audit_date_utc": "2026-10-09",
-  "research_window_utc_approx": ["19:17", "19:30"],
+  "research_window_utc_approx": ["19:17", "19:41"],
   "access": "Authenticated existing Edge Instagram browser for public post discovery only; unauthenticated yt-dlp without cookies for bounded public-video acquisition; ffmpeg native 2 fps frame sampling; no likes, follows, comments, messages, private media, login changes, paid calls, or posting.",
   "queries": [
     "3 restaurants in Rome",
@@ -9,12 +9,21 @@
     "3 waterfalls in Bali",
     "3 beaches in Thailand",
     "3 beaches in Algarve",
-    "3 beaches in Lagos Portugal"
+    "3 beaches in Lagos Portugal",
+    "3 waterfalls in Oregon",
+    "2 waterfalls oregon",
+    "3 waterfalls norway",
+    "3 coffee shops kyoto",
+    "3 waterfalls washington state"
   ],
   "new_full_video_captures": [
     {"case_id": "g_7021ac9a49bc866a", "source_public_id": "DZWFGIUT64X", "duration_seconds": 14.7, "native_frames_inspected": 29, "initial_status": "candidate", "question": "Two cascade shots need independent same-attraction matching."},
     {"case_id": "g_b6c60f33eb6a677c", "source_public_id": "DRxTKyyDG4L", "duration_seconds": 8.105011, "native_frames_inspected": 16, "initial_status": "candidate", "question": "Opening restaurant-view waterfall requires separate-site and scene-identity review."},
-    {"case_id": "g_648cb668cbe9b54c", "source_public_id": "DOd10-yCJPU", "duration_seconds": 9.87, "native_frames_inspected": 20, "initial_status": "candidate", "question": "Opening cove and bridge alias require independent geometric matching."}
+    {"case_id": "g_648cb668cbe9b54c", "source_public_id": "DOd10-yCJPU", "duration_seconds": 9.87, "native_frames_inspected": 20, "initial_status": "candidate", "question": "Opening cove and bridge alias require independent geometric matching."},
+    {"case_id": "g_fd34f4a4968645a8", "source_public_id": "CwDliJfMlku", "duration_seconds": 10.52, "native_frames_inspected": 21, "initial_status": "candidate", "question": "Three Oregon falls visible; independent full-scene match pending."},
+    {"case_id": "g_e8ea5a6ed9f6cda0", "source_public_id": "DCoz5qhN5O2", "duration_seconds": 53.633333, "native_frames_inspected": 107, "initial_status": "candidate", "question": "Three historical Kyoto cafe branches; Weekenders Tominokoji closed and relocated since recording."},
+    {"case_id": "g_d43c3b57ac321d4f", "source_public_id": "DDwmTK0hN-E", "duration_seconds": 9.285714, "native_frames_inspected": 19, "initial_status": "candidate", "question": "Opening cafe may add a fourth place; Kumonocha branch unresolved; musch Kyoto branch appears closed now."},
+    {"case_id": "g_b91b7d88dccff5c4", "source_public_id": "CwWLRa5tWFH", "duration_seconds": 5.319002, "native_frames_inspected": 11, "initial_status": "candidate", "question": "Three Washington falls visible; opening Sol Duc scene appears replayed; Spirit Falls trail access later closed."}
   ],
   "screened_out_at_caption_or_modal_triage": [
     {"source_public_id": "DQXWi0bjTaF", "reason": "Rome restaurant narration; no verified scene-level mapping acquired in this batch."},
@@ -34,5 +43,10 @@
     {"source_public_id": "Dauokq8gjK0", "reason": "Single Praia dos Três Irmãos presentation; redundant for this short multi-place batch."},
     {"source_public_id": "C9Ku7jysp06", "reason": "Same three contiguous Alvor beaches as another screened result; deprioritized for scene-boundary ambiguity."}
   ],
-  "interpretation": "Screened-out posts were not full-video reviewed; these reasons are triage judgments, not gold negative labels. Captured cases remain candidates until blind second pass and independent visual corroboration establish complete depicted sets."
+  "additional_thumbnail_triage": [
+    {"source_public_id": "C-agDy0PB1_", "reason": "Oregon thumbnail advertises a ten-waterfall montage, beyond compact 2-4 place target."},
+    {"source_public_id": "DMPzKhCSsKI", "reason": "Kyoto carousel lists six cafes including now-closed Weekenders Tominokoji; not a short video to inspect."},
+    {"source_public_id": "DbOLIzSNLAM", "reason": "Norway thumbnail focuses on one named waterfall, rather than a distinct short multi-place itinerary."}
+  ],
+  "interpretation": "Screened-out posts were not full-video reviewed; these reasons are triage judgments, not gold negative labels. Captured cases remain candidates until blind second pass and independent visual corroboration establish complete depicted sets. Historical closed venues remain identified by the source-date physical branch; closure is explicitly flagged and never remapped to a new branch."
 }
