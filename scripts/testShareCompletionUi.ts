@@ -6,6 +6,7 @@ import {
   acceptedBody,
   canDismiss,
   shareCompletionMotion,
+  shareReceiptSource,
 } from '../lib/shareCompletionUi';
 
 // Safe areas / tap targets survive.
@@ -18,8 +19,13 @@ assert.ok(SHARE_COMPLETION_LAYOUT.markSize >= 40, 'confirmation mark is visible'
 assert.equal(SHARE_COMPLETION_COPY.primary, 'Done');
 assert.equal(SHARE_COMPLETION_COPY.secondary, 'Open Nearr');
 assert.equal(SHARE_COMPLETION_COPY.acceptedTitle, 'Sent to Nearr');
-assert.match(acceptedBody(false), /add it to your map/i);
-assert.match(acceptedBody(true), /already shared/i);
+assert.equal(acceptedBody(false), 'You can close this.');
+assert.match(SHARE_COMPLETION_COPY.submittingTitle, /Sending/);
+assert.doesNotMatch(SHARE_COMPLETION_COPY.submittingBody, /can close|keeps working/);
+assert.match(SHARE_COMPLETION_COPY.submittingBody, /until it is sent/);
+assert.doesNotMatch(SHARE_COMPLETION_COPY.acceptedBody, /add.*map|saved|place found/i);
+assert.match(SHARE_COMPLETION_COPY.failureBody, /confirm this share/);
+assert.match(acceptedBody(true), /already sent/i);
 assert.notEqual(acceptedBody(true), acceptedBody(false), 'duplicate is stated honestly');
 
 // A submitting state never blocks dismissal — the extension must not hold
@@ -42,3 +48,9 @@ assert.ok(normal.fromScale < 1, 'mark scales in');
 assert.ok(normal.fromOpacity < 1, 'content fades in');
 
 console.log('PASS share completion surface layout, copy, dismissal, and Reduce Motion');
+
+assert.deepEqual(shareReceiptSource('https://www.instagram.com/reel/abc?token=secret', 'A coastal afternoon https://www.instagram.com/reel/abc?token=secret', ['https://remote.invalid/p.jpg', 'file:///local.jpg']), { title: 'Your Instagram post', caption: 'A coastal afternoon', thumbnail: 'file:///local.jpg' });
+assert.equal(shareReceiptSource('https://tiktok.com/video/123').title, 'Your TikTok post');
+assert.equal(shareReceiptSource('https://youtu.be/123').title, 'Your YouTube post');
+assert.equal(shareReceiptSource(null).title, 'Your shared post');
+assert.equal(shareReceiptSource('not-a-url', undefined, ['https://remote.invalid/p.jpg']).thumbnail, undefined, 'receipt never introduces a remote preview request');

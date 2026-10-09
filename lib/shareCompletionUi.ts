@@ -14,11 +14,11 @@ export type ShareCompletionState = 'submitting' | 'accepted' | 'recoverable';
 
 /** Completion-surface metrics shared by the React view and focused tests. */
 export const SHARE_COMPLETION_LAYOUT = {
-  horizontalPadding: 22,
+  horizontalPadding: 24,
   /** Diameter of the animated confirmation mark. */
   markSize: 56,
-  primaryHeight: 52,
-  secondaryHeight: 48,
+  primaryHeight: 50,
+  secondaryHeight: 44,
 } as const;
 
 export type ShareCompletionMotion = {
@@ -41,19 +41,19 @@ export function shareCompletionMotion(reduceMotion: boolean): ShareCompletionMot
   if (reduceMotion) {
     return { animate: false, durationMs: 0, fromScale: 1, fromOpacity: 1 };
   }
-  return { animate: true, durationMs: 260, fromScale: 0.82, fromOpacity: 0 };
+  return { animate: true, durationMs: 220, fromScale: 0.96, fromOpacity: 0 };
 }
 
 export const SHARE_COMPLETION_COPY = {
-  submittingTitle: 'Finding the place…',
-  submittingBody: 'You can close this — Nearr keeps working.',
+  submittingTitle: 'Sending to Nearr\u2026',
+  submittingBody: 'Keep this open until it is sent.',
   acceptedTitle: 'Sent to Nearr',
-  acceptedBody: "We'll add it to your map in the background. You can close this.",
-  duplicateBody: "You already shared this one — we're still on it.",
+  acceptedBody: 'You can close this.',
+  duplicateBody: 'Already sent to Nearr. You can close this.',
   primary: 'Done',
   secondary: 'Open Nearr',
   failureTitle: "Couldn't send this to Nearr",
-  failureBody: 'Check your connection and try again.',
+  failureBody: "We couldn't confirm this share. Try again.",
   retry: 'Try again',
   cancel: 'Cancel',
 } as const;
@@ -70,4 +70,16 @@ export function acceptedBody(duplicate: boolean): string {
  */
 export function canDismiss(state: ShareCompletionState): boolean {
   return state === 'submitting' || state === 'accepted' || state === 'recoverable';
+}
+
+/** Receipt identity uses the actual shared payload, never a guessed destination or fetched preview. */
+export function shareReceiptSource(url: string | null, text?: string, images?: string[]) {
+  let host = '';
+  try { host = url ? new URL(url).hostname.replace(/^www\./, '') : ''; } catch { /* Invalid payload has no source label. */ }
+  const platform = /(^|\.)instagram\.com$/i.test(host) ? 'Instagram'
+    : /(^|\.)tiktok\.com$/i.test(host) ? 'TikTok'
+    : /(^|\.)(youtube\.com|youtu\.be)$/i.test(host) ? 'YouTube' : host;
+  const caption = text?.replace(/https?:\/\/[^\s<>"']+/gi, '').replace(/\s+/g, ' ').trim();
+  const thumbnail = images?.find(uri => /^file:\/\//i.test(uri));
+  return { title: platform ? `Your ${platform} post` : 'Your shared post', caption: caption || 'Original post', thumbnail };
 }

@@ -15,7 +15,7 @@ class ShareExtensionViewController: UIViewController {
 
   private static var sharedBridge: RCTBridge?
   private weak var rootView: RCTRootView?
-  private let loadingIndicator = UIActivityIndicatorView(style: .large)
+  private let loadingIndicator = UIActivityIndicatorView(style: .medium)
   private let loadingLabel = UILabel()
   private let compactSurfaceView = UIView()
   private var payloadFailureView: UIView?
@@ -38,17 +38,25 @@ class ShareExtensionViewController: UIViewController {
     let configuredHeight = configured.map { CGFloat(truncating: $0) } ?? 360
     return min(max(configuredHeight, 340), 380)
   }()
-  private let maximumAccessibleHeight: CGFloat = 420
-  private let compactSurfaceColor = UIColor(
-    red: 13.0 / 255.0,
-    green: 13.0 / 255.0,
-    blue: 15.0 / 255.0,
-    alpha: 1
-  )
+  private let maximumAccessibleHeight: CGFloat = 600
+  // The extension owns its own window. Dynamic colors match the host Fieldnotes palette.
+  private static func adaptiveColor(light: UInt32, dark: UInt32) -> UIColor {
+    UIColor { traits in
+      let rgb = traits.userInterfaceStyle == .dark ? dark : light
+      return UIColor(red: CGFloat((rgb >> 16) & 0xff) / 255,
+                     green: CGFloat((rgb >> 8) & 0xff) / 255,
+                     blue: CGFloat(rgb & 0xff) / 255, alpha: 1)
+    }
+  }
+  private let compactSurfaceColor = ShareExtensionViewController.adaptiveColor(light: 0xF7F4EE, dark: 0x171A18)
+  private let textColor = ShareExtensionViewController.adaptiveColor(light: 0x242621, dark: 0xF4F3EB)
+  private let secondaryTextColor = ShareExtensionViewController.adaptiveColor(light: 0x62675B, dark: 0xB4BCAE)
+  private let actionColor = ShareExtensionViewController.adaptiveColor(light: 0x263A32, dark: 0xDCE9DC)
+  private let actionTextColor = ShareExtensionViewController.adaptiveColor(light: 0xFFFFFF, dark: 0x18231B)
 
   private var requestedCompactHeight: CGFloat {
     if traitCollection.preferredContentSizeCategory.isAccessibilityCategory {
-      return min(compactPresentationHeight + 60, maximumAccessibleHeight)
+      return min(compactPresentationHeight + 240, maximumAccessibleHeight)
     }
     return compactPresentationHeight
   }
@@ -133,7 +141,7 @@ class ShareExtensionViewController: UIViewController {
     compactSurfaceView.backgroundColor = compactSurfaceColor
     compactSurfaceView.isOpaque = true
     compactSurfaceView.translatesAutoresizingMaskIntoConstraints = false
-    compactSurfaceView.layer.cornerRadius = 24
+    compactSurfaceView.layer.cornerRadius = 28
     compactSurfaceView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
     compactSurfaceView.clipsToBounds = true
     view.addSubview(compactSurfaceView)
@@ -163,7 +171,7 @@ class ShareExtensionViewController: UIViewController {
   }
 
   private func setupLoadingIndicator() {
-    loadingIndicator.color = UIColor(red: 1, green: 107.0 / 255.0, blue: 0, alpha: 1)
+    loadingIndicator.color = actionColor
     compactSurfaceView.addSubview(loadingIndicator)
     loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
     NSLayoutConstraint.activate([
@@ -171,8 +179,10 @@ class ShareExtensionViewController: UIViewController {
       loadingIndicator.centerYAnchor.constraint(equalTo: compactSurfaceView.centerYAnchor, constant: -18)
     ])
     loadingLabel.text = "Preparing share…"
-    loadingLabel.textColor = .white
-    loadingLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+    loadingLabel.textColor = textColor
+    loadingLabel.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 16, weight: .semibold))
+    loadingLabel.adjustsFontForContentSizeCategory = true
+    loadingLabel.numberOfLines = 0
     loadingLabel.textAlignment = .center
     loadingLabel.translatesAutoresizingMaskIntoConstraints = false
     compactSurfaceView.addSubview(loadingLabel)
@@ -208,8 +218,10 @@ class ShareExtensionViewController: UIViewController {
     let title = UILabel()
     let isBundleFailure = reason.contains("bundle") || reason == "bridge_unavailable"
     title.text = isBundleFailure ? "Couldn’t start Nearr" : "Couldn’t read this share"
-    title.textColor = .white
-    title.font = .systemFont(ofSize: 21, weight: .bold)
+    title.textColor = textColor
+    title.font = UIFontMetrics(forTextStyle: .title2).scaledFont(for: .systemFont(ofSize: 24, weight: .bold))
+    title.adjustsFontForContentSizeCategory = true
+    title.numberOfLines = 0
     title.textAlignment = .center
 
     let body = UILabel()
@@ -218,35 +230,58 @@ class ShareExtensionViewController: UIViewController {
       : (reason == "timeout"
         ? "Instagram didn’t finish sending the link. Try again or close this window."
         : "Nearr couldn’t find a link in this item. Try again or close this window.")
-    body.textColor = UIColor(white: 0.72, alpha: 1)
-    body.font = .systemFont(ofSize: 15)
+    body.textColor = secondaryTextColor
+    body.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 16))
+    body.adjustsFontForContentSizeCategory = true
     body.textAlignment = .center
     body.numberOfLines = 0
 
     let retry = UIButton(type: .system)
     retry.setTitle("Try again", for: .normal)
-    retry.setTitleColor(.white, for: .normal)
-    retry.titleLabel?.font = .systemFont(ofSize: 16, weight: .bold)
-    retry.backgroundColor = UIColor(red: 1, green: 107.0 / 255.0, blue: 0, alpha: 1)
-    retry.layer.cornerRadius = 14
-    retry.heightAnchor.constraint(equalToConstant: 52).isActive = true
+    retry.setTitleColor(actionTextColor, for: .normal)
+    retry.titleLabel?.font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 16, weight: .bold))
+    retry.titleLabel?.adjustsFontForContentSizeCategory = true
+    retry.titleLabel?.numberOfLines = 0
+    retry.titleLabel?.textAlignment = .center
+    retry.contentEdgeInsets = UIEdgeInsets(top: 12, left: 20, bottom: 12, right: 20)
+    retry.backgroundColor = actionColor
+    retry.layer.cornerRadius = 12
+    retry.heightAnchor.constraint(greaterThanOrEqualToConstant: 50).isActive = true
     retry.addTarget(self, action: #selector(retryPayloadExtraction), for: .touchUpInside)
 
     let closeButton = UIButton(type: .system)
     closeButton.setTitle("Close", for: .normal)
-    closeButton.setTitleColor(UIColor(white: 0.82, alpha: 1), for: .normal)
-    closeButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
-    closeButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+    closeButton.setTitleColor(secondaryTextColor, for: .normal)
+    closeButton.titleLabel?.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 15, weight: .semibold))
+    closeButton.titleLabel?.adjustsFontForContentSizeCategory = true
+    closeButton.titleLabel?.numberOfLines = 0
+    closeButton.contentEdgeInsets = UIEdgeInsets(top: 10, left: 20, bottom: 10, right: 20)
+    closeButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
     closeButton.addTarget(self, action: #selector(closeFromNativeFailure), for: .touchUpInside)
 
     [title, body, retry, closeButton].forEach { container.addArrangedSubview($0) }
-    compactSurfaceView.addSubview(container)
+    installFailureContent(container)
+  }
+
+  // Native errors remain readable and actionable at the largest Dynamic Type sizes.
+  private func installFailureContent(_ content: UIStackView) {
+    let scroll = UIScrollView()
+    scroll.translatesAutoresizingMaskIntoConstraints = false
+    scroll.alwaysBounceVertical = false
+    compactSurfaceView.addSubview(scroll)
+    scroll.addSubview(content)
     NSLayoutConstraint.activate([
-      container.leadingAnchor.constraint(equalTo: compactSurfaceView.leadingAnchor, constant: 24),
-      container.trailingAnchor.constraint(equalTo: compactSurfaceView.trailingAnchor, constant: -24),
-      container.centerYAnchor.constraint(equalTo: compactSurfaceView.centerYAnchor)
+      scroll.topAnchor.constraint(equalTo: compactSurfaceView.safeAreaLayoutGuide.topAnchor),
+      scroll.leadingAnchor.constraint(equalTo: compactSurfaceView.leadingAnchor),
+      scroll.trailingAnchor.constraint(equalTo: compactSurfaceView.trailingAnchor),
+      scroll.bottomAnchor.constraint(equalTo: compactSurfaceView.safeAreaLayoutGuide.bottomAnchor),
+      content.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 24),
+      content.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -24),
+      content.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor, constant: 24),
+      content.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor, constant: -24),
+      content.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor, constant: -48)
     ])
-    payloadFailureView = container
+    payloadFailureView = scroll
   }
 
   @objc private func retryPayloadExtraction() {
@@ -366,41 +401,45 @@ class ShareExtensionViewController: UIViewController {
 
     let title = UILabel()
     title.text = "Couldn’t open Nearr"
-    title.textColor = .white
-    title.font = .systemFont(ofSize: 21, weight: .bold)
+    title.textColor = textColor
+    title.font = UIFontMetrics(forTextStyle: .title2).scaledFont(for: .systemFont(ofSize: 24, weight: .bold))
+    title.adjustsFontForContentSizeCategory = true
+    title.numberOfLines = 0
     title.textAlignment = .center
 
     let body = UILabel()
     body.text = "Try opening Nearr again, or close this window and keep browsing."
-    body.textColor = UIColor(white: 0.72, alpha: 1)
-    body.font = .systemFont(ofSize: 15)
+    body.textColor = secondaryTextColor
+    body.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 16))
+    body.adjustsFontForContentSizeCategory = true
     body.textAlignment = .center
     body.numberOfLines = 0
 
     let retry = UIButton(type: .system)
     retry.setTitle("Try again", for: .normal)
-    retry.setTitleColor(.white, for: .normal)
-    retry.titleLabel?.font = .systemFont(ofSize: 16, weight: .bold)
-    retry.backgroundColor = UIColor(red: 1, green: 107.0 / 255.0, blue: 0, alpha: 1)
-    retry.layer.cornerRadius = 14
-    retry.heightAnchor.constraint(equalToConstant: 52).isActive = true
+    retry.setTitleColor(actionTextColor, for: .normal)
+    retry.titleLabel?.font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 16, weight: .bold))
+    retry.titleLabel?.adjustsFontForContentSizeCategory = true
+    retry.titleLabel?.numberOfLines = 0
+    retry.titleLabel?.textAlignment = .center
+    retry.contentEdgeInsets = UIEdgeInsets(top: 12, left: 20, bottom: 12, right: 20)
+    retry.backgroundColor = actionColor
+    retry.layer.cornerRadius = 12
+    retry.heightAnchor.constraint(greaterThanOrEqualToConstant: 50).isActive = true
     retry.addTarget(self, action: #selector(retryHostOpen), for: .touchUpInside)
 
     let closeButton = UIButton(type: .system)
     closeButton.setTitle("Close", for: .normal)
-    closeButton.setTitleColor(UIColor(white: 0.82, alpha: 1), for: .normal)
-    closeButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
-    closeButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+    closeButton.setTitleColor(secondaryTextColor, for: .normal)
+    closeButton.titleLabel?.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 15, weight: .semibold))
+    closeButton.titleLabel?.adjustsFontForContentSizeCategory = true
+    closeButton.titleLabel?.numberOfLines = 0
+    closeButton.contentEdgeInsets = UIEdgeInsets(top: 10, left: 20, bottom: 10, right: 20)
+    closeButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
     closeButton.addTarget(self, action: #selector(closeFromNativeFailure), for: .touchUpInside)
 
     [title, body, retry, closeButton].forEach { container.addArrangedSubview($0) }
-    compactSurfaceView.addSubview(container)
-    NSLayoutConstraint.activate([
-      container.leadingAnchor.constraint(equalTo: compactSurfaceView.leadingAnchor, constant: 24),
-      container.trailingAnchor.constraint(equalTo: compactSurfaceView.trailingAnchor, constant: -24),
-      container.centerYAnchor.constraint(equalTo: compactSurfaceView.centerYAnchor)
-    ])
-    payloadFailureView = container
+    installFailureContent(container)
   }
 
   @objc private func retryHostOpen() {

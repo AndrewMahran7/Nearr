@@ -1,0 +1,66 @@
+{
+  "passed": 10,
+  "total": 10,
+  "results": [
+    {
+      "test": "testFieldnotesShareReceipt",
+      "exit": 0,
+      "summary": "PASS Fieldnotes share receipt: 15 real component renders, adaptive colors, durable acknowledgement, retry/error/auth/config gates, bundled/local-only imagery, motion alternatives, one success haptic and read-only Activity fixtures",
+      "error": null
+    },
+    {
+      "test": "testShareCompletionUi",
+      "exit": 0,
+      "summary": "PASS share completion surface layout, copy, dismissal, and Reduce Motion",
+      "error": null
+    },
+    {
+      "test": "testShareExtensionCompact",
+      "exit": 0,
+      "summary": "PASS compact native share-extension layout and Swift structure",
+      "error": null
+    },
+    {
+      "test": "testShareExtensionCompletion",
+      "exit": 0,
+      "summary": "PASS share completion render, actions, failure, async, and tap safety",
+      "error": null
+    },
+    {
+      "test": "testShareExtensionEnv",
+      "exit": 0,
+      "summary": "All share-extension environment tests passed.",
+      "error": null
+    },
+    {
+      "test": "testShareSubmission",
+      "exit": 0,
+      "summary": "ALL SHARE SUBMISSION TESTS PASSED",
+      "error": null
+    },
+    {
+      "test": "testShareJobClient",
+      "exit": 0,
+      "summary": "PASS create-share-job response contract, timer lifecycle, and sanitized diagnostics",
+      "error": null
+    },
+    {
+      "test": "testSharedAuthSession",
+      "exit": 0,
+      "summary": "All shared-auth-session tests passed.",
+      "error": null
+    },
+    {
+      "test": "testFieldnotesReviewComponents",
+      "exit": 0,
+      "summary": "PASS Fieldnotes review: 24 actual component renders across 2 appearances, 4 width/text configurations and 0/1/5 photos; independent controls, provenance, omission, disabled save, motion and virtualized Activity",
+      "error": null
+    },
+    {
+      "test": "testQueueInteractionContracts",
+      "exit": 0,
+      "summary": "PASS queue native gesture, accessibility, dismissal, and canonical save contracts",
+      "error": null
+    }
+  ]
+}

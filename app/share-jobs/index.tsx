@@ -27,6 +27,7 @@ import { ShareJobsSheet } from '@/components/ShareJobsSheet';
 import { SwipeableRow } from '@/components/SwipeableRow';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
+import { isMapPreviewMode } from '@/lib/mapPreview';
 import { useAuth } from '@/hooks/useAuth';
 import { useShareJobs } from '@/hooks/useShareJobs';
 import { routeShareJobCard } from '@/lib/shareJobRouting';
@@ -108,13 +109,14 @@ import {
 // is progressing.
 const STALE_PROCESSING_MS = RECOGNITION_LONG_RUNNING_MS;
 
-function RecentAutoSaveImage({ item }: { item: RecentAutoSave }) {
+function RecentAutoSaveImage({ item, readOnly = false }: { item: RecentAutoSave; readOnly?: boolean }) {
   const knownPhotos = useMemo(() => item.candidate?.photoUrls?.length
     ? item.candidate.photoUrls
     : item.candidate?.photoUrl ? [item.candidate.photoUrl] : [], [item.candidate]);
   const [localPhoto, setLocalPhoto] = useState<string | null>(null);
 
   useEffect(() => {
+    if (readOnly) return;
     let cancelled = false;
     const load = async () => {
       if (item.candidate && isPersistableShareJobCandidate(item.candidate)) {
@@ -134,12 +136,13 @@ function RecentAutoSaveImage({ item }: { item: RecentAutoSave }) {
     };
     void load().catch(() => undefined);
     return () => { cancelled = true; };
-  }, [item.candidate, item.savedPlace, knownPhotos]);
+  }, [item.candidate, item.savedPlace, knownPhotos, readOnly]);
 
   return (
     <PlaceImage
       googlePlaceId={item.savedPlace.place.google_place_id}
-      hydrationPolicy="saved_snapshot"
+      hydrationPolicy={readOnly ? "compact_known_only" : "saved_snapshot"}
+      allowGoogleLookup={!readOnly}
       initialPhotoUrls={localPhoto ? [localPhoto] : knownPhotos}
       fallbackSourceUri={item.candidate?.sourceFrameUrl}
       size={64}
@@ -263,7 +266,10 @@ function shouldShowHost(job: ShareJob): boolean {
   return !['instagram', 'tiktok', 'youtube'].includes((job.source_platform ?? '').toLowerCase());
 }
 
-function ShareJobsQueueScreen() {
+export type ActivityPreviewData = { jobs: ShareJob[]; recentAutoSaves: RecentAutoSave[] };
+
+function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewData }) {
+  const previewActive = __DEV__ && isMapPreviewMode() && !!previewData;
   useEffect(() => {
     recordOnboardingV2RouteDiagnostic('screen_mounted', {
       route: '/share-jobs',
@@ -274,7 +280,10 @@ function ShareJobsQueueScreen() {
   const { colors, typography } = useTheme();
   const vayrinEnabled = isVayrinProductUiEnabled();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { jobs, recentAutoSaves, loading, refreshing, refresh, enabled, authLoading } = useShareJobs();
+  const live = useShareJobs();
+  const { jobs, recentAutoSaves, loading, refreshing, refresh, enabled, authLoading } = previewActive
+    ? { ...live, ...previewData!, loading: false, refreshing: false, authLoading: false, enabled: true, refresh: async () => undefined }
+    : live;
   const { session, isOfflineSession } = useAuth();
   const userId = session?.user?.id ?? null;
   const [actingId, setActingId] = useState<string | null>(null);
@@ -288,6 +297,7 @@ function ShareJobsQueueScreen() {
   // Locally acknowledged completed rows stay hidden across launches. This never
   // deletes a saved place or mutates a job.
   useEffect(() => {
+    if (previewActive) return;
     let active = true;
     void Promise.all([readClearedQueueIds(userId), readDismissedQueueIds(userId)]).then(([cleared, dismissed]) => {
       if (active) {
@@ -298,7 +308,7 @@ function ShareJobsQueueScreen() {
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [userId, previewActive]);
 
   // Presentation grouping (visibility already filtered upstream by the hook):
   // needs_help + failed are both actionable → one "Needs you" section;
@@ -319,6 +329,7 @@ function ShareJobsQueueScreen() {
   const clearableCount = completedRows.length;
 
   async function clearCompleted() {
+    if (previewActive) return;
     const lock = 'clear-completed';
     if (actionLocksRef.current.size > 0 || clearableCount === 0) return;
     actionLocksRef.current.add(lock);
@@ -343,6 +354,7 @@ function ShareJobsQueueScreen() {
   }
 
   async function emptyQueue() {
+    if (previewActive) return;
     if (actionLocksRef.current.size > 0 || !hasContent) return;
     const requestedCount = visibleJobs.length + completedRows.length;
     void trackEvent('queue_empty_requested', { queue_empty_count: requestedCount });
@@ -376,7 +388,7 @@ function ShareJobsQueueScreen() {
         count: result.archivedCount,
       });
       hapticSuccess();
-      Alert.alert('Queue emptied');
+      Alert.alert('Activity cleared');
     } catch (error) {
       setDismissedIds(previousDismissed);
       setClearedIds(previousCleared);
@@ -384,8 +396,8 @@ function ShareJobsQueueScreen() {
       const offline = isLikelyOfflineError(error);
       void trackEvent('queue_empty_failed', { reason: offline ? 'offline' : 'server' });
       Alert.alert(
-        offline ? "You're offline" : "Couldn't empty queue",
-        offline ? 'Connect to empty Activity.' : 'Your queue was reloaded. Please try again.',
+        offline ? "You're offline" : "Couldn't clear Activity",
+        offline ? 'Connect to empty Activity.' : 'Activity was reloaded. Please try again.',
       );
     } finally {
       actionLocksRef.current.delete(lock);
@@ -394,12 +406,13 @@ function ShareJobsQueueScreen() {
   }
 
   function confirmEmptyQueue() {
+    if (previewActive) return;
     Alert.alert(
       'Empty Activity?',
       "This removes all items from Activity. Your saved places won't be affected.",
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Empty queue', style: 'destructive', onPress: () => void emptyQueue() },
+        { text: 'Empty Activity', style: 'destructive', onPress: () => void emptyQueue() },
       ],
     );
   }
@@ -458,6 +471,7 @@ function ShareJobsQueueScreen() {
   }
 
   async function dismissJob(job: ShareJob) {
+    if (previewActive) return;
     const lock = `dismiss:${job.id}`;
     if (actionLocksRef.current.size > 0) return;
     actionLocksRef.current.add(lock);
@@ -479,6 +493,7 @@ function ShareJobsQueueScreen() {
   }
 
   async function saveJob(job: ShareJob) {
+    if (previewActive) return;
     const row = queueRowFor(job);
     const candidates = job.candidate_payload?.candidates;
     const candidate = Array.isArray(candidates) && candidates.length === 1 ? candidates[0] : null;
@@ -510,6 +525,7 @@ function ShareJobsQueueScreen() {
   }
 
   async function dismissCompleted(item: RecentAutoSave) {
+    if (previewActive) return;
     const lock = `completed:${item.resultId}`;
     if (actionLocksRef.current.size > 0) return;
     actionLocksRef.current.add(lock);
@@ -536,6 +552,7 @@ function ShareJobsQueueScreen() {
    * confirmation the map's place detail uses, sharing one copy helper.
    */
   function confirmRemoveRecent(item: RecentAutoSave) {
+    if (previewActive) return;
     const copy = savedPlaceRemovalCopy(item.savedPlace.place.name);
     Alert.alert(copy.title, copy.message, [
       { text: copy.cancelLabel, style: 'cancel' },
@@ -548,6 +565,7 @@ function ShareJobsQueueScreen() {
   }
 
   async function undoRecent(item: RecentAutoSave) {
+    if (previewActive) return;
     const lock = `undo:${item.savedPlaceId}`;
     if (actionLocksRef.current.size > 0) return;
     actionLocksRef.current.add(lock);
@@ -576,6 +594,7 @@ function ShareJobsQueueScreen() {
    * the exact row it will render and later focus on the map.
    */
   function openCompletedSave(item: RecentAutoSave) {
+    if (previewActive) return;
     upsertSavedPlaceIntoCache(item.savedPlace);
     router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: item.shareJobId } });
   }
@@ -589,12 +608,12 @@ function ShareJobsQueueScreen() {
     return (
       <Pressable
         onPress={() => openCompletedSave(item)}
-        disabled={busy}
+        disabled={previewActive || busy}
         style={({ pressed }) => [styles.row, pressed ? styles.rowPressed : null]}
         accessibilityRole="button"
         accessibilityLabel={`Open ${item.savedPlace.place.name}`}
       >
-        <RecentAutoSaveImage item={item} />
+        <RecentAutoSaveImage item={item} readOnly={previewActive} />
         <View style={styles.rowMain}>
           <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={2}>{item.savedPlace.place.name}</Text>
           <View style={styles.autoSaveMeta}>
@@ -604,7 +623,7 @@ function ShareJobsQueueScreen() {
         </View>
         <Pressable
           onPress={() => confirmRemoveRecent(item)}
-          disabled={busy}
+          disabled={previewActive || busy}
           hitSlop={8}
           style={styles.undoButton}
           accessibilityRole="button"
@@ -627,6 +646,7 @@ function ShareJobsQueueScreen() {
   // pretend the job is progressing; we let the user open the original post or
   // remove it from Activity.
   function openStalledActions(job: ShareJob) {
+    if (previewActive) return;
     const original = job.canonical_url ?? job.source_url;
     const buttons: Parameters<typeof Alert.alert>[2] = [];
     if (original) {
@@ -763,7 +783,7 @@ function ShareJobsQueueScreen() {
   function renderActivityItem({ item }: { item: ActivityItem }) {
     if (item.kind === 'section') return <View style={styles.sectionHeader}>
       <Text style={[typography.label, styles.sectionTitle]}>{item.title}</Text>
-      {item.completed ? <Pressable onPress={() => void clearCompleted()} disabled={!!actingId}
+      {item.completed ? <Pressable onPress={() => void clearCompleted()} disabled={previewActive || !!actingId}
         style={styles.clearCompletedButton} accessibilityRole="button" accessibilityLabel={clearCompletedLabel(clearableCount)}>
         <Text style={styles.undoAllText}>Clear completed</Text>
       </Pressable> : null}
@@ -771,12 +791,12 @@ function ShareJobsQueueScreen() {
     if (item.kind === 'saved') { const saved = item.item; return <SwipeableRow rowId={'completed:' + saved.resultId}
       availability={{ save: false, dismiss: true, saveBlockedReason: 'already_saved' }}
       actions={[{ name: 'dismiss', label: 'Remove from Activity' }]} onAction={() => void dismissCompleted(saved)}
-      coordinator={swipeCoordinator} disabled={actingId === saved.savedPlaceId || actingId === 'completed:' + saved.resultId || actingId === 'clear-completed'}
+      coordinator={swipeCoordinator} disabled={previewActive || actingId === saved.savedPlaceId || actingId === 'completed:' + saved.resultId || actingId === 'clear-completed'}
       accessibilityLabel={saved.savedPlace.place.name + '. Saved automatically'}>
       {renderRecentAutoSave(saved)}</SwipeableRow>; }
     const job = item.job, row = queueRowFor(job);
     return <SwipeableRow rowId={'job:' + job.id} availability={queueSwipeAvailability(row)} actions={queueAccessibilityActions(row)}
-      onAction={(action) => handleRowAction(job, action)} coordinator={swipeCoordinator} disabled={actingId === job.id}
+      onAction={(action) => handleRowAction(job, action)} coordinator={swipeCoordinator} disabled={previewActive || actingId === job.id}
       accessibilityLabel={jobTitle(job)}>{renderRow(job)}</SwipeableRow>;
   }
 
@@ -788,7 +808,7 @@ function ShareJobsQueueScreen() {
       onBack={goBack}
       backLabel="Close Activity"
       icon="close"
-      rightAction={hasContent ? {
+      rightAction={hasContent && !previewActive ? {
         accessibilityLabel: 'Activity actions',
         onPress: confirmEmptyQueue,
         disabled: !!actingId,
@@ -825,6 +845,7 @@ function ShareJobsQueueScreen() {
         ListHeaderComponent={<View style={styles.pageIntro}>
           <Text style={[typography.title, styles.pageTitle]}>Finding your places</Text>
           <Text style={[typography.body, styles.intro]}>From your posts. Into your world.</Text>
+          {previewActive ? <Text style={[typography.caption, { color: colors.accent }]}>Development preview - Read-only fixtures</Text> : null}
         </View>}
         ListEmptyComponent={loading ? <View style={styles.loadingWrap}><ActivityIndicator color={colors.primary} /><Text style={styles.emptyBody}>Loading your activity…</Text></View> :
           <View style={styles.emptyState}>
@@ -935,14 +956,14 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
 // Route-level error boundary so a single malformed job row (or any unexpected
 // render error) shows a friendly retry + a SANITIZED log line, instead of
 // dropping the whole app to the generic global boundary.
-export default function ShareJobsQueueRoute() {
+export default function ShareJobsQueueRoute({ previewData }: { previewData?: ActivityPreviewData } = {}) {
   return (
     <ErrorBoundary
       name="share-jobs"
       fallbackTitle="Couldn't open Activity"
       fallbackBody="Something went wrong loading Activity. Try again."
     >
-      <ShareJobsQueueScreen />
+      <ShareJobsQueueScreen previewData={previewData} />
     </ErrorBoundary>
   );
 }

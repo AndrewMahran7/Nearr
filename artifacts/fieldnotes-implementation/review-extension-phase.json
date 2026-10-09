@@ -1,0 +1,32 @@
+{
+  "phase": "activity-review-share-extension",
+  "activityReviewCheckpoint": "8cfa31b",
+  "reviewScriptsPassed": 25,
+  "extensionScriptsPassed": 10,
+  "actualReviewComponentRendersWithNativeHostMocks": 24,
+  "actualExtensionRootRendersWithNativeBridgeMocks": 15,
+  "typescript": "pass",
+  "swiftPluginGeneratedSourceMatchesAuthoritative": true,
+  "localSwiftCompilerExecuted": false,
+  "iOSShareExtensionHostVerified": false,
+  "nativeScreenshotsProducedByThisPhase": false,
+  "receiptUsesBundledIcon": true,
+  "receiptRemoteImageRequestsAdded": 0,
+  "backendOrRecognitionChanges": false,
+  "embeddedBundleSelectionChanged": false,
+  "motion": {
+    "receiptDurationMs": 220,
+    "receiptScaleFrom": 0.96,
+    "reduceMotion": "static icon; no pulse; disclosure and programmatic paging nonanimated",
+    "acceptedFeedback": "once after durable acknowledgement, suppressed after terminal action or unmount",
+    "errorFeedback": "once after direct attempt exhausts recovery",
+    "checkboxOrPollingFeedback": false
+  },
+  "remainingNativeAcceptance": [
+    "iOS Development build compile and embedded extension validation",
+    "share-host geometry and safe areas",
+    "VoiceOver and maximum Dynamic Type",
+    "native haptic availability",
+    "light/dark appearance continuity"
+  ]
+}

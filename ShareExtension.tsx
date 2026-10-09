@@ -36,10 +36,12 @@
  *     as the fallback.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  Image,
+  useColorScheme,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -47,7 +49,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useReducedMotion } from 'react-native-reanimated';
+import { useReduceMotion } from './lib/useReduceMotion';
+import { LightPalette, DarkPalette } from './constants/colors';
+import { hapticSuccess, hapticError } from './lib/haptics';
 import { close, openHostApp, type InitialProps } from 'expo-share-extension';
 
 import { sharedAuth } from './lib/sharedAuth';
@@ -77,6 +81,7 @@ import {
 import {
   SHARE_COMPLETION_LAYOUT,
   shareCompletionMotion,
+  shareReceiptSource,
 } from './lib/shareCompletionUi';
 import {
   completionView,
@@ -408,6 +413,7 @@ export default function ShareExtension(props: ExtensionInitialProps) {
 }
 
 function LegacyShareExtension(props: ExtensionInitialProps) {
+  const { colors, styles } = useExtensionStyles();
   // Guard against React 18 strict-mode double-invocation: only fire the
   // host-app handoff once per extension instantiation.
   const handledRef = useRef(false);
@@ -496,7 +502,7 @@ function LegacyShareExtension(props: ExtensionInitialProps) {
     };
   }, [props]);
 
-  const diagPanel = diag ? (
+  const diagPanel = diag && areDeveloperToolsVisible() ? (
     <View style={styles.diagPanel}>
       <Text style={styles.diagTitle}>share-extension diagnostics</Text>
       <Text style={styles.diagLine}>backend configured: {diag.backendConfigured ? 'yes' : 'no'}</Text>
@@ -531,7 +537,7 @@ function LegacyShareExtension(props: ExtensionInitialProps) {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator />
+      <ActivityIndicator color={colors.primary} />
       <Text style={styles.label}>Saving to Nearr…</Text>
       {diagPanel}
     </View>
@@ -565,7 +571,7 @@ type AsyncUi =
 
 /**
  * Cohesive content root shared by every async extension state. Native owns the
- * compact dark surface and clips this transparent React root to that surface;
+ * compact adaptive surface and clips this transparent React root to that surface;
  * the share host remains visible through the rest of its controller bounds.
  */
 function AsyncSurface({
@@ -577,6 +583,7 @@ function AsyncSurface({
   onClose: () => void;
   showClose?: boolean;
 }) {
+  const { asyncStyles } = useExtensionStyles();
   return (
     <SafeAreaView style={asyncStyles.surface}>
       {showClose ? (
@@ -595,7 +602,7 @@ function AsyncSurface({
       ) : null}
       <ScrollView
         style={asyncStyles.scroll}
-        contentContainerStyle={asyncStyles.contentContainer}
+        contentContainerStyle={[asyncStyles.contentContainer, showClose ? { paddingTop: 62 } : null]}
         alwaysBounceVertical={false}
         showsVerticalScrollIndicator={false}
       >
@@ -610,7 +617,8 @@ function AsyncSurface({
  * final frame immediately when Reduce Motion is enabled.
  */
 function SavedMark() {
-  const reduceMotion = useReducedMotion();
+  const { asyncStyles } = useExtensionStyles();
+  const reduceMotion = useReduceMotion();
   const progress = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
 
   useEffect(() => {
@@ -664,13 +672,17 @@ function SavedMark() {
         />
       ) : null}
       <Animated.View style={[asyncStyles.brandDot, { opacity, transform: [{ scale }] }]}>
-        <Text style={asyncStyles.check}>✓</Text>
+        <Image source={require('./assets/icon.png')} style={asyncStyles.brandIcon} accessible={false} />
       </Animated.View>
     </Animated.View>
   );
 }
 
 function AsyncShareExtension(props: ExtensionInitialProps) {
+  const { colors, asyncStyles } = useExtensionStyles();
+  const receipt = shareReceiptSource(pickSharedUrl(props), props.text, props.images);
+  const acceptedFeedbackRef = useRef(false);
+  const feedbackAllowedRef = useRef(true);
   const handledRef = useRef(false);
   // ONE stable submission id for THIS share action. Used as the idempotency key
   // for create-share-job AND propagated to the host fallback deep link (?sid=)
@@ -683,7 +695,10 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
   const completionActionsRef = useRef<CompletionActions | null>(null);
   const submissionGateRef = useRef<SubmissionGate<void> | null>(null);
   if (!completionActionsRef.current) {
-    completionActionsRef.current = createCompletionActions({ close, openHostApp });
+    completionActionsRef.current = createCompletionActions({
+      close: () => { feedbackAllowedRef.current = false; close(); },
+      openHostApp: (path) => { feedbackAllowedRef.current = false; openHostApp(path); },
+    });
   }
 
   const submit = async () => {
@@ -802,6 +817,10 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
       // Instagram) or View queue (open the host app). The durable job is
       // already persisted server-side, so no auto-dismiss is needed.
       setUi({ kind: 'accepted', duplicate: result.duplicate });
+      if (feedbackAllowedRef.current && !acceptedFeedbackRef.current) {
+        acceptedFeedbackRef.current = true;
+        hapticSuccess();
+      }
     } else if (result.reason === 'unauthorized' || result.reason === 'missing_auth') {
       // Server rejected the token we thought was valid (revoked / clock skew).
       // Recover through the host rather than looping on sign-in.
@@ -825,6 +844,7 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
         'ui_state',
         'submission_failure',
       );
+      if (feedbackAllowedRef.current) hapticError();
       setUi({
         kind: 'network_failure',
         reason: result.reason,
@@ -846,6 +866,7 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
     handledRef.current = true;
     void submitOnce();
     return () => {
+      feedbackAllowedRef.current = false;
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -885,10 +906,17 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
     const view = completionView({ kind: 'accepted', duplicate: ui.duplicate });
     return (
       <AsyncSurface onClose={finish} showClose={false}>
-        <SavedMark />
-        <Text style={asyncStyles.eyebrow}>NEARR</Text>
-        <Text style={asyncStyles.title}>{view.title}</Text>
-        <Text style={asyncStyles.subtle}>{view.body}</Text>
+        <View style={asyncStyles.receiptHeading}>
+          <SavedMark />
+          <View style={asyncStyles.receiptHeadingText}>
+            <Text style={[asyncStyles.title, asyncStyles.receiptTitle]}>{view.title}</Text>
+            <Text style={[asyncStyles.subtle, asyncStyles.receiptBody]}>{view.body}</Text>
+          </View>
+        </View>
+        <View style={asyncStyles.sourceRow} accessibilityLabel={`${receipt.title}. ${receipt.caption}`}>
+          {receipt.thumbnail ? <Image source={{ uri: receipt.thumbnail }} style={asyncStyles.sourceImage} accessible={false} /> : <View style={asyncStyles.sourcePlaceholder}><Text style={asyncStyles.sourceGlyph}>{'\u2197'}</Text></View>}
+          <View style={asyncStyles.sourceText}><Text style={asyncStyles.sourceTitle}>{receipt.title}</Text><Text style={asyncStyles.sourceCaption} numberOfLines={2}>{receipt.caption}</Text></View>
+        </View>
         <Pressable
           style={({ pressed }) => [
             asyncStyles.primaryBtn,
@@ -972,10 +1000,10 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
     // The code is shown because only a developer ever sees this screen.
     return (
       <AsyncSurface onClose={finish} showClose={false}>
-        <Text style={asyncStyles.title}>Nearr build is misconfigured</Text>
+        <Text style={asyncStyles.title}>Sharing is unavailable</Text>
         <Text style={asyncStyles.subtle}>
-          This build&apos;s environment does not agree with itself, so nothing was
-          sent. Rebuild the app for this lane. ({ui.codes})
+          Nothing was sent. Close this and try again after Nearr has been updated.
+          {areDeveloperToolsVisible() ? ` Development configuration: ${ui.codes}` : ''}
         </Text>
         <Pressable
           style={asyncStyles.secondaryBtn}
@@ -1021,7 +1049,7 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
   const submittingView = completionView({ kind: 'submitting' });
   return (
     <AsyncSurface onClose={finish} showClose={false}>
-      <ActivityIndicator color={NEARR_ORANGE} />
+      <ActivityIndicator color={colors.primary} />
       <Text style={asyncStyles.title}>{submittingView.title}</Text>
       <Text style={asyncStyles.subtle}>{submittingView.body}</Text>
       <Pressable
@@ -1036,7 +1064,7 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
   );
 }
 
-const styles = StyleSheet.create({
+function createLegacyStyles(colors: typeof LightPalette) { return StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -1046,197 +1074,103 @@ const styles = StyleSheet.create({
   label: {
     marginTop: 12,
     fontSize: 16,
-    color: '#FFFFFF',
+    color: colors.text,
   },
   checkmark: {
     fontSize: 40,
-    color: '#1a8a3a',
+    color: colors.success,
   },
   diagPanel: {
     marginTop: 16,
     padding: 8,
-    backgroundColor: '#242428',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 6,
     alignSelf: 'stretch',
   },
   diagTitle: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#D1D1D6',
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   diagLine: {
     fontSize: 11,
-    color: '#B7B7BE',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   title: {
     marginTop: 10,
     fontSize: 17,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
     textAlign: 'center',
   },
   subtle: {
     marginTop: 4,
     fontSize: 14,
-    color: '#B7B7BE',
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   subtleSmall: {
     marginTop: 6,
     fontSize: 12,
-    color: '#8E8E93',
+    color: colors.textMuted,
     textAlign: 'center',
     paddingHorizontal: 12,
   },
   primaryBtn: {
     marginTop: 14,
-    backgroundColor: '#D85C16',
+    backgroundColor: colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 22,
     borderRadius: 999,
   },
-  primaryText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  primaryText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },
   secondaryBtn: {
     marginTop: 10,
     paddingVertical: 8,
     paddingHorizontal: 18,
   },
-  secondaryText: { color: '#D85C16', fontSize: 14, fontWeight: '600' },
-});
+  secondaryText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
+}); }
 
-// ---------------------------------------------------------------------------
-// Async share-extension styles — matches the Nearr dark map UI (near-black
-// surface, white type, orange accent). Kept SEPARATE from the legacy `styles`
-// above so the flag-off (legacy) extension appearance is unchanged.
-// ---------------------------------------------------------------------------
-const NEARR_ORANGE = '#FF6B00';
+/** The extension is a separate React root, so appearance follows the OS without a host ThemeProvider. */
+function useExtensionStyles() {
+  const appearance = useColorScheme();
+  const colors = appearance === 'dark' ? DarkPalette : LightPalette;
+  return useMemo(() => ({ colors, styles: createLegacyStyles(colors), asyncStyles: createAsyncStyles(colors) }), [colors]);
+}
 
-const asyncStyles = StyleSheet.create({
-  surface: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
+function createAsyncStyles(colors: typeof LightPalette) { return StyleSheet.create({
+  surface: { flex: 1, backgroundColor: 'transparent' },
   scroll: { flex: 1 },
-  contentContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: SHARE_COMPLETION_LAYOUT.horizontalPadding,
-    paddingVertical: 20,
-  },
-  content: {
-    width: '100%',
-    maxWidth: 420,
-    alignSelf: 'center',
-    alignItems: 'center',
-  },
-  closeBtn: {
-    position: 'absolute',
-    zIndex: 2,
-    top: 10,
-    right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#242428',
-  },
+  contentContainer: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: SHARE_COMPLETION_LAYOUT.horizontalPadding, paddingVertical: 20 },
+  content: { width: '100%', maxWidth: 420, alignSelf: 'center', alignItems: 'center' },
+  closeBtn: { position: 'absolute', zIndex: 2, top: 10, right: 16, width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated },
   closeBtnPressed: { opacity: 0.7 },
-  closeIcon: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    lineHeight: 27,
-    fontWeight: '400',
-  },
-  markWrap: {
-    width: SHARE_COMPLETION_LAYOUT.markSize + 20,
-    height: SHARE_COMPLETION_LAYOUT.markSize + 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  markPulse: {
-    position: 'absolute',
-    width: SHARE_COMPLETION_LAYOUT.markSize + 12,
-    height: SHARE_COMPLETION_LAYOUT.markSize + 12,
-    borderRadius: (SHARE_COMPLETION_LAYOUT.markSize + 12) / 2,
-    backgroundColor: NEARR_ORANGE,
-  },
-  brandDot: {
-    width: SHARE_COMPLETION_LAYOUT.markSize,
-    height: SHARE_COMPLETION_LAYOUT.markSize,
-    borderRadius: SHARE_COMPLETION_LAYOUT.markSize / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,107,0,0.14)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,0,0.3)',
-  },
-  check: {
-    fontSize: 28,
-    lineHeight: 32,
-    color: NEARR_ORANGE,
-    fontWeight: '700',
-  },
-  eyebrow: {
-    marginTop: 1,
-    color: NEARR_ORANGE,
-    fontSize: 11,
-    lineHeight: 15,
-    fontWeight: '800',
-    letterSpacing: 2.2,
-  },
-  title: {
-    marginTop: 5,
-    fontSize: 22,
-    lineHeight: 27,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  subtle: {
-    marginTop: 6,
-    fontSize: 15,
-    color: '#B7B7BE',
-    textAlign: 'center',
-    lineHeight: 21,
-    maxWidth: 330,
-  },
-  diagnosticText: {
-    marginTop: 8,
-    fontSize: 11,
-    color: '#8E8E93',
-    textAlign: 'center',
-    lineHeight: 15,
-    maxWidth: 360,
-  },
-  // Prominent, 56px tall, full-width primary action.
-  primaryBtn: {
-    marginTop: 18,
-    alignSelf: 'stretch',
-    minHeight: SHARE_COMPLETION_LAYOUT.primaryHeight,
-    backgroundColor: NEARR_ORANGE,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  primaryBtnPressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.99 }],
-  },
-  primaryText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  // Text button (e.g. "Open Nearr") — always visible directly below the primary
-  // action.
-  secondaryBtn: {
-    marginTop: 3,
-    alignSelf: 'stretch',
-    minHeight: SHARE_COMPLETION_LAYOUT.secondaryHeight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
+  closeIcon: { color: colors.text, fontSize: 24, lineHeight: 27, fontWeight: '400' },
+  markWrap: { width: SHARE_COMPLETION_LAYOUT.markSize, height: SHARE_COMPLETION_LAYOUT.markSize, alignItems: 'center', justifyContent: 'center' },
+  markPulse: { position: 'absolute', width: SHARE_COMPLETION_LAYOUT.markSize + 12, height: SHARE_COMPLETION_LAYOUT.markSize + 12, borderRadius: 20, backgroundColor: colors.brand },
+  brandDot: { width: SHARE_COMPLETION_LAYOUT.markSize, height: SHARE_COMPLETION_LAYOUT.markSize, borderRadius: 12, overflow: 'hidden' },
+  brandIcon: { width: SHARE_COMPLETION_LAYOUT.markSize, height: SHARE_COMPLETION_LAYOUT.markSize },
+  title: { marginTop: 12, fontSize: 24, lineHeight: 29, fontWeight: '700', color: colors.text, textAlign: 'center' },
+  subtle: { marginTop: 6, fontSize: 16, color: colors.textSecondary, textAlign: 'center', lineHeight: 22, maxWidth: 330 },
+  diagnosticText: { marginTop: 8, fontSize: 11, color: colors.textSecondary, textAlign: 'center', lineHeight: 15, maxWidth: 360 },
+  receiptHeading: { flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', gap: 16 },
+  receiptHeadingText: { flex: 1, minWidth: 0 },
+  receiptTitle: { marginTop: 0, textAlign: 'left' },
+  receiptBody: { textAlign: 'left' },
+  sourceRow: { flexDirection: 'row', gap: 12, alignItems: 'center', alignSelf: 'stretch', paddingVertical: 12, marginTop: 14, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  sourceImage: { width: 40, height: 44, borderRadius: 8 },
+  sourcePlaceholder: { width: 40, height: 44, borderRadius: 8, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
+  sourceGlyph: { color: colors.primary, fontSize: 22 },
+  sourceText: { flex: 1, minWidth: 0 },
+  sourceTitle: { color: colors.text, fontSize: 14, lineHeight: 19, fontWeight: '600' },
+  sourceCaption: { color: colors.textSecondary, fontSize: 13, lineHeight: 18, marginTop: 2 },
+  primaryBtn: { marginTop: 16, alignSelf: 'stretch', minHeight: SHARE_COMPLETION_LAYOUT.primaryHeight, backgroundColor: colors.primary, borderRadius: 12, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+  primaryBtnPressed: { opacity: 0.86 },
+  primaryText: { color: colors.textInverse, fontSize: 16, lineHeight: 22, fontWeight: '700', textAlign: 'center' },
+  secondaryBtn: { marginTop: 2, alignSelf: 'stretch', minHeight: SHARE_COMPLETION_LAYOUT.secondaryHeight, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 10 },
   secondaryBtnPressed: { opacity: 0.62 },
-  secondaryText: { color: '#D1D1D6', fontSize: 15, fontWeight: '600' },
-});
+  secondaryText: { color: colors.textSecondary, fontSize: 15, lineHeight: 20, fontWeight: '600', textAlign: 'center' },
+}); }

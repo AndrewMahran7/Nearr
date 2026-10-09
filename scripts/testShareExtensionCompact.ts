@@ -174,7 +174,7 @@ assert.match(swift, /compactSurfaceView\.bottomAnchor\.constraint\(equalTo: view
 assert.match(swift, /compactSurfaceView\.heightAnchor\.constraint\(equalToConstant: requestedCompactHeight\)/);
 assert.match(swift, /layer\.maskedCorners = \[\.layerMinXMinYCorner, \.layerMaxXMinYCorner\]/);
 assert.match(swift, /preferredContentSize = target/);
-assert.match(swift, /maximumAccessibleHeight: CGFloat = 420/);
+assert.match(swift, /maximumAccessibleHeight: CGFloat = 600/);
 assert.match(swift, /preferredContentSizeCategory\.isAccessibilityCategory/);
 
 // Both startup and React content are confined to the compact native surface.
@@ -193,7 +193,8 @@ assert.doesNotMatch(swift, /view\.backgroundColor = compactSurfaceColor/);
 // actions, failure UI, bundle identity, and generated target remain pinned.
 assert.match(react, /const finish = \(\) => completionActionsRef\.current\?\.done\(\)/);
 assert.match(react, /completionActionsRef\.current\?\.openNearr\(SHARE_JOBS_DEEPLINK_PATH\)/);
-assert.match(react, /<Text style={asyncStyles\.title}>{view\.title}<\/Text>/);
+assert.match(react, /asyncStyles\.receiptTitle/);
+assert.match(react, /\{view\.title\}/);
 assert.match(react, /<Text style={asyncStyles\.subtle}>{view\.body}<\/Text>/);
 assert.match(react, /ui\.kind === 'network_failure'/);
 assert.match(swift, /Bundle\.main\.object\(forInfoDictionaryKey: "AppGroup"\)/);
@@ -239,7 +240,7 @@ assert.doesNotMatch(infoPlistPlugin, /NSExtensionMainStoryboard/);
 
 // React fills only the native surface and contributes no fake screen-sized
 // card, spacer, or opaque background of its own.
-assert.match(react, /contentContainerStyle={asyncStyles\.contentContainer}/);
+assert.match(react, /contentContainerStyle=\{\[asyncStyles\.contentContainer/);
 assert.match(react, /backgroundColor: 'transparent'/);
 assert.match(react, /<SafeAreaView style={asyncStyles\.surface}>/);
 assert.doesNotMatch(react, /height: '100%'/);
@@ -280,3 +281,14 @@ assert.match(swift, /extension_url_extracted/);
 assert.doesNotMatch(swift, /openURL\(url\)\s*\n\s*self\.close\(\)/);
 
 console.log('PASS compact native share-extension layout and Swift structure');
+
+assert.match(swift, /adaptiveColor\(light: 0xF7F4EE, dark: 0x171A18\)/);
+assert.match(swift, /UIFontMetrics/);
+assert.match(swift, /adjustsFontForContentSizeCategory = true/);
+assert.match(swift, /private func installFailureContent/);
+assert.match(swift, /scroll\.contentLayoutGuide/);
+assert.match(swift, /retry\.heightAnchor\.constraint\(greaterThanOrEqualToConstant: 50\)/);
+assert.match(react, /useReduceMotion/);
+assert.match(react, /source=\{require\('\.\/assets\/icon\.png'\)\}/);
+assert.match(react, /feedbackAllowedRef\.current && !acceptedFeedbackRef\.current/);
+assert.match(react, /hapticSuccess\(\)/);

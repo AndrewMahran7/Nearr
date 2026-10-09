@@ -40,7 +40,7 @@ async function main() {
   const accepted = completionView({ kind: 'accepted', duplicate: false });
   assert.deepEqual(accepted, {
     title: 'Sent to Nearr',
-    body: "We'll add it to your map in the background. You can close this.",
+    body: 'You can close this.',
     primary: 'Done',
     secondary: 'Open Nearr',
     showsConfirmationMark: true,
@@ -48,7 +48,7 @@ async function main() {
 
   // A duplicate server response is still one accepted share, stated honestly.
   const duplicate = completionView({ kind: 'accepted', duplicate: true });
-  assert.match(duplicate.body, /already shared/i);
+  assert.match(duplicate.body, /already sent/i);
   assert.equal(duplicate.primary, 'Done');
 
   // Queue-submission failure is compact, recoverable, and provider-agnostic.
