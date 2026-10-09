@@ -15,6 +15,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { PhotoRolodexModal } from '@/components/PhotoRolodex';
 import { Radius, Spacing } from '@/constants';
+import { useTheme } from '@/lib/theme';
 import { formatCandidateTimestamp } from '@/lib/vayrinCandidateConfirmation';
 import { QUICK_CHECK_LAYOUT, quickCheckCompactEvidenceFrameWidth } from '@/lib/quickCheckDensity';
 import { resolveShareEvidenceFrames, type ResolvedShareEvidenceFrame } from '@/lib/shareEvidenceFrames';
@@ -29,6 +30,7 @@ type Props = {
   dense?: boolean;
   /** One small, tappable frame for progressive-disclosure review rows. */
   preview?: boolean;
+  paired?: boolean;
 };
 
 const COLORS = {
@@ -39,21 +41,29 @@ const COLORS = {
 export function SourceEvidenceGallery({
   frames,
   analysisAttempted = false,
-  title = 'Frames checked',
-  subtitle = 'Evidence from the video',
+  title = 'From your video',
+  subtitle = 'Original post evidence',
   compact = false,
   dense = false,
   preview = false,
+  paired = false,
 }: Props) {
-  const { width: windowWidth } = useWindowDimensions();
-  const frameWidth = preview
+  const { colors } = useTheme();
+  const COLORS = { cream: colors.text, orange: colors.accent, surface: colors.surfaceElevated, border: colors.border, muted: colors.textSecondary, black: colors.surfaceElevated };
+  const styles = useMemo(() => createStyles(COLORS), [colors]);
+  const { width: windowWidth, fontScale } = useWindowDimensions();
+  const [measuredWidth, setMeasuredWidth] = useState(0);
+  const stacked = windowWidth < 360 || fontScale > 1.25;
+  const frameWidth = paired
+    ? measuredWidth || (stacked ? windowWidth - 48 : (windowWidth - 56) / 2)
+    : preview
     ? 112
     : compact && dense
     ? quickCheckCompactEvidenceFrameWidth(windowWidth)
     : compact
     ? Math.min(160, Math.max(148, (windowWidth - 72) / 2))
     : Math.min(360, Math.max(280, windowWidth - 56));
-  const frameHeight = preview ? 92 : compact && dense ? QUICK_CHECK_LAYOUT.evidenceFrameHeight : compact ? 100 : 204;
+  const frameHeight = paired ? (stacked ? 220 : 168) : preview ? 92 : compact && dense ? QUICK_CHECK_LAYOUT.evidenceFrameHeight : compact ? 100 : 204;
   const [resolved, setResolved] = useState<ResolvedShareEvidenceFrame[]>([]);
   const [loading, setLoading] = useState(frames.length > 0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -80,13 +90,13 @@ export function SourceEvidenceGallery({
   if (frames.length === 0 && !analysisAttempted) return null;
 
   return (
-    <View style={[styles.section, compact && styles.sectionCompact, dense && styles.sectionDense, preview && styles.sectionPreview]} testID="source-evidence-gallery">
-      {!preview ? <Text style={[styles.title, compact && styles.titleCompact]}>{title}</Text> : null}
-      {!preview ? <Text style={[styles.subtitle, dense && styles.subtitleDense]}>{subtitle}</Text> : null}
+    <View style={[styles.section, compact && styles.sectionCompact, dense && styles.sectionDense, preview && styles.sectionPreview, paired && styles.sectionPaired]} onLayout={(event) => paired && setMeasuredWidth(Math.round(event.nativeEvent.layout.width))} testID="source-evidence-gallery">
+      {!preview && !paired ? <Text style={[styles.title, compact && styles.titleCompact]}>{title}</Text> : null}
+      {!preview && !paired ? <Text style={[styles.subtitle, dense && styles.subtitleDense]}>{subtitle}</Text> : null}
       {loading ? (
         <View style={[styles.missing, { width: frameWidth, height: frameHeight }]}>
           <ActivityIndicator color={COLORS.orange} />
-          <Text style={styles.missingText}>Loading analyzed frames…</Text>
+          <Text style={styles.missingText}>Loading video frames…</Text>
         </View>
       ) : available.length > 0 ? (
         <>
@@ -123,8 +133,9 @@ export function SourceEvidenceGallery({
                 style={[styles.frame, { width: frameWidth, height: frameHeight }]}
               >
                 <Image source={{ uri: item.uri! }} style={styles.frameImage as StyleProp<ImageStyle>} resizeMode="cover" />
+                {paired ? <View style={styles.provenanceBadge}><Text style={styles.provenanceText}>From your video</Text></View> : null}
                 <View style={styles.timestampBadge}><Text style={styles.timestamp}>{formatCandidateTimestamp(item.timestampSeconds)}</Text></View>
-                <View style={styles.expandBadge}><Feather name="maximize-2" size={15} color={COLORS.cream} /></View>
+                <View style={styles.expandBadge}><Feather name="maximize-2" size={15} color="#F7F4EE" /></View>
               </Pressable>
             )}
           />
@@ -137,7 +148,7 @@ export function SourceEvidenceGallery({
       ) : (
         <View style={[styles.missing, { width: frameWidth, minHeight: compact ? 92 : 112 }]}>
           <Feather name="film" size={22} color={COLORS.muted} />
-          <Text style={styles.missingText}>Analyzed frames weren’t retained for this result.</Text>
+          <Text style={styles.missingText}>Video frames are unavailable. You can still watch the original post.</Text>
         </View>
       )}
       <PhotoRolodexModal
@@ -151,7 +162,10 @@ export function SourceEvidenceGallery({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(COLORS: { cream: string; orange: string; surface: string; border: string; muted: string; black: string }) { return StyleSheet.create({
+  sectionPaired: { marginTop: 0, marginBottom: 0, alignSelf: 'stretch' },
+  provenanceBadge: { position: 'absolute', left: 8, top: 8, backgroundColor: 'rgba(23,26,24,0.88)', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 4 },
+  provenanceText: { color: '#F7F4EE', fontSize: 11, lineHeight: 15, fontWeight: '600' },
   section: { marginTop: Spacing.lg, marginBottom: Spacing.md },
   sectionCompact: { marginTop: Spacing.md, marginBottom: Spacing.sm },
   sectionDense: { marginTop: QUICK_CHECK_LAYOUT.evidenceSectionTop, marginBottom: QUICK_CHECK_LAYOUT.evidenceSectionBottom },
@@ -164,12 +178,12 @@ const styles = StyleSheet.create({
   frame: { overflow: 'hidden', borderRadius: Radius.lg, backgroundColor: COLORS.black, borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border },
   frameImage: { width: '100%', height: '100%' },
   timestampBadge: { position: 'absolute', left: Spacing.sm, bottom: Spacing.sm, borderRadius: 8, backgroundColor: 'rgba(5,6,8,0.82)', paddingHorizontal: 8, paddingVertical: 4 },
-  timestamp: { color: COLORS.cream, fontSize: 13, lineHeight: 17, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  expandBadge: { position: 'absolute', right: Spacing.sm, top: Spacing.sm, width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(5,6,8,0.72)', alignItems: 'center', justifyContent: 'center' },
+  timestamp: { color: '#F7F4EE', fontSize: 13, lineHeight: 17, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  expandBadge: { position: 'absolute', right: Spacing.sm, bottom: Spacing.sm, width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(5,6,8,0.72)', alignItems: 'center', justifyContent: 'center' },
   dots: { minHeight: 22, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
   dotsDense: { minHeight: QUICK_CHECK_LAYOUT.evidenceDotsHeight },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.border },
   dotActive: { width: 18, backgroundColor: COLORS.orange },
   missing: { borderRadius: Radius.lg, backgroundColor: COLORS.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg, gap: Spacing.sm },
   missingText: { color: COLORS.muted, fontSize: 13, lineHeight: 18, textAlign: 'center' },
-});
+}); }

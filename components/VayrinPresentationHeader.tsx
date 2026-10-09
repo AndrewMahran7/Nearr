@@ -27,8 +27,8 @@ export function VayrinPresentationHeader({
       style={[styles.container, compact && styles.compact]}
     >
       <View style={styles.eyebrowRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <View style={styles.orangeRule} />
-        <Text style={styles.eyebrow}>NEARR</Text>
+
+        <Text style={styles.eyebrow}>{looking ? 'FINDING A PLACE' : 'FROM YOUR POST'}</Text>
         {looking ? <ActivityIndicator size="small" color={colors.primary} /> : null}
       </View>
       <Text style={[compact ? typography.heading : typography.title, styles.headline]}>
@@ -42,17 +42,12 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
     container: {
       alignSelf: 'stretch',
-      padding: Spacing.lg,
-      borderRadius: Radius.lg,
-      backgroundColor: colors.surfaceElevated,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.accentBorder,
+      paddingVertical: Spacing.md,
       marginBottom: Spacing.lg,
     },
-    compact: { padding: Spacing.md, marginBottom: Spacing.md },
+    compact: { paddingVertical: Spacing.sm, marginBottom: Spacing.md },
     eyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, minHeight: 24 },
-    orangeRule: { width: 18, height: 3, borderRadius: 2, backgroundColor: '#FF6A1A' },
-    eyebrow: { color: colors.primary, fontSize: 12, fontWeight: '800', letterSpacing: 1.2, flex: 1 },
+    eyebrow: { color: colors.textSecondary, fontSize: 12, fontWeight: '800', letterSpacing: 1.2, flex: 1 },
     headline: { color: colors.text, marginTop: Spacing.sm },
     body: { color: colors.textSecondary, marginTop: Spacing.xs, lineHeight: 22 },
   });

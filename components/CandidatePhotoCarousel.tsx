@@ -12,6 +12,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 
 import { Spacing } from '@/constants';
+import { useTheme } from '@/lib/theme';
 import { PhotoRolodexModal } from '@/components/PhotoRolodex';
 import { pageIndexFromOffset } from '@/lib/photoCarousel';
 import {
@@ -62,6 +63,9 @@ export function CandidatePhotoCarousel({
   active = true,
   presentationContext = { trigger: 'other' },
 }: Props) {
+  const { colors } = useTheme();
+  const COLORS = { orange: colors.primary, cream: '#F7F4EE', muted: colors.textSecondary, surface: colors.surfaceElevated, border: colors.border };
+  const styles = useMemo(() => createStyles(COLORS), [colors]);
   const { width: windowWidth } = useWindowDimensions();
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const width = measuredWidth || Math.max(280, windowWidth - Spacing.lg * 2);
@@ -247,10 +251,12 @@ export function CandidatePhotoCarousel({
     setActiveIndex(index);
     setVisitedPhotoIndexes((current) => visitCandidatePhoto(current, index, items.length));
   }, [items.length, width]);
+  const provenanceLabel = items[activeIndex]?.kind === 'places' ? 'Destination photo' : items[activeIndex]?.kind === 'source' || items[activeIndex]?.kind === 'frame' ? 'From your video' : null;
   const rolodexItems = useMemo(() => items.map((item, index) => ({
     key: item.uri,
     uri: item.uri,
-    accessibilityLabel: `${accessibilityLabel}, photo ${index + 1} of ${items.length}`,
+    accessibilityLabel: `${item.kind === 'places' ? 'Destination photo' : 'From your video'}. ${accessibilityLabel}, photo ${index + 1} of ${items.length}`,
+    footerLabel: item.kind === 'places' ? 'Destination photo' : 'From your video',
   })), [accessibilityLabel, items]);
 
   if (variant === 'thumbnail') {
@@ -277,6 +283,7 @@ export function CandidatePhotoCarousel({
               onError={() => markFailed(first.uri)}
               accessible={false}
             />
+            <View style={styles.provenanceBadge} pointerEvents="none"><Text style={styles.provenanceText}>{first.kind === 'places' ? 'Place photo' : 'From video'}</Text></View>
             <View style={styles.expandBadge} pointerEvents="none">
               <Feather name="maximize-2" size={15} color={COLORS.cream} />
             </View>
@@ -346,6 +353,7 @@ export function CandidatePhotoCarousel({
               </Pressable>
             )}
           />
+          {provenanceLabel ? <View style={styles.provenanceBadge} pointerEvents="none"><Text style={styles.provenanceText}>{provenanceLabel}</Text></View> : null}
           {items.length > 1 ? (
             <View
               style={styles.dots}
@@ -379,7 +387,9 @@ export function CandidatePhotoCarousel({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(COLORS: { orange: string; cream: string; muted: string; surface: string; border: string }) { return StyleSheet.create({
+  provenanceBadge: { position: 'absolute', left: 8, top: 8, maxWidth: '80%', backgroundColor: 'rgba(23,26,24,0.88)', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 4 },
+  provenanceText: { color: '#F7F4EE', fontSize: 11, lineHeight: 15, fontWeight: '600' },
   root: { width: '100%', backgroundColor: COLORS.surface, overflow: 'hidden' },
   thumbnailRoot: { overflow: 'hidden', borderRadius: 15, backgroundColor: COLORS.surface },
   thumbnailButton: { flex: 1 },
@@ -391,7 +401,7 @@ const styles = StyleSheet.create({
   thumbnailState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 },
   thumbnailFallback: { color: COLORS.muted, fontSize: 11, lineHeight: 15, fontWeight: '700' },
   expandBadge: {
-    position: 'absolute', right: 7, top: 7, width: 32, height: 32, borderRadius: 16,
+    position: 'absolute', right: 7, bottom: 7, width: 32, height: 32, borderRadius: 16,
     alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(5,6,8,0.76)',
   },
   countBadge: {
@@ -403,4 +413,4 @@ const styles = StyleSheet.create({
   dots: { position: 'absolute', bottom: 9, alignSelf: 'center', minHeight: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 9, borderRadius: 10, backgroundColor: 'rgba(15,16,20,0.68)' },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.border },
   dotActive: { width: 17, backgroundColor: COLORS.cream },
-});
+}); }

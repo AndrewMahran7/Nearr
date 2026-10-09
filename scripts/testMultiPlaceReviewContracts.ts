@@ -16,7 +16,8 @@ assert.match(detail, /expandedMentionId/, 'one scalar owns progressive disclosur
 assert.match(detail, /accessibilityState=\{\{ expanded \}\}/, 'mention summaries announce disclosure state');
 assert.match(detail, /visibleMentionCandidates\(row\)/, 'candidate presentation is capped without truncating the model');
 assert.match(detail, /SourceEvidenceGallery/);
-assert.match(detail, /batchCounts\.total > 0/, 'zero selection hides the dominant footer');
+assert.match(detail, /selectedPendingCount === 0 \? 'Select a place to save'/, 'zero selection explains how to enable saving');
+assert.match(detail, /disabled=\{selectedPendingCount === 0 \|\| busy\}/, 'zero selection cannot save');
 assert.match(detail, /styles\.batchFooter/, 'final batch action is sticky outside row cards');
 assert.doesNotMatch(detail, /batch\.order\.slice\(/, 'UI does not slice logical rows to five');
 assert.doesNotMatch(detail, /Choose the right place/, 'candidate accordions are removed');

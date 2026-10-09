@@ -1,3 +1,4 @@
+import './testFieldnotesReviewComponents';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -65,8 +66,8 @@ const fiveBatch = reconcileMultiPlaceBatch({ jobId: 'five', slots: five.mentionS
 assert.equal(fiveBatch.rows['five-punch']!.candidates.length, 5, 'internal ranking stays intact');
 assert.equal(visibleMentionCandidates(fiveBatch.rows['five-punch']!).length, MAX_VISIBLE_CANDIDATES_PER_MENTION); // 3/21
 assert.match(card, /accessibilityRole=\{selectionRole\}/); // 4
-assert.match(card, /testID="compact-candidate-row"/);
-assert.ok(card.indexOf('<CandidatePhotoCarousel') < card.indexOf('testID="candidate-selection-control"'), 'gallery remains separate from the selection responder');
+assert.match(card, /compact-candidate-row/);
+assert.match(card, /const selection = selectable && onPress/, 'independent selection tree is exercised by the rendered Fieldnotes test');
 
 const alternatives = [candidate('a'), candidate('b'), candidate('c')];
 batch = reconcileMultiPlaceBatch({ jobId: 'exclusive', slots: [slot('one', alternatives), slot('two', [candidate('two')])] });
@@ -98,7 +99,7 @@ assert.equal(searched.rows.two!.selectedForSave, true); // 10
 const duplicate = reconcileMultiPlaceBatch({ jobId: 'duplicate', slots: [slot('a', [candidate('same')]), slot('b', [candidate('same')])] });
 assert.equal(selectedBatchTargets(duplicate).length, 1); // 13
 assert.equal(batchPrimaryActionLabel({ total: 0, newPlaces: 0, sourceAttachments: 0 }), 'Save 0 places');
-assert.match(app, /batchCounts\.total > 0/); // 22
+assert.match(app, /batch\.rows\[id\]\?\.persistence === 'pending'/); // Zero-selection action stays visible and disabled.
 
 const frameHeavy = { ...fiveBatch.rows['five-punch']!, sourceTimestamps: [0, 1, 2, 3, 4] };
 const frames = Array.from({ length: 5 }, (_, index) => ({ id: `f${index}`, storagePath: null, url: `https:\/\/example.com\/${index}.jpg`, timestampSeconds: index, width: 10, height: 10, relevance: 'candidate_evidence' as const }));
@@ -109,7 +110,7 @@ assert.match(sourceGallery, /maxToRenderPerBatch=\{2\}/); // 14
 assert.match(app, /initialNumToRender=\{2\}[\s\S]*windowSize=\{3\}/); // 5/10 mention performance
 
 assert.match(app, /persistShareJobCandidate\([\s\S]*sourceUrl,/); // 16
-assert.match(card, /numberOfLines=\{3\}/); // 17
+assert.doesNotMatch(card, /numberOfLines=\{[23]\}/); // Critical names grow for Dynamic Type.
 assert.match(app, /persistShareJobCandidate/); // 18
 assert.match(read('supabase/functions/process-share-jobs/recognitionCache.ts'), /candidate_payload|candidatePayload/); // 19
 assert.match(enrichment, /saved_place_sources|source_url|sourceUrl/); // 20

@@ -1,3 +1,4 @@
+import './testFieldnotesReviewComponents';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -43,7 +44,7 @@ assert.match(rolodex, /horizontal[\s\S]{0,220}snapToInterval/);
 
 // 4-6. Compact image and selection are sibling controls; the outer screen remains vertical.
 const selectionIndex = card.indexOf('testID="candidate-selection-control"');
-const thumbnailIndex = card.indexOf('variant="thumbnail"');
+const thumbnailIndex = card.indexOf("'thumbnail'");
 assert.ok(selectionIndex > -1 && thumbnailIndex > -1, 'selection and thumbnail controls both exist');
 assert.match(card, /compactRow: \{ flexDirection: 'row'/);
 assert.doesNotMatch(card, /<Pressable[\s\S]{0,200}<View style=\{\[styles\.card[\s\S]*<CandidatePhotoCarousel/);
@@ -79,22 +80,22 @@ assert.match(rolodex, /top: insets\.top \+ Spacing\.sm/);
 assert.match(rolodex, /width: 44, height: 44/);
 assert.match(rolodex, /testID="photo-rolodex-close"/);
 assert.doesNotMatch(source, /<Modal\b/);
-assert.doesNotMatch(detail, /<Modal\b/);
+assert.doesNotMatch(detail, /<Modal[^>]*visible=\{photo/, 'photos retain the shared viewer; the independent More actions menu may own a native Modal');
 
 // 14. Multi-candidate mode is a bounded image-left/text-right row at common iPhone widths.
 const compactThumbWidth = Number(card.match(/COMPACT_CANDIDATE_THUMB_WIDTH = (\d+)/)?.[1]);
 const compactPhotoHeight = Number(card.match(/COMPACT_CANDIDATE_PHOTO_HEIGHT = (\d+)/)?.[1]);
 const standardPhotoHeight = Number(card.match(/STANDARD_CANDIDATE_PHOTO_HEIGHT = (\d+)/)?.[1]);
-assert.equal(compactThumbWidth, 118);
-assert.equal(compactPhotoHeight, 132);
+assert.equal(compactThumbWidth, 96);
+assert.equal(compactPhotoHeight, 112);
 assert.equal(standardPhotoHeight, 220);
 assert.ok(3 * (compactPhotoHeight + 16) <= 480, 'three collapsed rows stay within a compact comparison budget');
 for (const width of [320, 375, 390, 430]) {
   assert.ok(width - 48 - compactThumbWidth - 10 >= 144, `${width}pt leaves useful comparison copy width`);
 }
-assert.match(card, /testID="compact-candidate-row"/);
-assert.match(card, /numberOfLines=\{2\}>\{candidate\.name\}/);
-assert.match(card, /numberOfLines=\{2\}>\{compactEvidence\}/);
+assert.match(card, /compact-candidate-row/);
+assert.doesNotMatch(card, /numberOfLines=\{2\}>\{candidate\.name\}/, 'place names grow; rendered tests cover long names and large type');
+assert.match(card, /const stacked = width < 360 \|\| fontScale > 1\.25/, 'narrow or large-text layouts stack');
 
 // 15-17. Qualitative evidence, Why, and the three-candidate cap remain intact.
 assert.equal(candidateMatchLabel(candidate('high')), 'High match');

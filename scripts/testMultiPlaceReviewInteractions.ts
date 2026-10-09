@@ -1,3 +1,4 @@
+import './testFieldnotesReviewComponents';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -96,7 +97,7 @@ assert.match(carousel, /scrollEventThrottle=\{16\}/);
 // 9. Gallery gestures can open the shared viewer but cannot invoke candidate selection.
 assert.match(carousel, /onPress=\{\(\) => setViewerIndex\(index\)\}/);
 assert.doesNotMatch(carousel, /onPress=\{onPress\}|toggleCandidateSelection|chooseBatchCandidate/);
-assert.ok(card.indexOf('<CandidatePhotoCarousel') < card.indexOf('testID="candidate-selection-control"'));
+assert.match(card, /const selection = selectable && onPress/, 'independent selection tree is exercised by the rendered Fieldnotes test');
 
 // 10. The non-gallery header remains an explicit radio selection target.
 assert.match(card, /testID="candidate-selection-control"/);

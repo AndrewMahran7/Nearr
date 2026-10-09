@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/lib/theme';
@@ -12,6 +12,8 @@ type Props = {
 
 export function ShareJobsSheet({ children, onDismiss, size = 'queue' }: Props) {
   const { colors } = useTheme();
+  const { fontScale, height } = useWindowDimensions();
+  const expandedForAccess = fontScale > 1.25 || height < 700;
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
@@ -31,9 +33,10 @@ export function ShareJobsSheet({ children, onDismiss, size = 'queue' }: Props) {
             : size === 'compact'
               ? styles.compactSheet
               : styles.queueSheet,
+          expandedForAccess && styles.detailSheet,
         ]}
       >
-        <View style={styles.dragIndicator} />
+
         <View style={styles.content}>{children}</View>
       </SafeAreaView>
     </View>
@@ -49,15 +52,15 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     sheet: {
       backgroundColor: colors.bg,
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
       borderWidth: StyleSheet.hairlineWidth,
       borderBottomWidth: 0,
       borderColor: colors.border,
       overflow: 'hidden',
     },
     compactSheet: { height: '46%' },
-    queueSheet: { height: '76%' },
+    queueSheet: { height: '92%' },
     detailSheet: { height: '92%' },
     dragIndicator: {
       alignSelf: 'center',

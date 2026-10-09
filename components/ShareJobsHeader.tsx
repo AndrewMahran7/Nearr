@@ -59,7 +59,7 @@ export function ShareJobsHeader({
       >
         <Feather name={icon === 'close' ? 'x' : 'chevron-left'} size={24} color={colors.text} />
       </Pressable>
-      <Text style={[typography.title, styles.title]} numberOfLines={1}>
+      <Text style={[typography.heading, styles.title]}>
         {title}
       </Text>
       {rightAction ? (
@@ -80,7 +80,7 @@ export function ShareJobsHeader({
       ) : showBadge ? (
         <View
           style={styles.badge}
-          accessibilityLabel={`${count} ${count === 1 ? 'item needs' : 'items need'} your help`}
+          accessibilityLabel={`${count} ${count === 1 ? 'item needs' : 'items need'} your check`}
         >
           <Text style={styles.badgeText}>{count}</Text>
         </View>

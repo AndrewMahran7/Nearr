@@ -1,0 +1,152 @@
+[
+  {
+    "test": "testCandidatePresentationCostControl",
+    "exit": 0,
+    "summary": "PASS candidate presentation cost control (9 deterministic contracts)",
+    "error": null
+  },
+  {
+    "test": "testShareJobsUi",
+    "exit": 0,
+    "summary": "PASS plural heading avoids system vocabulary",
+    "error": null
+  },
+  {
+    "test": "testQuickCheckResolution",
+    "exit": 0,
+    "summary": "PASS no result preserves manual recovery",
+    "error": null
+  },
+  {
+    "test": "testQueueInbox",
+    "exit": 0,
+    "summary": "PASS queue inbox sections, clear completed, swipe policy, accessibility, empty state",
+    "error": null
+  },
+  {
+    "test": "testQueuePersistence",
+    "exit": 0,
+    "summary": "PASS queue dismissal persistence, batching, and rollback",
+    "error": null
+  },
+  {
+    "test": "testQueueSwipeCoordinator",
+    "exit": 0,
+    "summary": "PASS queue swipe single-open coordination",
+    "error": null
+  },
+  {
+    "test": "testQueueSaveResolution",
+    "exit": 0,
+    "summary": "PASS canonical queue save and resolution orchestration",
+    "error": null
+  },
+  {
+    "test": "testQueueInteractionContracts",
+    "exit": 0,
+    "summary": "PASS queue native gesture, accessibility, dismissal, and canonical save contracts",
+    "error": null
+  },
+  {
+    "test": "testQueuePlaceNavigation",
+    "exit": 0,
+    "summary": "PASS queue place navigation, queue dismissal, and confirmed removal affordance",
+    "error": null
+  },
+  {
+    "test": "testQueueSavedPlaceFocus",
+    "exit": 0,
+    "summary": "PASS completed queue row -> exact saved place opens in completed-result detail",
+    "error": null
+  },
+  {
+    "test": "testShareJobResult",
+    "exit": 0,
+    "summary": "PASS share-job mention result contract",
+    "error": null
+  },
+  {
+    "test": "testMultiPlaceBatch",
+    "exit": 0,
+    "summary": "PASS stable persistent multi-place batch, inline resolution, dedupe, and partial-save behavior",
+    "error": null
+  },
+  {
+    "test": "testMultiPlaceReviewContracts",
+    "exit": 0,
+    "summary": "PASS multi-place review UI, accessibility, sticky-save, and persisted-result contracts",
+    "error": null
+  },
+  {
+    "test": "testMultiPlaceReviewInteractions",
+    "exit": 0,
+    "summary": "PASS multi-place stable ordering, independent selection, and native photo-carousel interaction contracts",
+    "error": null
+  },
+  {
+    "test": "testMultiPlaceProgressiveDisclosure",
+    "exit": 0,
+    "summary": "PASS multi-place progressive disclosure (960pt two-place, 1032pt three-place, collapsed hydration 0)",
+    "error": null
+  },
+  {
+    "test": "testMultiPlaceBrowseV2",
+    "exit": 0,
+    "summary": "PASS multi-place browse v2 contract (33 cases)",
+    "error": null
+  },
+  {
+    "test": "testMultiSelectPlaces",
+    "exit": 0,
+    "summary": "PASS multi-select place semantics, persistence, accessibility, and Vayrin integration",
+    "error": null
+  },
+  {
+    "test": "testVayrinCandidateConfirmation",
+    "exit": 0,
+    "summary": "PASS Vayrin candidate confirmation modes, images, save linkage, fixtures, and accessibility",
+    "error": null
+  },
+  {
+    "test": "testVayrinCandidateConfirmationV2",
+    "exit": 0,
+    "summary": "PASS Vayrin candidate resolution, compact capped shortlist, raw search, multi-select, sticky CTA, and truthful copy V2",
+    "error": null
+  },
+  {
+    "test": "testVayrinQuickCheckEvidenceUi",
+    "exit": 0,
+    "summary": "PASS Vayrin Quick Check evidence-first frames, galleries, truthful confidence, evidence, selection, fixtures, persistence, lifecycle, and safe-area CTA",
+    "error": null
+  },
+  {
+    "test": "testVayrinMultiPlaceReviewRedesign",
+    "exit": 0,
+    "summary": "PASS Vayrin multi-place evidence-first layout, fixtures, selection, save integrity, and performance contracts",
+    "error": null
+  },
+  {
+    "test": "testQuickCheckDensity",
+    "exit": 0,
+    "summary": "PASS Fieldnotes Quick Check content-sized density, responsive evidence pair, bounded alternatives, sticky actions, keyboard and selection identity",
+    "error": null
+  },
+  {
+    "test": "testQuickCheckRolodexUx",
+    "exit": 0,
+    "summary": "PASS Quick Check shared rolodex, compact layout, swipe ownership, accessibility, selection, and multi-place regression contracts",
+    "error": null
+  },
+  {
+    "test": "testVayrinPresentationUi",
+    "exit": 0,
+    "summary": "PASS Vayrin feature gate, UI wiring, boundaries, and accessibility contracts",
+    "error": null
+  },
+  {
+    "test": "testNoUserFacingVayrin",
+    "exit": 0,
+    "summary": "PASS no user-facing or accessibility Vayrin branding remains.",
+    "error": null
+  }
+]

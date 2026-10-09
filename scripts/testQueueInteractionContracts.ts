@@ -23,7 +23,7 @@ assert.match(swipe, /minWidth: 64/);
 assert.match(swipe, /minHeight: 64/);
 
 assert.match(queue, /onScrollBeginDrag=\{\(\) => swipeCoordinator\.closeActive\(\)\}/);
-assert.match(queue, /rowId=\{`completed:/, 'completed rows expose Remove');
+assert.match(queue, /rowId=\{'completed:' \+ saved\.resultId\}/, 'completed rows expose Remove');
 assert.match(queue, /clearCompletedButton/);
 assert.match(queue, /minHeight: 44/);
 assert.match(queue, /saveResolvedQueueCandidate\(job, candidate\)/);

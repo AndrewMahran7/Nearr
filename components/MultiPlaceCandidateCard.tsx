@@ -3,6 +3,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { CandidatePhotoCarousel } from '@/components/CandidatePhotoCarousel';
 import { Radius, Spacing } from '@/constants';
+import { useTheme } from '@/lib/theme';
 import type { ShareJobResultCandidate } from '@/lib/shareJobResult';
 
 type Props = {
@@ -15,15 +16,13 @@ type Props = {
   onPress: () => void;
 };
 
-const BRAND = {
-  cream: '#F4F2EF', orange: '#FF6A1A', muted: '#A7A39D', border: '#34363D', surface: '#17191E', selected: '#211B18',
-};
 
 /** Compact evidence-first candidate card with an independent native gallery gesture surface. */
 export function MultiPlaceCandidateCard({ candidate, meta, selected, alreadySaved, persisted, duplicate, onPress }: Props) {
-  const match = candidate.matchStrength
-    ? `${candidate.matchStrength[0]!.toUpperCase()}${candidate.matchStrength.slice(1)} match`
-    : null;
+  const { colors } = useTheme();
+  const BRAND = { cream: colors.text, orange: colors.accent, muted: colors.textSecondary, border: colors.border, surface: colors.surface, selected: colors.surfaceElevated };
+  const styles = createStyles(BRAND);
+  const match = 'Possible match';
   return (
     <View style={[styles.card, selected && styles.cardSelected, persisted && styles.cardPersisted]}>
       <Pressable
@@ -42,7 +41,7 @@ export function MultiPlaceCandidateCard({ candidate, meta, selected, alreadySave
           {match ? <Text style={styles.match}>{match}</Text> : null}
         </View>
         <View style={[styles.radio, selected && styles.radioSelected]}>
-          {selected ? <Feather name="check" size={16} color="#FFFFFF" /> : null}
+          {selected ? <Feather name="check" size={16} color={colors.onGradient} /> : null}
         </View>
       </Pressable>
       <CandidatePhotoCarousel
@@ -72,7 +71,7 @@ export function MultiPlaceCandidateCard({ candidate, meta, selected, alreadySave
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(BRAND: { cream: string; orange: string; muted: string; border: string; surface: string; selected: string }) { return StyleSheet.create({
   card: { overflow: 'hidden', backgroundColor: BRAND.surface, borderRadius: Radius.lg, borderWidth: 1, borderColor: BRAND.border, marginTop: Spacing.sm },
   cardSelected: { borderColor: BRAND.orange, borderWidth: 2, backgroundColor: BRAND.selected },
   cardPersisted: { opacity: 0.92 },
@@ -82,9 +81,9 @@ const styles = StyleSheet.create({
   name: { color: BRAND.cream, fontSize: 17, lineHeight: 22, fontWeight: '700' },
   meta: { color: BRAND.muted, fontSize: 13, lineHeight: 18, marginTop: 3 },
   match: { color: BRAND.cream, fontSize: 12, lineHeight: 17, fontWeight: '700', marginTop: 4 },
-  radio: { width: 38, height: 38, borderRadius: 19, borderWidth: 1.5, borderColor: BRAND.orange, alignItems: 'center', justifyContent: 'center' },
-  radioSelected: { backgroundColor: BRAND.orange },
+  radio: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, borderColor: BRAND.orange, alignItems: 'center', justifyContent: 'center' },
+  radioSelected: { backgroundColor: '#FF9957' },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   saved: { flex: 1, color: BRAND.orange, fontSize: 12, lineHeight: 17, fontWeight: '700' },
   duplicate: { color: BRAND.orange, fontSize: 12, lineHeight: 17, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
-});
+}); }

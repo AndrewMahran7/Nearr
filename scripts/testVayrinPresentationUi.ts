@@ -52,7 +52,8 @@ assert.doesNotMatch(
 // is absent. The presentation remains text-first and themed in both modes.
 assert.doesNotMatch(header, /Image|Svg|require\(/);
 assert.match(header, /useTheme/);
-assert.match(header, /#FF6A1A/, 'canonical orange is the only fixed brand accent');
+assert.match(header, /colors\.textSecondary/, 'Fieldnotes status uses adaptive semantic colors');
+assert.doesNotMatch(header, /#FF6A1A/, 'hard-coded legacy orange is removed');
 for (const [name, source] of [
   ['sync share', sync],
   ['async detail', asyncDetail],

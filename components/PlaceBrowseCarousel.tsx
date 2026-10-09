@@ -18,6 +18,7 @@ import {
   PLACE_BROWSE_MAX_RENDER_BATCH,
 } from '@/lib/placeBrowseCarousel';
 import { useTheme } from '@/lib/theme';
+import { useReduceMotion } from '@/lib/useReduceMotion';
 
 export type PlaceBrowseCarouselItem = {
   id: string;
@@ -49,7 +50,8 @@ export function PlaceBrowseCarousel({
   presentation = 'compact',
   testID = 'place-browse-carousel',
 }: Props) {
-  const { width } = useWindowDimensions();
+  const { width, fontScale } = useWindowDimensions();
+  const reduceMotion = useReduceMotion();
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const expanded = presentation === 'expanded';
@@ -65,8 +67,8 @@ export function PlaceBrowseCarousel({
   useEffect(() => {
     if (selectedIndex < 0 || lastSyncedIndexRef.current === selectedIndex) return;
     lastSyncedIndexRef.current = selectedIndex;
-    listRef.current?.scrollToIndex({ index: selectedIndex, animated: true, viewPosition: 0.08 });
-  }, [selectedIndex]);
+    listRef.current?.scrollToIndex({ index: selectedIndex, animated: !reduceMotion, viewPosition: 0.08 });
+  }, [selectedIndex, reduceMotion]);
 
   function selectFromMomentum(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const index = carouselIndexFromOffset(
@@ -144,7 +146,7 @@ export function PlaceBrowseCarousel({
               accessibilityLabel={`Photo of ${item.name}`}
             />
             <View style={styles.copy}>
-              <Text style={styles.name} numberOfLines={expanded ? 2 : 1}>{item.name}</Text>
+              <Text style={styles.name} numberOfLines={fontScale > 1.25 ? undefined : expanded ? 2 : 1}>{item.name}</Text>
               {item.subtitle ? (
                 <Text style={styles.subtitle} numberOfLines={expanded ? 2 : 1}>{item.subtitle}</Text>
               ) : null}

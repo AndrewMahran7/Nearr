@@ -31,6 +31,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 
 import { Button, ErrorBoundary, Input, ShareJobsHeader } from '@/components';
+import { SourceRibbon } from '@/components/SourceRibbon';
+import { useReduceMotion } from '@/lib/useReduceMotion';
 import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
 import { PlaceBrowseCarousel, type PlaceBrowseCarouselItem } from '@/components/PlaceBrowseCarousel';
 import { PlaceImage } from '@/components/PlaceImage';
@@ -360,6 +362,8 @@ function ShareJobDetailScreen() {
   // normalise ONCE so no downstream string call can throw on it.
   const routeJobId = typeof jobId === 'string' ? jobId.trim() : '';
   const { colors, typography } = useTheme();
+  const reduceMotion = useReduceMotion();
+  const [reviewIndex, setReviewIndex] = useState(0);
   const vayrinEnabled = isVayrinProductUiEnabled();
   const { state: onboardingV2 } = useOnboardingV2();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -967,6 +971,12 @@ function ShareJobDetailScreen() {
       return pickerSelectionMode === 'exclusive' ? retained.slice(0, 1) : retained;
     });
   }, [confirmationCandidates, detail.kind, job?.id, pickerSelectionMode]);
+
+  useEffect(() => {
+    if (pickerSelectionMode !== 'exclusive') return;
+    const selectedIndex = confirmationCandidates.findIndex((candidate) => candidate.googlePlaceId === pickerSelectedIds[0]);
+    setReviewIndex((current) => selectedIndex >= 0 ? selectedIndex : Math.min(current, Math.max(0, confirmationCandidates.length - 1)));
+  }, [confirmationCandidates, pickerSelectedIds, pickerSelectionMode]);
   const reviewSlots = useMemo(() => {
     if (mentionSlots.length > 0) return mentionSlots;
     return candidates.map((candidate) => ({
@@ -1464,12 +1474,12 @@ function ShareJobDetailScreen() {
 
   function revealSearch() {
     if (!manualQuery) setManualQuery(job?.suggested_query || candidates[0]?.name || '');
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setSearchExpanded(true);
   }
 
   function hideSearch() {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setSearchExpanded(false);
   }
 
@@ -1522,7 +1532,7 @@ function ShareJobDetailScreen() {
 
   function openSearchForBatchRow(row: MultiPlaceBatchRow) {
     if (!batch) return;
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedMentionId(row.logicalPlaceId);
     setBatch(openBatchSearch(batch, row.logicalPlaceId));
     void trackEvent('find_right_place_started', {
@@ -1683,7 +1693,7 @@ function ShareJobDetailScreen() {
 
   function selectBatchCandidate(row: MultiPlaceBatchRow, candidate: ShareJobResultCandidate) {
     const savedPlaceId = savedByGoogleId[candidate.googlePlaceId] ?? null;
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setBatch((value) => value
       ? chooseBatchCandidate(value, row.logicalPlaceId, candidate, savedPlaceId)
       : value);
@@ -1696,12 +1706,12 @@ function ShareJobDetailScreen() {
   }
 
   function toggleMentionDisclosure(logicalPlaceId: string) {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedMentionId((current) => current === logicalPlaceId ? null : logicalPlaceId);
   }
 
   function dismissMention(row: MultiPlaceBatchRow) {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setBatch((value) => value ? dismissBatchRow(value, row.logicalPlaceId) : value);
     setExpandedMentionId(null);
   }
@@ -2039,12 +2049,16 @@ function ShareJobDetailScreen() {
       ? evidenceFramesForMention(row, detail.evidenceFrames).slice(0, 1)
       : [];
     const mentionName = row.primaryVenueName ?? row.extractedName;
+    const previewCandidate = rowCandidate(row);
+    const canSelect = !persisted && row.resolution === 'resolved' && !!previewCandidate
+      && !row.userDismissed && !!batch && !duplicateSelectionOwner(batch, row.logicalPlaceId);
     return (
       <View
         key={row.logicalPlaceId}
         style={[styles.mentionCard, row.selectedForSave && styles.mentionCardSelected, expanded && styles.mentionCardExpanded]}
         testID={`mention-${row.logicalPlaceId}`}
       >
+        <View style={styles.mentionTopRow}>
         <Pressable
           onPress={() => toggleMentionDisclosure(row.logicalPlaceId)}
           accessibilityRole="button"
@@ -2054,8 +2068,13 @@ function ShareJobDetailScreen() {
           style={({ pressed }) => [styles.mentionSummary, pressed && styles.mentionSummaryPressed]}
           testID="mention-summary"
         >
+          <PlaceImage googlePlaceId={previewCandidate?.googlePlaceId}
+            initialPhotoUrls={previewCandidate?.photoUrls?.length ? previewCandidate.photoUrls : previewCandidate?.photoUrl ? [previewCandidate.photoUrl] : undefined}
+            fallbackSourceUri={row.sourceFrameUrl} size={64} borderRadius={8}
+            presentationMode="candidate" presentationActive={false} allowGoogleLookup={false}
+            accessibilityLabel={previewCandidate?.photoUrl || previewCandidate?.photoUrls?.length ? 'Destination photo' : 'From your video'} />
           <View style={styles.flex}>
-            <Text style={styles.mentionSummaryName} numberOfLines={2}>{mentionName}</Text>
+            <Text style={styles.mentionSummaryName}>{mentionName}</Text>
             <Text style={styles.mentionSummaryStatus} numberOfLines={1}>{status}</Text>
             {timestamp ? <Text style={styles.mentionSummaryTimestamp}>Seen around {timestamp.replace(/^At /, '')}</Text> : null}
           </View>
@@ -2064,6 +2083,15 @@ function ShareJobDetailScreen() {
             <Feather name={expanded ? 'chevron-up' : 'chevron-right'} size={22} color={colors.textMuted} />
           </View>
         </Pressable>
+        <Pressable onPress={() => toggleBatchSelection(row)} disabled={!canSelect || busy}
+          accessibilityRole="checkbox" accessibilityLabel={'Save ' + mentionName}
+          accessibilityHint="Changes selection only; does not reject this place"
+          accessibilityState={{ checked: row.selectedForSave || persisted, disabled: !canSelect || busy }}
+          style={[styles.mentionCheckbox, (row.selectedForSave || persisted) && styles.mentionCheckboxSelected]}
+          testID="mention-save-checkbox">
+          {row.selectedForSave || persisted ? <Feather name="check" size={18} color={colors.onGradient} /> : null}
+        </Pressable>
+        </View>
 
         {expanded ? (
           <View style={styles.mentionDetails} testID="expanded-mention-details">
@@ -2109,7 +2137,7 @@ function ShareJobDetailScreen() {
   if (loading) {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
+        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primary} />
         </View>
@@ -2123,7 +2151,7 @@ function ShareJobDetailScreen() {
     const retryable = isRetryableLoadFailure(loadFailure);
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
+        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" />
         <View style={styles.centered}>
           <Text style={[typography.body, styles.help]}>
             {retryable
@@ -2141,7 +2169,7 @@ function ShareJobDetailScreen() {
             />
           ) : null}
           <Button
-            title="Back to queue"
+            title="Back to Activity"
             variant={retryable ? 'secondary' : 'primary'}
             onPress={backToQueue}
             style={{ marginTop: Spacing.md }}
@@ -2170,7 +2198,7 @@ function ShareJobDetailScreen() {
     if (!resultModel) {
       return (
         <ShareJobsSheet onDismiss={backToQueue} size="detail">
-          <ShareJobsHeader title="Saved place" onBack={backToQueue} backLabel="Back to queue" />
+          <ShareJobsHeader title="Saved place" onBack={backToQueue} backLabel="Back to Activity" />
           <View style={styles.centered} testID="saved-place-unavailable">
             <Text style={[typography.heading, styles.centeredTitle]}>This save is no longer available</Text>
             <Text style={[typography.body, styles.help, { textAlign: 'center' }]}>It may have been removed from your map.</Text>
@@ -2183,7 +2211,7 @@ function ShareJobDetailScreen() {
     const originalPlan = planOpenOriginal(sourceUrl);
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Saved place" onBack={backToQueue} backLabel="Back to queue" />
+        <ShareJobsHeader title="Saved place" onBack={backToQueue} backLabel="Back to Activity" />
         <SavedPlaceResult
           primary={resultModel}
           sourceAvailable={originalPlan.kind === 'open'}
@@ -2235,12 +2263,12 @@ function ShareJobDetailScreen() {
   if (detail.kind === 'dismissed') {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
+        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" />
         <View style={styles.centered}>
           <Text style={[typography.body, styles.help]}>
-            This item is no longer in your queue.
+            This item is no longer in Activity.
           </Text>
-          <Button title="Back to queue" onPress={backToQueue} style={{ marginTop: Spacing.lg }} />
+          <Button title="Back to Activity" onPress={backToQueue} style={{ marginTop: Spacing.lg }} />
         </View>
       </ShareJobsSheet>
     );
@@ -2318,7 +2346,7 @@ function ShareJobDetailScreen() {
     const recoveryCount = batch ? recoverableBatchRowCount(batch) : 0;
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Review places" onBack={backToQueue} backLabel="Back to queue" />
+        <ShareJobsHeader title="Review places" onBack={backToQueue} backLabel="Back to Activity" />
         {!batch ? (
           <View style={styles.centered}>
             <ActivityIndicator color={colors.primary} />
@@ -2344,28 +2372,21 @@ function ShareJobDetailScreen() {
               removeClippedSubviews
               ListHeaderComponent={(
                 <View style={styles.batchIntro}>
-                  <View style={styles.sourceRow}>
-                    <Feather name={sourceIcon} size={14} color={colors.textSecondary} />
-                    <Text style={[typography.caption, styles.sourceText]} numberOfLines={1}>{platformName(platform)} · From the original post</Text>
-                  </View>
+                  <SourceRibbon title="Original post" platform={platformName(platform)} thumbnail={overallSourceFrameUrl}
+                    onPress={validateSourceUrl(sourceUrl).ok ? () => void openOriginalPost() : undefined} compact />
                   <Text style={[typography.title, styles.batchTitle]}>{batch.order.length} places found</Text>
-                  <Text style={[typography.caption, styles.batchHelp]}>Swipe to browse places from this video.</Text>
-                  <Text accessibilityLiveRegion="polite" style={styles.batchProgress}>
-                    {batchProgress.resolved} of {batchProgress.total} places resolved
-                  </Text>
-                  <PlaceBrowseCarousel
-                    items={batchBrowseItems}
-                    selectedId={expandedMentionId ?? batch.order[0] ?? null}
-                    onSelect={(item, interaction) => {
-                      setExpandedMentionId(item.id);
-                      void trackEvent(
-                        interaction === 'swipe' ? 'source_group_swiped' : 'source_group_card_selected',
-                        { source: 'multi_place_review', job_id: job?.id ?? null },
-                      );
-                    }}
-                    testID="multi-place-review-carousel"
-                  />
-                  <Text style={styles.fullListLabel}>All places</Text>
+                  <Text style={[typography.body, styles.batchHelp]}>Keep the ones you want.</Text>
+                  <View style={styles.batchSelectionActions}>
+                    <Text accessibilityLiveRegion="polite" style={styles.batchProgress}>
+                      {selectedPendingCount} selected{savedBatchIds.length > 0 ? ' · ' + savedBatchIds.length + ' saved' : ''}
+                    </Text>
+                    <Pressable onPress={allEligibleBatchRowsSelected(batch) ? clearEveryEligibleBatchRow : selectEveryEligibleBatchRow}
+                      disabled={busy} accessibilityRole="button" style={styles.inlineAction}
+                      accessibilityLabel={allEligibleBatchRowsSelected(batch) ? 'Clear selection' : 'Select all places'}>
+                      <Text style={styles.inlineActionText}>{allEligibleBatchRowsSelected(batch) ? 'Clear selection' : 'Select all'}</Text>
+                    </Pressable>
+                  </View>
+
                 </View>
               )}
               ListEmptyComponent={<View style={styles.emptyBatch}><Text style={[typography.body, styles.help]}>No places were available to review.</Text></View>}
@@ -2378,7 +2399,7 @@ function ShareJobDetailScreen() {
                 </View>
               )}
             />
-            {batchCounts.total > 0 || batch.feedback || (savedBatchIds.length > 0 && recoveryCount > 0) ? (
+            {batch.order.length > 0 ? (
               <View style={[styles.batchFooter, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
               {batch.feedback ? (
                 <Text
@@ -2394,9 +2415,10 @@ function ShareJobDetailScreen() {
                         : `Saved ${batch.feedback.saved} ${batch.feedback.saved === 1 ? 'place' : 'places'}.`}
                 </Text>
               ) : null}
-              {batchCounts.total > 0 ? (
+              {batch.order.some((id) => batch.rows[id]?.persistence === 'pending') ? (
                 <Button
-                  title={batchPrimaryActionLabel(batchCounts)}
+                  title={selectedPendingCount === 0 ? 'Select a place to save' : batchPrimaryActionLabel(batchCounts)}
+                  variant="save"
                   accessibilityLabel={`${batchPrimaryActionLabel(batchCounts)} from this review`}
                   onPress={() => void handleSaveSelected()}
                   disabled={selectedPendingCount === 0 || busy}
@@ -2423,7 +2445,7 @@ function ShareJobDetailScreen() {
   if (isCandidatePicker) {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" compact />
+        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" compact />
         <ScrollView
           contentContainerStyle={[styles.content, styles.quickCheckContent]}
           contentInsetAdjustmentBehavior="automatic"
@@ -2432,20 +2454,29 @@ function ShareJobDetailScreen() {
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
         >
-          <View style={[styles.sourceRow, styles.quickCheckSourceRow]}>
-            <Feather name={sourceIcon} size={14} color={colors.textSecondary} />
-            <Text style={[typography.caption, styles.sourceText]} numberOfLines={1}>
-              {platformName(platform)} · From the original post
-            </Text>
-          </View>
-          <SourceEvidenceGallery
-            frames={detail.evidenceFrames}
-            analysisAttempted={job.analysis_attempted}
-            compact
-            dense
-          />
+          <Text style={[typography.title, styles.reviewTitle]}>Is this the place?</Text>
+          <SourceRibbon title="Original post" platform={platformName(platform)} thumbnail={overallSourceFrameUrl}
+            onPress={validateSourceUrl(sourceUrl).ok ? () => void openOriginalPost() : undefined} compact />
+          {pickerSelectionMode !== 'exclusive' ? <SourceEvidenceGallery frames={detail.evidenceFrames}
+            analysisAttempted={job.analysis_attempted} compact dense /> : null}
+          {pickerSelectionMode === 'exclusive' && confirmationCandidates.length > 1 ? (
+            <View style={styles.reviewNavigation}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Previous possible place"
+                disabled={reviewIndex <= 0} accessibilityState={{ disabled: reviewIndex <= 0 }} style={styles.reviewArrow}
+                onPress={() => { const next = Math.max(0, reviewIndex - 1); setReviewIndex(next); setPickerSelectedIds([confirmationCandidates[next]!.googlePlaceId]); }}>
+                <Feather name="chevron-left" size={22} color={reviewIndex <= 0 ? colors.textMuted : colors.text} />
+              </Pressable>
+              <Text style={styles.reviewCount}>Possible place {Math.min(reviewIndex + 1, confirmationCandidates.length)} of {confirmationCandidates.length}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Next possible place"
+                disabled={reviewIndex >= confirmationCandidates.length - 1} accessibilityState={{ disabled: reviewIndex >= confirmationCandidates.length - 1 }} style={styles.reviewArrow}
+                onPress={() => { const next = Math.min(confirmationCandidates.length - 1, reviewIndex + 1); setReviewIndex(next); setPickerSelectedIds([confirmationCandidates[next]!.googlePlaceId]); }}>
+                <Feather name="chevron-right" size={22} color={reviewIndex >= confirmationCandidates.length - 1 ? colors.textMuted : colors.text} />
+              </Pressable>
+            </View>
+          ) : null}
           <View style={[styles.section, styles.quickCheckCandidates]}>
             {confirmationCandidates.map((candidate, index) => {
+              if (pickerSelectionMode === 'exclusive' && index !== Math.min(reviewIndex, confirmationCandidates.length - 1)) return null;
               const address = splitPlaceAddress(candidate.formattedAddress);
               const broad = isBroadCandidate(candidate);
               return (
@@ -2455,7 +2486,8 @@ function ShareJobDetailScreen() {
                   locality={address.locality ?? candidate.formattedAddress}
                   selected={pickerSelectedIds.includes(candidate.googlePlaceId)}
                   selectable
-                  compact
+                  compact={pickerSelectionMode !== 'exclusive'}
+                  sourceEvidence={pickerSelectionMode === 'exclusive' && (detail.evidenceFrames.length > 0 || job.analysis_attempted) ? <SourceEvidenceGallery frames={detail.evidenceFrames} analysisAttempted={job.analysis_attempted} paired /> : undefined}
                   rank={index + 1}
                   bestMatch={index === 0 && confirmationCandidates.length > 1}
                   selectionRole={pickerSelectionMode === 'exclusive' ? 'radio' : 'checkbox'}
@@ -2498,8 +2530,8 @@ function ShareJobDetailScreen() {
           ) : (
             <>
               <Button
-                title="None of these"
-                variant="secondary"
+                title="Not this place"
+                variant="text"
                 onPress={() => {
                   if (vayrinEnabled) {
                     void trackEvent('vayrin_not_it', { job_id: job.id, source: 'async_picker' });
@@ -2528,6 +2560,7 @@ function ShareJobDetailScreen() {
             testID="quick-check-sticky-save-bar"
           >
             <Button
+              variant="save"
               title={busy
                 ? 'Saving…'
                 : candidateSaveLabel(
@@ -2556,7 +2589,7 @@ function ShareJobDetailScreen() {
 
   return (
     <ShareJobsSheet onDismiss={backToQueue} size="detail">
-      <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
+      <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" />
       <ScrollView
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
@@ -2685,7 +2718,7 @@ function ShareJobDetailScreen() {
         ) : (
           <View style={styles.section}>
             {vayrinEnabled ? (
-              <VayrinPresentationHeader presentation={candidateConfirmationPresentation} />
+              <Text style={[typography.title, styles.reviewTitle]}>Is this the place?</Text>
             ) : (
               <>
                 <Text style={[typography.title, styles.title]}>
@@ -2696,13 +2729,11 @@ function ShareJobDetailScreen() {
                 </Text>
               </>
             )}
-            <SourceEvidenceGallery
-              frames={detail.evidenceFrames}
-              analysisAttempted={job.analysis_attempted}
-            />
+
             {confirmationSingle ? (
               <CandidateConfirmationCard
                 candidate={confirmationSingle}
+                sourceEvidence={detail.evidenceFrames.length > 0 || job.analysis_attempted ? <SourceEvidenceGallery frames={detail.evidenceFrames} analysisAttempted={job.analysis_attempted} paired /> : undefined}
                 locality={placeAddress.locality ?? confirmationSingle.formattedAddress}
                 saved={Boolean(alreadySavedId)}
                 presentationActive
@@ -2744,7 +2775,7 @@ function ShareJobDetailScreen() {
               <>
                 <Button
                   title={broadSingle ? 'Not this area' : 'Not this place'}
-                  variant="secondary"
+                  variant="text"
                   onPress={() => {
                     if (vayrinEnabled) {
                       void trackEvent('vayrin_not_it', { job_id: job.id, source: 'async_likely' });
@@ -2773,6 +2804,7 @@ function ShareJobDetailScreen() {
       {manualSelected.length > 0 ? (
         <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
           <Button
+            variant="save"
             title={busy ? 'Saving…' : fallbackSaveLabel(manualSelected[0]?.name)}
             accessibilityLabel={busy ? 'Saving place' : fallbackSaveLabel(manualSelected[0]?.name)}
             onPress={() => void handleSaveCanonicalCandidates(
@@ -2801,6 +2833,13 @@ function ShareJobDetailScreen() {
 
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
+    reviewTitle: { color: colors.text, marginBottom: Spacing.md },
+    reviewNavigation: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: Spacing.md, gap: Spacing.sm },
+    reviewArrow: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated },
+    reviewCount: { flex: 1, color: colors.textSecondary, fontSize: 13, lineHeight: 18, textAlign: 'center' },
+    mentionTopRow: { flexDirection: 'row', alignItems: 'center', paddingRight: Spacing.sm },
+    mentionCheckbox: { width: 44, height: 44, borderRadius: 8, borderWidth: 1.5, borderColor: colors.controlBorder, alignItems: 'center', justifyContent: 'center' },
+    mentionCheckboxSelected: { backgroundColor: colors.brand, borderColor: colors.accent },
     content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xxl + 72 },
     quickCheckContent: { paddingTop: QUICK_CHECK_LAYOUT.scrollContentTop, paddingBottom: QUICK_CHECK_LAYOUT.scrollBottomPadding },
     batchKeyboardSurface: { flex: 1 },
@@ -2812,7 +2851,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     batchIntro: { paddingBottom: Spacing.xs },
     batchTitle: { color: colors.text, marginTop: Spacing.sm },
-    batchHelp: { color: colors.textSecondary, marginTop: 2, lineHeight: 18 },
+    batchHelp: { color: colors.textSecondary, marginTop: Spacing.sm },
     vayrinLabel: { color: colors.accent, fontSize: 11, lineHeight: 16, fontWeight: '800', letterSpacing: 1.6, marginTop: Spacing.lg },
     batchProgress: { color: colors.textSecondary, fontSize: 13, lineHeight: 18, fontWeight: '700', marginTop: Spacing.xs },
     fullListLabel: { color: colors.text, fontSize: 15, fontWeight: '700', marginTop: Spacing.lg, marginBottom: Spacing.xs },
@@ -2995,9 +3034,10 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderColor: colors.border,
       marginTop: Spacing.sm,
     },
-    mentionCardSelected: { borderColor: colors.primary },
+    mentionCardSelected: { borderColor: colors.accent },
     mentionCardExpanded: { borderColor: colors.accentBorder },
     mentionSummary: {
+      flex: 1,
       minHeight: 72,
       flexDirection: 'row',
       alignItems: 'center',

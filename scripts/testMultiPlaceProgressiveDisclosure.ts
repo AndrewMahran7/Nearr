@@ -93,13 +93,13 @@ assert.equal(rowCandidate(searched.rows['disclosure-three-a']!)?.googlePlaceId, 
 
 // 9–10. Expanded rows reuse the shared compact row; collapsed rows mount no galleries.
 assert.match(detailSource, /<CandidateConfirmationCard[\s\S]*compact[\s\S]*selectionRole="radio"/);
-assert.match(candidateSource, /testID="compact-candidate-row"/);
-assert.match(candidateSource, /variant="thumbnail"/);
+assert.match(candidateSource, /compact-candidate-row/);
+assert.match(candidateSource, /variant=\{compact && !stacked \? 'thumbnail' : 'carousel'\}/, 'compact evidence stacks into a full image at narrow width or large text');
 assert.match(candidateSource, /PhotoRolodex|CandidatePhotoCarousel/);
 const rowRenderer = detailSource.slice(detailSource.indexOf('function renderBatchRow'), detailSource.indexOf('if (loading)'));
 assert.match(rowRenderer, /const visibleCandidates = expanded \? visibleMentionCandidates\(row\) : \[\]/);
 assert.match(rowRenderer, /expanded \? \([\s\S]*SourceEvidenceGallery[\s\S]*CandidateConfirmationCard|expanded \? \([\s\S]*renderBatchCandidateChoice/);
-assert.match(evidenceSource, /frameWidth = preview[\s\S]*\? 112/);
+assert.match(evidenceSource, /frameWidth = paired[\s\S]*: preview[\s\S]*\? 112/);
 assert.match(evidenceSource, /preview \? 92/);
 
 // 11–12. A 2/3-place overview plus one expanded decision stays near one 844pt viewport.

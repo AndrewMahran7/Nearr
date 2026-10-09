@@ -137,7 +137,7 @@ assert.deepEqual(evidenceFramesFromPayload(serialized).map((frame) => frame.time
 assert.equal(normalizeEvidenceFrames([{ id: 'bad', timestampSeconds: 1 }]).length, 0);
 assert.match(candidateCarousel, /Place photos unavailable/);
 assert.equal(buildShareJobDetailState(buildVayrinCandidateFixtureJob('vayrin-confirm-missing-frames')).evidenceFrames.length, 0);
-assert.match(sourceGallery, /Analyzed frames weren’t retained/);
+assert.match(sourceGallery, /Video frames are unavailable/);
 
 // 24–25. No dead end and safe-area-aware persistent CTA.
 assert.match(asyncDetail, /Find the right place/);

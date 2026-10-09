@@ -13,7 +13,7 @@ import {
   Linking,
   Pressable,
   RefreshControl,
-  ScrollView,
+  FlatList,
   StyleSheet,
   Text,
   View,
@@ -21,7 +21,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-import { ErrorBoundary, ShareJobsHeader } from '@/components';
+import { Button, ErrorBoundary, ShareJobsHeader } from '@/components';
 import { PlaceImage } from '@/components/PlaceImage';
 import { ShareJobsSheet } from '@/components/ShareJobsSheet';
 import { SwipeableRow } from '@/components/SwipeableRow';
@@ -241,14 +241,14 @@ function jobSubtitle(job: ShareJob, stalled = false): string {
         : processingMessage(job.status, stalled ? STALE_PROCESSING_MS + 1 : 0);
     case 'needs_help':
       if (vayrin && normalizeVayrinIdentityLeads(job.candidate_payload).length > 0) {
-        return 'Needs your review · Open to search for the exact place';
+        return 'Needs your check · Find the right place';
       }
       if (Array.isArray(job.candidate_payload?.candidates) && job.candidate_payload.candidates.length > 1) {
-        return vayrin ? 'Needs your review · Choose the place that matches' : 'Pick the one you meant';
+        return vayrin ? 'Needs your check · Choose a place' : 'Pick the one you meant';
       }
       if (!Array.isArray(job.candidate_payload?.candidates) || job.candidate_payload.candidates.length === 0)
         return buildShareJobDetailState(job).copy.body;
-      return vayrin ? 'Needs your review · Is this the place?' : 'Does this look right?';
+      return vayrin ? 'Needs your check' : 'Does this look right?';
     case 'failed':
       return buildShareJobDetailState(job).copy.body;
     default:
@@ -349,7 +349,7 @@ function ShareJobsQueueScreen() {
 
     if (isOfflineSession) {
       void trackEvent('queue_empty_failed', { reason: 'offline' });
-      Alert.alert("You're offline", 'Connect to empty your queue.');
+      Alert.alert("You're offline", 'Connect to empty Activity.');
       return;
     }
 
@@ -385,7 +385,7 @@ function ShareJobsQueueScreen() {
       void trackEvent('queue_empty_failed', { reason: offline ? 'offline' : 'server' });
       Alert.alert(
         offline ? "You're offline" : "Couldn't empty queue",
-        offline ? 'Connect to empty your queue.' : 'Your queue was reloaded. Please try again.',
+        offline ? 'Connect to empty Activity.' : 'Your queue was reloaded. Please try again.',
       );
     } finally {
       actionLocksRef.current.delete(lock);
@@ -395,8 +395,8 @@ function ShareJobsQueueScreen() {
 
   function confirmEmptyQueue() {
     Alert.alert(
-      'Empty your queue?',
-      "This removes all items from your queue. Your saved places won't be affected.",
+      'Empty Activity?',
+      "This removes all items from Activity. Your saved places won't be affected.",
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Empty queue', style: 'destructive', onPress: () => void emptyQueue() },
@@ -435,8 +435,8 @@ function ShareJobsQueueScreen() {
    * The queue is a presented modal, so a bare `router.push` left it sitting on
    * top of the destination — and the X then popped the pushed route, taking
    * the selection with it. Tearing the modal stack down FIRST and replacing
-   * makes this one navigation action: the queue closes, the place stays open,
-   * and closing the queue is no longer entangled with the selection.
+   * makes this one navigation action: Activity closes, the place stays open,
+   * and closing Activity is no longer entangled with the selection.
    *
    * Same primitive the job-detail screen already uses for "View place".
    */
@@ -532,7 +532,7 @@ function ShareJobsQueueScreen() {
 
   /**
    * Confirm before undoing an automatic save. The mutation removes the SAVED
-   * PLACE, not just the queue row, so it is gated by the same native
+   * PLACE, not just Activity row, so it is gated by the same native
    * confirmation the map's place detail uses, sharing one copy helper.
    */
   function confirmRemoveRecent(item: RecentAutoSave) {
@@ -625,7 +625,7 @@ function ShareJobsQueueScreen() {
 
   // Honest escape hatch for a job the backend has not advanced. We never
   // pretend the job is progressing; we let the user open the original post or
-  // remove it from the queue.
+  // remove it from Activity.
   function openStalledActions(job: ShareJob) {
     const original = job.canonical_url ?? job.source_url;
     const buttons: Parameters<typeof Alert.alert>[2] = [];
@@ -640,7 +640,7 @@ function ShareJobsQueueScreen() {
       });
     }
     buttons.push({
-      text: 'Remove from queue',
+      text: 'Remove from Activity',
       style: 'destructive',
       onPress: () => void dismissJob(job),
     });
@@ -668,7 +668,7 @@ function ShareJobsQueueScreen() {
         leaveQueueForMap({ savedPlaceId: route.savedPlaceId, source: 'share_job_completed' });
         break;
       case 'queue_item':
-        // Job detail pushes on purpose: Back must return to the queue.
+        // Job detail pushes on purpose: Back must return to Activity.
         router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: route.jobId } });
         break;
       case 'map':
@@ -676,7 +676,7 @@ function ShareJobsQueueScreen() {
         break;
       case 'queue_root':
       default:
-        break; // already on the queue
+        break; // already on Activity
     }
   }
 
@@ -685,7 +685,7 @@ function ShareJobsQueueScreen() {
     const stalled = isProcessing && isStalledProcessing(job);
     const busy = actingId === job.id;
     const actionableRow = !isProcessing || stalled;
-    const subtitle = jobSubtitle(job, stalled);
+    const subtitle = isProcessing ? stalled ? 'Still looking. You can come back later.' : 'Finding the place' : jobSubtitle(job, stalled);
     const firstCandidate = Array.isArray(job.candidate_payload?.candidates)
       ? job.candidate_payload?.candidates[0]
       : null;
@@ -703,9 +703,8 @@ function ShareJobsQueueScreen() {
       >
         <PlaceImage
           googlePlaceId={firstCandidate?.googlePlaceId}
-          initialPhotoUrls={firstCandidate?.photoUrls?.length
-            ? firstCandidate.photoUrls
-            : firstCandidate?.photoUrl ? [firstCandidate.photoUrl] : undefined}
+          sourceUri={firstCandidate?.sourceFrameUrl}
+          allowGoogleLookup={false}
           fallbackSourceUri={firstCandidate?.sourceFrameUrl}
           size={64}
           borderRadius={12}
@@ -719,7 +718,7 @@ function ShareJobsQueueScreen() {
               ? job.candidate_payload.candidates.length
               : 0,
           }}
-          accessibilityLabel={firstCandidate?.name ? `Photo of ${firstCandidate.name}` : undefined}
+          accessibilityLabel="From the original post"
         />
         <View style={styles.rowMain}>
           <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={2}>
@@ -729,7 +728,7 @@ function ShareJobsQueueScreen() {
             <Text style={[typography.caption, styles.rowLocality]} numberOfLines={1}>{locality}</Text>
           ) : null}
           <View style={styles.rowDetail}>
-            <Text style={[typography.caption, styles.rowSubtitle]} numberOfLines={1}>{subtitle}</Text>
+            <Text style={[typography.caption, styles.rowSubtitle]}>{subtitle}</Text>
             <Text style={[typography.caption, styles.rowMeta]} numberOfLines={1}>
               {shouldShowHost(job)
                 ? `${hostOf(job.canonical_url ?? job.source_url)} · ${relativeTime(job.created_at)}`.replace(/^ · /, '')
@@ -754,49 +753,43 @@ function ShareJobsQueueScreen() {
     );
   }
 
-  function renderSection(title: string, sectionJobs: ShareJob[]) {
-    if (sectionJobs.length === 0) return null;
-    return (
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={[typography.label, styles.sectionTitle]}>{title}</Text>
-        </View>
-        <View style={styles.card}>
-          {sectionJobs.map((job, i) => {
-            const row = queueRowFor(job);
-            const availability = queueSwipeAvailability(row);
-            return (
-              <View key={job.id}>
-                {i > 0 ? <View style={styles.separator} /> : null}
-                <SwipeableRow
-                  rowId={`job:${job.id}`}
-                  availability={availability}
-                  actions={queueAccessibilityActions(row)}
-                  onAction={(action) => handleRowAction(job, action)}
-                  coordinator={swipeCoordinator}
-                  disabled={actingId === job.id}
-                  accessibilityLabel={jobTitle(job)}
-                >
-                  {renderRow(job)}
-                </SwipeableRow>
-              </View>
-            );
-          })}
-        </View>
-      </View>
-    );
+  type ActivityItem = { kind: 'section'; key: string; title: string; completed?: boolean }
+    | { kind: 'job'; key: string; job: ShareJob }
+    | { kind: 'saved'; key: string; item: RecentAutoSave };
+  const activityItems: ActivityItem[] = [];
+  if (actionable.length) activityItems.push({ kind: 'section', key: 'check', title: 'Needs your check' }, ...actionable.map(job => ({ kind: 'job' as const, key: job.id, job })));
+  if (processing.length) activityItems.push({ kind: 'section', key: 'finding', title: 'Finding places' }, ...processing.map(job => ({ kind: 'job' as const, key: job.id, job })));
+  if (completedRows.length) activityItems.push({ kind: 'section', key: 'saved', title: 'On your map', completed: true }, ...completedRows.map(item => ({ kind: 'saved' as const, key: item.resultId, item })));
+  function renderActivityItem({ item }: { item: ActivityItem }) {
+    if (item.kind === 'section') return <View style={styles.sectionHeader}>
+      <Text style={[typography.label, styles.sectionTitle]}>{item.title}</Text>
+      {item.completed ? <Pressable onPress={() => void clearCompleted()} disabled={!!actingId}
+        style={styles.clearCompletedButton} accessibilityRole="button" accessibilityLabel={clearCompletedLabel(clearableCount)}>
+        <Text style={styles.undoAllText}>Clear completed</Text>
+      </Pressable> : null}
+    </View>;
+    if (item.kind === 'saved') { const saved = item.item; return <SwipeableRow rowId={'completed:' + saved.resultId}
+      availability={{ save: false, dismiss: true, saveBlockedReason: 'already_saved' }}
+      actions={[{ name: 'dismiss', label: 'Remove from Activity' }]} onAction={() => void dismissCompleted(saved)}
+      coordinator={swipeCoordinator} disabled={actingId === saved.savedPlaceId || actingId === 'completed:' + saved.resultId || actingId === 'clear-completed'}
+      accessibilityLabel={saved.savedPlace.place.name + '. Saved automatically'}>
+      {renderRecentAutoSave(saved)}</SwipeableRow>; }
+    const job = item.job, row = queueRowFor(job);
+    return <SwipeableRow rowId={'job:' + job.id} availability={queueSwipeAvailability(row)} actions={queueAccessibilityActions(row)}
+      onAction={(action) => handleRowAction(job, action)} coordinator={swipeCoordinator} disabled={actingId === job.id}
+      accessibilityLabel={jobTitle(job)}>{renderRow(job)}</SwipeableRow>;
   }
 
   // The header is rendered in EVERY state so the back control is always
   // available — even while auth restores, when the flag is off, or when empty.
   const header = (
     <ShareJobsHeader
-      title="Recent finds"
+      title="Activity"
       onBack={goBack}
-      backLabel="Close queue"
+      backLabel="Close Activity"
       icon="close"
       rightAction={hasContent ? {
-        accessibilityLabel: 'Queue actions',
+        accessibilityLabel: 'Activity actions',
         onPress: confirmEmptyQueue,
         disabled: !!actingId,
       } : undefined}
@@ -824,86 +817,32 @@ function ShareJobsQueueScreen() {
   return (
     <ShareJobsSheet onDismiss={goBack} size={hasContent ? 'queue' : 'compact'}>
       {header}
-      <ScrollView
-        contentContainerStyle={styles.content}
-        contentInsetAdjustmentBehavior="automatic"
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
-        }
-        showsVerticalScrollIndicator={false}
-        onScrollBeginDrag={() => swipeCoordinator.closeActive()}
-      >
-        {loading && !hasContent ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator color={colors.primary} />
-          </View>
-        ) : !hasContent ? (
+      <FlatList data={activityItems} keyExtractor={(item) => item.kind + ':' + item.key}
+        renderItem={renderActivityItem} initialNumToRender={8} maxToRenderPerBatch={6} windowSize={5}
+        contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
+        showsVerticalScrollIndicator={false} onScrollBeginDrag={() => swipeCoordinator.closeActive()}
+        ListHeaderComponent={<View style={styles.pageIntro}>
+          <Text style={[typography.title, styles.pageTitle]}>Finding your places</Text>
+          <Text style={[typography.body, styles.intro]}>From your posts. Into your world.</Text>
+        </View>}
+        ListEmptyComponent={loading ? <View style={styles.loadingWrap}><ActivityIndicator color={colors.primary} /><Text style={styles.emptyBody}>Loading your activity…</Text></View> :
           <View style={styles.emptyState}>
-            <View style={styles.emptyIcon}><Feather name="inbox" size={22} color={colors.primary} /></View>
-            <Text style={[typography.heading, styles.emptyTitle]}>{QUEUE_EMPTY_COPY.title}</Text>
-            <Text style={[typography.body, styles.emptyBody]}>{QUEUE_EMPTY_COPY.body}</Text>
-          </View>
-        ) : (
-          <>
-            {actionable.length > 0 ? (
-              <Text style={[typography.body, styles.intro]}>
-                {vayrinEnabled
-                  ? count === 1
-                    ? '1 earlier find has optional correction tools.'
-                    : `${count} earlier finds have optional correction tools.`
-                  : queueIntro(count)}
-              </Text>
-            ) : null}
-            {renderSection(vayrinEnabled ? 'Finding places' : 'Still processing', processing)}
-            {renderSection('Other finds', actionable)}
-          </>
-        )}
-        {completedRows.length > 0 ? (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[typography.label, styles.sectionTitle]}>Recent finds</Text>
-              <Pressable
-                onPress={() => void clearCompleted()}
-                disabled={!!actingId}
-                hitSlop={8}
-                style={styles.clearCompletedButton}
-                accessibilityRole="button"
-                accessibilityLabel={clearCompletedLabel(clearableCount)}
-              >
-                <Text style={styles.undoAllText}>Clear completed</Text>
-              </Pressable>
-            </View>
-            <View style={styles.card}>
-              {completedRows.map((item, index) => (
-                <View key={item.resultId}>
-                  {index > 0 ? <View style={styles.separator} /> : null}
-                  <SwipeableRow
-                    rowId={`completed:${item.resultId}`}
-                    availability={{ save: false, dismiss: true, saveBlockedReason: 'already_saved' }}
-                    actions={[{ name: 'dismiss', label: 'Remove from queue' }]}
-                    onAction={() => void dismissCompleted(item)}
-                    coordinator={swipeCoordinator}
-                    disabled={
-                      actingId === item.savedPlaceId ||
-                      actingId === `completed:${item.resultId}` ||
-                      actingId === 'clear-completed'
-                    }
-                    accessibilityLabel={`${item.savedPlace.place.name}. Saved automatically`}
-                  >
-                    {renderRecentAutoSave(item)}
-                  </SwipeableRow>
-                </View>
-              ))}
-            </View>
-          </View>
-        ) : null}
-      </ScrollView>
+            <View style={styles.emptyIcon}><Feather name="check" size={22} color={colors.primary} /></View>
+            <Text style={[typography.heading, styles.emptyTitle]}>You're all caught up</Text>
+            <Text style={[typography.body, styles.emptyBody]}>Share a post to find your next place.</Text>
+            <Button title="Back to your map" onPress={goBack} style={styles.emptyAction} />
+          </View>}
+      />
     </ShareJobsSheet>
   );
 }
 
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
+    pageIntro: { paddingBottom: Spacing.sm },
+    pageTitle: { color: colors.text },
+    emptyAction: { marginTop: Spacing.lg, alignSelf: 'stretch' },
     content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xxl },
     loadingWrap: { paddingTop: Spacing.xl * 2, alignItems: 'center' },
     stateWrap: { paddingTop: Spacing.xl, paddingHorizontal: Spacing.lg },
@@ -914,6 +853,9 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       alignItems: 'center',
       justifyContent: 'space-between',
       marginBottom: Spacing.sm,
+      marginTop: Spacing.lg,
+      minHeight: 44,
+      flexWrap: 'wrap',
     },
     sectionTitle: { color: colors.text, fontWeight: '700' },
     countBadge: {
@@ -938,8 +880,10 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       alignItems: 'center',
       gap: Spacing.md,
       minHeight: 104,
-      paddingVertical: Spacing.lg,
-      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.md,
+      paddingHorizontal: 0,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
     },
     rowPressed: { backgroundColor: colors.surfaceElevated },
     separator: {
@@ -950,9 +894,9 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     rowMain: { flex: 1, minWidth: 0, marginRight: Spacing.xs },
     rowTitle: { color: colors.text },
     rowLocality: { color: colors.textSecondary, marginTop: 2 },
-    rowDetail: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: 5 },
+    rowDetail: { alignItems: 'flex-start', gap: Spacing.xs, marginTop: Spacing.xs },
     rowSubtitle: { color: colors.textSecondary, flexShrink: 1 },
-    rowMeta: { color: colors.textMuted, marginLeft: 'auto' },
+    rowMeta: { color: colors.textSecondary },
     autoSaveMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.xs },
     categoryBadge: {
       color: colors.textSecondary,
@@ -995,8 +939,8 @@ export default function ShareJobsQueueRoute() {
   return (
     <ErrorBoundary
       name="share-jobs"
-      fallbackTitle="Couldn't open your queue"
-      fallbackBody="Something went wrong loading the queue. Try again."
+      fallbackTitle="Couldn't open Activity"
+      fallbackBody="Something went wrong loading Activity. Try again."
     >
       <ShareJobsQueueScreen />
     </ErrorBoundary>
