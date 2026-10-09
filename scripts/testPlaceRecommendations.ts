@@ -185,7 +185,8 @@ assert.deepEqual(recommendationQueryForCategory('attraction'), {
   assert.ok(recommended.includes('const saved = await onSave(recommendation)'));
   assert.ok(recommended.includes('setFailedPhotoUrls'));
   assert.ok(recommended.includes('No place photos yet'));
-  assert.ok(recommended.includes('numberOfLines={3}'));
+  assert.match(recommended, /<Text accessibilityRole="header" style=\{styles\.name\}>[\s\S]*?\{recommendation\.name\}/, 'the destination name is a full scalable header');
+  assert.doesNotMatch(recommended, /<Text[^>]*numberOfLines[^>]*>[\s]*\{recommendation\.name\}/, 'important destination names may wrap');
   assert.ok(recommended.includes("filter(Boolean).join(' · ')"));
   assert.ok(map.includes("handleSavePlaceCandidate(candidate, 'recommendation')"));
   assert.ok(map.includes('selectPlace(result.saved)'));

@@ -171,7 +171,7 @@ assert.match(assetRegistry, /dorset-quarry-loop\.mp4/);
 assert.match(assetRegistry, /mad-yolks-loop\.mp4/);
 assert.match(assetRegistry, /hydra-old-town-loop\.mp4/);
 const visualLanguage = read('components/onboarding/v2/OnboardingVisualLanguage.tsx');
-assert.match(visualLanguage, /AccessibilityInfo\.isReduceMotionEnabled/);
+assert.match(visualLanguage, /return useReduceMotion\(\)/, 'onboarding delegates to the conservative live accessibility setting');
 assert.doesNotMatch(ui, /InstagramReelMock|fake social/i);
 const endpoint = read('supabase/functions/get-onboarding-tutorial/index.ts');
 assert.match(endpoint, /DEVELOPMENT_HOST/);

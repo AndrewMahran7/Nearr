@@ -1,22 +1,16 @@
 import { useMemo } from 'react';
-import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Image, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Image, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 
+import { useReduceMotion } from '@/lib/useReduceMotion';
 import { Phase1Colors, usePhase1Colors } from './Phase1Visuals';
 import { selectOfflineOnboardingFixture } from '@/onboarding/fixtures/offlineOnboardingFixtures';
 import { offlineOnboardingAsset, offlineOnboardingMedia } from '@/onboarding/assets/offlineOnboardingAssets';
 import type { OnboardingInterest, OnboardingPlatform } from '@/lib/onboardingV2Core';
 
 export function useOnboardingReduceMotion(): boolean {
-  const [reduceMotion, setReduceMotion] = useState(false);
-  useEffect(() => {
-    let mounted = true;
-    void AccessibilityInfo.isReduceMotionEnabled().then((value) => { if (mounted) setReduceMotion(value); });
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
-    return () => { mounted = false; subscription.remove(); };
-  }, []);
-  return reduceMotion;
+  return useReduceMotion();
 }
 
 export function platformIcon(platform: OnboardingPlatform | null): keyof typeof Ionicons.glyphMap {

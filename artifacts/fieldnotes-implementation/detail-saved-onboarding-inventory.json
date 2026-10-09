@@ -2,7 +2,7 @@
   "phase": "detail-saved-onboarding",
   "base": "ca08c154",
   "detailSavedCommit": "0921895",
-  "onboardingCommit": "pending",
+  "onboardingCommit": "501acec",
   "changedComponents": {
     "detail": [
       "components/map/SelectedPlaceDetails.tsx",
@@ -110,5 +110,10 @@
     "Host mocks render actual React components and assert contracts, but do not measure native pixels, clipping, VoiceOver, scroll performance, animation frames, or touch dispatch.",
     "100/150/200% scene and 100/150/220% Saved host props exercise responsive branches only; physical/simulator visual validation remains with root native QA.",
     "This phase does not claim native screenshot or production deployment evidence."
+  ],
+  "accessibilityFollowup": [
+    "Onboarding Reduce Motion helper delegates to conservative shared hook",
+    "Dark warm-accent/success icon foregrounds use semantic inverse text",
+    "Destination reminder separator uses a real middle dot"
   ]
 }

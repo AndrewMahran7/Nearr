@@ -200,7 +200,7 @@ export function OnboardingV2RealPractice({ state }: { state: OnboardingV2State }
       </View>
       <View style={styles.statusCard}>
         <View style={[styles.statusIcon, (received || needsReview) && styles.statusIconActive]}>
-          <Feather name={needsReview ? 'edit-3' : received ? 'check' : waiting ? 'share' : failed ? 'alert-circle' : 'map-pin'} size={19} color="#FFFFFF" />
+          <Feather name={needsReview ? 'edit-3' : received ? 'check' : waiting ? 'share' : failed ? 'alert-circle' : 'map-pin'} size={19} color={Phase1Colors.onOrange} />
         </View>
         <View style={styles.statusCopy}>
           <Text style={styles.statusLabel}>{status.replaceAll('_', ' ')}</Text>

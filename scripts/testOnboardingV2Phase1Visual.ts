@@ -42,7 +42,8 @@ console.log('PASS bundled source video uses neutral Nearr framing rather than fa
 
 assert.match(preAuth, /1 PLACE FOUND/);
 assert.match(preAuth, /Social apps save the video\. Nearr saves the place/);
-assert.match(visualLanguage, /AccessibilityInfo\.isReduceMotionEnabled/);
+assert.match(visualLanguage, /return useReduceMotion\(\)/);
+assert.match(read('lib/useReduceMotion.ts'), /AccessibilityInfo\.isReduceMotionEnabled/);
 const practiceScene = read('components/onboarding/v2/FieldnotesPracticeScene.tsx');
 assert.match(preAuth, /<FieldnotesPracticeScene/);
 assert.match(practiceScene, /Saved for this walkthrough/);

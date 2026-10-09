@@ -221,5 +221,12 @@
       "Old hardcoded cream/orange appearance assertions now test shared semantic palette and adaptive motion/scaling"
     ]
   },
-  "visualEvidence": "No native screenshot claim from these host tests; root owns native capture and comparison."
+  "visualEvidence": "No native screenshot claim from these host tests; root owns native capture and comparison.",
+  "accessibilityFollowup": {
+    "foundationCommand": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testFieldnotesFoundation.ts",
+    "foundationChecks": 35,
+    "phase1Visual": "pass",
+    "practiceSceneCombinations": 24,
+    "sharedReduceMotion": "conservative until OS preference known; live changes observed"
+  }
 }

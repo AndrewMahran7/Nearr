@@ -197,7 +197,7 @@ assert.match(
   'an open detail is repointed to the exact refreshed database row',
 );
 assert.match(detail, /whySavedDisplay\(\{ notes, ai_note: saved\.ai_note \}\)/);
-assert.match(detail, /<Text style=\{styles\.reasonText\}>\{`“\$\{whySaved\.text\}”`\}<\/Text>/);
+assert.match(detail, /<Text style=\{styles\.reasonText\}>\{whySaved\.text\}<\/Text>/);
 assert.match(
   finalizer,
   /event: 'video_ai_note_enrichment'/,

@@ -216,7 +216,7 @@ function PlatformScreen({ state }: { state: OnboardingV2State }) {
 
   return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.14} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title="Continue" disabled={!state.preferredPlatform} onPress={() => void completeOnboardingV2Platforms()} />}>
     <Text style={styles.eyebrow}>START WITH YOUR FEED</Text><Text style={styles.headline}>Where do you usually find places?</Text><Text style={styles.body}>Choose the one you use most.</Text>
-    <View style={styles.choiceGrid}>{PLATFORMS.map((item) => { const selected = state.preferredPlatform === item.value; return <Pressable key={item.value} onPress={() => { hapticSelection(); void chooseOnboardingV2PrimaryPlatform(item.value); }} accessibilityRole="radio" accessibilityState={{ checked: selected }} accessibilityLabel={item.label} style={[styles.platformCard, selected && styles.selectedCard]}><View style={[styles.platformIcon, { backgroundColor: item.tint }]}><Ionicons name={item.icon} size={29} color="#171615" /></View><Text style={styles.choiceTitle}>{item.label}</Text><View style={[styles.radio, selected && styles.radioSelected]}>{selected ? <Feather name="check" size={13} color="#FFFFFF" /> : null}</View></Pressable>; })}</View>
+    <View style={styles.choiceGrid}>{PLATFORMS.map((item) => { const selected = state.preferredPlatform === item.value; return <Pressable key={item.value} onPress={() => { hapticSelection(); void chooseOnboardingV2PrimaryPlatform(item.value); }} accessibilityRole="radio" accessibilityState={{ checked: selected }} accessibilityLabel={item.label} style={[styles.platformCard, selected && styles.selectedCard]}><View style={[styles.platformIcon, { backgroundColor: item.tint }]}><Ionicons name={item.icon} size={29} color="#171615" /></View><Text style={styles.choiceTitle}>{item.label}</Text><View style={[styles.radio, selected && styles.radioSelected]}>{selected ? <Feather name="check" size={13} color={Phase1Colors.onOrange} /> : null}</View></Pressable>; })}</View>
   </Phase1Frame>;
 }
 function InterestScreen({ state }: { state: OnboardingV2State }) {
@@ -225,7 +225,7 @@ function InterestScreen({ state }: { state: OnboardingV2State }) {
 
   return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.22} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title="Continue" disabled={state.selectedInterests.length === 0} onPress={() => void completeOnboardingV2Interests()} />}>
     <Text style={styles.eyebrow}>MAKE IT YOURS</Text><Text style={styles.headline}>What do you save most?</Text><Text style={styles.body}>Pick everything that sounds like you.</Text>
-    <View style={styles.interestGrid}>{INTERESTS.map((item) => { const selected = state.selectedInterests.includes(item.value); return <Pressable key={item.value} onPress={() => { hapticSelection(); void toggleOnboardingV2Interest(item.value); }} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} accessibilityLabel={item.label} style={[styles.interestCard, selected && styles.selectedInterestCard]}><View style={[styles.interestIcon, selected && styles.selectedInterestIcon]}><Feather name={item.icon} size={21} color={selected ? '#FFFFFF' : Phase1Colors.orange} /></View><Text style={[styles.interestLabel, selected && styles.selectedInterestText]}>{item.label}</Text>{selected ? <Feather name="check-circle" size={18} color={Phase1Colors.orange} /> : null}</Pressable>; })}</View>
+    <View style={styles.interestGrid}>{INTERESTS.map((item) => { const selected = state.selectedInterests.includes(item.value); return <Pressable key={item.value} onPress={() => { hapticSelection(); void toggleOnboardingV2Interest(item.value); }} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} accessibilityLabel={item.label} style={[styles.interestCard, selected && styles.selectedInterestCard]}><View style={[styles.interestIcon, selected && styles.selectedInterestIcon]}><Feather name={item.icon} size={21} color={selected ? Phase1Colors.onOrange : Phase1Colors.orange} /></View><Text style={[styles.interestLabel, selected && styles.selectedInterestText]}>{item.label}</Text>{selected ? <Feather name="check-circle" size={18} color={Phase1Colors.orange} /> : null}</Pressable>; })}</View>
   </Phase1Frame>;
 }
 function PersonalizedPayoffScreen({ state }: { state: OnboardingV2State }) {
@@ -394,7 +394,7 @@ function Phase2IntroScreen({ state }: { state: OnboardingV2State }) {
   };
   return (
     <Phase1Frame progress={0.74} progressLabel="Onboarding progress" scroll={false} contentStyle={styles.phase2Content} footer={<View style={styles.phase2Actions}><Phase1PrimaryButton title={starting ? 'Connecting…' : 'Try with a real video'} disabled={starting} onPress={() => void tryRealVideo()} /><Pressable onPress={() => void deferOnboardingV2Practice()} accessibilityRole="button" accessibilityLabel="I'll try this later" style={styles.laterButton}><Text style={styles.laterButtonText}>I’ll try this later</Text></Pressable></View>}>
-      <View style={styles.phase2MapBackdrop}><View style={styles.mapRoadWide} /><View style={styles.mapRoadThin} /><View style={styles.smallPayoffPin}><Feather name="map-pin" size={17} color="#FFFFFF" /></View></View>
+      <View style={styles.phase2MapBackdrop}><View style={styles.mapRoadWide} /><View style={styles.mapRoadThin} /><View style={styles.smallPayoffPin}><Feather name="map-pin" size={17} color={Phase1Colors.onOrange} /></View></View>
       <View style={styles.phase2Sheet}>
         <Text style={styles.eyebrow}>OPTIONAL REAL-WORLD PRACTICE</Text>
         <Text style={styles.headline}>Ready to save one of your own?</Text>
@@ -441,7 +441,7 @@ function FirstMagicCompleteScreen({ state }: { state: OnboardingV2State }) {
   const placeName = realSave?.place.name ?? practice?.expectedPlaceName ?? 'Your place';
   const fallbackAsset = practice?.localPreviewAssetKey ?? 'mad_yolks';
   return <Phase1Frame progress={0.76} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title="Set up Nearr" onPress={() => void beginOnboardingV2SecondHalf()} />} contentStyle={styles.centered}>
-    <View style={styles.celebrationMark}><NearrSparkleMark size={78} /><View style={styles.checkBadge}><Feather name="check" size={18} color="#FFFFFF" /></View></View>
+    <View style={styles.celebrationMark}><NearrSparkleMark size={78} /><View style={styles.checkBadge}><Feather name="check" size={18} color={Phase1Colors.onOrange} /></View></View>
     <Text style={styles.headlineCentered}>{placeName} is saved.</Text>
     <View style={styles.realSaveProof}>
       <Image source={sourceThumbnail ? { uri: sourceThumbnail } : offlineOnboardingAsset(fallbackAsset)} style={styles.realSaveFallback} resizeMode="cover" accessibilityLabel={`${placeName} saved-place photo`} />

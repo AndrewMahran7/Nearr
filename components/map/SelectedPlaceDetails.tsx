@@ -1159,7 +1159,7 @@ export function SelectedPlaceDetails({
         <View style={styles.reminderCopy}>
           <Text style={styles.reminderTitle}>Remind me nearby</Text>
           <Text style={styles.reminderDescription}>A little nudge when you?re close.</Text>
-          {notifyOn ? <Pressable onPress={() => setReminderSettingsExpanded((value) => !value)} accessibilityRole="button" accessibilityLabel={`Nearby reminder, ${reminderStatus}. Change distance`} accessibilityState={{ expanded: reminderSettingsExpanded }} style={styles.reminderControl}><Text style={styles.reminderDistanceText}>{reminderDistance} ? Change distance</Text><Feather name={reminderSettingsExpanded ? 'chevron-down' : 'chevron-right'} size={16} color={colors.textSecondary} /></Pressable> : null}
+          {notifyOn ? <Pressable onPress={() => setReminderSettingsExpanded((value) => !value)} accessibilityRole="button" accessibilityLabel={`Nearby reminder, ${reminderStatus}. Change distance`} accessibilityState={{ expanded: reminderSettingsExpanded }} style={styles.reminderControl}><Text style={styles.reminderDistanceText}>{reminderDistance} · Change distance</Text><Feather name={reminderSettingsExpanded ? 'chevron-down' : 'chevron-right'} size={16} color={colors.textSecondary} /></Pressable> : null}
         </View>
         {reminderBusy ? <ActivityIndicator accessibilityLabel="Updating reminder" color={colors.primary} /> : <Switch value={notifyOn} onValueChange={(next) => void changeReminderEnabled(next)} accessibilityLabel={`Nearby reminder for ${saved.place.name}`} trackColor={{ false: colors.controlBorder, true: colors.primary }} />}
       </View> : null}
