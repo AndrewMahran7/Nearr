@@ -172,6 +172,8 @@ test('historical, unreviewed and weakly verified cases cannot enter holdout', ()
   assert.ok(holdoutEligibility(manifest(), label({ review_passes: [label().review_passes[0], { ...label().review_passes[1], blind_to_first_pass: false }] })).reasons.includes('heldout_double_review_missing_or_disagreed'));
   assert.ok(holdoutEligibility(manifest(), label({ review_passes: [label().review_passes[0], { ...label().review_passes[1], accepted_place_group_ids: [opaquePlaceGroupId('other')] }] })).reasons.includes('heldout_double_review_missing_or_disagreed'));
   assert.throws(() => validateLabels([manifest()], [label({ confidence: 'MEDIUM' })]), /ready_requires_high_confidence/);
+  assert.throws(() => validateLabels([manifest()], [label({ label_class: 'UNVERIFIED', expected_places: [] })]), /ready_truth_review_missing/);
+  assert.throws(() => validateLabels([manifest()], [label({ review: { decision: 'accept', reviewer: 'collector-a', reviewed_at: '2026-10-08T01:00:00Z', independent: true } })]), /ready_truth_review_missing/);
 });
 
 test('each ready depicted exact place needs a distinct shared place group', () => {

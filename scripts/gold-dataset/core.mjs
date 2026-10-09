@@ -85,7 +85,11 @@ export function validateLabels(manifest, labels) {
     if (!l.expected_places.every((p) => ['depicted', 'mentioned_only'].includes(p.role))) fail(`invalid_place_role:${l.case_id}`);
     if (!l.provenance.every((p) => p && typeof p.kind === 'string' && typeof p.reference === 'string')) fail(`invalid_provenance:${l.case_id}`);
     if (!l.place_group_ids.every((x) => PLACE_GROUP_ID.test(x))) fail(`invalid_place_group:${l.case_id}`);
-    if (byCase.get(l.case_id).state === 'ready' && l.confidence !== 'HIGH') fail(`ready_requires_high_confidence:${l.case_id}`);
+    if (byCase.get(l.case_id).state === 'ready') {
+      if (l.confidence !== 'HIGH') fail(`ready_requires_high_confidence:${l.case_id}`);
+      const decision = { VERIFIED_EXACT_SINGLE: 'accept', VERIFIED_MULTI: 'accept', VERIFIED_REGION_ONLY: 'region_only', KNOWN_NEGATIVE: 'negative' }[l.label_class];
+      if (!decision || l.review?.decision !== decision || !str(l.review?.reviewer).trim() || !Number.isFinite(Date.parse(l.review?.reviewed_at)) || l.review?.independent !== true || l.review?.reviewer === l.collected_by) fail(`ready_truth_review_missing:${l.case_id}`);
+    }
     if (l.review_passes != null && (!Array.isArray(l.review_passes) || !l.review_passes.every((p) => p && typeof p.reviewer === 'string' && typeof p.reviewed_at === 'string' && typeof p.decision === 'string' && Array.isArray(p.accepted_place_group_ids) && p.accepted_place_group_ids.every((x) => PLACE_GROUP_ID.test(x))))) fail(`invalid_review_passes:${l.case_id}`);
     if (l.review_agreement != null && !['agree', 'disagree', 'pending'].includes(l.review_agreement)) fail(`invalid_review_agreement:${l.case_id}`);
     if (['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI'].includes(l.label_class)) {
@@ -133,7 +137,7 @@ export function holdoutEligibility(record, label) {
 
 export function benchmarkReadiness(manifest, labels) {
   const byId = new Map(labels.map((l) => [l.case_id, l]));
-  const ready = manifest.filter((r) => r.state === 'ready' && r.view_eligibility?.full === true && array(r.evidence?.frame_paths).length >= 3 && byId.get(r.case_id)?.confidence === 'HIGH');
+  const ready = manifest.filter((r) => r.state === 'ready' && r.view_eligibility?.full === true && array(r.evidence?.frame_paths).length >= 3 && byId.get(r.case_id)?.confidence === 'HIGH' && ['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI', 'VERIFIED_REGION_ONLY', 'KNOWN_NEGATIVE'].includes(byId.get(r.case_id)?.label_class));
   const outdoor = (r) => array(r.categories).some((c) => /beach|cove|cliff|hike|trail|waterfall|outdoor|viewpoint|lake|swimming.hole|cave|geolog/i.test(c));
   const counts = {
     ready: ready.length,
