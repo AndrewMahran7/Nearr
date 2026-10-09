@@ -6,7 +6,7 @@
   "required": ["input_id", "view", "status", "autonomous", "places", "candidates"],
   "properties": {
     "input_id": { "type": "string", "pattern": "^i_[a-f0-9]{24}$" },
-    "view": { "enum": ["full", "description_hidden", "location_hidden", "visual_only", "text_only"] },
+    "view": { "enum": ["full", "description_hidden", "location_hidden", "visual_audio", "visual_only", "visual_pixel_text_masked", "text_only"] },
     "status": { "enum": ["completed", "review", "failed"] },
     "autonomous": { "type": "boolean" },
     "places": { "type": "array", "items": { "$ref": "#/$defs/place" } },

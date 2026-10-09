@@ -25,8 +25,11 @@
         "location_tag": { "type": ["string", "null"] },
         "source_geography": { "type": ["object", "null"], "properties": { "country": { "type": ["string", "null"] }, "region": { "type": ["string", "null"] }, "city": { "type": ["string", "null"] } }, "additionalProperties": false },
         "transcript": { "type": ["string", "null"] },
+        "transcript_source": { "enum": ["spoken_audio", null], "description": "Required with visual_audio; transcript must come from speech in the video, never caption text." },
         "frame_paths": { "type": "array", "items": { "type": "string" }, "description": "Local temporary paths; materializer re-encodes into neutral names. Do not commit media." },
-        "frame_sha256": { "type": "array", "items": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "description": "Required for each held-out frame; seal verifies bytes exist and match." }
+        "frame_sha256": { "type": "array", "items": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "description": "Required for each held-out frame; seal verifies bytes exist and match." },
+        "pixel_text_masked_frame_paths": { "type": "array", "items": { "type": "string" }, "description": "Optional reviewed derivatives for the separate OCR ablation. The normal visual_only view uses original frames, including legitimate in-video text." },
+        "pixel_text_masked_frame_sha256": { "type": "array", "items": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
       },
       "additionalProperties": true
     },
@@ -52,13 +55,16 @@
         "full": { "type": "boolean" },
         "description_hidden": { "type": "boolean" },
         "location_hidden": { "type": "boolean" },
+        "visual_audio": { "type": "boolean" },
         "visual_only": { "type": "boolean" },
+        "visual_pixel_text_masked": { "type": "boolean" },
         "text_only": { "type": "boolean" }
       },
       "additionalProperties": false
     },
-    "visual_answer_overlay": { "type": "boolean" },
-    "mask_review": { "type": "object", "properties": { "answer_fields_checked": { "type": "boolean" }, "permitted_media_derivative": { "type": "boolean" }, "reviewer": { "type": "string" }, "reviewed_at": { "type": "string", "format": "date-time" } }, "additionalProperties": true },
+    "visual_answer_overlay": { "type": "boolean", "description": "Whether original video pixels visibly state the answer. This does not disqualify normal visual_only." },
+    "visual_review": { "type": "object", "description": "Required for READY: inspected complete video, with retained frames spanning opening, middle and ending.", "required": ["duration_seconds", "frame_timestamps_seconds", "coverage", "entire_video_inspected", "reviewer", "reviewed_at"], "properties": { "duration_seconds": { "type": "number", "exclusiveMinimum": 0 }, "frame_timestamps_seconds": { "type": "array", "minItems": 3, "items": { "type": "number", "minimum": 0 } }, "coverage": { "type": "array", "items": { "enum": ["opening", "middle", "ending", "scene_change", "distinct_segment"] } }, "entire_video_inspected": { "type": "boolean" }, "reviewer": { "type": "string" }, "reviewed_at": { "type": "string", "format": "date-time" } }, "additionalProperties": true },
+    "mask_review": { "type": "object", "properties": { "answer_fields_checked": { "type": "boolean" }, "permitted_media_derivative": { "type": "boolean" }, "pixel_text_mask_verified": { "type": "boolean" }, "reviewer": { "type": "string" }, "reviewed_at": { "type": "string", "format": "date-time" } }, "additionalProperties": true },
     "state": { "enum": ["candidate", "ready"] },
     "exposure": { "enum": ["new_unscored", "historical_outcomes_already_exposed"] }
   },

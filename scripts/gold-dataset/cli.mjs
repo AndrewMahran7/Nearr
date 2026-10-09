@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { heldoutRunKey, holdoutEligibility, inferencePayload, proposeSplits, renderReview, scoreOne, sha256, summarizeScores, validateLabels, validateManifest, validateSplits, VIEWS } from './core.mjs';
+import { benchmarkReadiness, heldoutRunKey, holdoutEligibility, independentGroupCount, inferencePayload, proposeSplits, renderReview, scoreOne, sha256, summarizeScores, validateLabels, validateManifest, validateSplits, VIEWS } from './core.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const dataset = path.join(repo, 'artifacts/recognition-gold-dataset');
@@ -78,12 +78,14 @@ function materialize(opts) {
   fs.mkdirSync(root, { recursive: true });
   fs.mkdirSync(dir); // Immutable materialization: a repeated attempt must not overwrite evidence.
   try {
-    const frameSources = opts.view === 'text_only' ? [] : record.evidence.frame_paths ?? [];
+    const pixelMasked = opts.view === 'visual_pixel_text_masked';
+    const frameSources = opts.view === 'text_only' ? [] : pixelMasked ? record.evidence.pixel_text_masked_frame_paths ?? [] : record.evidence.frame_paths ?? [];
+    const frameHashes = pixelMasked ? record.evidence.pixel_text_masked_frame_sha256 : record.evidence.frame_sha256;
     if (frameSources.length) fs.mkdirSync(path.join(dir, 'frames'));
     for (let i = 0; i < frameSources.length; i++) {
       const from = path.resolve(repo, frameSources[i]);
       if (!fs.statSync(from).isFile()) throw new Error('invalid_frame');
-      const expectedHash = record.evidence.frame_sha256?.[i];
+      const expectedHash = frameHashes?.[i];
       if (expectedHash && sha256(fs.readFileSync(from)) !== expectedHash) throw new Error('frame_hash_mismatch');
       const to = path.join(dir, input.media.frames[i]);
       const child = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-nostdin', '-i', from, '-frames:v', '1', '-map_metadata', '-1', '-map_chapters', '-1', '-an', '-q:v', '2', to], { stdio: 'ignore', windowsHide: true });
@@ -109,24 +111,33 @@ function requirePrivateHoldoutManifest(opts) {
 function ensureHoldoutQuality(manifest, labels, splits) {
   const held = manifest.filter((r) => splits.assignments[r.case_id] === 'held_out');
   const groups = new Set(held.map((r) => r.source_group_id));
-  if (manifest.length < 250 || groups.size < 60 || held.length < 60 || held.length > 80) throw new Error('holdout_quality_size_gate');
+  const independentGroups = independentGroupCount(held, labels);
   const byId = new Map(labels.map((l) => [l.case_id, l]));
+  const readiness = benchmarkReadiness(manifest, labels);
+  if (readiness.counts.ready < 200 || independentGroups < 60 || held.length < 60) throw new Error('holdout_quality_size_gate');
+  if (!readiness.eligible) throw new Error('benchmark_ready_slice_gate');
+  const outdoor = (r) => r.categories.some((c) => /beach|cove|cliff|hike|trail|waterfall|outdoor|viewpoint|lake|swimming.hole|cave|geolog/i.test(c));
+  const misleading = (r) => r.misleading_metadata === true || (Array.isArray(r.misleading_metadata) && r.misleading_metadata.length > 0);
   for (const r of held) if (!holdoutEligibility(r, byId.get(r.case_id)).eligible) throw new Error(`holdout_review_gate:${r.case_id}`);
   for (const r of held) for (let i = 0; i < r.evidence.frame_paths.length; i++) {
     const frame = path.resolve(repo, r.evidence.frame_paths[i]);
     if (!fs.existsSync(frame) || !fs.statSync(frame).isFile() || sha256(fs.readFileSync(frame)) !== r.evidence.frame_sha256[i]) throw new Error(`holdout_frame_hash_mismatch:${r.case_id}`);
   }
+  for (const r of held.filter((item) => item.view_eligibility.visual_pixel_text_masked)) for (let i = 0; i < r.evidence.pixel_text_masked_frame_paths.length; i++) {
+    const frame = path.resolve(repo, r.evidence.pixel_text_masked_frame_paths[i]);
+    if (!fs.existsSync(frame) || !fs.statSync(frame).isFile() || sha256(fs.readFileSync(frame)) !== r.evidence.pixel_text_masked_frame_sha256[i]) throw new Error(`holdout_pixel_mask_frame_hash_mismatch:${r.case_id}`);
+  }
   const classes = new Set(held.map((r) => byId.get(r.case_id).label_class));
   const byClass = (x) => held.filter((r) => byId.get(r.case_id).label_class === x).length;
   if (!classes.has('VERIFIED_EXACT_SINGLE') || byClass('VERIFIED_MULTI') < 8 || byClass('KNOWN_NEGATIVE') < 6) throw new Error('holdout_missing_label_slice');
   if (held.filter((r) => r.view_eligibility.description_hidden).length < 15 || held.filter((r) => r.view_eligibility.visual_only).length < 15 || !['location_hidden', 'text_only'].every((view) => held.some((r) => r.view_eligibility[view]))) throw new Error('holdout_missing_ablation_slice');
-  if (held.filter((r) => r.misleading_metadata === true || (Array.isArray(r.misleading_metadata) && r.misleading_metadata.length)).length < 6) throw new Error('holdout_missing_misleading_metadata');
-  if (held.filter((r) => r.categories.some((c) => /beach|cliff|hike|trail|waterfall|outdoor|viewpoint/i.test(c))).length < 10 || held.filter((r) => r.categories.includes('branch_disambiguation')).length < 6) throw new Error('holdout_missing_hard_slices');
+  if (held.filter(misleading).length < 6) throw new Error('holdout_missing_misleading_metadata');
+  if (held.filter(outdoor).length < 10 || held.filter((r) => r.categories.includes('branch_disambiguation')).length < 6) throw new Error('holdout_missing_hard_slices');
   const platformCounts = held.reduce((map, r) => map.set(r.platform, (map.get(r.platform) ?? 0) + 1), new Map());
   if ([...platformCounts.values()].filter((n) => n >= 5).length < 2 || new Set(held.flatMap((r) => r.categories)).size < 5) throw new Error('holdout_platform_or_category_imbalance');
   const countries = new Set(held.map((r) => r.geography?.country ?? byId.get(r.case_id)?.geography?.country ?? byId.get(r.case_id)?.expected_places?.[0]?.country).filter(Boolean));
   if (countries.size < 3) throw new Error('holdout_geography_imbalance');
-  return { held, groups };
+  return { held, groups, independentGroups };
 }
 function checkedSeal(opts) {
   requirePrivateHoldoutManifest(opts);
@@ -134,8 +145,8 @@ function checkedSeal(opts) {
   for (const [key, file] of [['manifest_sha256', opts.manifest ?? defaults.manifest], ['labels_sha256', opts.labels ?? defaults.labels], ['splits_sha256', opts.splits ?? defaults.splits]]) if (sealDoc[key] !== sha256(fs.readFileSync(file))) throw new Error(`holdout_seal_mismatch:${key}`);
   const { manifest, labels } = read(opts);
   const splits = splitsFile(opts, manifest, labels);
-  const { held, groups } = ensureHoldoutQuality(manifest, labels, splits);
-  if (held.length !== sealDoc.heldout_cases || groups.size !== sealDoc.heldout_source_groups) throw new Error('invalid_holdout_seal_counts');
+  const { held, groups, independentGroups } = ensureHoldoutQuality(manifest, labels, splits);
+  if (held.length !== sealDoc.heldout_cases || groups.size !== sealDoc.heldout_source_groups || independentGroups !== sealDoc.heldout_independent_groups) throw new Error('invalid_holdout_seal_counts');
   if (!sealDoc.allowed_milestones?.includes('baseline_v1')) throw new Error('invalid_holdout_seal_milestones');
   return sealDoc;
 }
@@ -143,16 +154,16 @@ function seal(opts) {
   requirePrivateHoldoutManifest(opts);
   const { manifest, labels } = read(opts);
   const splits = splitsFile(opts, manifest, labels);
-  const { held, groups } = ensureHoldoutQuality(manifest, labels, splits);
+  const { held, groups, independentGroups } = ensureHoldoutQuality(manifest, labels, splits);
   const sealDoc = {
-    schema_version: 1, created_at: new Date().toISOString(), heldout_cases: held.length, heldout_source_groups: groups.size,
+    schema_version: 1, created_at: new Date().toISOString(), heldout_cases: held.length, heldout_source_groups: groups.size, heldout_independent_groups: independentGroups,
     manifest_sha256: sha256(fs.readFileSync(opts.manifest ?? defaults.manifest)),
     labels_sha256: sha256(fs.readFileSync(opts.labels ?? defaults.labels)),
     splits_sha256: sha256(fs.readFileSync(opts.splits ?? defaults.splits)),
     source_group_ids: [...groups].sort(), allowed_milestones: ['baseline_v1'],
   };
   writeOnce(opts.seal ?? defaults.seal, JSON.stringify(sealDoc, null, 2) + '\n');
-  return { heldout_cases: held.length, heldout_source_groups: groups.size, seal_path: opts.seal ?? defaults.seal };
+  return { heldout_cases: held.length, heldout_source_groups: groups.size, heldout_independent_groups: independentGroups, seal_path: opts.seal ?? defaults.seal };
 }
 function score(opts) {
   if (!opts.observations || !opts.view || !opts.split) throw new Error('score_requires_observations_view_split');
@@ -210,7 +221,7 @@ function cryptoRandom() { return `${Date.now()}-${Math.random()}-${process.pid}`
 function main() {
   const [command, ...raw] = process.argv.slice(2), opts = args(raw);
   let result;
-  if (command === 'validate') { const { manifest, labels } = read(opts); result = { manifest: validateManifest(manifest), labels: validateLabels(manifest, labels) }; if (fs.existsSync(opts.splits ?? defaults.splits)) result.splits = validateSplits(manifest, labels, JSON.parse(fs.readFileSync(opts.splits ?? defaults.splits, 'utf8'))); }
+  if (command === 'validate') { const { manifest, labels } = read(opts); result = { manifest: validateManifest(manifest), labels: validateLabels(manifest, labels), benchmark_readiness: benchmarkReadiness(manifest, labels) }; if (fs.existsSync(opts.splits ?? defaults.splits)) result.splits = validateSplits(manifest, labels, JSON.parse(fs.readFileSync(opts.splits ?? defaults.splits, 'utf8'))); }
   else if (command === 'split') { const { manifest, labels } = read(opts); const splits = proposeSplits(manifest, labels, opts.seed); writeOnce(opts.splits ?? defaults.splits, JSON.stringify(splits, null, 2) + '\n'); result = validateSplits(manifest, labels, splits); }
   else if (command === 'materialize') result = materialize(opts);
   else if (command === 'seal') result = seal(opts);

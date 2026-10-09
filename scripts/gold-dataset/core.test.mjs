@@ -6,7 +6,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { heldoutRunKey, holdoutEligibility, inferencePayload, opaqueCaseId, opaquePlaceGroupId, opaqueSourceGroupId, placeMatches, proposeSplits, renderReview, scoreOne, sha256, summarizeScores, validateLabels, validateManifest, validateSplits } from './core.mjs';
+import { benchmarkReadiness, heldoutRunKey, holdoutEligibility, independentGroupCount, inferencePayload, opaqueCaseId, opaquePlaceGroupId, opaqueSourceGroupId, placeMatches, proposeSplits, renderReview, scoreOne, sha256, summarizeScores, validateLabels, validateManifest, validateSplits } from './core.mjs';
 
 const cid = opaqueCaseId('instagram', 'example-123');
 const gid = opaqueSourceGroupId('instagram:example-123');
@@ -15,7 +15,8 @@ const manifest = (overrides = {}) => ({
   case_id: cid, source_group_id: gid, platform: 'instagram', source_public_id: 'example-123',
   source_url_reference: 'https://instagram.com/reel/example-123', retrieval_date: '2026-10-08',
   categories: ['beach'], state: 'ready', exposure: 'new_unscored',
-  evidence: { caption: 'At Cala Varques today', description: 'Cala Varques, Mallorca', hashtags: ['#CalaVarques'], tagged_accounts: ['cala.varques'], location_tag: 'Cala Varques', source_geography: { city: 'Mallorca' }, transcript: 'Welcome to Cala Varques', frame_paths: ['C:/private/Cala Varques/frame.jpg'], frame_sha256: ['a'.repeat(64)] },
+  evidence: { caption: 'At Cala Varques today', description: 'Cala Varques, Mallorca', hashtags: ['#CalaVarques'], tagged_accounts: ['cala.varques'], location_tag: 'Cala Varques', source_geography: { city: 'Mallorca' }, transcript: 'Welcome to Cala Varques', transcript_source: 'spoken_audio', frame_paths: ['C:/private/Cala Varques/open.jpg', 'C:/private/Cala Varques/middle.jpg', 'C:/private/Cala Varques/end.jpg'], frame_sha256: ['a'.repeat(64), 'b'.repeat(64), 'c'.repeat(64)] },
+  visual_review: { duration_seconds: 10, frame_timestamps_seconds: [1, 5, 9], coverage: ['opening', 'middle', 'ending'], entire_video_inspected: true, reviewer: 'collector-a', reviewed_at: '2026-10-08T00:00:00Z' },
   answer_spans: [
     { field: 'caption', start: 3, end: 15, kind: 'exact_place' },
     { field: 'description', start: 0, end: 12, kind: 'exact_place' },
@@ -24,15 +25,21 @@ const manifest = (overrides = {}) => ({
     { field: 'tagged_accounts', start: 0, end: 12, kind: 'exact_place' },
     { field: 'source_geography', start: 0, end: 8, kind: 'geography' },
   ],
-  view_eligibility: { full: true, description_hidden: true, location_hidden: true, visual_only: true, text_only: true },
+  view_eligibility: { full: true, description_hidden: true, location_hidden: true, visual_audio: true, visual_only: true, text_only: true },
+  evidence_note: 'test fixture',
   visual_answer_overlay: false, mask_review: { answer_fields_checked: true, permitted_media_derivative: true, reviewer: 'reviewer-b', reviewed_at: '2026-10-08T00:00:00Z' },
   ...overrides,
 });
 const label = (overrides = {}) => ({
   case_id: cid, label_class: 'VERIFIED_EXACT_SINGLE',
   expected_places: [{ place_id: 'google:123', place_group_id: pg, name: 'Cala Varques', aliases: ['Cala Varques'], role: 'depicted', country: 'Spain', region: 'Balearic Islands', coordinates: { lat: 39.5, lng: 3.3 }, accepted_radius_meters: 100 }],
-  complete_set_established: true, place_group_ids: [pg], reasonable_autonomous_expected: true,
+  complete_set_established: true, place_group_ids: [pg], reasonable_autonomous_expected: true, confidence: 'HIGH', collected_by: 'collector-a',
   provenance: [{ kind: 'source_caption', reference: 'https://instagram.com/reel/example-123' }, { kind: 'official_tourism', reference: 'https://example.org/cala', independent: true }],
+  review_passes: [
+    { decision: 'accept', reviewer: 'collector-a', reviewed_at: '2026-10-08T00:00:00Z', evidence_inspected: true, verification_reference: 'official source A', accepted_place_group_ids: [pg] },
+    { decision: 'accept', reviewer: 'reviewer-b', reviewed_at: '2026-10-08T01:00:00Z', evidence_inspected: true, verification_reference: 'independent source B', accepted_place_group_ids: [pg], independent: true, blind_to_first_pass: true },
+  ],
+  review_agreement: 'agree',
   review: { decision: 'accept', reviewer: 'reviewer-b', reviewed_at: '2026-10-08T00:00:00Z', independent: true }, ...overrides,
 });
 const pred = { place_id: 'google:123', name: 'Cala Varques', country: 'Spain', region: 'Balearic Islands' };
@@ -61,7 +68,7 @@ test('answer spans contain offsets, not duplicated text', () => {
   assert.throws(() => validateManifest([manifest({ answer_spans: [{ field: 'caption', start: 3, end: 15, kind: 'exact_place', text: 'Cala Varques' }] })]), /invalid_answer_spans/);
 });
 
-test('masked payloads exclude answer-bearing source metadata, path names, labels and cache', () => {
+test('evidence views keep only intended modalities and exclude paths, labels and cache', () => {
   const r = manifest(), l = label();
   const full = inferencePayload(r, l, 'full');
   assert.match(JSON.stringify(full), /Cala Varques/);
@@ -69,14 +76,14 @@ test('masked payloads exclude answer-bearing source metadata, path names, labels
   assert.equal(desc.evidence.caption, null);
   assert.equal(desc.evidence.description, null);
   assert.equal(desc.evidence.hashtags, null);
-  assert.equal(desc.evidence.transcript, null);
-  assert.equal(desc.evidence.location_tag, null);
+  assert.equal(desc.evidence.transcript, 'Welcome to Cala Varques');
+  assert.equal(desc.evidence.location_tag, 'Cala Varques');
   const unannotated = manifest({ answer_spans: [] });
   const descUnannotated = inferencePayload(unannotated, l, 'description_hidden');
-  assert.equal(descUnannotated.evidence.transcript, null);
-  assert.equal(descUnannotated.evidence.location_tag, null);
+  assert.equal(descUnannotated.evidence.transcript, 'Welcome to Cala Varques');
+  assert.equal(descUnannotated.evidence.location_tag, 'Cala Varques');
   const compactHandle = manifest({ answer_spans: [], evidence: { ...r.evidence, tagged_accounts: ['@CalaVarques'], location_tag: null, transcript: null } });
-  assert.equal(inferencePayload(compactHandle, l, 'description_hidden').evidence.tagged_accounts, null);
+  assert.deepEqual(inferencePayload(compactHandle, l, 'description_hidden').evidence.tagged_accounts, ['@CalaVarques']);
   const loc = inferencePayload(r, l, 'location_hidden');
   assert.equal(loc.evidence.location_tag, null);
   assert.equal(loc.evidence.source_geography, null);
@@ -84,9 +91,14 @@ test('masked payloads exclude answer-bearing source metadata, path names, labels
   const visual = inferencePayload(r, l, 'visual_only');
   const serialized = JSON.stringify(visual);
   assert.doesNotMatch(serialized, /Cala|Varques|instagram|example-123|private|source_url|place_id|candidate|case_id|answer_spans|ground_truth|debug_context/i);
-  assert.deepEqual(visual.media.frames, ['frames/000.jpg']);
+  assert.deepEqual(visual.media.frames, ['frames/000.jpg', 'frames/001.jpg', 'frames/002.jpg']);
   assert.equal(visual.cache_policy, 'disabled');
   assert.ok(Object.values(visual.evidence).every((x) => x === null));
+  const visualAudio = inferencePayload(r, l, 'visual_audio');
+  assert.deepEqual(visualAudio.media.frames, ['frames/000.jpg', 'frames/001.jpg', 'frames/002.jpg']);
+  assert.equal(visualAudio.evidence.transcript, 'Welcome to Cala Varques');
+  assert.ok(Object.entries(visualAudio.evidence).every(([key, value]) => key === 'transcript' || value === null));
+  assert.doesNotMatch(JSON.stringify(visualAudio), /instagram|source_url|cala\.varques|example-123|private/i);
   const text = inferencePayload(r, l, 'text_only');
   assert.deepEqual(text.media.frames, []);
   assert.match(text.evidence.caption, /Cala Varques/);
@@ -99,10 +111,50 @@ test('nested source geography cannot carry debug truth or cache into inference',
   assert.doesNotMatch(raw, /debug_context|ground_truth|candidate_cache/);
 });
 
-test('visual only cannot be claimed for missing frames or answer overlays', () => {
+test('normal visual-only keeps legitimate in-video text; separate pixel-text masking requires reviewed derivatives', () => {
   assert.throws(() => validateManifest([manifest({ evidence: { caption: 'Answer' } })]), /missing_visual_evidence_for_view/);
-  assert.throws(() => inferencePayload(manifest({ visual_answer_overlay: true }), label(), 'visual_only'), /masked_view_review_missing/);
-  assert.throws(() => validateManifest([manifest({ visual_answer_overlay: true })]), /masked_view_review_missing/);
+  const overlay = manifest({ visual_answer_overlay: true });
+  assert.equal(validateManifest([overlay]).cases, 1);
+  assert.deepEqual(inferencePayload(overlay, label(), 'visual_only').media.frames, ['frames/000.jpg', 'frames/001.jpg', 'frames/002.jpg']);
+  assert.deepEqual(holdoutEligibility(overlay, label()), { eligible: true, reasons: [] });
+  const masked = manifest({ view_eligibility: { ...overlay.view_eligibility, visual_pixel_text_masked: true } });
+  assert.throws(() => validateManifest([masked]), /pixel_text_mask_evidence_missing/);
+  const reviewed = manifest({ view_eligibility: masked.view_eligibility, evidence: { ...overlay.evidence, pixel_text_masked_frame_paths: ['C:/private/masked-1.jpg', 'C:/private/masked-2.jpg', 'C:/private/masked-3.jpg'], pixel_text_masked_frame_sha256: ['d'.repeat(64), 'e'.repeat(64), 'f'.repeat(64)] }, mask_review: { ...overlay.mask_review, pixel_text_mask_verified: true } });
+  assert.equal(validateManifest([reviewed]).cases, 1);
+  assert.deepEqual(inferencePayload(reviewed, label(), 'visual_pixel_text_masked').media.frames, ['frames/000.jpg', 'frames/001.jpg', 'frames/002.jpg']);
+  assert.ok(Object.values(inferencePayload(reviewed, label(), 'visual_pixel_text_masked').evidence).every((x) => x === null));
+});
+
+test('visual-audio requires a transcript of spoken audio, not copied social text', () => {
+  const r = manifest({ evidence: { ...manifest().evidence, transcript_source: undefined } });
+  assert.throws(() => validateManifest([r]), /visual_audio_spoken_transcript_missing/);
+  assert.throws(() => inferencePayload(r, label(), 'visual_audio'), /visual_audio_spoken_transcript_missing/);
+});
+
+test('READY requires reviewed opening, middle and ending frames with matching hashes', () => {
+  assert.equal(validateManifest([manifest()]).cases, 1);
+  assert.throws(() => validateManifest([manifest({ visual_review: { ...manifest().visual_review, entire_video_inspected: false } })]), /ready_visual_review_missing/);
+  assert.throws(() => validateManifest([manifest({ visual_review: { ...manifest().visual_review, frame_timestamps_seconds: [1, 2, 3] } })]), /ready_visual_review_missing/);
+  assert.throws(() => validateManifest([manifest({ evidence: { ...manifest().evidence, frame_sha256: ['a'.repeat(64)] } })]), /ready_visual_evidence_missing/);
+  assert.equal(validateManifest([manifest({ state: 'candidate', visual_review: undefined })]).cases, 1);
+});
+
+test('completion gate counts benchmark-ready cases and reports exact slice deficits', () => {
+  const rows = Array.from({ length: 200 }, (_, i) => ({
+    case_id: `case-${i}`, state: 'ready', view_eligibility: { full: true, description_hidden: i < 50, visual_only: i < 30 },
+    evidence: { frame_paths: ['open', 'middle', 'end'] }, categories: [i < 50 ? 'waterfall' : 'food', ...(i < 25 ? ['branch_disambiguation'] : [])],
+    misleading_metadata: i < 25,
+  }));
+  const labels = rows.map((r, i) => ({ case_id: r.case_id, confidence: 'HIGH', label_class: i < 30 ? 'VERIFIED_MULTI' : i < 55 ? 'KNOWN_NEGATIVE' : 'VERIFIED_EXACT_SINGLE', complete_set_established: true }));
+  const complete = benchmarkReadiness(rows, labels);
+  assert.equal(complete.eligible, true);
+  assert.deepEqual(complete.remaining, { ready: 0, complete_multi: 0, outdoor: 0, description_hidden: 0, visual_only: 0, misleading_metadata: 0, branch_disambiguation: 0, verified_negative: 0 });
+  rows[199].state = 'candidate';
+  rows[24].misleading_metadata = false;
+  const short = benchmarkReadiness(rows, labels);
+  assert.equal(short.eligible, false);
+  assert.equal(short.remaining.ready, 1);
+  assert.equal(short.remaining.misleading_metadata, 1);
 });
 
 test('historical, unreviewed and weakly verified cases cannot enter holdout', () => {
@@ -115,6 +167,11 @@ test('historical, unreviewed and weakly verified cases cannot enter holdout', ()
   assert.ok(holdoutEligibility(manifest({ evidence: { caption: 'Cala Varques' }, view_eligibility: { full: false, description_hidden: false, location_hidden: false, visual_only: false, text_only: true } }), label()).reasons.includes('full_visual_evidence_missing'));
   assert.ok(holdoutEligibility(manifest({ evidence: { ...manifest().evidence, frame_sha256: [] } }), label()).reasons.includes('frame_hashes_missing'));
   assert.ok(holdoutEligibility(manifest({ mask_review: { answer_fields_checked: true, reviewer: 'reviewer-b' } }), label()).reasons.includes('visual_mask_review_missing'));
+  assert.ok(holdoutEligibility(manifest(), label({ confidence: 'MEDIUM' })).reasons.includes('high_confidence_missing'));
+  assert.ok(holdoutEligibility(manifest(), label({ review_agreement: 'disagree' })).reasons.includes('heldout_double_review_missing_or_disagreed'));
+  assert.ok(holdoutEligibility(manifest(), label({ review_passes: [label().review_passes[0], { ...label().review_passes[1], blind_to_first_pass: false }] })).reasons.includes('heldout_double_review_missing_or_disagreed'));
+  assert.ok(holdoutEligibility(manifest(), label({ review_passes: [label().review_passes[0], { ...label().review_passes[1], accepted_place_group_ids: [opaquePlaceGroupId('other')] }] })).reasons.includes('heldout_double_review_missing_or_disagreed'));
+  assert.throws(() => validateLabels([manifest()], [label({ confidence: 'MEDIUM' })]), /ready_requires_high_confidence/);
 });
 
 test('each ready depicted exact place needs a distinct shared place group', () => {
@@ -135,6 +192,8 @@ test('source and place connected groups cannot cross splits', () => {
   assert.throws(() => validateSplits([a, b], [la, lb], { assignments: { [a.case_id]: 'development', [b.case_id]: 'held_out' } }), /place_group_leakage/);
   const exposed = manifest({ exposure: 'historical_outcomes_already_exposed' });
   assert.equal(proposeSplits([exposed], [la]).assignments[cid], 'development');
+  assert.equal(independentGroupCount([a, b], [la, lb]), 1);
+  assert.equal(independentGroupCount([a, b], [la, label({ case_id: b.case_id, place_group_ids: [opaquePlaceGroupId('different')] })]), 2);
 });
 
 test('single score requires exact physical identity and excludes review from autonomous rate', () => {
@@ -249,22 +308,27 @@ test('materialization re-encodes source metadata and hides source names, paths, 
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'nearr-gold-mask-'));
   const frameDir = path.join(scratch, 'Cala Varques private frame path');
   const frame = path.join(frameDir, 'CalaVarquesSecret.jpg');
+  const maskedFrame = path.join(frameDir, 'PixelTextMaskedSecret.jpg');
   const caseId = opaqueCaseId('instagram', randomUUID());
-  const r = manifest({ case_id: caseId, source_public_id: randomUUID(), source_group_id: opaqueSourceGroupId(randomUUID()), evidence: { ...manifest().evidence, frame_paths: [frame] } });
+  const r = manifest({ case_id: caseId, source_public_id: randomUUID(), source_group_id: opaqueSourceGroupId(randomUUID()), state: 'candidate', view_eligibility: { ...manifest().view_eligibility, visual_pixel_text_masked: true }, mask_review: { ...manifest().mask_review, pixel_text_mask_verified: true }, evidence: { ...manifest().evidence, frame_paths: [frame], pixel_text_masked_frame_paths: [maskedFrame] } });
   const l = label({ case_id: caseId });
-  let output;
+  const outputs = [];
   try {
     fs.mkdirSync(frameDir);
     const generated = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=red:s=16x16:d=0.1', '-metadata', 'title=CalaVarquesSecret', '-frames:v', '1', frame], { stdio: 'ignore', windowsHide: true });
     assert.equal(generated.status, 0);
+    const maskedGenerated = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=16x16:d=0.1', '-metadata', 'title=PixelTextMaskedSecret', '-frames:v', '1', maskedFrame], { stdio: 'ignore', windowsHide: true });
+    assert.equal(maskedGenerated.status, 0);
     r.evidence.frame_sha256 = [sha256(fs.readFileSync(frame))];
+    r.evidence.pixel_text_masked_frame_sha256 = [sha256(fs.readFileSync(maskedFrame))];
     const manifestFile = path.join(scratch, 'manifest.jsonl'), labelsFile = path.join(scratch, 'labels.jsonl'), splitFile = path.join(scratch, 'splits.json');
     fs.writeFileSync(manifestFile, JSON.stringify(r) + '\n');
     fs.writeFileSync(labelsFile, JSON.stringify(l) + '\n');
     fs.writeFileSync(splitFile, JSON.stringify({ schema_version: 1, assignments: { [caseId]: 'development' } }));
     const run = spawnSync(process.execPath, ['scripts/gold-dataset/cli.mjs', 'materialize', '--manifest', manifestFile, '--labels', labelsFile, '--splits', splitFile, '--case', caseId, '--view', 'visual_only'], { cwd: root, encoding: 'utf8', windowsHide: true });
     assert.equal(run.status, 0, run.stderr);
-    output = JSON.parse(run.stdout);
+    const output = JSON.parse(run.stdout);
+    outputs.push(output);
     const inputBytes = fs.readFileSync(output.input, 'utf8');
     assert.doesNotMatch(inputBytes, /Cala|Varques|Secret|instagram|source_public|source_url|label|candidate|ground_truth|private/i);
     assert.equal(JSON.parse(inputBytes).cache_policy, 'disabled');
@@ -274,11 +338,24 @@ test('materialization re-encodes source metadata and hides source names, paths, 
     assert.doesNotMatch(frameBytes, /CalaVarquesSecret/);
     assert.match(path.basename(path.dirname(output.input)), /^[a-f0-9]{24}$/);
     assert.match(path.basename(output.mapping), /^[a-f0-9]{24}\.json$/);
+    const audioRun = spawnSync(process.execPath, ['scripts/gold-dataset/cli.mjs', 'materialize', '--manifest', manifestFile, '--labels', labelsFile, '--splits', splitFile, '--case', caseId, '--view', 'visual_audio'], { cwd: root, encoding: 'utf8', windowsHide: true });
+    assert.equal(audioRun.status, 0, audioRun.stderr);
+    const audioOutput = JSON.parse(audioRun.stdout);
+    outputs.push(audioOutput);
+    const audioInput = JSON.parse(fs.readFileSync(audioOutput.input, 'utf8'));
+    assert.equal(audioInput.evidence.transcript, 'Welcome to Cala Varques');
+    assert.ok(Object.entries(audioInput.evidence).every(([key, value]) => key === 'transcript' || value === null));
+    const pixelRun = spawnSync(process.execPath, ['scripts/gold-dataset/cli.mjs', 'materialize', '--manifest', manifestFile, '--labels', labelsFile, '--splits', splitFile, '--case', caseId, '--view', 'visual_pixel_text_masked'], { cwd: root, encoding: 'utf8', windowsHide: true });
+    assert.equal(pixelRun.status, 0, pixelRun.stderr);
+    const pixelOutput = JSON.parse(pixelRun.stdout);
+    outputs.push(pixelOutput);
+    assert.notEqual(sha256(fs.readFileSync(path.join(path.dirname(pixelOutput.input), 'frames', '000.jpg'))), sha256(fs.readFileSync(path.join(path.dirname(output.input), 'frames', '000.jpg'))));
+    assert.ok(Object.values(JSON.parse(fs.readFileSync(pixelOutput.input, 'utf8')).evidence).every((x) => x === null));
   } finally {
     const scratchRoot = path.resolve(os.tmpdir()) + path.sep;
     assert.ok(path.resolve(scratch).startsWith(scratchRoot));
     fs.rmSync(scratch, { recursive: true, force: true });
-    if (output) {
+    for (const output of outputs) {
       const localRoot = path.resolve(root, '.local/recognition-gold-dataset') + path.sep;
       assert.ok(path.resolve(path.dirname(output.input)).startsWith(localRoot));
       assert.ok(path.resolve(output.mapping).startsWith(localRoot));
@@ -292,7 +369,7 @@ test('CLI scores a development observation and rejects an unsealed held-out atte
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'nearr-gold-score-'));
   const caseId = opaqueCaseId('youtube', randomUUID());
-  const r = manifest({ case_id: caseId, source_group_id: opaqueSourceGroupId(randomUUID()), platform: 'youtube', source_public_id: randomUUID(), source_url_reference: 'https://youtube.com/watch?v=score', evidence: { ...manifest().evidence, frame_paths: ['C:/nonexistent/frame.jpg'] } });
+  const r = manifest({ case_id: caseId, source_group_id: opaqueSourceGroupId(randomUUID()), platform: 'youtube', source_public_id: randomUUID(), source_url_reference: 'https://youtube.com/watch?v=score', evidence: { ...manifest().evidence, frame_paths: ['C:/nonexistent/open.jpg', 'C:/nonexistent/middle.jpg', 'C:/nonexistent/end.jpg'] } });
   const l = label({ case_id: caseId });
   const manifestFile = path.join(scratch, 'manifest.jsonl'), labelsFile = path.join(scratch, 'labels.jsonl');
   const splitFile = path.join(scratch, 'splits.json'), observationsFile = path.join(scratch, 'observations.jsonl');

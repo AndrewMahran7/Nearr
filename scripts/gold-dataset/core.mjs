@@ -1,6 +1,8 @@
 import crypto from 'node:crypto';
 
-export const VIEWS = Object.freeze(['full', 'description_hidden', 'location_hidden', 'visual_only', 'text_only']);
+export const VIEWS = Object.freeze(['full', 'description_hidden', 'location_hidden', 'visual_audio', 'visual_only', 'visual_pixel_text_masked', 'text_only']);
+const REQUIRED_VIEWS = Object.freeze(['full', 'description_hidden', 'location_hidden', 'visual_only', 'text_only']);
+const OPTIONAL_VIEWS = Object.freeze(['visual_audio', 'visual_pixel_text_masked']);
 export const LABELS = Object.freeze(['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI', 'VERIFIED_REGION_ONLY', 'KNOWN_NEGATIVE', 'AMBIGUOUS', 'UNVERIFIED']);
 export const SPLITS = Object.freeze(['development', 'calibration', 'held_out']);
 const CASE_ID = /^g_[a-f0-9]{16}$/;
@@ -17,7 +19,6 @@ const fail = (code) => { throw new Error(code); };
 const array = (x) => Array.isArray(x) ? x : [];
 const str = (x) => typeof x === 'string' ? x : '';
 export const norm = (x) => str(x).normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
-const compact = (x) => norm(x).replaceAll(' ', '');
 function sourceUrlKey(raw) {
   const url = new URL(raw);
   if (!['http:', 'https:'].includes(url.protocol)) fail('invalid_public_url');
@@ -51,15 +52,24 @@ export function validateManifest(records) {
     if (!Array.isArray(r.categories) || !r.categories.every((x) => typeof x === 'string')) fail(`invalid_categories:${r.case_id}`);
     if (!r.evidence || typeof r.evidence !== 'object' || Array.isArray(r.evidence)) fail(`invalid_evidence:${r.case_id}`);
     for (const field of ['caption', 'description', 'location_tag', 'transcript']) if (r.evidence[field] != null && typeof r.evidence[field] !== 'string') fail(`invalid_evidence_field:${r.case_id}:${field}`);
-    for (const field of ['hashtags', 'tagged_accounts', 'frame_paths', 'frame_sha256']) if (r.evidence[field] != null && (!Array.isArray(r.evidence[field]) || !r.evidence[field].every((x) => typeof x === 'string'))) fail(`invalid_evidence_field:${r.case_id}:${field}`);
+    for (const field of ['hashtags', 'tagged_accounts', 'frame_paths', 'frame_sha256', 'pixel_text_masked_frame_paths', 'pixel_text_masked_frame_sha256']) if (r.evidence[field] != null && (!Array.isArray(r.evidence[field]) || !r.evidence[field].every((x) => typeof x === 'string'))) fail(`invalid_evidence_field:${r.case_id}:${field}`);
+    if (r.evidence.transcript_source != null && r.evidence.transcript_source !== 'spoken_audio') fail(`invalid_transcript_source:${r.case_id}`);
     if (r.evidence.source_geography != null && (typeof r.evidence.source_geography !== 'object' || Array.isArray(r.evidence.source_geography) || Object.keys(r.evidence.source_geography).some((x) => !['country', 'region', 'city'].includes(x)) || Object.values(r.evidence.source_geography).some((x) => x != null && typeof x !== 'string'))) fail(`invalid_source_geography:${r.case_id}`);
     if (!Array.isArray(r.answer_spans) || !r.answer_spans.every((x) => TEXT_FIELDS.includes(x.field) && Number.isInteger(x.start) && Number.isInteger(x.end) && x.start >= 0 && x.end > x.start && typeof x.kind === 'string' && !Object.hasOwn(x, 'text'))) fail(`invalid_answer_spans:${r.case_id}`);
-    if (!r.view_eligibility || !VIEWS.every((x) => typeof r.view_eligibility[x] === 'boolean')) fail(`invalid_view_eligibility:${r.case_id}`);
+    if (!r.view_eligibility || !REQUIRED_VIEWS.every((x) => typeof r.view_eligibility[x] === 'boolean') || !OPTIONAL_VIEWS.every((x) => r.view_eligibility[x] == null || typeof r.view_eligibility[x] === 'boolean')) fail(`invalid_view_eligibility:${r.case_id}`);
     if (!['candidate', 'ready'].includes(r.state) || !['new_unscored', 'historical_outcomes_already_exposed'].includes(r.exposure)) fail(`invalid_case_state:${r.case_id}`);
-    if (['full', 'description_hidden', 'location_hidden'].some((view) => r.view_eligibility[view]) && !array(r.evidence.frame_paths).length) fail(`missing_visual_evidence_for_view:${r.case_id}`);
-    if ((r.view_eligibility.description_hidden || r.view_eligibility.visual_only) && (r.visual_answer_overlay !== false || r.mask_review?.answer_fields_checked !== true || !r.mask_review?.reviewer || !r.mask_review?.reviewed_at)) fail(`masked_view_review_missing:${r.case_id}`);
+    if (VIEWS.some((view) => view !== 'text_only' && view !== 'visual_pixel_text_masked' && r.view_eligibility[view]) && !array(r.evidence.frame_paths).length) fail(`missing_visual_evidence_for_view:${r.case_id}`);
+    if (['description_hidden', 'visual_audio', 'visual_only', 'visual_pixel_text_masked'].some((view) => r.view_eligibility[view]) && (r.mask_review?.answer_fields_checked !== true || !r.mask_review?.reviewer || !r.mask_review?.reviewed_at)) fail(`masked_view_review_missing:${r.case_id}`);
+    if (r.view_eligibility.visual_audio && (!str(r.evidence.transcript).trim() || r.evidence.transcript_source !== 'spoken_audio')) fail(`visual_audio_spoken_transcript_missing:${r.case_id}`);
     if (r.view_eligibility.visual_only && !array(r.evidence.frame_paths).length) fail(`invalid_visual_only_eligibility:${r.case_id}`);
+    if (r.view_eligibility.visual_pixel_text_masked && (!array(r.evidence.pixel_text_masked_frame_paths).length || array(r.evidence.pixel_text_masked_frame_paths).length !== array(r.evidence.frame_paths).length || array(r.evidence.pixel_text_masked_frame_sha256).length !== array(r.evidence.frame_paths).length || !array(r.evidence.pixel_text_masked_frame_sha256).every((x) => /^[a-f0-9]{64}$/.test(x)) || r.mask_review?.pixel_text_mask_verified !== true)) fail(`pixel_text_mask_evidence_missing:${r.case_id}`);
     if (r.view_eligibility.text_only && !TEXT_FIELDS.some((x) => Boolean(r.evidence[x]?.length || (typeof r.evidence[x] === 'object' && Object.keys(r.evidence[x]).length)))) fail(`invalid_text_only_eligibility:${r.case_id}`);
+    if (r.state === 'ready') {
+      const frames = array(r.evidence.frame_paths), hashes = array(r.evidence.frame_sha256), review = r.visual_review;
+      if (!r.view_eligibility.full || !r.retrieval_date || r.mask_review?.permitted_media_derivative !== true || frames.length < 3 || hashes.length !== frames.length || !hashes.every((x) => /^[a-f0-9]{64}$/.test(x))) fail(`ready_visual_evidence_missing:${r.case_id}`);
+      const duration = review?.duration_seconds, times = array(review?.frame_timestamps_seconds);
+      if (!Number.isFinite(duration) || duration <= 0 || times.length !== frames.length || !times.every((x, i) => Number.isFinite(x) && x >= 0 && x <= duration && (i === 0 || x > times[i - 1])) || times[0] > duration * 0.35 || !times.some((x) => x >= duration * 0.3 && x <= duration * 0.7) || times.at(-1) < duration * 0.65 || !['opening', 'middle', 'ending'].every((x) => array(review?.coverage).includes(x)) || review?.entire_video_inspected !== true || !str(review?.reviewer).trim() || !Number.isFinite(Date.parse(review?.reviewed_at))) fail(`ready_visual_review_missing:${r.case_id}`);
+    }
   }
   return { cases: ids.size, sourceGroups: new Set(records.map((r) => r.source_group_id)).size };
 }
@@ -75,6 +85,9 @@ export function validateLabels(manifest, labels) {
     if (!l.expected_places.every((p) => ['depicted', 'mentioned_only'].includes(p.role))) fail(`invalid_place_role:${l.case_id}`);
     if (!l.provenance.every((p) => p && typeof p.kind === 'string' && typeof p.reference === 'string')) fail(`invalid_provenance:${l.case_id}`);
     if (!l.place_group_ids.every((x) => PLACE_GROUP_ID.test(x))) fail(`invalid_place_group:${l.case_id}`);
+    if (byCase.get(l.case_id).state === 'ready' && l.confidence !== 'HIGH') fail(`ready_requires_high_confidence:${l.case_id}`);
+    if (l.review_passes != null && (!Array.isArray(l.review_passes) || !l.review_passes.every((p) => p && typeof p.reviewer === 'string' && typeof p.reviewed_at === 'string' && typeof p.decision === 'string' && Array.isArray(p.accepted_place_group_ids) && p.accepted_place_group_ids.every((x) => PLACE_GROUP_ID.test(x))))) fail(`invalid_review_passes:${l.case_id}`);
+    if (l.review_agreement != null && !['agree', 'disagree', 'pending'].includes(l.review_agreement)) fail(`invalid_review_agreement:${l.case_id}`);
     if (['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI'].includes(l.label_class)) {
       const wanted = l.label_class === 'VERIFIED_MULTI' ? 2 : 1;
       const depicted = l.expected_places.filter((p) => p.role !== 'mentioned_only');
@@ -93,16 +106,22 @@ export function holdoutEligibility(record, label) {
   const reasons = [];
   if (record.state !== 'ready') reasons.push('not_ready');
   if (record.view_eligibility?.full !== true || !array(record.evidence?.frame_paths).length) reasons.push('full_visual_evidence_missing');
-  if (record.visual_answer_overlay !== false || record.mask_review?.answer_fields_checked !== true || record.mask_review?.permitted_media_derivative !== true || !record.mask_review?.reviewer || !record.mask_review?.reviewed_at) reasons.push('visual_mask_review_missing');
+  if (record.mask_review?.answer_fields_checked !== true || record.mask_review?.permitted_media_derivative !== true || !record.mask_review?.reviewer || !record.mask_review?.reviewed_at) reasons.push('visual_mask_review_missing');
   if (array(record.evidence?.frame_sha256).length !== array(record.evidence?.frame_paths).length || !array(record.evidence?.frame_sha256).every((x) => /^[a-f0-9]{64}$/.test(x))) reasons.push('frame_hashes_missing');
   if (record.exposure !== 'new_unscored') reasons.push('historical_outcome_exposed');
   if (!record.retrieval_date) reasons.push('source_not_retrieved');
   if (!label || ['UNVERIFIED', 'AMBIGUOUS'].includes(label.label_class)) reasons.push('truth_not_adjudicated');
+  if (label?.confidence !== 'HIGH') reasons.push('high_confidence_missing');
   if (!label?.review || !['accept', 'region_only', 'negative'].includes(label.review.decision) || !label.review.reviewer || !label.review.reviewed_at || label.review.independent !== true) reasons.push('independent_manual_review_missing');
   const expectedDecision = { VERIFIED_EXACT_SINGLE: 'accept', VERIFIED_MULTI: 'accept', VERIFIED_REGION_ONLY: 'region_only', KNOWN_NEGATIVE: 'negative' }[label?.label_class];
   if (expectedDecision && label?.review?.decision !== expectedDecision) reasons.push('review_label_mismatch');
   if (label?.collected_by && label.collected_by === label?.review?.reviewer) reasons.push('reviewer_not_independent');
   if (['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI'].includes(label?.label_class)) {
+    const passes = array(label.review_passes);
+    const expectedGroups = [...array(label.place_group_ids)].sort().join('|');
+    const reviewers = new Set(passes.map((p) => p?.reviewer));
+    const agreed = passes.length >= 2 && reviewers.size === passes.length && passes[1]?.reviewer !== label.collected_by && passes[1]?.reviewer === label.review?.reviewer && passes[1]?.independent === true && passes[1]?.blind_to_first_pass === true && passes.every((p) => p?.decision === 'accept' && p?.evidence_inspected === true && str(p?.verification_reference).trim() && Number.isFinite(Date.parse(p?.reviewed_at)) && array(p?.accepted_place_group_ids).slice().sort().join('|') === expectedGroups) && label.review_agreement === 'agree';
+    if (!agreed) reasons.push('heldout_double_review_missing_or_disagreed');
     const independentProof = array(label.provenance).some((p) => p.independent === true && p.reference);
     if (!independentProof) reasons.push('independent_provenance_missing');
     if (label.label_class === 'VERIFIED_MULTI' && label.complete_set_established !== true) reasons.push('incomplete_multi_set');
@@ -110,6 +129,37 @@ export function holdoutEligibility(record, label) {
     if (depicted.some((p) => !PLACE_GROUP_ID.test(p.place_group_id ?? '') || !array(label.place_group_ids).includes(p.place_group_id))) reasons.push('place_group_mapping_missing');
   }
   return { eligible: reasons.length === 0, reasons };
+}
+
+export function benchmarkReadiness(manifest, labels) {
+  const byId = new Map(labels.map((l) => [l.case_id, l]));
+  const ready = manifest.filter((r) => r.state === 'ready' && r.view_eligibility?.full === true && array(r.evidence?.frame_paths).length >= 3 && byId.get(r.case_id)?.confidence === 'HIGH');
+  const outdoor = (r) => array(r.categories).some((c) => /beach|cove|cliff|hike|trail|waterfall|outdoor|viewpoint|lake|swimming.hole|cave|geolog/i.test(c));
+  const counts = {
+    ready: ready.length,
+    complete_multi: ready.filter((r) => byId.get(r.case_id)?.label_class === 'VERIFIED_MULTI' && byId.get(r.case_id)?.complete_set_established === true).length,
+    outdoor: ready.filter(outdoor).length,
+    description_hidden: ready.filter((r) => r.view_eligibility.description_hidden).length,
+    visual_only: ready.filter((r) => r.view_eligibility.visual_only).length,
+    misleading_metadata: ready.filter((r) => r.misleading_metadata === true || (Array.isArray(r.misleading_metadata) && r.misleading_metadata.length > 0)).length,
+    branch_disambiguation: ready.filter((r) => r.categories.includes('branch_disambiguation') || array(byId.get(r.case_id)?.expected_places).some((p) => p.branch_disambiguation === true)).length,
+    verified_negative: ready.filter((r) => byId.get(r.case_id)?.label_class === 'KNOWN_NEGATIVE').length,
+  };
+  const targets = { ready: 200, complete_multi: 30, outdoor: 50, description_hidden: 50, visual_only: 30, misleading_metadata: 25, branch_disambiguation: 25, verified_negative: 25 };
+  const remaining = Object.fromEntries(Object.entries(targets).map(([key, minimum]) => [key, Math.max(0, minimum - counts[key])]));
+  return { eligible: Object.values(remaining).every((n) => n === 0), counts, targets, remaining };
+}
+
+export function independentGroupCount(records, labels) {
+  const byLabel = new Map(labels.map((l) => [l.case_id, l]));
+  const parent = new Map(records.map((r) => [r.case_id, r.case_id]));
+  const find = (id) => { while (parent.get(id) !== id) { parent.set(id, parent.get(parent.get(id))); id = parent.get(id); } return id; };
+  const owner = new Map();
+  for (const r of records) for (const key of [`source:${r.source_group_id}`, ...array(byLabel.get(r.case_id)?.place_group_ids).map((id) => `place:${id}`)]) {
+    if (owner.has(key)) parent.set(find(r.case_id), find(owner.get(key)));
+    else owner.set(key, r.case_id);
+  }
+  return new Set(records.map((r) => find(r.case_id))).size;
 }
 
 // Source and place identities form connected components; no connected component
@@ -165,7 +215,6 @@ export function validateSplits(manifest, labels, splitFile) {
   return Object.fromEntries(SPLITS.map((s) => [s, manifest.filter((r) => splitFile.assignments[r.case_id] === s).length]));
 }
 
-function bearing(record, field) { return record.answer_spans.some((x) => x.field === field); }
 function safeField(record, field) {
   const value = record.evidence[field];
   if (field === 'source_geography' && value != null) {
@@ -180,20 +229,18 @@ function safeField(record, field) {
 }
 export function inferencePayload(record, label, view) {
   if (!VIEWS.includes(view) || record.view_eligibility?.[view] !== true) fail(`ineligible_view:${view}`);
-  if (['description_hidden', 'visual_only'].includes(view) && (record.visual_answer_overlay !== false || record.mask_review?.answer_fields_checked !== true || !record.mask_review?.reviewer || !record.mask_review?.reviewed_at)) fail('masked_view_review_missing');
+  if (['description_hidden', 'visual_audio', 'visual_only', 'visual_pixel_text_masked'].includes(view) && (record.mask_review?.answer_fields_checked !== true || !record.mask_review?.reviewer || !record.mask_review?.reviewed_at)) fail('masked_view_review_missing');
+  if (view === 'visual_audio' && (!str(record.evidence.transcript).trim() || record.evidence.transcript_source !== 'spoken_audio')) fail('visual_audio_spoken_transcript_missing');
+  if (view === 'visual_pixel_text_masked' && (!array(record.evidence.pixel_text_masked_frame_paths).length || record.mask_review?.pixel_text_mask_verified !== true)) fail('pixel_text_mask_evidence_missing');
   const visual = view !== 'text_only';
-  const frames = visual ? array(record.evidence.frame_paths) : [];
-  if (view === 'visual_only' && (!frames.length || record.visual_answer_overlay === true)) fail('visual_only_not_clean');
+  const frames = visual ? array(view === 'visual_pixel_text_masked' ? record.evidence.pixel_text_masked_frame_paths : record.evidence.frame_paths) : [];
+  if (visual && !frames.length) fail('visual_evidence_missing');
   const evidence = Object.fromEntries(TEXT_FIELDS.map((key) => [key, null]));
-  if (view !== 'visual_only') {
+  if (view === 'visual_audio') evidence.transcript = safeField(record, 'transcript');
+  if (!['visual_only', 'visual_audio', 'visual_pixel_text_masked'].includes(view)) {
     for (const key of TEXT_FIELDS) evidence[key] = safeField(record, key);
     if (view === 'description_hidden') {
       evidence.caption = null; evidence.description = null; evidence.hashtags = null;
-      const answerNames = [...array(label?.expected_places), ...array(label?.proposed_places)].flatMap((p) => [p.name, ...array(p.aliases)]).map(compact).filter((x) => x.length >= 4);
-      for (const key of ['tagged_accounts', 'location_tag', 'source_geography', 'transcript']) {
-        const normalized = compact(JSON.stringify(evidence[key]));
-        if (bearing(record, key) || answerNames.some((name) => normalized.includes(name))) evidence[key] = null;
-      }
     }
     if (view === 'location_hidden') { evidence.location_tag = null; evidence.source_geography = null; }
   }
@@ -207,7 +254,7 @@ export function inferencePayload(record, label, view) {
   };
   // The label object is deliberately never spread or serialized into the payload.
   // Checking known answer tokens in the strongest mask catches accidental text flow.
-  if (view === 'visual_only') {
+  if (['visual_only', 'visual_pixel_text_masked'].includes(view)) {
     const value = JSON.stringify(payload.evidence);
     const tokens = [...array(label?.expected_places), ...array(label?.proposed_places)].flatMap((p) => [p.name, ...array(p.aliases)]).map(norm).filter((x) => x.length >= 4);
     if (tokens.some((x) => norm(value).includes(x))) fail('visual_answer_leak');

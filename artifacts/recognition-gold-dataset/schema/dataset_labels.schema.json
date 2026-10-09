@@ -37,9 +37,11 @@
     "geography": { "type": ["object", "null"] },
     "place_group_ids": { "type": "array", "items": { "type": "string", "pattern": "^pg_[a-f0-9]{16}$" } },
     "provenance": { "type": "array", "items": { "type": "object", "required": ["kind", "reference"], "properties": { "kind": { "type": "string" }, "reference": { "type": "string" }, "independent": { "type": "boolean" } }, "additionalProperties": true } },
-    "confidence": { "type": ["string", "number", "null"] },
+    "confidence": { "type": ["string", "number", "null"], "description": "Ready benchmark labels require HIGH. Legacy candidate strings remain readable; normalize candidates to HIGH/MEDIUM/LOW during adjudication." },
     "collected_by": { "type": ["string", "null"] },
-    "review": { "type": "object", "properties": { "decision": { "enum": ["accept", "reject", "needs_more_research", "region_only", "ambiguous", "negative"] }, "reviewer": { "type": ["string", "null"] }, "reviewed_at": { "type": ["string", "null"], "format": "date-time" }, "independent": { "type": "boolean" } }, "additionalProperties": true }
+    "review": { "type": "object", "properties": { "decision": { "enum": ["accept", "reject", "needs_more_research", "region_only", "ambiguous", "negative"] }, "reviewer": { "type": ["string", "null"] }, "reviewed_at": { "type": ["string", "null"], "format": "date-time" }, "independent": { "type": "boolean" } }, "additionalProperties": true },
+    "review_agreement": { "enum": ["agree", "disagree", "pending"], "description": "Strict held-out exact cases require agree; disagreement keeps the case out until adjudicated." },
+    "review_passes": { "type": "array", "description": "For held-out exact truth: collector/adjudicator pass followed by a fresh independent blind pass, both citing verification evidence and independently naming the same place groups.", "items": { "type": "object", "required": ["reviewer", "reviewed_at", "decision", "accepted_place_group_ids", "evidence_inspected", "verification_reference"], "properties": { "reviewer": { "type": "string" }, "reviewed_at": { "type": "string", "format": "date-time" }, "decision": { "enum": ["accept", "reject", "needs_more_research", "region_only", "ambiguous", "negative"] }, "accepted_place_group_ids": { "type": "array", "items": { "type": "string", "pattern": "^pg_[a-f0-9]{16}$" } }, "evidence_inspected": { "type": "boolean" }, "verification_reference": { "type": "string" }, "independent": { "type": "boolean" }, "blind_to_first_pass": { "type": "boolean" } }, "additionalProperties": true } }
   },
   "additionalProperties": true
 }
