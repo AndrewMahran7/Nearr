@@ -75,6 +75,7 @@ import {
 import { persistNamesFromAuthUser } from '@/services/profileService';
 import { onboardingTransferErrorCopy } from '@/lib/onboardingTransferErrors';
 import { recordOnboardingV2RenderDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
+import { claimOnboardingAccountTransition } from '@/lib/onboardingAccountTransition';
 
 /**
  * Gate for the DEBUGGING-ONLY developer login panel.
@@ -181,6 +182,7 @@ export default function AccountAuthScreen() {
   // the state copy exists purely to drive the loading UI.
   const [activeOperation, setActiveOperation] = useState<ActiveAuthOperation>(null);
   const activeOperationRef = useRef<ActiveAuthOperation>(null);
+  const [accountTransitionBusy, setAccountTransitionBusy] = useState(false);
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -300,33 +302,52 @@ export default function AccountAuthScreen() {
    * own routing. Navigation intentionally runs even if the screen unmounted
    * (an OAuth sheet can outlive it) — only state writes are mount-guarded.
    */
-  async function completeAuthentication(userId: string, method = activeOperationRef.current ?? 'resume') {
+  async function completeAuthentication(
+    userId: string,
+    method = activeOperationRef.current ?? 'resume',
+    options: { retry?: boolean } = {},
+  ) {
+    const claim = claimOnboardingAccountTransition({
+      userId,
+      retry: options.retry,
+      run: async () => {
+        const current = await supabase.auth.getUser();
+        if (current.data.user?.id === userId) await persistNamesFromAuthUser(current.data.user);
+        const existing = await resolveExistingAccountSignIn(userId);
+        if (existing.kind === 'qualified') return QUALIFIED_EXISTING_ACCOUNT_ROUTE;
+        if (existing.kind === 'new_account') {
+          return { pathname: '/(onboarding)' as const, params: { reason: 'new_account' } };
+        }
+        return resolvePostAuthRoute(userId);
+      },
+    });
+
+    // A remount, auth-listener replay, or second tap observes the owner's
+    // promise. It never emits another error and never claims navigation.
+    if (!claim.owner) {
+      try {
+        await claim.promise;
+      } catch {
+        // The owner renders the one recoverable error action.
+      }
+      return;
+    }
+
     beginPostAuthRouting();
     markAuthenticatedTransactionTransferring();
+    if (mountedRef.current) setAccountTransitionBusy(true);
     try {
-      const current = await supabase.auth.getUser();
-      if (current.data.user?.id === userId) await persistNamesFromAuthUser(current.data.user);
-      const existing = await resolveExistingAccountSignIn(userId);
-      if (existing.kind === 'qualified') {
-        clearPostAuthRoutingRetry();
-        completeAuthenticatedTransaction();
-        router.replace(QUALIFIED_EXISTING_ACCOUNT_ROUTE);
-        return;
-      }
-      if (existing.kind === 'new_account') {
-        clearPostAuthRoutingRetry();
-        completeAuthenticatedTransaction();
-        router.replace({ pathname: '/(onboarding)', params: { reason: 'new_account' } });
-        return;
-      }
-      const route = await resolvePostAuthRoute(userId);
+      const route = await claim.promise;
       clearPostAuthRoutingRetry();
       completeAuthenticatedTransaction();
       router.replace(route);
     } catch (error) {
       requirePostAuthRoutingRetry();
       void recordOnboardingV2AuthFailed(method, 'failed');
-      console.warn('[onboarding-v2] account_transition_failed', error);
+      console.log('[onboarding-v2] account_transition_failed', {
+        generation: claim.generation,
+        reason: error instanceof Error ? error.message : 'unknown',
+      });
       if (mountedRef.current) {
         setErrorMessage(authEntryIntent === 'existing_account_sign_in'
           ? 'You’re signed in, but Nearr could not verify this account yet. Try Continue again.'
@@ -334,6 +355,7 @@ export default function AccountAuthScreen() {
       }
       router.replace({ pathname: '/(onboarding)/account', params: { reason: 'account_verification_failed' } });
     } finally {
+      if (mountedRef.current) setAccountTransitionBusy(false);
       endPostAuthRouting();
     }
   }
@@ -534,7 +556,7 @@ export default function AccountAuthScreen() {
   // Dev/QA preview: a session already exists → skip auth to the activation step.
   function handleContinueSignedIn() {
     const userId = session?.user.id;
-    if (userId) void completeAuthentication(userId);
+    if (userId) void completeAuthentication(userId, 'resume', { retry: true });
   }
 
   // -------------------------------------------------------------------------
@@ -652,7 +674,12 @@ export default function AccountAuthScreen() {
 
         {signedIn ? (
           <View style={styles.form}>
-            <OnboardingPrimaryButton title="Continue" onPress={handleContinueSignedIn} />
+            <OnboardingPrimaryButton
+              title="Continue"
+              onPress={handleContinueSignedIn}
+              loading={accountTransitionBusy}
+              disabled={accountTransitionBusy}
+            />
           </View>
         ) : mode === 'check_email' ? (
           <View style={styles.sentCard}>

@@ -237,6 +237,8 @@
     "test:onboarding-v2-physical-runtime": "npm run test:onboarding-v2-map-settings && ts-node -P scripts/tsconfig.json scripts/testShareExtensionSubmission.ts && npm run test:onboarding-final-journey",
     "test:onboarding-final-journey": "ts-node -P scripts/tsconfig.json scripts/testOnboardingFinalJourney.ts",
     "test:onboarding-physical-qa-regressions": "ts-node -P scripts/tsconfig.json scripts/testOnboardingPhysicalQaRegressions.ts",
+    "test:onboarding-account-transition": "ts-node -P scripts/tsconfig.json scripts/testOnboardingAccountTransitionRegression.ts",
+    "prove:onboarding-account-transition:dev": "ts-node -P scripts/tsconfig.json scripts/proveOnboardingAccountTransitionDev.ts",
     "test:onboarding-v2-hands-on-activation": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2HandsOnActivation.ts",
     "test:onboarding-v2-phase2-map": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2Phase2Map.ts",
     "test:onboarding-v2-p0-production": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2P0ProductionFixture.ts",
