@@ -1,4 +1,16 @@
-# Nearr 1.5.58 release handoff — 2026-10-09 UTC
+# Nearr 1.5.58 release handoff — 2026-10-10 UTC
+
+## Final branch disposition
+
+**BACKEND BRANCH READY FOR SCHEDULED PRODUCTION DEPLOYMENT.** The exact seven-migration sequence passed from a fresh clone of the newest restored Production database with mismatch count zero after every file. Ownership/V1/V2/RLS/failure/concurrency, provider names, dual-client contracts, notification SQL/concurrency/transport, typecheck, Deno check, full prebuild, and server-side bundle-only packaging all passed. Recognition produced zero before/after differences across 85 available/recovered frozen result inputs and `REGRESSED=[]` across the full deterministic 91-case corpus; the six cases without historical runtime objects are explicitly isolated in `RECOGNITION_ZERO_DIFF_REPORT.md`. The v123-equivalent recovery source and candidate both package successfully, and Production remains unchanged at v123. Execute only the scheduled runbook in `NEARR_1_5_PRODUCTION_BACKEND_MANIFEST.md`, starting with a new encrypted backup/restore and immediate preflight.
+
+No Production schema/Edge change, Railway change, OTA, App Store upload, merge to main, or public release occurred in this task.
+
+## Prior incomplete-run record
+
+**Current verdict: BLOCKED before Production mutation.** The founder-approved at-most-once notification design is implemented and passed isolated restored-database/10-way claim/10-way marker/10-way stale-drain/transport tests. The six prior compatibility migrations plus the new notification migration passed the isolated clone; seven V1/V2/security/dual-client SQL suites, static client contracts, full prebuild, typecheck, and Deno package checks passed. Production read-only query still shows zero owner mismatches, zero legacy in-flight notification attempts, 105 users, 627 saves, 545 links, and 903 jobs; migration ledger still ends `20260907000003`. The clean v123-equivalent rollback source and candidate both passed Supabase `bundleOnly=1`; Production remains ACTIVE v123. The canonical 91-case frozen regression ran with `REGRESSED=[]`, and v123-versus-candidate Edge projection produced zero differences, but only 76 cases have actual recorded Premium runtime inputs; the other 15 are no-result/unavailable paths. Full Edge recognition-output replay and physical old/new client presentation remain unproven. Therefore do **not** make the fresh predeploy backup/migration/Edge/App Store stages yet. Railway, Production OTA, main, and public release remain unchanged. Four restricted plaintext SQL copies remain because exact-path cleanup was again blocked by execution policy; the encrypted archive hash matched its restore-tested value.
+
+## Historical 2026-10-09 handoff (superseded notification policy)
 
 **Verdict: BLOCKED before Production deployment.** The fresh encrypted backup and restore, six-migration Production-data rehearsal, full prebuild, and 120-pair V1/V2 ownership release gate passed. A dynamic notification test proved a provider-accepted/response-lost notification can be resent after its claim becomes stale. The no-duplicate stop condition therefore remains red; exact v123 redeployable rollback and the 91-case Edge recognition before/after replay are also not proven. Do not deploy migrations/Edge, upload build 58, or submit App Review under the current approval.
 

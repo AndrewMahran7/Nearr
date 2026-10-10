@@ -1,4 +1,22 @@
-# Production Edge v123 rollback verification — 2026-10-09 UTC
+# Production Edge v123 recovery — 2026-10-10 UTC
+
+Final branch addendum: both sources passed Supabase's non-persisting `bundleOnly=1` workflow again. The clean rollback worktree remained detached and clean at `ded040465176a193bba8c6921b179b07ef6a9a64`, with 72 local files and entry SHA-256 `F8D83FBD2FDCF785C252185952BD453C5F1E43EB463022BFFCFDFAF346CD077F`; its server-built bundle SHA was `bc80dba6b5d5417e6d6c52b4d42b8fd92c19700bec031aa81cd0d4087f9689e8`. The 74-file notification candidate entry SHA-256 was `0DFA8E17FD628CEE9ABA928299FC603D94BDF2655C0BF571446E68D9A13CD584`, and its server-built bundle SHA was `68f55b9ff9e154b80610cb3c53fe9a2d0a5199443b3cef3352b2d615b2451c01`. A live list after packaging confirmed Production remained ACTIVE v123, `verify_jwt=false`, bundle SHA `578f81df4c87b54ec178ee0ce32aadd35be527d6d6f30c0760a0bb8add925339`. No deploy occurred.
+
+Status: **source-equivalent v123 recovery and official non-persisting packaging PASS, to the tooling's provenance limit; no Edge deploy.** Production `process-share-jobs` remains ACTIVE v123, `verify_jwt=false`, bundle SHA-256 `578f81df4c87b54ec178ee0ce32aadd35be527d6d6f30c0760a0bb8add925339` after bundle-only calls.
+
+The deployed API-downloaded v123 entry SHA-256 `F8D83FBD2FDCF785C252185952BD453C5F1E43EB463022BFFCFDFAF346CD077F` equals clean main at `ded040465176a193bba8c6921b179b07ef6a9a64` byte-for-byte. Production v123's API `updated_at` is 2026-09-08 23:27:45 UTC, about five minutes after commit `e9daf499cfb276ea7072b651642a04218b90ccf9` (2026-09-08 23:22:18 UTC). None of the 72 local Deno dependency files changed between `e9daf49` and the clean `ded0404` worktree. This is a strong complete-local-source-lineage match, though it cannot cryptographically prove each deployed dependency: the 70 API-downloaded dependency modules are transcompiled/flattened rather than original TypeScript, so all differ bytewise from main. The download CLI rejects a parent-relative dependency path; do not redeploy the extracted tree.
+
+`scripts/proveEdgeBundleOnly.ps1` assembled the 72-file local Deno dependency graph from clean main and POSTed it to Supabase's documented `functions/deploy?slug=process-share-jobs&bundleOnly=1` endpoint, using the CLI credential without printing it. Supabase built it and returned SHA `bc80dba6b5d5417e6d6c52b4d42b8fd92c19700bec031aa81cd0d4087f9689e8`, `verify_jwt=false`, with the expected entry path. The final 74-file notification candidate also built, SHA `68f55b9ff9e154b80610cb3c53fe9a2d0a5199443b3cef3352b2d615b2451c01`. A subsequent live list still showed v123 and its original SHA. Bundle SHA differences are expected for a new package; they do not prove dependency identity.
+
+The conditional forward-recovery command, **not run** merely to test rollback, is:
+
+```powershell
+supabase functions deploy process-share-jobs --project-ref rlqvxdwtetxsqxhqztkw --no-verify-jwt --use-api --workdir 'C:\Users\andre\Desktop\Nearr-main-dev-build'
+```
+
+Before using it, verify that worktree is clean at `ded040465176a193bba8c6921b179b07ef6a9a64`, the ref/JWT setting, and the existing Production function secret/config *names* without exposing values. Source-critical names include `SHARE_JOBS_WORKER_SECRET`, `MEDIA_FINALIZE_SECRET`, platform-injected `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`, `GOOGLE_PLACES_KEY`, `GEMINI_API_KEY`, and existing media feature flags such as `MEDIA_FALLBACK_ENABLED`; do not change their values for rollback. Afterwards check ACTIVE version, boot/auth, recognition smoke, and share-job processing. This is a forward redeploy of source-equivalent v123, not guaranteed to reproduce the original bundle hash. Supabase documents [`bundleOnly=1` as non-persisting packaging](https://supabase.com/changelog/33720-deploy-and-update-edge-functions-using-the-management-api).
+
+## Historical 2026-10-09 status (superseded by bundle-only result)
 
 Status: **NOT PROVEN; no Edge deploy.** Production `process-share-jobs` is ACTIVE v123, bundle SHA-256 `578f81df4c87b54ec178ee0ce32aadd35be527d6d6f30c0760a0bb8add925339`, `verify_jwt=false`. The API-downloaded v123 entry `index.ts` SHA-256 `F8D83FBD2FDCF785C252185952BD453C5F1E43EB463022BFFCFDFAF346CD077F` matches clean `origin/main` source at `ded040465176a193bba8c6921b179b07ef6a9a64` byte-for-byte. The staged release diff adds notification authority/immediate draining only; recognition imports/paths are unchanged.
 

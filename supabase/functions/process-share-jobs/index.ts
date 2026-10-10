@@ -57,6 +57,7 @@ import {
 } from '../../../lib/shareFailurePresentation.ts';
 import { isNearrCategory, resolvePlaceCategory } from '../../../lib/placeCategory.ts';
 import { authoritativeShareJobNotification } from '../../../lib/shareJobNotificationAuthority.ts';
+import { shareJobNotificationLogicalId } from '../../../lib/shareJobNotificationIdentity.ts';
 import {
   evaluateDeliverableAiPlaceNote,
   generateAiPlaceNote,
@@ -68,7 +69,7 @@ import {
   videoAiNoteCallbackMatchesTarget,
 } from '../../../lib/videoDerivedAiNote.ts';
 
-import { submitPushToUser, checkExpoReceipts, type TicketRef } from './push.ts';
+import { preparePushToUser, submitPreparedPush, checkExpoReceipts, type TicketRef } from './push.ts';
 import {
   classifyResolverFailure,
   formatResolverRetryLog,
@@ -748,6 +749,10 @@ async function finalize(
     updatePatch.recognition_content_id = identity.contentId;
   }
   if (note) {
+    const noteStatus = typeof updatePatch.status === 'string' ? updatePatch.status : job.status;
+    if (!['completed', 'needs_help', 'failed'].includes(noteStatus)) {
+      throw new Error('notification_requires_actionable_terminal_status');
+    }
     updatePatch.notification_status = 'pending';
     updatePatch.notification_attempts = 0;
     updatePatch.notification_last_attempt_at = null;
@@ -756,6 +761,10 @@ async function finalize(
     updatePatch.notification_error_code = null;
     updatePatch.notification_submitted_at = null;
     updatePatch.notification_receipts_checked_at = null;
+    updatePatch.notification_receipt_status = null;
+    updatePatch.notification_logical_id = shareJobNotificationLogicalId(job.id, noteStatus);
+    updatePatch.notification_attempt_id = null;
+    updatePatch.notification_attempt_started_at = null;
     updatePatch.notification_payload = note;
   }
   const finalFacts = { ...job, ...updatePatch };
@@ -4620,16 +4629,22 @@ async function processPendingNotifications(admin: any, limit = 25): Promise<void
 
   const rows = Array.isArray(claimed) ? claimed : [];
   for (const claimedRow of rows) {
+    const attemptId = claimedRow.notification_attempt_id;
+    if (typeof attemptId !== 'string') {
+      console.log(`[share-job] notification_missing_attempt_id job_id=${claimedRow.id}`);
+      continue;
+    }
     const { data: currentRow, error: currentRowError } = await admin
       .from('share_jobs')
-      .select('id,user_id,status,notification_status,notification_payload,notification_attempts,notification_max_attempts')
+      .select('id,user_id,status,notification_status,notification_payload,notification_attempts,notification_max_attempts,notification_logical_id,notification_attempt_id,notification_attempt_started_at')
       .eq('id', claimedRow.id)
       .maybeSingle();
     if (currentRowError) {
       console.log(`[share-job] notification_authority_read_failed job_id=${claimedRow.id} code=${currentRowError.code ?? 'unknown'}`);
       continue;
     }
-    const authoritative = authoritativeShareJobNotification(currentRow);
+    const authoritative = currentRow?.notification_attempt_id === attemptId
+      ? authoritativeShareJobNotification(currentRow) : null;
     if (!authoritative) {
       console.log(`[share-job] notification_authority_rejected job_id=${claimedRow.id}`);
       await admin
@@ -4640,12 +4655,15 @@ async function processPendingNotifications(admin: any, limit = 25): Promise<void
           notification_next_attempt_at: null,
         })
         .eq('id', claimedRow.id)
-        .eq('notification_status', 'sending');
+        .eq('notification_status', 'sending')
+        .eq('notification_attempt_id', attemptId)
+        .is('notification_attempt_started_at', null);
       continue;
     }
     const row = currentRow;
     const payload = parseNotificationPayload(authoritative.payload);
-    if (!payload) {
+    const logicalId = row.notification_logical_id;
+    if (!payload || typeof logicalId !== 'string') {
       await admin
         .from('share_jobs')
         .update({
@@ -4654,74 +4672,110 @@ async function processPendingNotifications(admin: any, limit = 25): Promise<void
           notification_next_attempt_at: null,
         })
         .eq('id', row.id)
-        .eq('notification_status', 'sending');
+        .eq('notification_status', 'sending')
+        .eq('notification_attempt_id', attemptId)
+        .is('notification_attempt_started_at', null);
       continue;
     }
 
-    console.log(`[share-job] notification_dispatch_started job_id=${row.id} at=${nowIso()}`);
-    const result = await submitPushToUser(admin, authoritative.userId, payload);
-    if (result.status === 'submitted') {
-      await admin
-        .from('share_jobs')
-        .update({
-          notification_status: 'submitted',
-          notification_ticket_ids: result.ticketRefs,
-          notification_submitted_at: nowIso(),
-          notification_error_code: null,
-          notification_next_attempt_at: null,
-        })
-        .eq('id', row.id)
-        .eq('notification_status', 'sending');
-      if (payload.data?.type === 'share_job_completed') {
-        const { error: analyticsError } = await admin.from('analytics_events').insert({
-          user_id: row.user_id,
-          event_name: 'notification_primary_save',
-          properties: {
-            share_job_id: row.id,
-            alternative_count: typeof payload.data.alternativeCount === 'number'
-              ? Math.max(0, Math.floor(payload.data.alternativeCount))
-              : 0,
-          },
-        });
-        if (analyticsError) console.log(`[share-job] notification_analytics_failed job_id=${row.id}`);
-      }
-      console.log(`[share-job] notification_submitted job_id=${row.id} tickets=${result.ticketRefs.length}`);
-      continue;
+    let preparation;
+    try {
+      preparation = await preparePushToUser(admin, authoritative.userId, payload, logicalId);
+    } catch (_error) {
+      preparation = { status: 'retryable_pre_send', errorCode: 'push_preparation_failed' };
     }
-
-    if (result.status === 'retryable_failed') {
+    if (preparation.status !== 'ready') {
       const attempts = typeof row.notification_attempts === 'number' ? row.notification_attempts : 1;
       const maxAttempts = typeof row.notification_max_attempts === 'number' ? row.notification_max_attempts : 6;
-      const nextStatus = attempts >= maxAttempts ? 'permanently_failed' : 'retryable_failed';
+      const nextStatus = preparation.status === 'retryable_pre_send' && attempts < maxAttempts
+        ? 'retryable_failed' : 'permanently_failed';
       const nextAttempt =
         nextStatus === 'retryable_failed' ? addSecondsIso(notificationBackoffSeconds(attempts)) : null;
-
       await admin
         .from('share_jobs')
         .update({
           notification_status: nextStatus,
-          notification_error_code:
-            nextStatus === 'permanently_failed'
-              ? 'notification_retry_budget_exhausted'
-              : (result.errorCode ?? 'notification_retryable_error'),
+          notification_error_code: nextStatus === 'permanently_failed' && preparation.status === 'retryable_pre_send'
+            ? 'notification_pre_send_retry_budget_exhausted' : preparation.errorCode,
           notification_next_attempt_at: nextAttempt,
         })
         .eq('id', row.id)
-        .eq('notification_status', 'sending');
-      console.log(`[share-job] notification_retry_scheduled job_id=${row.id} attempts=${attempts}`);
+        .eq('notification_status', 'sending')
+        .eq('notification_attempt_id', attemptId)
+        .is('notification_attempt_started_at', null);
+      console.log(`[share-job] notification_pre_send_result job_id=${row.id} status=${nextStatus}`);
       continue;
     }
 
-    await admin
-      .from('share_jobs')
-      .update({
+    // This RPC is the irreversible boundary. If its response is lost, do not
+    // call Expo; the durable marker may already have committed.
+    const { data: started, error: startError } = await admin.rpc(
+      'begin_share_job_notification_provider_attempt',
+      { p_job_id: row.id, p_attempt_id: attemptId },
+    );
+    if (startError) {
+      console.log(`[share-job] notification_attempt_marker_unknown job_id=${row.id} code=${startError.code ?? 'unknown'}`);
+      continue;
+    }
+    if (!Array.isArray(started) || started.length !== 1) {
+      await admin.from('share_jobs').update({
         notification_status: 'permanently_failed',
-        notification_error_code: result.errorCode ?? 'notification_permanent_error',
+        notification_error_code: 'notification_superseded_before_send',
         notification_next_attempt_at: null,
-      })
-      .eq('id', row.id)
-      .eq('notification_status', 'sending');
-    console.log(`[share-job] notification_permanent_failure job_id=${row.id}`);
+      }).eq('id', row.id).eq('notification_status', 'sending')
+        .eq('notification_attempt_id', attemptId).is('notification_attempt_started_at', null);
+      continue;
+    }
+
+    console.log(`[share-job] notification_dispatch_started job_id=${row.id} logical_id=${logicalId} attempt_id=${attemptId} at=${nowIso()}`);
+    let result;
+    try {
+      result = await submitPreparedPush(admin, preparation.prepared, attemptId);
+    } catch (_error) {
+      result = { status: 'delivery_unknown', errorCode: 'provider_outcome_unknown_exception', ticketRefs: [] };
+    }
+    // Retry only the metadata write, NEVER the external provider call. If all
+    // writes fail, stale reconciliation marks this attempt delivery_unknown.
+    let recorded = false;
+    for (let writeAttempt = 0; writeAttempt < 3; writeAttempt += 1) {
+      const { data: finished, error: finishError } = await admin.rpc(
+        'finish_share_job_notification_provider_attempt',
+        {
+          p_job_id: row.id,
+          p_attempt_id: attemptId,
+          p_outcome: result.status,
+          p_ticket_refs: result.ticketRefs,
+          p_error_code: result.errorCode,
+        },
+      );
+      if (!finishError && finished === true) { recorded = true; break; }
+      if (!finishError && finished === false && result.status === 'submitted') {
+        // A previous write may have committed while its response was lost.
+        const { data: check } = await admin.from('share_jobs')
+          .select('notification_status,notification_attempt_id')
+          .eq('id', row.id).maybeSingle();
+        if (check?.notification_status === 'submitted' && check?.notification_attempt_id === attemptId) {
+          recorded = true; break;
+        }
+      }
+    }
+    if (!recorded) {
+      console.log(`[share-job] notification_outcome_write_unconfirmed job_id=${row.id} attempt_id=${attemptId} tickets=${result.ticketRefs.length}`);
+      continue;
+    }
+    if (result.status === 'submitted' && payload.data?.type === 'share_job_completed') {
+      const { error: analyticsError } = await admin.from('analytics_events').insert({
+        user_id: row.user_id,
+        event_name: 'notification_primary_save',
+        properties: {
+          share_job_id: row.id,
+          alternative_count: typeof payload.data.alternativeCount === 'number'
+            ? Math.max(0, Math.floor(payload.data.alternativeCount)) : 0,
+        },
+      });
+      if (analyticsError) console.log(`[share-job] notification_analytics_failed job_id=${row.id}`);
+    }
+    console.log(`[share-job] notification_provider_result job_id=${row.id} status=${result.status} tickets=${result.ticketRefs.length}`);
   }
 }
 
@@ -4748,9 +4802,9 @@ async function processNotificationReceipts(admin: any, limit = 25): Promise<void
     if (receipt.errorCode === 'expo_receipts_retryable') {
       await admin
         .from('share_jobs')
-        .update({ notification_error_code: receipt.errorCode })
+        .update({ notification_error_code: receipt.errorCode, notification_receipt_status: 'unknown' })
         .eq('id', row.id)
-        .eq('notification_status', 'submitted');
+        .in('notification_status', ['submitted', 'delivery_unknown']);
       continue;
     }
 
@@ -4758,20 +4812,25 @@ async function processNotificationReceipts(admin: any, limit = 25): Promise<void
       await admin
         .from('share_jobs')
         .update({
-          notification_status: 'permanently_failed',
+          notification_status: row.notification_status === 'submitted' ? 'permanently_failed' : 'delivery_unknown',
+          notification_receipt_status: 'failed',
           notification_error_code: receipt.errorCode ?? 'expo_receipts_permanent_failure',
           notification_next_attempt_at: null,
         })
         .eq('id', row.id)
-        .eq('notification_status', 'submitted');
+        .in('notification_status', ['submitted', 'delivery_unknown']);
       continue;
     }
 
     await admin
       .from('share_jobs')
-      .update({ notification_error_code: receipt.errorCode })
+      .update({
+        notification_error_code: receipt.errorCode,
+        notification_receipt_status: receipt.errorCode ? 'unknown'
+          : receipt.hadAnySuccess ? 'accepted' : 'unknown',
+      })
       .eq('id', row.id)
-      .eq('notification_status', 'submitted');
+      .in('notification_status', ['submitted', 'delivery_unknown']);
   }
 }
 

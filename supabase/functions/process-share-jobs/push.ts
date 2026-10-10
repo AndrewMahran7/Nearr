@@ -25,10 +25,12 @@ export type PushNotification = {
 export type TicketRef = {
   ticketId: string;
   tokenId: string;
+  logicalId?: string;
+  attemptId?: string;
 };
 
 export type PushSubmissionResult = {
-  status: 'submitted' | 'retryable_failed' | 'permanently_failed';
+  status: 'submitted' | 'delivery_unknown' | 'permanently_failed';
   errorCode: string | null;
   ticketRefs: TicketRef[];
   submitted: number;
@@ -59,26 +61,35 @@ function isPermanentExpoError(code: string | null): boolean {
   ].includes(code);
 }
 
-export async function submitPushToUser(
+export type PreparedPush = {
+  tokenRows: Array<{ id: string; token: string }>;
+  messages: Array<Record<string, unknown>>;
+  logicalId: string;
+};
+
+export type PushPreparation =
+  | { status: 'ready'; prepared: PreparedPush }
+  | { status: 'retryable_pre_send' | 'permanently_failed'; errorCode: string };
+
+/** All database/local work happens before the durable provider-attempt marker. */
+export async function preparePushToUser(
   admin: any,
   userId: string,
   note: PushNotification,
-): Promise<PushSubmissionResult> {
+  logicalId: string,
+): Promise<PushPreparation> {
+  if (!logicalId || new TextEncoder().encode(logicalId).length > 64) {
+    return { status: 'permanently_failed', errorCode: 'invalid_logical_notification_id' };
+  }
   const { data: tokenRows, error } = await admin
     .from('user_push_tokens')
     .select('id, token')
     .eq('user_id', userId)
     .eq('enabled', true);
 
-  if (error || !tokenRows || tokenRows.length === 0) {
-    return {
-      status: 'permanently_failed',
-      errorCode: error ? 'token_query_failed' : 'no_enabled_tokens',
-      ticketRefs: [],
-      submitted: 0,
-      invalidated: 0,
-      tokens: 0,
-    };
+  if (error) return { status: 'retryable_pre_send', errorCode: 'token_query_failed' };
+  if (!tokenRows || tokenRows.length === 0) {
+    return { status: 'permanently_failed', errorCode: 'no_enabled_tokens' };
   }
 
   const messages = tokenRows.map((t: { token: string }) => ({
@@ -89,18 +100,31 @@ export async function submitPushToUser(
     sound: 'default',
     channelId: 'default',
     priority: 'high',
+    collapseId: logicalId,
+    tag: logicalId,
   }));
+  return { status: 'ready', prepared: { tokenRows, messages, logicalId } };
+}
+
+/** Called only after begin_share_job_notification_provider_attempt commits. */
+export async function submitPreparedPush(
+  admin: any,
+  prepared: PreparedPush,
+  attemptId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PushSubmissionResult> {
+  const { tokenRows, messages, logicalId } = prepared;
 
   let submitted = 0;
   let invalidated = 0;
   const ticketRefs: TicketRef[] = [];
-  let sawRetryable = false;
-  let sawPermanent = false;
+  let sawUnknown = false;
+  let sawRejected = false;
 
   for (let i = 0; i < messages.length; i += SEND_CHUNK) {
     const chunk = messages.slice(i, i + SEND_CHUNK);
     try {
-      const res = await fetch(EXPO_PUSH_URL, {
+      const res = await fetchImpl(EXPO_PUSH_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,19 +135,20 @@ export async function submitPushToUser(
       });
       const parsed = await res.json().catch(() => null);
       if (!res.ok) {
-        sawRetryable = true;
+        // Even a failed HTTP response is not proof that no earlier chunk was
+        // accepted. The at-most-once policy never resends after fetch starts.
+        sawUnknown = true;
         continue;
       }
 
       const tickets = Array.isArray(parsed?.data) ? parsed.data : [];
-      for (let k = 0; k < tickets.length; k++) {
+      if (tickets.length !== chunk.length) sawUnknown = true;
+      for (let k = 0; k < chunk.length; k++) {
         const ticket = tickets[k];
         const row = tokenRows[i + k];
-        if (ticket?.status === 'ok') {
+        if (ticket?.status === 'ok' && typeof ticket?.id === 'string' && row?.id) {
           submitted += 1;
-          if (typeof ticket?.id === 'string' && row?.id) {
-            ticketRefs.push({ ticketId: ticket.id, tokenId: row.id });
-          }
+          ticketRefs.push({ ticketId: ticket.id, tokenId: row.id, logicalId, attemptId });
         } else if (ticket?.status === 'error') {
           const code = typeof ticket?.details?.error === 'string' ? ticket.details.error : null;
           if (code === 'DeviceNotRegistered') {
@@ -134,50 +159,45 @@ export async function submitPushToUser(
                 .eq('id', row.id);
               invalidated += 1;
             }
-            sawPermanent = true;
+            sawRejected = true;
             continue;
           }
-
-          if (isRetryableExpoError(code)) {
-            sawRetryable = true;
-          } else if (isPermanentExpoError(code)) {
-            sawPermanent = true;
-          } else {
-            sawRetryable = true;
-          }
+          if (isPermanentExpoError(code) || code === 'MessageRateExceeded') sawRejected = true;
+          else sawUnknown = true;
+        } else {
+          sawUnknown = true;
         }
       }
     } catch (_err) {
-      sawRetryable = true;
+      // A timeout/reset can happen after Expo accepted the request.
+      sawUnknown = true;
     }
   }
 
+  if (sawUnknown) {
+    return {
+      status: 'delivery_unknown',
+      errorCode: 'expo_acceptance_ambiguous',
+      ticketRefs,
+      submitted,
+      invalidated,
+      tokens: tokenRows.length,
+    };
+  }
   if (submitted > 0) {
     return {
       status: 'submitted',
-      errorCode: null,
+      errorCode: sawRejected ? 'expo_partial_rejection' : null,
       ticketRefs,
       submitted,
       invalidated,
       tokens: tokenRows.length,
     };
   }
-
-  if (sawRetryable) {
-    return {
-      status: 'retryable_failed',
-      errorCode: 'expo_send_retryable',
-      ticketRefs,
-      submitted,
-      invalidated,
-      tokens: tokenRows.length,
-    };
-  }
-
-  if (sawPermanent) {
+  if (sawRejected) {
     return {
       status: 'permanently_failed',
-      errorCode: 'expo_send_permanent',
+      errorCode: 'expo_explicit_rejection',
       ticketRefs,
       submitted,
       invalidated,
@@ -186,7 +206,7 @@ export async function submitPushToUser(
   }
 
   return {
-    status: 'retryable_failed',
+    status: 'delivery_unknown',
     errorCode: 'expo_send_unknown',
     ticketRefs,
     submitted,
@@ -198,6 +218,7 @@ export async function submitPushToUser(
 export async function checkExpoReceipts(
   admin: any,
   ticketRefs: TicketRef[],
+  fetchImpl: typeof fetch = fetch,
 ): Promise<PushReceiptResult> {
   if (!Array.isArray(ticketRefs) || ticketRefs.length === 0) {
     return {
@@ -218,7 +239,7 @@ export async function checkExpoReceipts(
     const chunk = ticketRefs.slice(i, i + RECEIPT_CHUNK);
     const ids = chunk.map((t) => t.ticketId);
     try {
-      const res = await fetch(EXPO_RECEIPTS_URL, {
+      const res = await fetchImpl(EXPO_RECEIPTS_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -283,7 +304,7 @@ export async function checkExpoReceipts(
     };
   }
 
-  const allPermanentFailures = sawAnyResult && !hadAnySuccess && !sawNonPermanent;
+  const allPermanentFailures = sawAnyResult && !sawRetryable && !hadAnySuccess && !sawNonPermanent;
   return {
     errorCode: sawRetryable ? 'expo_receipts_partial_retryable' : null,
     invalidated,

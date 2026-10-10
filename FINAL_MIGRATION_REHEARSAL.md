@@ -1,4 +1,14 @@
-# Final migration rehearsal — 2026-10-09 UTC
+# Final migration rehearsal — 2026-10-10 UTC
+
+## Final branch rehearsal
+
+Status: **PASS; scheduled Production execution only.** A new local database, `nearr_branch_final_20261010`, was cloned directly from the newest available restored Production database, `nearr_release_restore_20261009`. All seven release migrations were applied one at a time in the manifest order, and the ownership mismatch count remained zero after every file. Owner invariant, V2 core, V2 adversarial grants/RLS, V2 failure injection, V1 transfer, source-attachment, dual-client, notification-state, provider-name, four-class two-session V2 concurrency, and ten-way notification claim/marker/stale-drain tests all passed. Typecheck, Deno check, canonical recognition regression, recognition isolation, and the full prebuild passed. No Production migration was applied.
+
+## Prior rehearsal record
+
+2026-10-10 addendum: The six previously qualified migrations remain unchanged. The new seventh file, `20261009000006_share_job_notification_at_most_once.sql`, applied successfully to an isolated clone of `nearr_release_migrated_20261009`. It introduces durable attempt-start fencing, `delivery_unknown`, logical/attempt IDs, ticket provenance and receipt status, plus service-role-only marker/finish RPCs. On that seven-migration clone, seven ownership/V1/V2/security/dual-client SQL suites and notification SQL/concurrency suites passed. This is **not** the required fresh immediately-before-deploy restored Production backup/rehearsal; no Production migration was applied. Deploy order, if later released, is the six files below followed by `20261009000006` only after a fresh encrypted backup/restore and live preflight. Do not use blanket `supabase db push` from the Development-linked worktree.
+
+## Historical six-migration rehearsal
 
 Status: **PASS on the fresh restored Production clone; NOT deployed.** Source database `nearr_release_restore_20261009`, migrated clone `nearr_release_migrated_20261009` on isolated PostgreSQL 18. Applied only the six files below, in order, one at a time. Mismatch count remained zero after each.
 

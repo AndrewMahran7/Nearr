@@ -5,7 +5,7 @@ param(
   [int]$Port = 55458
 )
 $ErrorActionPreference = 'Continue'
-if ($SourceDatabase -notmatch '^nearr_postrepair_[0-9]{8}$|^nearr_migration_rehearsal_20261009$|^nearr_final_replay_20261009$|^nearr_release_migrated_20261009$' -or $Port -ne 55458) {
+if ($SourceDatabase -notmatch '^nearr_postrepair_[0-9]{8}$|^nearr_migration_rehearsal_20261009$|^nearr_final_replay_20261009$|^nearr_release_migrated_20261009$|^nearr_branch_final_20261010$' -or $Port -ne 55458) {
   throw 'This harness is restricted to the local post-repair restore or migration rehearsal on port 55458.'
 }
 $database = 'nearr_v2_concurrency_' + [guid]::NewGuid().ToString('N').Substring(0, 12)

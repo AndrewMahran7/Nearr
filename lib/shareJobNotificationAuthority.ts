@@ -29,6 +29,8 @@ export function authoritativeShareJobNotification(
   const data = payload.data;
   if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
   if ((data as Record<string, unknown>).jobId !== row.id) return null;
+  const expectedType = row.status === 'completed' ? 'share_job_completed' : 'share_job_needs_help';
+  if ((data as Record<string, unknown>).type !== expectedType) return null;
 
   return {
     jobId: row.id,
