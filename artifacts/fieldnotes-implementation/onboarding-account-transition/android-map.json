@@ -1,0 +1,17 @@
+{
+  "platform": "Android",
+  "device": "Pixel 8a AVD",
+  "deviceId": "emulator-5554",
+  "width": 1080,
+  "height": 2400,
+  "density": "Physical density: 420",
+  "fontScale": 1,
+  "animatorDurationScale": 1,
+  "route": "nearr://dev-qa?fieldnotes=map&theme=light",
+  "data": "10 bundled demo saved places; native Google map; signed-out Activity guard active",
+  "commit": "599938f2403c7cb3f03d25ab6d11570965edea6b",
+  "nativeBuild": "Android debug; generated before JS version 1.6.59 bump",
+  "capturedAt": "2026-10-10T03:51:13.539Z",
+  "source": "adb exec-out screencap -p",
+  "iosEvidence": false
+}
