@@ -19,6 +19,7 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { evaluateMediaClaimFence } from './mediaClaimFence.ts';
+import { evaluateLegacyParentCategory } from './adaptiveLegacyIdentity.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
 
 import { readEnv, validateEnv } from '../process-share-link/env.ts';
@@ -3505,8 +3506,12 @@ async function finalizeMediaTask(
     failureReason: result.failureReason,
   });
   const legacyExactIdentityStrength = mediaEvidenceExactIdentityStrength(parsed.value);
+  const parentCategoryVetoEnabled = (Deno.env.get('ADAPTIVE_LEGACY_PARENT_CATEGORY_VETO_ENABLED') ?? '').trim().toLowerCase() === 'true';
+  const legacyIdentityChecks = parentCategoryVetoEnabled
+    ? (result.candidates ?? []).map((candidate: any) => evaluateLegacyParentCategory(candidate, parsed.value))
+    : null;
   const legacyMediaCompletion = planAutomaticCompletion(
-    (result.candidates ?? []).map((candidate: any) => ({
+    (result.candidates ?? []).map((candidate: any, index: number) => ({
       ...candidate,
       exactIdentityStrength: legacyExactIdentityStrength === 'none'
         ? undefined
@@ -3516,6 +3521,10 @@ async function finalizeMediaTask(
             )
         ? undefined
         : legacyExactIdentityStrength,
+      ...(legacyIdentityChecks && !legacyIdentityChecks[index].eligible ? {
+        upstreamSafetyDecision: 'REVIEW',
+        reasons: [...(candidate.reasons ?? []), legacyIdentityChecks[index].reason],
+      } : {}),
     })),
   );
   const legacyCandidate = legacyMediaCompletion.action === 'save'

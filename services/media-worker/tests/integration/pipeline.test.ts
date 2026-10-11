@@ -34,6 +34,7 @@ function testCfg(over: Partial<WorkerConfig> = {}): WorkerConfig {
     scrapeCreatorsInstagramFallbackEnabled: false,
     scrapeCreatorsFacebookFallbackEnabled: false,
     automaticDeepRecognitionEnabled: true,
+    adaptiveEmptyEvidenceReviewEnabled: false,
     supabaseUrl: 'http://localhost',
     supabaseServiceRoleKey: 'k',
     finalizeUrl: 'http://localhost/f',

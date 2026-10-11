@@ -23,6 +23,7 @@ function config(): WorkerConfig {
     scrapeCreatorsInstagramFallbackEnabled: false,
     scrapeCreatorsFacebookFallbackEnabled: false,
     automaticDeepRecognitionEnabled: true,
+    adaptiveEmptyEvidenceReviewEnabled: false,
     supabaseUrl: 'http://localhost', supabaseServiceRoleKey: 'benchmark', finalizeUrl: 'http://localhost/finalize',
     mediaFinalizeSecret: 'benchmark',
     maxConcurrency: 1, claimBatchSize: 1, claimLockSeconds: 600, retryBaseSeconds: 30, retryMaxSeconds: 900,
