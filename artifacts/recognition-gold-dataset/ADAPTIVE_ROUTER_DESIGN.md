@@ -44,9 +44,17 @@ loss is reported, not reclassified as a negative. The rule changes cost allocati
 without claiming higher autonomous accuracy.
 
 Scoring requires immutable inference artifacts before opening labels. Paired confidence
-intervals resample connected source/place groups. The 62-case holdout is now running as
+intervals resample connected source/place groups. The 62-case holdout completed as
 one baseline and one frozen final candidate milestone, with a shared immutable
 first-pass prefix and label-free candidate replay. The full baseline time is retained
 for the candidate, so only avoided provider cost is credited.
 
-No architecture has passed the preregistered safety and improvement gates yet.
+The frozen empty-review plus parent-veto policy passed the relative cost and observed-safety gates. Absolute identity precision remains inadequate for broad production rollout.
+
+## Final sealed result — 2026-10-11
+
+The frozen valid-empty-review plus food-parent-veto policy is a statistically supported cost improvement over the repaired baseline. All 9/56 held-out correct autonomous resolutions, 17 autonomous outputs and their identities are unchanged; no new wrong confident result or complete multi-set regression occurred. The conservative cost-per-correct ratio is 0.909136, with a 95% connected-group bootstrap interval [0.825217, 0.978259] (10,000 draws; 60 groups). This is at least 9.09% cheaper at the adversarial point estimate; the interval corresponds to a 2.17%–17.48% reduction. It narrowly misses the suggested 10% material point target, which was not the preregistered statistical acceptance gate.
+
+This result does not establish production safety or improved identity accuracy. Held-out precision is only 9/17 = 52.94% (group-bootstrap 95% interval 27.78%–80.00%); 8/62 outputs are wrong or unverified against the frozen exact standard. Coverage is 17/56 = 30.36% of exact-positive submissions (17/62 overall). No 99% precision or population equivalence claim is made. Multi-place exact autonomous sets remain 0/8; detection is 3/8. Missing parsed provider country/region fields mean geography check coverage is 0/17, so reported zero geographic mismatches is not evidence of zero errors. Wrong/unverified branches are 3/12; negative autonomous false positives are 0/6.
+
+The earlier pending statements above describe experiment chronology. The final architecture and deployment status are in `FINAL_RECOGNITION_ARCHITECTURE.md` and `DEVELOPMENT_INTEGRATION_REPORT.md`.

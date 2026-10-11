@@ -1,6 +1,6 @@
 # Description and modality ablation
 
-Status: development pilot only. The final full-view heldout pair is running; masked-view heldout results are not claimed.
+Status: modality results below are development pilots only. The final full-view heldout pair has completed; masked-view heldout results are not claimed.
 
 | Same five sources | Correct autonomous positives | Autonomous outputs | Wrong/unverified outputs | Total provider cost | p90 |
 |---|---:|---:|---:|---:|---:|

@@ -1,18 +1,19 @@
-# Latency and cost by measured tier
+# Latency and economics by exclusive route
 
-Status: development/calibration only; the sealed pair is running. Tiers below are mutually exclusive paths selected from the recorded provider calls. Every case runs the cheap visual/text model; no metadata-only early exit passed calibration.
+| Split | Exclusive tier | Cases | Correct autonomous | Precision | Coverage | p50/p75/p90/p95 seconds | Cost/submission |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| development | normal_visual_places | 45 (40.18%) | 16/45 (35.56%) | 16/19 (84.21%) | 19/45 (42.22%) | 5.096 / 5.925 / 7.472 / 10.503 | $0.075795 |
+| development | deep_review | 33 (29.46%) | 0/32 (0.00%) | 0/0 (n/a) | 0/32 (0.00%) | 18.812 / 26.384 / 39.448 / 43.218 | $0.161589 |
+| development | empty_review | 34 (30.36%) | 0/1 (0.00%) | 0/0 (n/a) | 0/1 (0.00%) | 6.227 / 7.141 / 7.765 / 10.739 | $0.002084 |
+| calibration | normal_visual_places | 17 (50.00%) | 3/16 (18.75%) | 3/7 (42.86%) | 7/16 (43.75%) | 9.039 / 10.816 / 11.523 / 15.430 | $0.069253 |
+| calibration | deep_review | 11 (32.35%) | 0/10 (0.00%) | 0/0 (n/a) | 0/10 (0.00%) | 18.804 / 21.217 / 25.458 / 27.332 | $0.109030 |
+| calibration | empty_review | 6 (17.65%) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | 11.244 / 11.658 / 13.690 / 14.666 | $0.002533 |
+| held_out | normal_visual_places | 41 (66.13%) | 9/41 (21.95%) | 9/17 (52.94%) | 17/41 (41.46%) | 7.163 / 8.571 / 9.534 / 9.821 | $0.072758–$0.073538 |
+| held_out | deep_review | 15 (24.19%) | 0/15 (0.00%) | 0/0 (n/a) | 0/15 (0.00%) | 16.407 / 19.912 / 21.965 / 27.398 | $0.096632 |
+| held_out | empty_review | 6 (9.68%) | 0/0 (n/a) | 0/0 (n/a) | 0/0 (n/a) | 10.747 / 12.360 / 12.927 / 13.076 | $0.004543 |
 
-All times start at retained-evidence inference and end at finalization planning. Source acquisition, new frame extraction, historical transcript generation, queueing, database I/O and device rendering are outside the boundary. The candidate retains full baseline latency plus measured local policy overhead, even for avoided Deep calls. This is a conservative replay bound, not a measured deployed speedup.
+Normal visual/Places includes weak or failed normal-resolution attempts that did not reach Deep; it is not a ground-truth easy-case class. Deep review includes weak named evidence, partial/multi intent and recovery. Empty review requires fully valid empty normal evidence and no partial or multi intent.
 
-| Split / tier | Cases | Correct autonomous / positives | Precision | Autonomous coverage | p50 | p75 | p90 | p95 | Mean provider cost |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| development / visual + Places | 45 | 16/45 | 16/19 | 19/45 | 5.096s | 5.925s | 7.472s | 10.503s | $0.075795 |
-| development / Deep review/recovery | 33 | 0/32 | undefined (0 saves) | 0/32 | 18.812s | 26.384s | 39.448s | 43.218s | $0.161589 |
-| development / early review after empty pass | 34 | 0/1 | undefined (0 saves) | 0/1 | 6.227s | 7.141s | 7.765s | 10.739s | $0.002084 |
-| calibration / visual + Places | 17 | 3/16 | 3/7 | 7/16 | 9.039s | 10.816s | 11.523s | 15.430s | $0.069253 |
-| calibration / Deep review/recovery | 11 | 0/10 | undefined (0 saves) | 0/10 | 18.804s | 21.217s | 25.458s | 27.332s | $0.109030 |
-| calibration / early review after empty pass | 6 | 0/0 | undefined (0 saves) | not applicable | 11.244s | 11.658s | 13.690s | 14.666s | $0.002533 |
+Held-out submitted latency is 8.610 / 11.871 / 16.444 / 20.868 seconds at p50/p75/p90/p95. On the 9 correct autonomous results it is approximately 6.65 seconds p50 and 8.34 seconds p90. The 6 empty-review cases retain full old-run latency in this table, even though their later requests are removed from the cost calculation. Do not interpret that conservative replay value as measured live early-review latency.
 
-Deep remains review-only in the repaired baseline. None of its 67 development or 17 calibration cases ended autonomously before the new stopping policy. Removing all Deep would lose useful review candidates; only the valid-empty subset is selected for early review. Other weak, partial and multi-place sources still receive the existing Deep path.
-
-Provider request durations overlap; their sums represent work, not wall time. No summed stage durations are offered as a durable-job critical path. A fresh deployed timing run and physical device QA remain necessary for the omitted stages. Local OCR averages about 4.1 seconds of preprocessing on this corpus and has not earned inclusion in the selected path.
+Timing starts with retained evidence and ends at authoritative server finalization planning. It excludes live media acquisition, fresh ASR, queueing, database writes and device delivery. Candidate replay retains the entire baseline latency plus measured local policy overhead; no skipped-work speedup is claimed. Costs are provider usage times frozen tariffs, not invoice totals. The one unknown fixed-price request remains unknown in primary metrics; ranges use its reserved $0.032 maximum.

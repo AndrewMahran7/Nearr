@@ -1,0 +1,5515 @@
+{
+  "version": 1,
+  "created_at": "2026-10-11T20:11:24.124Z",
+  "recognition_policy_frozen": true,
+  "heldout_cases_not_used_for_tuning": true,
+  "countries_case_counts_nonexclusive": {
+    "Indonesia": 7,
+    "Costa Rica": 2,
+    "Japan": 4,
+    "Jordan": 1,
+    "United States": 65,
+    "Singapore": 3,
+    "Italy": 8,
+    "Australia": 6,
+    "Spain": 2,
+    "France": 6,
+    "Albania": 1,
+    "Mexico": 5,
+    "Portugal": 6,
+    "Vatican City": 1,
+    "Iceland": 6,
+    "Canada": 1,
+    "Cyprus": 1,
+    "India": 2,
+    "United Arab Emirates": 1,
+    "South Korea": 1,
+    "Vietnam": 1,
+    "Czechia": 1,
+    "Thailand": 3,
+    "Kuwait": 1,
+    "China": 4,
+    "Georgia": 1,
+    "Turkey": 1,
+    "Philippines": 2,
+    "Malaysia": 1,
+    "Guatemala": 1,
+    "Sweden": 2,
+    "New Zealand": 1,
+    "Brazil": 2,
+    "Poland": 3,
+    "Kazakhstan": 1,
+    "Peru": 1,
+    "Mauritius": 2,
+    "Chile": 1,
+    "United Kingdom": 1,
+    "Oman": 1,
+    "Bosnia and Herzegovina": 2,
+    "Taiwan": 1,
+    "Bhutan": 1,
+    "Sri Lanka": 3,
+    "Lesotho": 1,
+    "Armenia": 1,
+    "Croatia": 1,
+    "Ghana": 2,
+    "Uganda": 1,
+    "Ecuador": 1
+  },
+  "ready_platforms": {
+    "youtube": 106,
+    "instagram": 76,
+    "facebook": 13,
+    "tiktok": 13
+  },
+  "reports": {
+    "development": {
+      "baseline": {
+        "arm": "baseline_development_all",
+        "receipt_sha256": "6bde671932a0a8b76b791da6a569dd244431973f34d3a2002c0399db3c2cdd2c",
+        "summary": {
+          "cases": 112,
+          "correct_autonomous_resolution": {
+            "numerator": 16,
+            "denominator": 78,
+            "rate": 0.20512820512820512
+          },
+          "autonomous_coverage": {
+            "numerator": 20,
+            "denominator": 78,
+            "rate": 0.2564102564102564
+          },
+          "autonomous_submission_coverage": {
+            "numerator": 20,
+            "denominator": 112,
+            "rate": 0.17857142857142858
+          },
+          "autonomous_precision": {
+            "numerator": 16,
+            "denominator": 20,
+            "rate": 0.8
+          },
+          "review_rate": {
+            "numerator": 59,
+            "denominator": 112,
+            "rate": 0.5267857142857143
+          },
+          "failure_rate": {
+            "numerator": 33,
+            "denominator": 112,
+            "rate": 0.29464285714285715
+          },
+          "candidate_recall": {
+            "1": {
+              "macro": 0.3552706552706552,
+              "complete_set": {
+                "numerator": 24,
+                "denominator": 78,
+                "rate": 0.3076923076923077
+              }
+            },
+            "3": {
+              "macro": 0.4200854700854701,
+              "complete_set": {
+                "numerator": 26,
+                "denominator": 78,
+                "rate": 0.3333333333333333
+              }
+            },
+            "5": {
+              "macro": 0.43205128205128207,
+              "complete_set": {
+                "numerator": 26,
+                "denominator": 78,
+                "rate": 0.3333333333333333
+              }
+            },
+            "n": {
+              "macro": 0.43774928774928784,
+              "complete_set": {
+                "numerator": 26,
+                "denominator": 78,
+                "rate": 0.3333333333333333
+              }
+            }
+          },
+          "confidence_intervals": {
+            "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+            "correct_autonomous_resolution": {
+              "lower": 0.13039795219832023,
+              "upper": 0.307539730452461,
+              "n": 78
+            },
+            "autonomous_precision": {
+              "lower": 0.5839825677481064,
+              "upper": 0.919342337420202,
+              "n": 20
+            },
+            "wrong_confident": {
+              "lower": 0.013974612394676886,
+              "upper": 0.08824663845319956,
+              "n": 112
+            }
+          },
+          "autonomous_unadjudicable_outputs": 0,
+          "wrong_confident": {
+            "numerator": 4,
+            "denominator": 112,
+            "rate": 0.03571428571428571
+          },
+          "single": {
+            "cases": 54,
+            "exact_top1": {
+              "numerator": 24,
+              "denominator": 54,
+              "rate": 0.4444444444444444
+            },
+            "candidate_recall_at_1": {
+              "numerator": 24,
+              "denominator": 54,
+              "rate": 0.4444444444444444
+            },
+            "correct_autonomous": {
+              "numerator": 16,
+              "denominator": 54,
+              "rate": 0.2962962962962963
+            }
+          },
+          "multi": {
+            "cases": 24,
+            "detection": {
+              "numerator": 21,
+              "denominator": 24,
+              "rate": 0.875
+            },
+            "place_precision": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            },
+            "place_recall": {
+              "numerator": 0,
+              "denominator": 90,
+              "rate": 0
+            },
+            "f1": 0,
+            "exact_set": {
+              "numerator": 0,
+              "denominator": 24,
+              "rate": 0
+            },
+            "extra_places": 0,
+            "missed_places": 90,
+            "review_proposal_exact_set": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            }
+          },
+          "negative": {
+            "cases": 34,
+            "correct_abstention": {
+              "numerator": 1,
+              "denominator": 34,
+              "rate": 0.029411764705882353
+            },
+            "unsupported_exact": {
+              "numerator": 0,
+              "denominator": 34,
+              "rate": 0
+            }
+          },
+          "region": {
+            "cases": 0,
+            "correct_geography": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            },
+            "unsupported_exact": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            }
+          },
+          "wrong_country": {
+            "numerator": 0,
+            "denominator": 112,
+            "rate": 0
+          },
+          "wrong_region": {
+            "numerator": 0,
+            "denominator": 112,
+            "rate": 0
+          },
+          "geography_check_coverage": {
+            "country": {
+              "numerator": 0,
+              "denominator": 20,
+              "rate": 0
+            },
+            "region": {
+              "numerator": 0,
+              "denominator": 20,
+              "rate": 0
+            },
+            "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+          },
+          "wrong_or_unverified_branch": {
+            "numerator": 0,
+            "denominator": 19,
+            "rate": 0
+          },
+          "latency": {
+            "submitted": {
+              "n": 112,
+              "p50": 6637.232500000011,
+              "p75": 13075.826875,
+              "p90": 25127.835820000004,
+              "p95": 36440.839049999995
+            },
+            "correct_usable": {
+              "n": 16,
+              "p50": 4875.582900000001,
+              "p75": 5628.209574999964,
+              "p90": 6409.034500000009,
+              "p95": 6651.105725000016
+            },
+            "correct_autonomous": {
+              "n": 16,
+              "p50": 4875.582900000001,
+              "p75": 5628.209574999964,
+              "p90": 6409.034500000009,
+              "p95": 6651.105725000016
+            }
+          },
+          "cost": {
+            "total_usd": 10.824125599999999,
+            "per_submission": 0.09664397857142856,
+            "per_correct_result": 0.6765078499999999,
+            "per_correct_autonomous": 0.6765078499999999
+          }
+        },
+        "cost_bounds": {
+          "lower_usd": 10.824125599999997,
+          "upper_usd": 10.824125599999997,
+          "per_submission_lower": 0.09664397857142855,
+          "per_submission_upper": 0.09664397857142855,
+          "per_correct_autonomous_lower": 0.6765078499999998,
+          "per_correct_autonomous_upper": 0.6765078499999998
+        },
+        "providers": {
+          "gemini_generate": {
+            "calls": 112,
+            "cases": 112,
+            "known_cost_usd": 0.48959860000000005,
+            "unknown_requests": 0,
+            "case_fraction": 1
+          },
+          "google_text_search": {
+            "calls": 202,
+            "cases": 79,
+            "known_cost_usd": 6.464000000000005,
+            "unknown_requests": 0,
+            "case_fraction": 0.7053571428571429
+          },
+          "openai_responses": {
+            "calls": 101,
+            "cases": 67,
+            "known_cost_usd": 3.735527,
+            "unknown_requests": 0,
+            "case_fraction": 0.5982142857142857
+          },
+          "google_geocode": {
+            "calls": 27,
+            "cases": 20,
+            "known_cost_usd": 0.13500000000000004,
+            "unknown_requests": 0,
+            "case_fraction": 0.17857142857142858
+          }
+        },
+        "tiers": {
+          "normal_visual_places": {
+            "fraction": 0.4017857142857143,
+            "summary": {
+              "cases": 45,
+              "correct_autonomous_resolution": {
+                "numerator": 16,
+                "denominator": 45,
+                "rate": 0.35555555555555557
+              },
+              "autonomous_coverage": {
+                "numerator": 20,
+                "denominator": 45,
+                "rate": 0.4444444444444444
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 20,
+                "denominator": 45,
+                "rate": 0.4444444444444444
+              },
+              "autonomous_precision": {
+                "numerator": 16,
+                "denominator": 20,
+                "rate": 0.8
+              },
+              "review_rate": {
+                "numerator": 25,
+                "denominator": 45,
+                "rate": 0.5555555555555556
+              },
+              "failure_rate": {
+                "numerator": 0,
+                "denominator": 45,
+                "rate": 0
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": 0.4666666666666667,
+                  "complete_set": {
+                    "numerator": 20,
+                    "denominator": 45,
+                    "rate": 0.4444444444444444
+                  }
+                },
+                "3": {
+                  "macro": 0.4888888888888889,
+                  "complete_set": {
+                    "numerator": 21,
+                    "denominator": 45,
+                    "rate": 0.4666666666666667
+                  }
+                },
+                "5": {
+                  "macro": 0.4888888888888889,
+                  "complete_set": {
+                    "numerator": 21,
+                    "denominator": 45,
+                    "rate": 0.4666666666666667
+                  }
+                },
+                "n": {
+                  "macro": 0.4888888888888889,
+                  "complete_set": {
+                    "numerator": 21,
+                    "denominator": 45,
+                    "rate": 0.4666666666666667
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": 0.23219082604215874,
+                  "upper": 0.5016418580362314,
+                  "n": 45
+                },
+                "autonomous_precision": {
+                  "lower": 0.5839825677481064,
+                  "upper": 0.919342337420202,
+                  "n": 20
+                },
+                "wrong_confident": {
+                  "lower": 0.035111116726370226,
+                  "upper": 0.20733575334289356,
+                  "n": 45
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 4,
+                "denominator": 45,
+                "rate": 0.08888888888888889
+              },
+              "single": {
+                "cases": 41,
+                "exact_top1": {
+                  "numerator": 20,
+                  "denominator": 41,
+                  "rate": 0.4878048780487805
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 20,
+                  "denominator": 41,
+                  "rate": 0.4878048780487805
+                },
+                "correct_autonomous": {
+                  "numerator": 16,
+                  "denominator": 41,
+                  "rate": 0.3902439024390244
+                }
+              },
+              "multi": {
+                "cases": 4,
+                "detection": {
+                  "numerator": 1,
+                  "denominator": 4,
+                  "rate": 0.25
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 11,
+                  "rate": 0
+                },
+                "f1": 0,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 4,
+                  "rate": 0
+                },
+                "extra_places": 0,
+                "missed_places": 11,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 0,
+                "correct_abstention": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "region": {
+                "cases": 0,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 45,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 45,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 20,
+                  "rate": 0
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 20,
+                  "rate": 0
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 0,
+                "denominator": 11,
+                "rate": 0
+              },
+              "latency": {
+                "submitted": {
+                  "n": 45,
+                  "p50": 5095.606999999996,
+                  "p75": 5924.7018999999855,
+                  "p90": 7471.192620000001,
+                  "p95": 10502.140879999992
+                },
+                "correct_usable": {
+                  "n": 16,
+                  "p50": 4875.582900000001,
+                  "p75": 5628.209574999964,
+                  "p90": 6409.034500000009,
+                  "p95": 6651.105725000016
+                },
+                "correct_autonomous": {
+                  "n": 16,
+                  "p50": 4875.582900000001,
+                  "p75": 5628.209574999964,
+                  "p90": 6409.034500000009,
+                  "p95": 6651.105725000016
+                }
+              },
+              "cost": {
+                "total_usd": 3.4107856999999995,
+                "per_submission": 0.07579523777777776,
+                "per_correct_result": 0.21317410624999997,
+                "per_correct_autonomous": 0.21317410624999997
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 3.4107856999999995,
+              "upper_usd": 3.4107856999999995,
+              "per_submission_lower": 0.07579523777777776,
+              "per_submission_upper": 0.07579523777777776,
+              "per_correct_autonomous_lower": 0.21317410624999997,
+              "per_correct_autonomous_upper": 0.21317410624999997
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 45,
+                "cases": 45,
+                "known_cost_usd": 0.20378570000000001,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_text_search": {
+                "calls": 96,
+                "cases": 45,
+                "known_cost_usd": 3.0720000000000023,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_geocode": {
+                "calls": 27,
+                "cases": 20,
+                "known_cost_usd": 0.13500000000000004,
+                "unknown_requests": 0,
+                "case_fraction": 0.4444444444444444
+              }
+            }
+          },
+          "deep_review": {
+            "fraction": 0.5982142857142857,
+            "summary": {
+              "cases": 67,
+              "correct_autonomous_resolution": {
+                "numerator": 0,
+                "denominator": 33,
+                "rate": 0
+              },
+              "autonomous_coverage": {
+                "numerator": 0,
+                "denominator": 33,
+                "rate": 0
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 0,
+                "denominator": 67,
+                "rate": 0
+              },
+              "autonomous_precision": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "review_rate": {
+                "numerator": 34,
+                "denominator": 67,
+                "rate": 0.5074626865671642
+              },
+              "failure_rate": {
+                "numerator": 33,
+                "denominator": 67,
+                "rate": 0.4925373134328358
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": 0.20336700336700336,
+                  "complete_set": {
+                    "numerator": 4,
+                    "denominator": 33,
+                    "rate": 0.12121212121212122
+                  }
+                },
+                "3": {
+                  "macro": 0.3262626262626263,
+                  "complete_set": {
+                    "numerator": 5,
+                    "denominator": 33,
+                    "rate": 0.15151515151515152
+                  }
+                },
+                "5": {
+                  "macro": 0.35454545454545455,
+                  "complete_set": {
+                    "numerator": 5,
+                    "denominator": 33,
+                    "rate": 0.15151515151515152
+                  }
+                },
+                "n": {
+                  "macro": 0.368013468013468,
+                  "complete_set": {
+                    "numerator": 5,
+                    "denominator": 33,
+                    "rate": 0.15151515151515152
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": 0,
+                  "upper": 0.10426999754245206,
+                  "n": 33
+                },
+                "autonomous_precision": {
+                  "lower": null,
+                  "upper": null,
+                  "n": 0
+                },
+                "wrong_confident": {
+                  "lower": 0,
+                  "upper": 0.05422613939130178,
+                  "n": 67
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 0,
+                "denominator": 67,
+                "rate": 0
+              },
+              "single": {
+                "cases": 13,
+                "exact_top1": {
+                  "numerator": 4,
+                  "denominator": 13,
+                  "rate": 0.3076923076923077
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 4,
+                  "denominator": 13,
+                  "rate": 0.3076923076923077
+                },
+                "correct_autonomous": {
+                  "numerator": 0,
+                  "denominator": 13,
+                  "rate": 0
+                }
+              },
+              "multi": {
+                "cases": 20,
+                "detection": {
+                  "numerator": 20,
+                  "denominator": 20,
+                  "rate": 1
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 79,
+                  "rate": 0
+                },
+                "f1": 0,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 20,
+                  "rate": 0
+                },
+                "extra_places": 0,
+                "missed_places": 79,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 34,
+                "correct_abstention": {
+                  "numerator": 1,
+                  "denominator": 34,
+                  "rate": 0.029411764705882353
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 34,
+                  "rate": 0
+                }
+              },
+              "region": {
+                "cases": 0,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 67,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 67,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 0,
+                "denominator": 8,
+                "rate": 0
+              },
+              "latency": {
+                "submitted": {
+                  "n": 67,
+                  "p50": 8235.491700000013,
+                  "p75": 19857.055450000014,
+                  "p90": 35061.45042,
+                  "p95": 40812.09504
+                },
+                "correct_usable": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                },
+                "correct_autonomous": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                }
+              },
+              "cost": {
+                "total_usd": 7.4133398999999995,
+                "per_submission": 0.11064686417910446,
+                "per_correct_result": null,
+                "per_correct_autonomous": null
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 7.413339899999999,
+              "upper_usd": 7.413339899999999,
+              "per_submission_lower": 0.11064686417910445,
+              "per_submission_upper": 0.11064686417910445,
+              "per_correct_autonomous_lower": null,
+              "per_correct_autonomous_upper": null
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 67,
+                "cases": 67,
+                "known_cost_usd": 0.28581290000000004,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "openai_responses": {
+                "calls": 101,
+                "cases": 67,
+                "known_cost_usd": 3.7355270000000003,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_text_search": {
+                "calls": 106,
+                "cases": 34,
+                "known_cost_usd": 3.3920000000000026,
+                "unknown_requests": 0,
+                "case_fraction": 0.5074626865671642
+              }
+            }
+          }
+        }
+      },
+      "candidate": {
+        "arm": "empty_parent_replay_development",
+        "receipt_sha256": "f697c9f37bc83a52fb1e473f349eb2260884a23b9ba8fc453f334b89ea315ea5",
+        "summary": {
+          "cases": 112,
+          "correct_autonomous_resolution": {
+            "numerator": 16,
+            "denominator": 78,
+            "rate": 0.20512820512820512
+          },
+          "autonomous_coverage": {
+            "numerator": 19,
+            "denominator": 78,
+            "rate": 0.24358974358974358
+          },
+          "autonomous_submission_coverage": {
+            "numerator": 19,
+            "denominator": 112,
+            "rate": 0.16964285714285715
+          },
+          "autonomous_precision": {
+            "numerator": 16,
+            "denominator": 19,
+            "rate": 0.8421052631578947
+          },
+          "review_rate": {
+            "numerator": 92,
+            "denominator": 112,
+            "rate": 0.8214285714285714
+          },
+          "failure_rate": {
+            "numerator": 1,
+            "denominator": 112,
+            "rate": 0.008928571428571428
+          },
+          "candidate_recall": {
+            "1": {
+              "macro": 0.3424501424501424,
+              "complete_set": {
+                "numerator": 23,
+                "denominator": 78,
+                "rate": 0.2948717948717949
+              }
+            },
+            "3": {
+              "macro": 0.4072649572649573,
+              "complete_set": {
+                "numerator": 25,
+                "denominator": 78,
+                "rate": 0.32051282051282054
+              }
+            },
+            "5": {
+              "macro": 0.41923076923076924,
+              "complete_set": {
+                "numerator": 25,
+                "denominator": 78,
+                "rate": 0.32051282051282054
+              }
+            },
+            "n": {
+              "macro": 0.424928774928775,
+              "complete_set": {
+                "numerator": 25,
+                "denominator": 78,
+                "rate": 0.32051282051282054
+              }
+            }
+          },
+          "confidence_intervals": {
+            "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+            "correct_autonomous_resolution": {
+              "lower": 0.13039795219832023,
+              "upper": 0.307539730452461,
+              "n": 78
+            },
+            "autonomous_precision": {
+              "lower": 0.6243452472967093,
+              "upper": 0.9447952836146585,
+              "n": 19
+            },
+            "wrong_confident": {
+              "lower": 0.009150819945928902,
+              "upper": 0.07580545495671442,
+              "n": 112
+            }
+          },
+          "autonomous_unadjudicable_outputs": 0,
+          "wrong_confident": {
+            "numerator": 3,
+            "denominator": 112,
+            "rate": 0.026785714285714284
+          },
+          "single": {
+            "cases": 54,
+            "exact_top1": {
+              "numerator": 23,
+              "denominator": 54,
+              "rate": 0.42592592592592593
+            },
+            "candidate_recall_at_1": {
+              "numerator": 23,
+              "denominator": 54,
+              "rate": 0.42592592592592593
+            },
+            "correct_autonomous": {
+              "numerator": 16,
+              "denominator": 54,
+              "rate": 0.2962962962962963
+            }
+          },
+          "multi": {
+            "cases": 24,
+            "detection": {
+              "numerator": 21,
+              "denominator": 24,
+              "rate": 0.875
+            },
+            "place_precision": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            },
+            "place_recall": {
+              "numerator": 0,
+              "denominator": 90,
+              "rate": 0
+            },
+            "f1": 0,
+            "exact_set": {
+              "numerator": 0,
+              "denominator": 24,
+              "rate": 0
+            },
+            "extra_places": 0,
+            "missed_places": 90,
+            "review_proposal_exact_set": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            }
+          },
+          "negative": {
+            "cases": 34,
+            "correct_abstention": {
+              "numerator": 33,
+              "denominator": 34,
+              "rate": 0.9705882352941176
+            },
+            "unsupported_exact": {
+              "numerator": 0,
+              "denominator": 34,
+              "rate": 0
+            }
+          },
+          "region": {
+            "cases": 0,
+            "correct_geography": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            },
+            "unsupported_exact": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            }
+          },
+          "wrong_country": {
+            "numerator": 0,
+            "denominator": 112,
+            "rate": 0
+          },
+          "wrong_region": {
+            "numerator": 0,
+            "denominator": 112,
+            "rate": 0
+          },
+          "geography_check_coverage": {
+            "country": {
+              "numerator": 0,
+              "denominator": 19,
+              "rate": 0
+            },
+            "region": {
+              "numerator": 0,
+              "denominator": 19,
+              "rate": 0
+            },
+            "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+          },
+          "wrong_or_unverified_branch": {
+            "numerator": 0,
+            "denominator": 19,
+            "rate": 0
+          },
+          "latency": {
+            "submitted": {
+              "n": 112,
+              "p50": 6638.043950000011,
+              "p75": 13076.12545,
+              "p90": 25128.138890000002,
+              "p95": 36441.26566
+            },
+            "correct_usable": {
+              "n": 16,
+              "p50": 4875.77785,
+              "p75": 5628.442699999964,
+              "p90": 6409.392650000009,
+              "p95": 6651.620625000016
+            },
+            "correct_autonomous": {
+              "n": 16,
+              "p50": 4875.77785,
+              "p75": 5628.442699999964,
+              "p90": 6409.392650000009,
+              "p95": 6651.620625000016
+            }
+          },
+          "cost": {
+            "total_usd": 8.8140616,
+            "per_submission": 0.07869697857142857,
+            "per_correct_result": 0.55087885,
+            "per_correct_autonomous": 0.55087885
+          }
+        },
+        "cost_bounds": {
+          "lower_usd": 8.814061599999999,
+          "upper_usd": 8.814061599999999,
+          "per_submission_lower": 0.07869697857142856,
+          "per_submission_upper": 0.07869697857142856,
+          "per_correct_autonomous_lower": 0.5508788499999999,
+          "per_correct_autonomous_upper": 0.5508788499999999
+        },
+        "providers": {
+          "gemini_generate": {
+            "calls": 112,
+            "cases": 112,
+            "known_cost_usd": 0.48959860000000005,
+            "unknown_requests": 0,
+            "case_fraction": 1
+          },
+          "google_text_search": {
+            "calls": 197,
+            "cases": 77,
+            "known_cost_usd": 6.304000000000005,
+            "unknown_requests": 0,
+            "case_fraction": 0.6875
+          },
+          "openai_responses": {
+            "calls": 34,
+            "cases": 33,
+            "known_cost_usd": 1.8854630000000003,
+            "unknown_requests": 0,
+            "case_fraction": 0.29464285714285715
+          },
+          "google_geocode": {
+            "calls": 27,
+            "cases": 20,
+            "known_cost_usd": 0.13500000000000004,
+            "unknown_requests": 0,
+            "case_fraction": 0.17857142857142858
+          }
+        },
+        "tiers": {
+          "normal_visual_places": {
+            "fraction": 0.4017857142857143,
+            "summary": {
+              "cases": 45,
+              "correct_autonomous_resolution": {
+                "numerator": 16,
+                "denominator": 45,
+                "rate": 0.35555555555555557
+              },
+              "autonomous_coverage": {
+                "numerator": 19,
+                "denominator": 45,
+                "rate": 0.4222222222222222
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 19,
+                "denominator": 45,
+                "rate": 0.4222222222222222
+              },
+              "autonomous_precision": {
+                "numerator": 16,
+                "denominator": 19,
+                "rate": 0.8421052631578947
+              },
+              "review_rate": {
+                "numerator": 26,
+                "denominator": 45,
+                "rate": 0.5777777777777777
+              },
+              "failure_rate": {
+                "numerator": 0,
+                "denominator": 45,
+                "rate": 0
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": 0.4666666666666667,
+                  "complete_set": {
+                    "numerator": 20,
+                    "denominator": 45,
+                    "rate": 0.4444444444444444
+                  }
+                },
+                "3": {
+                  "macro": 0.4888888888888889,
+                  "complete_set": {
+                    "numerator": 21,
+                    "denominator": 45,
+                    "rate": 0.4666666666666667
+                  }
+                },
+                "5": {
+                  "macro": 0.4888888888888889,
+                  "complete_set": {
+                    "numerator": 21,
+                    "denominator": 45,
+                    "rate": 0.4666666666666667
+                  }
+                },
+                "n": {
+                  "macro": 0.4888888888888889,
+                  "complete_set": {
+                    "numerator": 21,
+                    "denominator": 45,
+                    "rate": 0.4666666666666667
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": 0.23219082604215874,
+                  "upper": 0.5016418580362314,
+                  "n": 45
+                },
+                "autonomous_precision": {
+                  "lower": 0.6243452472967093,
+                  "upper": 0.9447952836146585,
+                  "n": 19
+                },
+                "wrong_confident": {
+                  "lower": 0.022932032599250987,
+                  "upper": 0.17856601963591895,
+                  "n": 45
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 3,
+                "denominator": 45,
+                "rate": 0.06666666666666667
+              },
+              "single": {
+                "cases": 41,
+                "exact_top1": {
+                  "numerator": 20,
+                  "denominator": 41,
+                  "rate": 0.4878048780487805
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 20,
+                  "denominator": 41,
+                  "rate": 0.4878048780487805
+                },
+                "correct_autonomous": {
+                  "numerator": 16,
+                  "denominator": 41,
+                  "rate": 0.3902439024390244
+                }
+              },
+              "multi": {
+                "cases": 4,
+                "detection": {
+                  "numerator": 1,
+                  "denominator": 4,
+                  "rate": 0.25
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 11,
+                  "rate": 0
+                },
+                "f1": 0,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 4,
+                  "rate": 0
+                },
+                "extra_places": 0,
+                "missed_places": 11,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 0,
+                "correct_abstention": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "region": {
+                "cases": 0,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 45,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 45,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 19,
+                  "rate": 0
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 19,
+                  "rate": 0
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 0,
+                "denominator": 11,
+                "rate": 0
+              },
+              "latency": {
+                "submitted": {
+                  "n": 45,
+                  "p50": 5096.142399999996,
+                  "p75": 5925.001299999985,
+                  "p90": 7471.775540000001,
+                  "p95": 10503.407679999993
+                },
+                "correct_usable": {
+                  "n": 16,
+                  "p50": 4875.77785,
+                  "p75": 5628.442699999964,
+                  "p90": 6409.392650000009,
+                  "p95": 6651.620625000016
+                },
+                "correct_autonomous": {
+                  "n": 16,
+                  "p50": 4875.77785,
+                  "p75": 5628.442699999964,
+                  "p90": 6409.392650000009,
+                  "p95": 6651.620625000016
+                }
+              },
+              "cost": {
+                "total_usd": 3.4107856999999995,
+                "per_submission": 0.07579523777777776,
+                "per_correct_result": 0.21317410624999997,
+                "per_correct_autonomous": 0.21317410624999997
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 3.4107856999999995,
+              "upper_usd": 3.4107856999999995,
+              "per_submission_lower": 0.07579523777777776,
+              "per_submission_upper": 0.07579523777777776,
+              "per_correct_autonomous_lower": 0.21317410624999997,
+              "per_correct_autonomous_upper": 0.21317410624999997
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 45,
+                "cases": 45,
+                "known_cost_usd": 0.20378570000000001,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_text_search": {
+                "calls": 96,
+                "cases": 45,
+                "known_cost_usd": 3.0720000000000023,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_geocode": {
+                "calls": 27,
+                "cases": 20,
+                "known_cost_usd": 0.13500000000000004,
+                "unknown_requests": 0,
+                "case_fraction": 0.4444444444444444
+              }
+            }
+          },
+          "deep_review": {
+            "fraction": 0.29464285714285715,
+            "summary": {
+              "cases": 33,
+              "correct_autonomous_resolution": {
+                "numerator": 0,
+                "denominator": 32,
+                "rate": 0
+              },
+              "autonomous_coverage": {
+                "numerator": 0,
+                "denominator": 32,
+                "rate": 0
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 0,
+                "denominator": 33,
+                "rate": 0
+              },
+              "autonomous_precision": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "review_rate": {
+                "numerator": 32,
+                "denominator": 33,
+                "rate": 0.9696969696969697
+              },
+              "failure_rate": {
+                "numerator": 1,
+                "denominator": 33,
+                "rate": 0.030303030303030304
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": 0.17847222222222225,
+                  "complete_set": {
+                    "numerator": 3,
+                    "denominator": 32,
+                    "rate": 0.09375
+                  }
+                },
+                "3": {
+                  "macro": 0.3052083333333333,
+                  "complete_set": {
+                    "numerator": 4,
+                    "denominator": 32,
+                    "rate": 0.125
+                  }
+                },
+                "5": {
+                  "macro": 0.334375,
+                  "complete_set": {
+                    "numerator": 4,
+                    "denominator": 32,
+                    "rate": 0.125
+                  }
+                },
+                "n": {
+                  "macro": 0.3482638888888889,
+                  "complete_set": {
+                    "numerator": 4,
+                    "denominator": 32,
+                    "rate": 0.125
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": 0,
+                  "upper": 0.1071791982550706,
+                  "n": 32
+                },
+                "autonomous_precision": {
+                  "lower": null,
+                  "upper": null,
+                  "n": 0
+                },
+                "wrong_confident": {
+                  "lower": 0,
+                  "upper": 0.10426999754245206,
+                  "n": 33
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 0,
+                "denominator": 33,
+                "rate": 0
+              },
+              "single": {
+                "cases": 12,
+                "exact_top1": {
+                  "numerator": 3,
+                  "denominator": 12,
+                  "rate": 0.25
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 3,
+                  "denominator": 12,
+                  "rate": 0.25
+                },
+                "correct_autonomous": {
+                  "numerator": 0,
+                  "denominator": 12,
+                  "rate": 0
+                }
+              },
+              "multi": {
+                "cases": 20,
+                "detection": {
+                  "numerator": 20,
+                  "denominator": 20,
+                  "rate": 1
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 79,
+                  "rate": 0
+                },
+                "f1": 0,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 20,
+                  "rate": 0
+                },
+                "extra_places": 0,
+                "missed_places": 79,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 1,
+                "correct_abstention": {
+                  "numerator": 0,
+                  "denominator": 1,
+                  "rate": 0
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 1,
+                  "rate": 0
+                }
+              },
+              "region": {
+                "cases": 0,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 33,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 33,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 0,
+                "denominator": 8,
+                "rate": 0
+              },
+              "latency": {
+                "submitted": {
+                  "n": 33,
+                  "p50": 18811.52230000001,
+                  "p75": 26384.128199999977,
+                  "p90": 39448.332819999996,
+                  "p95": 43217.98752
+                },
+                "correct_usable": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                },
+                "correct_autonomous": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                }
+              },
+              "cost": {
+                "total_usd": 5.332425100000001,
+                "per_submission": 0.16158863939393942,
+                "per_correct_result": null,
+                "per_correct_autonomous": null
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 5.3324251,
+              "upper_usd": 5.3324251,
+              "per_submission_lower": 0.1615886393939394,
+              "per_submission_upper": 0.1615886393939394,
+              "per_correct_autonomous_lower": null,
+              "per_correct_autonomous_upper": null
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 33,
+                "cases": 33,
+                "known_cost_usd": 0.21496210000000002,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "openai_responses": {
+                "calls": 34,
+                "cases": 33,
+                "known_cost_usd": 1.8854630000000001,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_text_search": {
+                "calls": 101,
+                "cases": 32,
+                "known_cost_usd": 3.2320000000000024,
+                "unknown_requests": 0,
+                "case_fraction": 0.9696969696969697
+              }
+            }
+          },
+          "empty_review": {
+            "fraction": 0.30357142857142855,
+            "summary": {
+              "cases": 34,
+              "correct_autonomous_resolution": {
+                "numerator": 0,
+                "denominator": 1,
+                "rate": 0
+              },
+              "autonomous_coverage": {
+                "numerator": 0,
+                "denominator": 1,
+                "rate": 0
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 0,
+                "denominator": 34,
+                "rate": 0
+              },
+              "autonomous_precision": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "review_rate": {
+                "numerator": 34,
+                "denominator": 34,
+                "rate": 1
+              },
+              "failure_rate": {
+                "numerator": 0,
+                "denominator": 34,
+                "rate": 0
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": 0,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 1,
+                    "rate": 0
+                  }
+                },
+                "3": {
+                  "macro": 0,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 1,
+                    "rate": 0
+                  }
+                },
+                "5": {
+                  "macro": 0,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 1,
+                    "rate": 0
+                  }
+                },
+                "n": {
+                  "macro": 0,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 1,
+                    "rate": 0
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": 0,
+                  "upper": 0.7934506856227626,
+                  "n": 1
+                },
+                "autonomous_precision": {
+                  "lower": null,
+                  "upper": null,
+                  "n": 0
+                },
+                "wrong_confident": {
+                  "lower": 0,
+                  "upper": 0.10151455415332376,
+                  "n": 34
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 0,
+                "denominator": 34,
+                "rate": 0
+              },
+              "single": {
+                "cases": 1,
+                "exact_top1": {
+                  "numerator": 0,
+                  "denominator": 1,
+                  "rate": 0
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 0,
+                  "denominator": 1,
+                  "rate": 0
+                },
+                "correct_autonomous": {
+                  "numerator": 0,
+                  "denominator": 1,
+                  "rate": 0
+                }
+              },
+              "multi": {
+                "cases": 0,
+                "detection": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "f1": null,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "extra_places": 0,
+                "missed_places": 0,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 33,
+                "correct_abstention": {
+                  "numerator": 33,
+                  "denominator": 33,
+                  "rate": 1
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 33,
+                  "rate": 0
+                }
+              },
+              "region": {
+                "cases": 0,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 34,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 34,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "latency": {
+                "submitted": {
+                  "n": 34,
+                  "p50": 6227.122700000005,
+                  "p75": 7140.7259250000025,
+                  "p90": 7764.824460000003,
+                  "p95": 10738.65043999999
+                },
+                "correct_usable": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                },
+                "correct_autonomous": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                }
+              },
+              "cost": {
+                "total_usd": 0.07085080000000002,
+                "per_submission": 0.00208384705882353,
+                "per_correct_result": null,
+                "per_correct_autonomous": null
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 0.07085080000000002,
+              "upper_usd": 0.07085080000000002,
+              "per_submission_lower": 0.00208384705882353,
+              "per_submission_upper": 0.00208384705882353,
+              "per_correct_autonomous_lower": null,
+              "per_correct_autonomous_upper": null
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 34,
+                "cases": 34,
+                "known_cost_usd": 0.07085080000000002,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "calibration": {
+      "baseline": {
+        "arm": "baseline_calibration_all",
+        "receipt_sha256": "0736c2518e86c8715eec7bfb2b64c70b0a893259e0e48981f9c44cc0b2ef54b8",
+        "summary": {
+          "cases": 34,
+          "correct_autonomous_resolution": {
+            "numerator": 3,
+            "denominator": 26,
+            "rate": 0.11538461538461539
+          },
+          "autonomous_coverage": {
+            "numerator": 7,
+            "denominator": 26,
+            "rate": 0.2692307692307692
+          },
+          "autonomous_submission_coverage": {
+            "numerator": 7,
+            "denominator": 34,
+            "rate": 0.20588235294117646
+          },
+          "autonomous_precision": {
+            "numerator": 3,
+            "denominator": 7,
+            "rate": 0.42857142857142855
+          },
+          "review_rate": {
+            "numerator": 21,
+            "denominator": 34,
+            "rate": 0.6176470588235294
+          },
+          "failure_rate": {
+            "numerator": 6,
+            "denominator": 34,
+            "rate": 0.17647058823529413
+          },
+          "candidate_recall": {
+            "1": {
+              "macro": 0.2532051282051282,
+              "complete_set": {
+                "numerator": 6,
+                "denominator": 26,
+                "rate": 0.23076923076923078
+              }
+            },
+            "3": {
+              "macro": 0.31410256410256415,
+              "complete_set": {
+                "numerator": 7,
+                "denominator": 26,
+                "rate": 0.2692307692307692
+              }
+            },
+            "5": {
+              "macro": 0.31410256410256415,
+              "complete_set": {
+                "numerator": 7,
+                "denominator": 26,
+                "rate": 0.2692307692307692
+              }
+            },
+            "n": {
+              "macro": 0.31410256410256415,
+              "complete_set": {
+                "numerator": 7,
+                "denominator": 26,
+                "rate": 0.2692307692307692
+              }
+            }
+          },
+          "confidence_intervals": {
+            "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+            "correct_autonomous_resolution": {
+              "lower": 0.04003244623610615,
+              "upper": 0.2897590321171364,
+              "n": 26
+            },
+            "autonomous_precision": {
+              "lower": 0.15821985525146975,
+              "upper": 0.7495416354723428,
+              "n": 7
+            },
+            "wrong_confident": {
+              "lower": 0.04671446664882335,
+              "upper": 0.26620842770371833,
+              "n": 34
+            }
+          },
+          "autonomous_unadjudicable_outputs": 0,
+          "wrong_confident": {
+            "numerator": 4,
+            "denominator": 34,
+            "rate": 0.11764705882352941
+          },
+          "single": {
+            "cases": 22,
+            "exact_top1": {
+              "numerator": 6,
+              "denominator": 22,
+              "rate": 0.2727272727272727
+            },
+            "candidate_recall_at_1": {
+              "numerator": 6,
+              "denominator": 22,
+              "rate": 0.2727272727272727
+            },
+            "correct_autonomous": {
+              "numerator": 3,
+              "denominator": 22,
+              "rate": 0.13636363636363635
+            }
+          },
+          "multi": {
+            "cases": 4,
+            "detection": {
+              "numerator": 4,
+              "denominator": 4,
+              "rate": 1
+            },
+            "place_precision": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            },
+            "place_recall": {
+              "numerator": 0,
+              "denominator": 12,
+              "rate": 0
+            },
+            "f1": 0,
+            "exact_set": {
+              "numerator": 0,
+              "denominator": 4,
+              "rate": 0
+            },
+            "extra_places": 0,
+            "missed_places": 12,
+            "review_proposal_exact_set": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            }
+          },
+          "negative": {
+            "cases": 6,
+            "correct_abstention": {
+              "numerator": 0,
+              "denominator": 6,
+              "rate": 0
+            },
+            "unsupported_exact": {
+              "numerator": 0,
+              "denominator": 6,
+              "rate": 0
+            }
+          },
+          "region": {
+            "cases": 2,
+            "correct_geography": {
+              "numerator": 0,
+              "denominator": 2,
+              "rate": 0
+            },
+            "unsupported_exact": {
+              "numerator": 0,
+              "denominator": 2,
+              "rate": 0
+            }
+          },
+          "wrong_country": {
+            "numerator": 0,
+            "denominator": 34,
+            "rate": 0
+          },
+          "wrong_region": {
+            "numerator": 0,
+            "denominator": 34,
+            "rate": 0
+          },
+          "geography_check_coverage": {
+            "country": {
+              "numerator": 0,
+              "denominator": 7,
+              "rate": 0
+            },
+            "region": {
+              "numerator": 0,
+              "denominator": 7,
+              "rate": 0
+            },
+            "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+          },
+          "wrong_or_unverified_branch": {
+            "numerator": 0,
+            "denominator": 4,
+            "rate": 0
+          },
+          "latency": {
+            "submitted": {
+              "n": 34,
+              "p50": 11224.402799999982,
+              "p75": 16375.531899999994,
+              "p90": 21227.65008999998,
+              "p95": 26769.355579999992
+            },
+            "correct_usable": {
+              "n": 3,
+              "p50": 9600.324200000003,
+              "p75": 10682.88205,
+              "p90": 11332.416759999998,
+              "p95": 11548.928329999999
+            },
+            "correct_autonomous": {
+              "n": 3,
+              "p50": 9600.324200000003,
+              "p75": 10682.88205,
+              "p90": 11332.416759999998,
+              "p95": 11548.928329999999
+            }
+          },
+          "cost": {
+            "total_usd": 2.9632895999999995,
+            "per_submission": 0.08715557647058822,
+            "per_correct_result": 0.9877631999999998,
+            "per_correct_autonomous": 0.9877631999999998
+          }
+        },
+        "cost_bounds": {
+          "lower_usd": 2.9632895999999995,
+          "upper_usd": 2.9632895999999995,
+          "per_submission_lower": 0.08715557647058822,
+          "per_submission_upper": 0.08715557647058822,
+          "per_correct_autonomous_lower": 0.9877631999999998,
+          "per_correct_autonomous_upper": 0.9877631999999998
+        },
+        "providers": {
+          "gemini_generate": {
+            "calls": 34,
+            "cases": 34,
+            "known_cost_usd": 0.1702136,
+            "unknown_requests": 0,
+            "case_fraction": 1
+          },
+          "google_text_search": {
+            "calls": 58,
+            "cases": 28,
+            "known_cost_usd": 1.8560000000000014,
+            "unknown_requests": 0,
+            "case_fraction": 0.8235294117647058
+          },
+          "openai_responses": {
+            "calls": 23,
+            "cases": 17,
+            "known_cost_usd": 0.937076,
+            "unknown_requests": 0,
+            "case_fraction": 0.5
+          }
+        },
+        "tiers": {
+          "normal_visual_places": {
+            "fraction": 0.5,
+            "summary": {
+              "cases": 17,
+              "correct_autonomous_resolution": {
+                "numerator": 3,
+                "denominator": 16,
+                "rate": 0.1875
+              },
+              "autonomous_coverage": {
+                "numerator": 7,
+                "denominator": 16,
+                "rate": 0.4375
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 7,
+                "denominator": 17,
+                "rate": 0.4117647058823529
+              },
+              "autonomous_precision": {
+                "numerator": 3,
+                "denominator": 7,
+                "rate": 0.42857142857142855
+              },
+              "review_rate": {
+                "numerator": 10,
+                "denominator": 17,
+                "rate": 0.5882352941176471
+              },
+              "failure_rate": {
+                "numerator": 0,
+                "denominator": 17,
+                "rate": 0
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": 0.375,
+                  "complete_set": {
+                    "numerator": 6,
+                    "denominator": 16,
+                    "rate": 0.375
+                  }
+                },
+                "3": {
+                  "macro": 0.4375,
+                  "complete_set": {
+                    "numerator": 7,
+                    "denominator": 16,
+                    "rate": 0.4375
+                  }
+                },
+                "5": {
+                  "macro": 0.4375,
+                  "complete_set": {
+                    "numerator": 7,
+                    "denominator": 16,
+                    "rate": 0.4375
+                  }
+                },
+                "n": {
+                  "macro": 0.4375,
+                  "complete_set": {
+                    "numerator": 7,
+                    "denominator": 16,
+                    "rate": 0.4375
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": 0.06591599071428142,
+                  "upper": 0.4300888096197414,
+                  "n": 16
+                },
+                "autonomous_precision": {
+                  "lower": 0.15821985525146975,
+                  "upper": 0.7495416354723428,
+                  "n": 7
+                },
+                "wrong_confident": {
+                  "lower": 0.09555044322080117,
+                  "upper": 0.4726179811956498,
+                  "n": 17
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 4,
+                "denominator": 17,
+                "rate": 0.23529411764705882
+              },
+              "single": {
+                "cases": 16,
+                "exact_top1": {
+                  "numerator": 6,
+                  "denominator": 16,
+                  "rate": 0.375
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 6,
+                  "denominator": 16,
+                  "rate": 0.375
+                },
+                "correct_autonomous": {
+                  "numerator": 3,
+                  "denominator": 16,
+                  "rate": 0.1875
+                }
+              },
+              "multi": {
+                "cases": 0,
+                "detection": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "f1": null,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "extra_places": 0,
+                "missed_places": 0,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 0,
+                "correct_abstention": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "region": {
+                "cases": 1,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 1,
+                  "rate": 0
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 1,
+                  "rate": 0
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 17,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 17,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 7,
+                  "rate": 0
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 7,
+                  "rate": 0
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 0,
+                "denominator": 4,
+                "rate": 0
+              },
+              "latency": {
+                "submitted": {
+                  "n": 17,
+                  "p50": 9038.99609999999,
+                  "p75": 10815.827299999946,
+                  "p90": 11522.217119999998,
+                  "p95": 15429.649939999985
+                },
+                "correct_usable": {
+                  "n": 3,
+                  "p50": 9600.324200000003,
+                  "p75": 10682.88205,
+                  "p90": 11332.416759999998,
+                  "p95": 11548.928329999999
+                },
+                "correct_autonomous": {
+                  "n": 3,
+                  "p50": 9600.324200000003,
+                  "p75": 10682.88205,
+                  "p90": 11332.416759999998,
+                  "p95": 11548.928329999999
+                }
+              },
+              "cost": {
+                "total_usd": 1.1772935000000002,
+                "per_submission": 0.06925255882352943,
+                "per_correct_result": 0.3924311666666667,
+                "per_correct_autonomous": 0.3924311666666667
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 1.1772935,
+              "upper_usd": 1.1772935,
+              "per_submission_lower": 0.06925255882352942,
+              "per_submission_upper": 0.06925255882352942,
+              "per_correct_autonomous_lower": 0.39243116666666666,
+              "per_correct_autonomous_upper": 0.39243116666666666
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 17,
+                "cases": 17,
+                "known_cost_usd": 0.0892935,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_text_search": {
+                "calls": 34,
+                "cases": 17,
+                "known_cost_usd": 1.0880000000000007,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              }
+            }
+          },
+          "deep_review": {
+            "fraction": 0.5,
+            "summary": {
+              "cases": 17,
+              "correct_autonomous_resolution": {
+                "numerator": 0,
+                "denominator": 10,
+                "rate": 0
+              },
+              "autonomous_coverage": {
+                "numerator": 0,
+                "denominator": 10,
+                "rate": 0
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 0,
+                "denominator": 17,
+                "rate": 0
+              },
+              "autonomous_precision": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "review_rate": {
+                "numerator": 11,
+                "denominator": 17,
+                "rate": 0.6470588235294118
+              },
+              "failure_rate": {
+                "numerator": 6,
+                "denominator": 17,
+                "rate": 0.35294117647058826
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": 0.05833333333333333,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 10,
+                    "rate": 0
+                  }
+                },
+                "3": {
+                  "macro": 0.11666666666666665,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 10,
+                    "rate": 0
+                  }
+                },
+                "5": {
+                  "macro": 0.11666666666666665,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 10,
+                    "rate": 0
+                  }
+                },
+                "n": {
+                  "macro": 0.11666666666666665,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 10,
+                    "rate": 0
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": 0,
+                  "upper": 0.2775327998628892,
+                  "n": 10
+                },
+                "autonomous_precision": {
+                  "lower": null,
+                  "upper": null,
+                  "n": 0
+                },
+                "wrong_confident": {
+                  "lower": 0,
+                  "upper": 0.1843181350088518,
+                  "n": 17
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 0,
+                "denominator": 17,
+                "rate": 0
+              },
+              "single": {
+                "cases": 6,
+                "exact_top1": {
+                  "numerator": 0,
+                  "denominator": 6,
+                  "rate": 0
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 0,
+                  "denominator": 6,
+                  "rate": 0
+                },
+                "correct_autonomous": {
+                  "numerator": 0,
+                  "denominator": 6,
+                  "rate": 0
+                }
+              },
+              "multi": {
+                "cases": 4,
+                "detection": {
+                  "numerator": 4,
+                  "denominator": 4,
+                  "rate": 1
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 12,
+                  "rate": 0
+                },
+                "f1": 0,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 4,
+                  "rate": 0
+                },
+                "extra_places": 0,
+                "missed_places": 12,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 6,
+                "correct_abstention": {
+                  "numerator": 0,
+                  "denominator": 6,
+                  "rate": 0
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 6,
+                  "rate": 0
+                }
+              },
+              "region": {
+                "cases": 1,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 1,
+                  "rate": 0
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 1,
+                  "rate": 0
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 17,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 17,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "latency": {
+                "submitted": {
+                  "n": 17,
+                  "p50": 15641.073400000023,
+                  "p75": 20130.29389999999,
+                  "p90": 22929.209919999994,
+                  "p95": 26206.934660000003
+                },
+                "correct_usable": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                },
+                "correct_autonomous": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                }
+              },
+              "cost": {
+                "total_usd": 1.7859961,
+                "per_submission": 0.10505859411764706,
+                "per_correct_result": null,
+                "per_correct_autonomous": null
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 1.7859961,
+              "upper_usd": 1.7859961,
+              "per_submission_lower": 0.10505859411764706,
+              "per_submission_upper": 0.10505859411764706,
+              "per_correct_autonomous_lower": null,
+              "per_correct_autonomous_upper": null
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 17,
+                "cases": 17,
+                "known_cost_usd": 0.0809201,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "openai_responses": {
+                "calls": 23,
+                "cases": 17,
+                "known_cost_usd": 0.937076,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_text_search": {
+                "calls": 24,
+                "cases": 11,
+                "known_cost_usd": 0.7680000000000005,
+                "unknown_requests": 0,
+                "case_fraction": 0.6470588235294118
+              }
+            }
+          }
+        }
+      },
+      "candidate": {
+        "arm": "empty_parent_replay_calibration",
+        "receipt_sha256": "50ec1cb3d6f5f06879629e0d295e1fb7f63b46ccf2eaadcfffb4e25b76224a13",
+        "summary": {
+          "cases": 34,
+          "correct_autonomous_resolution": {
+            "numerator": 3,
+            "denominator": 26,
+            "rate": 0.11538461538461539
+          },
+          "autonomous_coverage": {
+            "numerator": 7,
+            "denominator": 26,
+            "rate": 0.2692307692307692
+          },
+          "autonomous_submission_coverage": {
+            "numerator": 7,
+            "denominator": 34,
+            "rate": 0.20588235294117646
+          },
+          "autonomous_precision": {
+            "numerator": 3,
+            "denominator": 7,
+            "rate": 0.42857142857142855
+          },
+          "review_rate": {
+            "numerator": 27,
+            "denominator": 34,
+            "rate": 0.7941176470588235
+          },
+          "failure_rate": {
+            "numerator": 0,
+            "denominator": 34,
+            "rate": 0
+          },
+          "candidate_recall": {
+            "1": {
+              "macro": 0.2532051282051282,
+              "complete_set": {
+                "numerator": 6,
+                "denominator": 26,
+                "rate": 0.23076923076923078
+              }
+            },
+            "3": {
+              "macro": 0.31410256410256415,
+              "complete_set": {
+                "numerator": 7,
+                "denominator": 26,
+                "rate": 0.2692307692307692
+              }
+            },
+            "5": {
+              "macro": 0.31410256410256415,
+              "complete_set": {
+                "numerator": 7,
+                "denominator": 26,
+                "rate": 0.2692307692307692
+              }
+            },
+            "n": {
+              "macro": 0.31410256410256415,
+              "complete_set": {
+                "numerator": 7,
+                "denominator": 26,
+                "rate": 0.2692307692307692
+              }
+            }
+          },
+          "confidence_intervals": {
+            "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+            "correct_autonomous_resolution": {
+              "lower": 0.04003244623610615,
+              "upper": 0.2897590321171364,
+              "n": 26
+            },
+            "autonomous_precision": {
+              "lower": 0.15821985525146975,
+              "upper": 0.7495416354723428,
+              "n": 7
+            },
+            "wrong_confident": {
+              "lower": 0.04671446664882335,
+              "upper": 0.26620842770371833,
+              "n": 34
+            }
+          },
+          "autonomous_unadjudicable_outputs": 0,
+          "wrong_confident": {
+            "numerator": 4,
+            "denominator": 34,
+            "rate": 0.11764705882352941
+          },
+          "single": {
+            "cases": 22,
+            "exact_top1": {
+              "numerator": 6,
+              "denominator": 22,
+              "rate": 0.2727272727272727
+            },
+            "candidate_recall_at_1": {
+              "numerator": 6,
+              "denominator": 22,
+              "rate": 0.2727272727272727
+            },
+            "correct_autonomous": {
+              "numerator": 3,
+              "denominator": 22,
+              "rate": 0.13636363636363635
+            }
+          },
+          "multi": {
+            "cases": 4,
+            "detection": {
+              "numerator": 4,
+              "denominator": 4,
+              "rate": 1
+            },
+            "place_precision": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            },
+            "place_recall": {
+              "numerator": 0,
+              "denominator": 12,
+              "rate": 0
+            },
+            "f1": 0,
+            "exact_set": {
+              "numerator": 0,
+              "denominator": 4,
+              "rate": 0
+            },
+            "extra_places": 0,
+            "missed_places": 12,
+            "review_proposal_exact_set": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            }
+          },
+          "negative": {
+            "cases": 6,
+            "correct_abstention": {
+              "numerator": 6,
+              "denominator": 6,
+              "rate": 1
+            },
+            "unsupported_exact": {
+              "numerator": 0,
+              "denominator": 6,
+              "rate": 0
+            }
+          },
+          "region": {
+            "cases": 2,
+            "correct_geography": {
+              "numerator": 0,
+              "denominator": 2,
+              "rate": 0
+            },
+            "unsupported_exact": {
+              "numerator": 0,
+              "denominator": 2,
+              "rate": 0
+            }
+          },
+          "wrong_country": {
+            "numerator": 0,
+            "denominator": 34,
+            "rate": 0
+          },
+          "wrong_region": {
+            "numerator": 0,
+            "denominator": 34,
+            "rate": 0
+          },
+          "geography_check_coverage": {
+            "country": {
+              "numerator": 0,
+              "denominator": 7,
+              "rate": 0
+            },
+            "region": {
+              "numerator": 0,
+              "denominator": 7,
+              "rate": 0
+            },
+            "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+          },
+          "wrong_or_unverified_branch": {
+            "numerator": 0,
+            "denominator": 4,
+            "rate": 0
+          },
+          "latency": {
+            "submitted": {
+              "n": 34,
+              "p50": 11224.919099999981,
+              "p75": 16375.757899999995,
+              "p90": 21228.17361999998,
+              "p95": 26769.83357499999
+            },
+            "correct_usable": {
+              "n": 3,
+              "p50": 9600.755600000002,
+              "p75": 10683.332900000001,
+              "p90": 11332.87928,
+              "p95": 11549.394739999998
+            },
+            "correct_autonomous": {
+              "n": 3,
+              "p50": 9600.755600000002,
+              "p75": 10683.332900000001,
+              "p90": 11332.87928,
+              "p95": 11549.394739999998
+            }
+          },
+          "cost": {
+            "total_usd": 2.3918255999999998,
+            "per_submission": 0.07034781176470588,
+            "per_correct_result": 0.7972752,
+            "per_correct_autonomous": 0.7972752
+          }
+        },
+        "cost_bounds": {
+          "lower_usd": 2.3918255999999998,
+          "upper_usd": 2.3918255999999998,
+          "per_submission_lower": 0.07034781176470588,
+          "per_submission_upper": 0.07034781176470588,
+          "per_correct_autonomous_lower": 0.7972752,
+          "per_correct_autonomous_upper": 0.7972752
+        },
+        "providers": {
+          "gemini_generate": {
+            "calls": 34,
+            "cases": 34,
+            "known_cost_usd": 0.1702136,
+            "unknown_requests": 0,
+            "case_fraction": 1
+          },
+          "google_text_search": {
+            "calls": 58,
+            "cases": 28,
+            "known_cost_usd": 1.8560000000000014,
+            "unknown_requests": 0,
+            "case_fraction": 0.8235294117647058
+          },
+          "openai_responses": {
+            "calls": 11,
+            "cases": 11,
+            "known_cost_usd": 0.365612,
+            "unknown_requests": 0,
+            "case_fraction": 0.3235294117647059
+          }
+        },
+        "tiers": {
+          "normal_visual_places": {
+            "fraction": 0.5,
+            "summary": {
+              "cases": 17,
+              "correct_autonomous_resolution": {
+                "numerator": 3,
+                "denominator": 16,
+                "rate": 0.1875
+              },
+              "autonomous_coverage": {
+                "numerator": 7,
+                "denominator": 16,
+                "rate": 0.4375
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 7,
+                "denominator": 17,
+                "rate": 0.4117647058823529
+              },
+              "autonomous_precision": {
+                "numerator": 3,
+                "denominator": 7,
+                "rate": 0.42857142857142855
+              },
+              "review_rate": {
+                "numerator": 10,
+                "denominator": 17,
+                "rate": 0.5882352941176471
+              },
+              "failure_rate": {
+                "numerator": 0,
+                "denominator": 17,
+                "rate": 0
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": 0.375,
+                  "complete_set": {
+                    "numerator": 6,
+                    "denominator": 16,
+                    "rate": 0.375
+                  }
+                },
+                "3": {
+                  "macro": 0.4375,
+                  "complete_set": {
+                    "numerator": 7,
+                    "denominator": 16,
+                    "rate": 0.4375
+                  }
+                },
+                "5": {
+                  "macro": 0.4375,
+                  "complete_set": {
+                    "numerator": 7,
+                    "denominator": 16,
+                    "rate": 0.4375
+                  }
+                },
+                "n": {
+                  "macro": 0.4375,
+                  "complete_set": {
+                    "numerator": 7,
+                    "denominator": 16,
+                    "rate": 0.4375
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": 0.06591599071428142,
+                  "upper": 0.4300888096197414,
+                  "n": 16
+                },
+                "autonomous_precision": {
+                  "lower": 0.15821985525146975,
+                  "upper": 0.7495416354723428,
+                  "n": 7
+                },
+                "wrong_confident": {
+                  "lower": 0.09555044322080117,
+                  "upper": 0.4726179811956498,
+                  "n": 17
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 4,
+                "denominator": 17,
+                "rate": 0.23529411764705882
+              },
+              "single": {
+                "cases": 16,
+                "exact_top1": {
+                  "numerator": 6,
+                  "denominator": 16,
+                  "rate": 0.375
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 6,
+                  "denominator": 16,
+                  "rate": 0.375
+                },
+                "correct_autonomous": {
+                  "numerator": 3,
+                  "denominator": 16,
+                  "rate": 0.1875
+                }
+              },
+              "multi": {
+                "cases": 0,
+                "detection": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "f1": null,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "extra_places": 0,
+                "missed_places": 0,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 0,
+                "correct_abstention": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "region": {
+                "cases": 1,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 1,
+                  "rate": 0
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 1,
+                  "rate": 0
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 17,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 17,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 7,
+                  "rate": 0
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 7,
+                  "rate": 0
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 0,
+                "denominator": 4,
+                "rate": 0
+              },
+              "latency": {
+                "submitted": {
+                  "n": 17,
+                  "p50": 9039.32599999999,
+                  "p75": 10816.462299999946,
+                  "p90": 11522.713459999999,
+                  "p95": 15430.124999999985
+                },
+                "correct_usable": {
+                  "n": 3,
+                  "p50": 9600.755600000002,
+                  "p75": 10683.332900000001,
+                  "p90": 11332.87928,
+                  "p95": 11549.394739999998
+                },
+                "correct_autonomous": {
+                  "n": 3,
+                  "p50": 9600.755600000002,
+                  "p75": 10683.332900000001,
+                  "p90": 11332.87928,
+                  "p95": 11549.394739999998
+                }
+              },
+              "cost": {
+                "total_usd": 1.1772935000000002,
+                "per_submission": 0.06925255882352943,
+                "per_correct_result": 0.3924311666666667,
+                "per_correct_autonomous": 0.3924311666666667
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 1.1772935,
+              "upper_usd": 1.1772935,
+              "per_submission_lower": 0.06925255882352942,
+              "per_submission_upper": 0.06925255882352942,
+              "per_correct_autonomous_lower": 0.39243116666666666,
+              "per_correct_autonomous_upper": 0.39243116666666666
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 17,
+                "cases": 17,
+                "known_cost_usd": 0.0892935,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_text_search": {
+                "calls": 34,
+                "cases": 17,
+                "known_cost_usd": 1.0880000000000007,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              }
+            }
+          },
+          "deep_review": {
+            "fraction": 0.3235294117647059,
+            "summary": {
+              "cases": 11,
+              "correct_autonomous_resolution": {
+                "numerator": 0,
+                "denominator": 10,
+                "rate": 0
+              },
+              "autonomous_coverage": {
+                "numerator": 0,
+                "denominator": 10,
+                "rate": 0
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 0,
+                "denominator": 11,
+                "rate": 0
+              },
+              "autonomous_precision": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "review_rate": {
+                "numerator": 11,
+                "denominator": 11,
+                "rate": 1
+              },
+              "failure_rate": {
+                "numerator": 0,
+                "denominator": 11,
+                "rate": 0
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": 0.05833333333333333,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 10,
+                    "rate": 0
+                  }
+                },
+                "3": {
+                  "macro": 0.11666666666666665,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 10,
+                    "rate": 0
+                  }
+                },
+                "5": {
+                  "macro": 0.11666666666666665,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 10,
+                    "rate": 0
+                  }
+                },
+                "n": {
+                  "macro": 0.11666666666666665,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 10,
+                    "rate": 0
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": 0,
+                  "upper": 0.2775327998628892,
+                  "n": 10
+                },
+                "autonomous_precision": {
+                  "lower": null,
+                  "upper": null,
+                  "n": 0
+                },
+                "wrong_confident": {
+                  "lower": 0,
+                  "upper": 0.2588329669680317,
+                  "n": 11
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 0,
+                "denominator": 11,
+                "rate": 0
+              },
+              "single": {
+                "cases": 6,
+                "exact_top1": {
+                  "numerator": 0,
+                  "denominator": 6,
+                  "rate": 0
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 0,
+                  "denominator": 6,
+                  "rate": 0
+                },
+                "correct_autonomous": {
+                  "numerator": 0,
+                  "denominator": 6,
+                  "rate": 0
+                }
+              },
+              "multi": {
+                "cases": 4,
+                "detection": {
+                  "numerator": 4,
+                  "denominator": 4,
+                  "rate": 1
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 12,
+                  "rate": 0
+                },
+                "f1": 0,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 4,
+                  "rate": 0
+                },
+                "extra_places": 0,
+                "missed_places": 12,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 0,
+                "correct_abstention": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "region": {
+                "cases": 1,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 1,
+                  "rate": 0
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 1,
+                  "rate": 0
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 11,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 11,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "latency": {
+                "submitted": {
+                  "n": 11,
+                  "p50": 18803.7464,
+                  "p75": 21217.21849999998,
+                  "p90": 25457.612700000012,
+                  "p95": 27332.21394999999
+                },
+                "correct_usable": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                },
+                "correct_autonomous": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                }
+              },
+              "cost": {
+                "total_usd": 1.1993317000000001,
+                "per_submission": 0.10903015454545456,
+                "per_correct_result": null,
+                "per_correct_autonomous": null
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 1.1993317000000001,
+              "upper_usd": 1.1993317000000001,
+              "per_submission_lower": 0.10903015454545456,
+              "per_submission_upper": 0.10903015454545456,
+              "per_correct_autonomous_lower": null,
+              "per_correct_autonomous_upper": null
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 11,
+                "cases": 11,
+                "known_cost_usd": 0.06571969999999999,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "openai_responses": {
+                "calls": 11,
+                "cases": 11,
+                "known_cost_usd": 0.365612,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_text_search": {
+                "calls": 24,
+                "cases": 11,
+                "known_cost_usd": 0.7680000000000005,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              }
+            }
+          },
+          "empty_review": {
+            "fraction": 0.17647058823529413,
+            "summary": {
+              "cases": 6,
+              "correct_autonomous_resolution": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "autonomous_coverage": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 0,
+                "denominator": 6,
+                "rate": 0
+              },
+              "autonomous_precision": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "review_rate": {
+                "numerator": 6,
+                "denominator": 6,
+                "rate": 1
+              },
+              "failure_rate": {
+                "numerator": 0,
+                "denominator": 6,
+                "rate": 0
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": null,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 0,
+                    "rate": null
+                  }
+                },
+                "3": {
+                  "macro": null,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 0,
+                    "rate": null
+                  }
+                },
+                "5": {
+                  "macro": null,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 0,
+                    "rate": null
+                  }
+                },
+                "n": {
+                  "macro": null,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 0,
+                    "rate": null
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": null,
+                  "upper": null,
+                  "n": 0
+                },
+                "autonomous_precision": {
+                  "lower": null,
+                  "upper": null,
+                  "n": 0
+                },
+                "wrong_confident": {
+                  "lower": 2.7755575615628914e-17,
+                  "upper": 0.3903342879021653,
+                  "n": 6
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 0,
+                "denominator": 6,
+                "rate": 0
+              },
+              "single": {
+                "cases": 0,
+                "exact_top1": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "correct_autonomous": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "multi": {
+                "cases": 0,
+                "detection": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "f1": null,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "extra_places": 0,
+                "missed_places": 0,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 6,
+                "correct_abstention": {
+                  "numerator": 6,
+                  "denominator": 6,
+                  "rate": 1
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 6,
+                  "rate": 0
+                }
+              },
+              "region": {
+                "cases": 0,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 6,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 6,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "latency": {
+                "submitted": {
+                  "n": 6,
+                  "p50": 11244.182249999998,
+                  "p75": 11658.163900000005,
+                  "p90": 13690.332350000013,
+                  "p95": 14665.710125000018
+                },
+                "correct_usable": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                },
+                "correct_autonomous": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                }
+              },
+              "cost": {
+                "total_usd": 0.0152004,
+                "per_submission": 0.0025334,
+                "per_correct_result": null,
+                "per_correct_autonomous": null
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 0.0152004,
+              "upper_usd": 0.0152004,
+              "per_submission_lower": 0.0025334,
+              "per_submission_upper": 0.0025334,
+              "per_correct_autonomous_lower": null,
+              "per_correct_autonomous_upper": null
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 6,
+                "cases": 6,
+                "known_cost_usd": 0.0152004,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "held_out": {
+      "baseline": {
+        "arm": "baseline_heldout_completed_v1",
+        "receipt_sha256": "b875537592f2e9acf38b6932e8c8da0f3bb433ced8cfd9a0763f90dc51776f8f",
+        "summary": {
+          "cases": 62,
+          "correct_autonomous_resolution": {
+            "numerator": 9,
+            "denominator": 56,
+            "rate": 0.16071428571428573
+          },
+          "autonomous_coverage": {
+            "numerator": 17,
+            "denominator": 56,
+            "rate": 0.30357142857142855
+          },
+          "autonomous_submission_coverage": {
+            "numerator": 17,
+            "denominator": 62,
+            "rate": 0.27419354838709675
+          },
+          "autonomous_precision": {
+            "numerator": 9,
+            "denominator": 17,
+            "rate": 0.5294117647058824
+          },
+          "review_rate": {
+            "numerator": 38,
+            "denominator": 62,
+            "rate": 0.6129032258064516
+          },
+          "failure_rate": {
+            "numerator": 7,
+            "denominator": 62,
+            "rate": 0.11290322580645161
+          },
+          "candidate_recall": {
+            "1": {
+              "macro": 0.319515306122449,
+              "complete_set": {
+                "numerator": 17,
+                "denominator": 56,
+                "rate": 0.30357142857142855
+              }
+            },
+            "3": {
+              "macro": 0.3399234693877551,
+              "complete_set": {
+                "numerator": 18,
+                "denominator": 56,
+                "rate": 0.32142857142857145
+              }
+            },
+            "5": {
+              "macro": 0.3424744897959184,
+              "complete_set": {
+                "numerator": 18,
+                "denominator": 56,
+                "rate": 0.32142857142857145
+              }
+            },
+            "n": {
+              "macro": 0.3450255102040816,
+              "complete_set": {
+                "numerator": 18,
+                "denominator": 56,
+                "rate": 0.32142857142857145
+              }
+            }
+          },
+          "confidence_intervals": {
+            "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+            "correct_autonomous_resolution": {
+              "lower": 0.08692667607595139,
+              "upper": 0.2780620666974952,
+              "n": 56
+            },
+            "autonomous_precision": {
+              "lower": 0.30963235060004424,
+              "upper": 0.7383489355759056,
+              "n": 17
+            },
+            "wrong_confident": {
+              "lower": 0.06685878059283037,
+              "upper": 0.2344932729017363,
+              "n": 62
+            }
+          },
+          "autonomous_unadjudicable_outputs": 0,
+          "wrong_confident": {
+            "numerator": 8,
+            "denominator": 62,
+            "rate": 0.12903225806451613
+          },
+          "single": {
+            "cases": 48,
+            "exact_top1": {
+              "numerator": 17,
+              "denominator": 48,
+              "rate": 0.3541666666666667
+            },
+            "candidate_recall_at_1": {
+              "numerator": 17,
+              "denominator": 48,
+              "rate": 0.3541666666666667
+            },
+            "correct_autonomous": {
+              "numerator": 9,
+              "denominator": 48,
+              "rate": 0.1875
+            }
+          },
+          "multi": {
+            "cases": 8,
+            "detection": {
+              "numerator": 3,
+              "denominator": 8,
+              "rate": 0.375
+            },
+            "place_precision": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            },
+            "place_recall": {
+              "numerator": 0,
+              "denominator": 24,
+              "rate": 0
+            },
+            "f1": 0,
+            "exact_set": {
+              "numerator": 0,
+              "denominator": 8,
+              "rate": 0
+            },
+            "extra_places": 0,
+            "missed_places": 24,
+            "review_proposal_exact_set": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            }
+          },
+          "negative": {
+            "cases": 6,
+            "correct_abstention": {
+              "numerator": 0,
+              "denominator": 6,
+              "rate": 0
+            },
+            "unsupported_exact": {
+              "numerator": 0,
+              "denominator": 6,
+              "rate": 0
+            }
+          },
+          "region": {
+            "cases": 0,
+            "correct_geography": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            },
+            "unsupported_exact": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            }
+          },
+          "wrong_country": {
+            "numerator": 0,
+            "denominator": 62,
+            "rate": 0
+          },
+          "wrong_region": {
+            "numerator": 0,
+            "denominator": 62,
+            "rate": 0
+          },
+          "geography_check_coverage": {
+            "country": {
+              "numerator": 0,
+              "denominator": 17,
+              "rate": 0
+            },
+            "region": {
+              "numerator": 0,
+              "denominator": 17,
+              "rate": 0
+            },
+            "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+          },
+          "wrong_or_unverified_branch": {
+            "numerator": 3,
+            "denominator": 12,
+            "rate": 0.25
+          },
+          "latency": {
+            "submitted": {
+              "n": 62,
+              "p50": 8609.73409999998,
+              "p75": 11870.940425,
+              "p90": 16444.353929999997,
+              "p95": 20868.285654999974
+            },
+            "correct_usable": {
+              "n": 9,
+              "p50": 6653.119600000005,
+              "p75": 7163.084000000003,
+              "p90": 8336.975140000004,
+              "p95": 8453.856419999993
+            },
+            "correct_autonomous": {
+              "n": 9,
+              "p50": 6653.119600000005,
+              "p75": 7163.084000000003,
+              "p90": 8336.975140000004,
+              "p95": 8453.856419999993
+            }
+          },
+          "cost": {
+            "total_usd": null,
+            "per_submission": null,
+            "per_correct_result": null,
+            "per_correct_autonomous": null
+          }
+        },
+        "cost_bounds": {
+          "lower_usd": 4.940729,
+          "upper_usd": 4.972729,
+          "per_submission_lower": 0.07968917741935484,
+          "per_submission_upper": 0.0802053064516129,
+          "per_correct_autonomous_lower": 0.5489698888888889,
+          "per_correct_autonomous_upper": 0.5525254444444445
+        },
+        "providers": {
+          "gemini_generate": {
+            "calls": 62,
+            "cases": 62,
+            "known_cost_usd": 0.35672000000000004,
+            "unknown_requests": 0,
+            "case_fraction": 1
+          },
+          "google_text_search": {
+            "calls": 114,
+            "cases": 56,
+            "known_cost_usd": 3.6160000000000028,
+            "unknown_requests": 1,
+            "case_fraction": 0.9032258064516129
+          },
+          "openai_responses": {
+            "calls": 27,
+            "cases": 21,
+            "known_cost_usd": 0.948009,
+            "unknown_requests": 0,
+            "case_fraction": 0.3387096774193548
+          },
+          "google_geocode": {
+            "calls": 4,
+            "cases": 4,
+            "known_cost_usd": 0.02,
+            "unknown_requests": 0,
+            "case_fraction": 0.06451612903225806
+          }
+        },
+        "tiers": {
+          "normal_visual_places": {
+            "fraction": 0.6612903225806451,
+            "summary": {
+              "cases": 41,
+              "correct_autonomous_resolution": {
+                "numerator": 9,
+                "denominator": 41,
+                "rate": 0.21951219512195122
+              },
+              "autonomous_coverage": {
+                "numerator": 17,
+                "denominator": 41,
+                "rate": 0.4146341463414634
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 17,
+                "denominator": 41,
+                "rate": 0.4146341463414634
+              },
+              "autonomous_precision": {
+                "numerator": 9,
+                "denominator": 17,
+                "rate": 0.5294117647058824
+              },
+              "review_rate": {
+                "numerator": 23,
+                "denominator": 41,
+                "rate": 0.5609756097560976
+              },
+              "failure_rate": {
+                "numerator": 1,
+                "denominator": 41,
+                "rate": 0.024390243902439025
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": 0.3902439024390244,
+                  "complete_set": {
+                    "numerator": 16,
+                    "denominator": 41,
+                    "rate": 0.3902439024390244
+                  }
+                },
+                "3": {
+                  "macro": 0.4146341463414634,
+                  "complete_set": {
+                    "numerator": 17,
+                    "denominator": 41,
+                    "rate": 0.4146341463414634
+                  }
+                },
+                "5": {
+                  "macro": 0.4146341463414634,
+                  "complete_set": {
+                    "numerator": 17,
+                    "denominator": 41,
+                    "rate": 0.4146341463414634
+                  }
+                },
+                "n": {
+                  "macro": 0.4146341463414634,
+                  "complete_set": {
+                    "numerator": 17,
+                    "denominator": 41,
+                    "rate": 0.4146341463414634
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": 0.12003174778217568,
+                  "upper": 0.3670500598822617,
+                  "n": 41
+                },
+                "autonomous_precision": {
+                  "lower": 0.30963235060004424,
+                  "upper": 0.7383489355759056,
+                  "n": 17
+                },
+                "wrong_confident": {
+                  "lower": 0.10234437385158025,
+                  "upper": 0.3401358518706343,
+                  "n": 41
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 8,
+                "denominator": 41,
+                "rate": 0.1951219512195122
+              },
+              "single": {
+                "cases": 37,
+                "exact_top1": {
+                  "numerator": 16,
+                  "denominator": 37,
+                  "rate": 0.43243243243243246
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 16,
+                  "denominator": 37,
+                  "rate": 0.43243243243243246
+                },
+                "correct_autonomous": {
+                  "numerator": 9,
+                  "denominator": 37,
+                  "rate": 0.24324324324324326
+                }
+              },
+              "multi": {
+                "cases": 4,
+                "detection": {
+                  "numerator": 0,
+                  "denominator": 4,
+                  "rate": 0
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 9,
+                  "rate": 0
+                },
+                "f1": 0,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 4,
+                  "rate": 0
+                },
+                "extra_places": 0,
+                "missed_places": 9,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 0,
+                "correct_abstention": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "region": {
+                "cases": 0,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 41,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 41,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 17,
+                  "rate": 0
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 17,
+                  "rate": 0
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 3,
+                "denominator": 12,
+                "rate": 0.25
+              },
+              "latency": {
+                "submitted": {
+                  "n": 41,
+                  "p50": 7163.084000000003,
+                  "p75": 8570.737699999983,
+                  "p90": 9533.541900000013,
+                  "p95": 9821.049600000057
+                },
+                "correct_usable": {
+                  "n": 9,
+                  "p50": 6653.119600000005,
+                  "p75": 7163.084000000003,
+                  "p90": 8336.975140000004,
+                  "p95": 8453.856419999993
+                },
+                "correct_autonomous": {
+                  "n": 9,
+                  "p50": 6653.119600000005,
+                  "p75": 7163.084000000003,
+                  "p90": 8336.975140000004,
+                  "p95": 8453.856419999993
+                }
+              },
+              "cost": {
+                "total_usd": null,
+                "per_submission": null,
+                "per_correct_result": null,
+                "per_correct_autonomous": null
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 2.9830615999999996,
+              "upper_usd": 3.0150615999999997,
+              "per_submission_lower": 0.07275759999999999,
+              "per_submission_upper": 0.07353808780487804,
+              "per_correct_autonomous_lower": 0.33145128888888886,
+              "per_correct_autonomous_upper": 0.3350068444444444
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 41,
+                "cases": 41,
+                "known_cost_usd": 0.24306160000000002,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_text_search": {
+                "calls": 86,
+                "cases": 41,
+                "known_cost_usd": 2.720000000000002,
+                "unknown_requests": 1,
+                "case_fraction": 1
+              },
+              "google_geocode": {
+                "calls": 4,
+                "cases": 4,
+                "known_cost_usd": 0.02,
+                "unknown_requests": 0,
+                "case_fraction": 0.0975609756097561
+              }
+            }
+          },
+          "deep_review": {
+            "fraction": 0.3387096774193548,
+            "summary": {
+              "cases": 21,
+              "correct_autonomous_resolution": {
+                "numerator": 0,
+                "denominator": 15,
+                "rate": 0
+              },
+              "autonomous_coverage": {
+                "numerator": 0,
+                "denominator": 15,
+                "rate": 0
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 0,
+                "denominator": 21,
+                "rate": 0
+              },
+              "autonomous_precision": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "review_rate": {
+                "numerator": 15,
+                "denominator": 21,
+                "rate": 0.7142857142857143
+              },
+              "failure_rate": {
+                "numerator": 6,
+                "denominator": 21,
+                "rate": 0.2857142857142857
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": 0.1261904761904762,
+                  "complete_set": {
+                    "numerator": 1,
+                    "denominator": 15,
+                    "rate": 0.06666666666666667
+                  }
+                },
+                "3": {
+                  "macro": 0.1357142857142857,
+                  "complete_set": {
+                    "numerator": 1,
+                    "denominator": 15,
+                    "rate": 0.06666666666666667
+                  }
+                },
+                "5": {
+                  "macro": 0.14523809523809525,
+                  "complete_set": {
+                    "numerator": 1,
+                    "denominator": 15,
+                    "rate": 0.06666666666666667
+                  }
+                },
+                "n": {
+                  "macro": 0.15476190476190474,
+                  "complete_set": {
+                    "numerator": 1,
+                    "denominator": 15,
+                    "rate": 0.06666666666666667
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": 0,
+                  "upper": 0.20388330103584862,
+                  "n": 15
+                },
+                "autonomous_precision": {
+                  "lower": null,
+                  "upper": null,
+                  "n": 0
+                },
+                "wrong_confident": {
+                  "lower": 0,
+                  "upper": 0.154639018924847,
+                  "n": 21
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 0,
+                "denominator": 21,
+                "rate": 0
+              },
+              "single": {
+                "cases": 11,
+                "exact_top1": {
+                  "numerator": 1,
+                  "denominator": 11,
+                  "rate": 0.09090909090909091
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 1,
+                  "denominator": 11,
+                  "rate": 0.09090909090909091
+                },
+                "correct_autonomous": {
+                  "numerator": 0,
+                  "denominator": 11,
+                  "rate": 0
+                }
+              },
+              "multi": {
+                "cases": 4,
+                "detection": {
+                  "numerator": 3,
+                  "denominator": 4,
+                  "rate": 0.75
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 15,
+                  "rate": 0
+                },
+                "f1": 0,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 4,
+                  "rate": 0
+                },
+                "extra_places": 0,
+                "missed_places": 15,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 6,
+                "correct_abstention": {
+                  "numerator": 0,
+                  "denominator": 6,
+                  "rate": 0
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 6,
+                  "rate": 0
+                }
+              },
+              "region": {
+                "cases": 0,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 21,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 21,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "latency": {
+                "submitted": {
+                  "n": 21,
+                  "p50": 12931.366399999999,
+                  "p75": 16976.4486,
+                  "p90": 21495.13010000001,
+                  "p95": 22273.13399999996
+                },
+                "correct_usable": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                },
+                "correct_autonomous": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                }
+              },
+              "cost": {
+                "total_usd": 1.9576674,
+                "per_submission": 0.09322225714285715,
+                "per_correct_result": null,
+                "per_correct_autonomous": null
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 1.9576674,
+              "upper_usd": 1.9576674,
+              "per_submission_lower": 0.09322225714285715,
+              "per_submission_upper": 0.09322225714285715,
+              "per_correct_autonomous_lower": null,
+              "per_correct_autonomous_upper": null
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 21,
+                "cases": 21,
+                "known_cost_usd": 0.11365839999999998,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "openai_responses": {
+                "calls": 27,
+                "cases": 21,
+                "known_cost_usd": 0.948009,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_text_search": {
+                "calls": 28,
+                "cases": 15,
+                "known_cost_usd": 0.8960000000000006,
+                "unknown_requests": 0,
+                "case_fraction": 0.7142857142857143
+              }
+            }
+          }
+        }
+      },
+      "candidate": {
+        "arm": "final_candidate_heldout_completed_v1",
+        "receipt_sha256": "aee439e72117bbd9799e74d33190f4f533d633ff5dd2b6c2b2a7b24bad26630d",
+        "summary": {
+          "cases": 62,
+          "correct_autonomous_resolution": {
+            "numerator": 9,
+            "denominator": 56,
+            "rate": 0.16071428571428573
+          },
+          "autonomous_coverage": {
+            "numerator": 17,
+            "denominator": 56,
+            "rate": 0.30357142857142855
+          },
+          "autonomous_submission_coverage": {
+            "numerator": 17,
+            "denominator": 62,
+            "rate": 0.27419354838709675
+          },
+          "autonomous_precision": {
+            "numerator": 9,
+            "denominator": 17,
+            "rate": 0.5294117647058824
+          },
+          "review_rate": {
+            "numerator": 44,
+            "denominator": 62,
+            "rate": 0.7096774193548387
+          },
+          "failure_rate": {
+            "numerator": 1,
+            "denominator": 62,
+            "rate": 0.016129032258064516
+          },
+          "candidate_recall": {
+            "1": {
+              "macro": 0.319515306122449,
+              "complete_set": {
+                "numerator": 17,
+                "denominator": 56,
+                "rate": 0.30357142857142855
+              }
+            },
+            "3": {
+              "macro": 0.3399234693877551,
+              "complete_set": {
+                "numerator": 18,
+                "denominator": 56,
+                "rate": 0.32142857142857145
+              }
+            },
+            "5": {
+              "macro": 0.3424744897959184,
+              "complete_set": {
+                "numerator": 18,
+                "denominator": 56,
+                "rate": 0.32142857142857145
+              }
+            },
+            "n": {
+              "macro": 0.3450255102040816,
+              "complete_set": {
+                "numerator": 18,
+                "denominator": 56,
+                "rate": 0.32142857142857145
+              }
+            }
+          },
+          "confidence_intervals": {
+            "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+            "correct_autonomous_resolution": {
+              "lower": 0.08692667607595139,
+              "upper": 0.2780620666974952,
+              "n": 56
+            },
+            "autonomous_precision": {
+              "lower": 0.30963235060004424,
+              "upper": 0.7383489355759056,
+              "n": 17
+            },
+            "wrong_confident": {
+              "lower": 0.06685878059283037,
+              "upper": 0.2344932729017363,
+              "n": 62
+            }
+          },
+          "autonomous_unadjudicable_outputs": 0,
+          "wrong_confident": {
+            "numerator": 8,
+            "denominator": 62,
+            "rate": 0.12903225806451613
+          },
+          "single": {
+            "cases": 48,
+            "exact_top1": {
+              "numerator": 17,
+              "denominator": 48,
+              "rate": 0.3541666666666667
+            },
+            "candidate_recall_at_1": {
+              "numerator": 17,
+              "denominator": 48,
+              "rate": 0.3541666666666667
+            },
+            "correct_autonomous": {
+              "numerator": 9,
+              "denominator": 48,
+              "rate": 0.1875
+            }
+          },
+          "multi": {
+            "cases": 8,
+            "detection": {
+              "numerator": 3,
+              "denominator": 8,
+              "rate": 0.375
+            },
+            "place_precision": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            },
+            "place_recall": {
+              "numerator": 0,
+              "denominator": 24,
+              "rate": 0
+            },
+            "f1": 0,
+            "exact_set": {
+              "numerator": 0,
+              "denominator": 8,
+              "rate": 0
+            },
+            "extra_places": 0,
+            "missed_places": 24,
+            "review_proposal_exact_set": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            }
+          },
+          "negative": {
+            "cases": 6,
+            "correct_abstention": {
+              "numerator": 6,
+              "denominator": 6,
+              "rate": 1
+            },
+            "unsupported_exact": {
+              "numerator": 0,
+              "denominator": 6,
+              "rate": 0
+            }
+          },
+          "region": {
+            "cases": 0,
+            "correct_geography": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            },
+            "unsupported_exact": {
+              "numerator": 0,
+              "denominator": 0,
+              "rate": null
+            }
+          },
+          "wrong_country": {
+            "numerator": 0,
+            "denominator": 62,
+            "rate": 0
+          },
+          "wrong_region": {
+            "numerator": 0,
+            "denominator": 62,
+            "rate": 0
+          },
+          "geography_check_coverage": {
+            "country": {
+              "numerator": 0,
+              "denominator": 17,
+              "rate": 0
+            },
+            "region": {
+              "numerator": 0,
+              "denominator": 17,
+              "rate": 0
+            },
+            "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+          },
+          "wrong_or_unverified_branch": {
+            "numerator": 3,
+            "denominator": 12,
+            "rate": 0.25
+          },
+          "latency": {
+            "submitted": {
+              "n": 62,
+              "p50": 8609.81309999998,
+              "p75": 11871.136050000001,
+              "p90": 16444.451389999995,
+              "p95": 20868.428074999974
+            },
+            "correct_usable": {
+              "n": 9,
+              "p50": 6653.321800000005,
+              "p75": 7163.260400000003,
+              "p90": 8337.095280000003,
+              "p95": 8453.993439999993
+            },
+            "correct_autonomous": {
+              "n": 9,
+              "p50": 6653.321800000005,
+              "p75": 7163.260400000003,
+              "p90": 8337.095280000003,
+              "p95": 8453.993439999993
+            }
+          },
+          "cost": {
+            "total_usd": null,
+            "per_submission": null,
+            "per_correct_result": null,
+            "per_correct_autonomous": null
+          }
+        },
+        "cost_bounds": {
+          "lower_usd": 4.4597950000000015,
+          "upper_usd": 4.4917950000000015,
+          "per_submission_lower": 0.07193217741935486,
+          "per_submission_upper": 0.07244830645161293,
+          "per_correct_autonomous_lower": 0.49553277777777793,
+          "per_correct_autonomous_upper": 0.4990883333333335
+        },
+        "providers": {
+          "gemini_generate": {
+            "calls": 62,
+            "cases": 62,
+            "known_cost_usd": 0.35672000000000004,
+            "unknown_requests": 0,
+            "case_fraction": 1
+          },
+          "google_text_search": {
+            "calls": 114,
+            "cases": 56,
+            "known_cost_usd": 3.6160000000000028,
+            "unknown_requests": 1,
+            "case_fraction": 0.9032258064516129
+          },
+          "openai_responses": {
+            "calls": 15,
+            "cases": 15,
+            "known_cost_usd": 0.46707499999999996,
+            "unknown_requests": 0,
+            "case_fraction": 0.24193548387096775
+          },
+          "google_geocode": {
+            "calls": 4,
+            "cases": 4,
+            "known_cost_usd": 0.02,
+            "unknown_requests": 0,
+            "case_fraction": 0.06451612903225806
+          }
+        },
+        "tiers": {
+          "normal_visual_places": {
+            "fraction": 0.6612903225806451,
+            "summary": {
+              "cases": 41,
+              "correct_autonomous_resolution": {
+                "numerator": 9,
+                "denominator": 41,
+                "rate": 0.21951219512195122
+              },
+              "autonomous_coverage": {
+                "numerator": 17,
+                "denominator": 41,
+                "rate": 0.4146341463414634
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 17,
+                "denominator": 41,
+                "rate": 0.4146341463414634
+              },
+              "autonomous_precision": {
+                "numerator": 9,
+                "denominator": 17,
+                "rate": 0.5294117647058824
+              },
+              "review_rate": {
+                "numerator": 23,
+                "denominator": 41,
+                "rate": 0.5609756097560976
+              },
+              "failure_rate": {
+                "numerator": 1,
+                "denominator": 41,
+                "rate": 0.024390243902439025
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": 0.3902439024390244,
+                  "complete_set": {
+                    "numerator": 16,
+                    "denominator": 41,
+                    "rate": 0.3902439024390244
+                  }
+                },
+                "3": {
+                  "macro": 0.4146341463414634,
+                  "complete_set": {
+                    "numerator": 17,
+                    "denominator": 41,
+                    "rate": 0.4146341463414634
+                  }
+                },
+                "5": {
+                  "macro": 0.4146341463414634,
+                  "complete_set": {
+                    "numerator": 17,
+                    "denominator": 41,
+                    "rate": 0.4146341463414634
+                  }
+                },
+                "n": {
+                  "macro": 0.4146341463414634,
+                  "complete_set": {
+                    "numerator": 17,
+                    "denominator": 41,
+                    "rate": 0.4146341463414634
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": 0.12003174778217568,
+                  "upper": 0.3670500598822617,
+                  "n": 41
+                },
+                "autonomous_precision": {
+                  "lower": 0.30963235060004424,
+                  "upper": 0.7383489355759056,
+                  "n": 17
+                },
+                "wrong_confident": {
+                  "lower": 0.10234437385158025,
+                  "upper": 0.3401358518706343,
+                  "n": 41
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 8,
+                "denominator": 41,
+                "rate": 0.1951219512195122
+              },
+              "single": {
+                "cases": 37,
+                "exact_top1": {
+                  "numerator": 16,
+                  "denominator": 37,
+                  "rate": 0.43243243243243246
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 16,
+                  "denominator": 37,
+                  "rate": 0.43243243243243246
+                },
+                "correct_autonomous": {
+                  "numerator": 9,
+                  "denominator": 37,
+                  "rate": 0.24324324324324326
+                }
+              },
+              "multi": {
+                "cases": 4,
+                "detection": {
+                  "numerator": 0,
+                  "denominator": 4,
+                  "rate": 0
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 9,
+                  "rate": 0
+                },
+                "f1": 0,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 4,
+                  "rate": 0
+                },
+                "extra_places": 0,
+                "missed_places": 9,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 0,
+                "correct_abstention": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "region": {
+                "cases": 0,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 41,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 41,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 17,
+                  "rate": 0
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 17,
+                  "rate": 0
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 3,
+                "denominator": 12,
+                "rate": 0.25
+              },
+              "latency": {
+                "submitted": {
+                  "n": 41,
+                  "p50": 7163.260400000003,
+                  "p75": 8570.891599999983,
+                  "p90": 9533.667300000014,
+                  "p95": 9821.155800000057
+                },
+                "correct_usable": {
+                  "n": 9,
+                  "p50": 6653.321800000005,
+                  "p75": 7163.260400000003,
+                  "p90": 8337.095280000003,
+                  "p95": 8453.993439999993
+                },
+                "correct_autonomous": {
+                  "n": 9,
+                  "p50": 6653.321800000005,
+                  "p75": 7163.260400000003,
+                  "p90": 8337.095280000003,
+                  "p95": 8453.993439999993
+                }
+              },
+              "cost": {
+                "total_usd": null,
+                "per_submission": null,
+                "per_correct_result": null,
+                "per_correct_autonomous": null
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 2.9830615999999996,
+              "upper_usd": 3.0150615999999997,
+              "per_submission_lower": 0.07275759999999999,
+              "per_submission_upper": 0.07353808780487804,
+              "per_correct_autonomous_lower": 0.33145128888888886,
+              "per_correct_autonomous_upper": 0.3350068444444444
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 41,
+                "cases": 41,
+                "known_cost_usd": 0.24306160000000002,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_text_search": {
+                "calls": 86,
+                "cases": 41,
+                "known_cost_usd": 2.720000000000002,
+                "unknown_requests": 1,
+                "case_fraction": 1
+              },
+              "google_geocode": {
+                "calls": 4,
+                "cases": 4,
+                "known_cost_usd": 0.02,
+                "unknown_requests": 0,
+                "case_fraction": 0.0975609756097561
+              }
+            }
+          },
+          "deep_review": {
+            "fraction": 0.24193548387096775,
+            "summary": {
+              "cases": 15,
+              "correct_autonomous_resolution": {
+                "numerator": 0,
+                "denominator": 15,
+                "rate": 0
+              },
+              "autonomous_coverage": {
+                "numerator": 0,
+                "denominator": 15,
+                "rate": 0
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 0,
+                "denominator": 15,
+                "rate": 0
+              },
+              "autonomous_precision": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "review_rate": {
+                "numerator": 15,
+                "denominator": 15,
+                "rate": 1
+              },
+              "failure_rate": {
+                "numerator": 0,
+                "denominator": 15,
+                "rate": 0
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": 0.1261904761904762,
+                  "complete_set": {
+                    "numerator": 1,
+                    "denominator": 15,
+                    "rate": 0.06666666666666667
+                  }
+                },
+                "3": {
+                  "macro": 0.1357142857142857,
+                  "complete_set": {
+                    "numerator": 1,
+                    "denominator": 15,
+                    "rate": 0.06666666666666667
+                  }
+                },
+                "5": {
+                  "macro": 0.14523809523809525,
+                  "complete_set": {
+                    "numerator": 1,
+                    "denominator": 15,
+                    "rate": 0.06666666666666667
+                  }
+                },
+                "n": {
+                  "macro": 0.15476190476190474,
+                  "complete_set": {
+                    "numerator": 1,
+                    "denominator": 15,
+                    "rate": 0.06666666666666667
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": 0,
+                  "upper": 0.20388330103584862,
+                  "n": 15
+                },
+                "autonomous_precision": {
+                  "lower": null,
+                  "upper": null,
+                  "n": 0
+                },
+                "wrong_confident": {
+                  "lower": 0,
+                  "upper": 0.20388330103584862,
+                  "n": 15
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 0,
+                "denominator": 15,
+                "rate": 0
+              },
+              "single": {
+                "cases": 11,
+                "exact_top1": {
+                  "numerator": 1,
+                  "denominator": 11,
+                  "rate": 0.09090909090909091
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 1,
+                  "denominator": 11,
+                  "rate": 0.09090909090909091
+                },
+                "correct_autonomous": {
+                  "numerator": 0,
+                  "denominator": 11,
+                  "rate": 0
+                }
+              },
+              "multi": {
+                "cases": 4,
+                "detection": {
+                  "numerator": 3,
+                  "denominator": 4,
+                  "rate": 0.75
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 15,
+                  "rate": 0
+                },
+                "f1": 0,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 4,
+                  "rate": 0
+                },
+                "extra_places": 0,
+                "missed_places": 15,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 0,
+                "correct_abstention": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "region": {
+                "cases": 0,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 15,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 15,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "latency": {
+                "submitted": {
+                  "n": 15,
+                  "p50": 16407.208400000003,
+                  "p75": 19911.799849999996,
+                  "p90": 21964.95207999998,
+                  "p95": 27397.744669999956
+                },
+                "correct_usable": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                },
+                "correct_autonomous": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                }
+              },
+              "cost": {
+                "total_usd": 1.4494765,
+                "per_submission": 0.09663176666666667,
+                "per_correct_result": null,
+                "per_correct_autonomous": null
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 1.4494765,
+              "upper_usd": 1.4494765,
+              "per_submission_lower": 0.09663176666666667,
+              "per_submission_upper": 0.09663176666666667,
+              "per_correct_autonomous_lower": null,
+              "per_correct_autonomous_upper": null
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 15,
+                "cases": 15,
+                "known_cost_usd": 0.08640149999999999,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "openai_responses": {
+                "calls": 15,
+                "cases": 15,
+                "known_cost_usd": 0.46707499999999996,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              },
+              "google_text_search": {
+                "calls": 28,
+                "cases": 15,
+                "known_cost_usd": 0.8960000000000006,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              }
+            }
+          },
+          "empty_review": {
+            "fraction": 0.0967741935483871,
+            "summary": {
+              "cases": 6,
+              "correct_autonomous_resolution": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "autonomous_coverage": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "autonomous_submission_coverage": {
+                "numerator": 0,
+                "denominator": 6,
+                "rate": 0
+              },
+              "autonomous_precision": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "review_rate": {
+                "numerator": 6,
+                "denominator": 6,
+                "rate": 1
+              },
+              "failure_rate": {
+                "numerator": 0,
+                "denominator": 6,
+                "rate": 0
+              },
+              "candidate_recall": {
+                "1": {
+                  "macro": null,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 0,
+                    "rate": null
+                  }
+                },
+                "3": {
+                  "macro": null,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 0,
+                    "rate": null
+                  }
+                },
+                "5": {
+                  "macro": null,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 0,
+                    "rate": null
+                  }
+                },
+                "n": {
+                  "macro": null,
+                  "complete_set": {
+                    "numerator": 0,
+                    "denominator": 0,
+                    "rate": null
+                  }
+                }
+              },
+              "confidence_intervals": {
+                "method": "95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons",
+                "correct_autonomous_resolution": {
+                  "lower": null,
+                  "upper": null,
+                  "n": 0
+                },
+                "autonomous_precision": {
+                  "lower": null,
+                  "upper": null,
+                  "n": 0
+                },
+                "wrong_confident": {
+                  "lower": 2.7755575615628914e-17,
+                  "upper": 0.3903342879021653,
+                  "n": 6
+                }
+              },
+              "autonomous_unadjudicable_outputs": 0,
+              "wrong_confident": {
+                "numerator": 0,
+                "denominator": 6,
+                "rate": 0
+              },
+              "single": {
+                "cases": 0,
+                "exact_top1": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "candidate_recall_at_1": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "correct_autonomous": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "multi": {
+                "cases": 0,
+                "detection": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_precision": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "place_recall": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "f1": null,
+                "exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "extra_places": 0,
+                "missed_places": 0,
+                "review_proposal_exact_set": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "negative": {
+                "cases": 6,
+                "correct_abstention": {
+                  "numerator": 6,
+                  "denominator": 6,
+                  "rate": 1
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 6,
+                  "rate": 0
+                }
+              },
+              "region": {
+                "cases": 0,
+                "correct_geography": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "unsupported_exact": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                }
+              },
+              "wrong_country": {
+                "numerator": 0,
+                "denominator": 6,
+                "rate": 0
+              },
+              "wrong_region": {
+                "numerator": 0,
+                "denominator": 6,
+                "rate": 0
+              },
+              "geography_check_coverage": {
+                "country": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "region": {
+                  "numerator": 0,
+                  "denominator": 0,
+                  "rate": null
+                },
+                "limitation": "Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match."
+              },
+              "wrong_or_unverified_branch": {
+                "numerator": 0,
+                "denominator": 0,
+                "rate": null
+              },
+              "latency": {
+                "submitted": {
+                  "n": 6,
+                  "p50": 10747.218450000002,
+                  "p75": 12359.547824999992,
+                  "p90": 12926.797399999996,
+                  "p95": 13075.80845
+                },
+                "correct_usable": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                },
+                "correct_autonomous": {
+                  "n": 0,
+                  "p50": null,
+                  "p75": null,
+                  "p90": null,
+                  "p95": null
+                }
+              },
+              "cost": {
+                "total_usd": 0.027256899999999994,
+                "per_submission": 0.004542816666666665,
+                "per_correct_result": null,
+                "per_correct_autonomous": null
+              }
+            },
+            "cost_bounds": {
+              "lower_usd": 0.027256899999999994,
+              "upper_usd": 0.027256899999999994,
+              "per_submission_lower": 0.004542816666666665,
+              "per_submission_upper": 0.004542816666666665,
+              "per_correct_autonomous_lower": null,
+              "per_correct_autonomous_upper": null
+            },
+            "providers": {
+              "gemini_generate": {
+                "calls": 6,
+                "cases": 6,
+                "known_cost_usd": 0.027256899999999994,
+                "unknown_requests": 0,
+                "case_fraction": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "cost_sensitivity": {
+    "version": 1,
+    "kind": "conservative_tariff_bound_sensitivity",
+    "exact_primary_cost_metrics_unchanged": true,
+    "baseline_bounds": {
+      "lower_usd": 4.940729,
+      "upper_usd": 4.972729,
+      "unknown_requests": 1
+    },
+    "candidate_bounds": {
+      "lower_usd": 4.4597950000000015,
+      "upper_usd": 4.4917950000000015,
+      "unknown_requests": 1
+    },
+    "method": "Baseline unknown requests assigned their lower bound; candidate unknown requests assigned their reserved upper bound in every connected-group bootstrap draw. These are bounds, not measured costs. Even shared unknown requests are treated adversarially.",
+    "worst_case_cost_per_correct_autonomous_ratio": {
+      "estimate": 0.9091360809305673,
+      "ci": {
+        "low": 0.8252169386772515,
+        "high": 0.9782585025564691,
+        "valid_draws": 10000
+      }
+    },
+    "worst_case_mean_cost_difference": {
+      "baseline": 0.07968917741935484,
+      "candidate": 0.07244830645161292,
+      "difference": -0.007240870967741925,
+      "baseline_ci": {
+        "low": 0.07075636547423886,
+        "high": 0.08988392241935482,
+        "valid_draws": 10000
+      },
+      "candidate_ci": {
+        "low": 0.06203437928571431,
+        "high": 0.08361413107338014,
+        "valid_draws": 10000
+      },
+      "difference_ci": {
+        "low": -0.013918784009888106,
+        "high": -0.0017243725396825411,
+        "valid_draws": 10000
+      }
+    },
+    "bootstrap": {
+      "independent_groups": 60,
+      "iterations": 10000,
+      "seed": "20261011",
+      "confidence": 0.95
+    },
+    "safety": {
+      "newly_wrong_confident": 0,
+      "resolved_wrong_confident": 0,
+      "multi_correct_autonomous_regressions": 0,
+      "identical_autonomous_outcomes": true
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # Founder recognition QA
 
-Status: not ready for physical QA until sealed validation passes and the Development integration is deployed from an attested commit. No Production testing is requested.
+Status: sealed cost validation passed and isolated integration `5ebf0d432fe2d331d89c23021d888cf5cbe6ad2b` is pushed. Physical QA must wait until the shared Development source is reconciled and the candidate is deployed from an attested commit. No Production testing is requested. The candidate retains 9/17 held-out precision and 0/8 complete autonomous multi sets; this is controlled R&D QA, not broad rollout approval.
 
 On the Development iPhone build, use fresh public examples outside the sealed generation and record the source, durable job ID, expected physical place/set, observed outcome and timestamps in a private QA record.
 

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "frozen_at": "2026-10-11T19:57:06.439874+00:00",
+  "before_heldout_scoring": true,
+  "recognition_policy_changed": false,
+  "purpose": "Supplementary conservative cost comparison after one fixed-tariff response timeout. Exact primary cost metrics remain unknown.",
+  "bounded_analysis_sha256": "29cb1b9940a7d0c032d529619a10968f426eb416b07234735af31842dd7c044e",
+  "paired_statistics_sha256": "4202fd36353b7d6e2fabaac4e91a0a341594243ee1f082def4cebbfa1eadad9b",
+  "iterations": 10000,
+  "seed": "20261011",
+  "confidence": 0.95,
+  "unknown_request_bounds_usd": {
+    "lower": 0,
+    "upper": 0.032
+  },
+  "method": "In every connected-group bootstrap draw assign all baseline unknown requests their lower cost bound and all candidate unknown requests their upper bound. This upper-bounds the candidate/baseline cost-per-correct ratio even when the unknown request is shared. Never call either bound a measured charge.",
+  "reporting": "Report primary unknown cost, known-plus-reserved total exposure, exact unchanged recognition/safety metrics, and the worst-case sensitivity interval separately. No omitted case, zero-cost imputation or source-specific tuning.",
+  "original_attempted_failure": "Retained as failed; only zero-dispatch records resume."
+}
