@@ -1,13 +1,17 @@
-# Remaining dataset bias
+# Dataset bias and limits
 
-The 109 accepted cases are useful development evidence, but this is not a representative frozen benchmark. Collection favored short, accessible public posts and independently verifiable destinations.
+**DATASET SEALED; BASELINE NOT RUN. Snapshot 2026-10-11T00:33:08.172Z.** 347 canonical posts, 208 HIGH-confidence READY, 336 complete sampled-timeline reviews. READY classes: VERIFIED_EXACT_SINGLE: 124, VERIFIED_MULTI: 36, KNOWN_NEGATIVE: 46, VERIFIED_REGION_ONLY: 2.
 
-- Platforms: inventory youtube: 71, instagram: 126, facebook: 2, tiktok: 7, other: 1; accepted youtube: 49, instagram: 52, facebook: 2, tiktok: 6. Fresh YouTube tutorials increase negative coverage, not hard place coverage.
-- Geography: Indonesia: 2, Costa Rica: 2, Japan: 3, Jordan: 1, United States: 43, Singapore: 2, not_established: 39, Italy: 3, Australia: 2, Spain: 2, France: 3, Albania: 1, Mexico: 2, Portugal: 1, South Africa: 1, New Zealand: 1, Vatican City: 1, Iceland: 1. Country appearances overlap for multi-country videos; no-place cases do not have an inferred country. United States businesses remain prominent. Africa, South America, Northern Europe and many Asian regions are sparse.
-- Negatives: 39 accepted, mostly tabletop drawing, nails, craft, makeup and product unboxing. This does not represent all ambiguous forests, hotel rooms, beaches, airplanes or street footage.
-- Outdoors: 31 accepted; subtype tags overlap: cliffs: 14, beaches: 3, hikes: 3, waterfalls: 11, other_natural: 8. Cliff/activity examples outnumber hard beaches and hikes. Some famous landmark examples are much easier than obscure, confusable natural sites.
-- Multi/branch/misleading: 15 / 11 / 8 accepted. Hotel, nightlife, exact-branch and full itinerary coverage remain thin. Candidate metadata is not verified coverage.
-- Evidence: ordinary visual-only includes creator pixel text. Only 22 qualify for strong scene-only exact recognition; only four audio sidecars exist. Sampling cannot exclude every event between frames.
-- Review/splits: agent adjudication, exposed historical outcomes and public source inventories reduce the future holdout pool. There is no sealed holdout or independent human validation sample yet.
+| Platform | All posts | READY |
+| --- | --- | --- |
+| youtube | 168 | 106 |
+| instagram | 151 | 76 |
+| facebook | 13 | 13 |
+| tiktok | 14 | 13 |
+| other | 1 | 0 |
 
-The next acquisition should prioritize new private-source outdoor/multi/branch/misleading cases and geographic diversity, not additional easy tutorial negatives. Keep rejected or unresolved sources as explicit research cases; never call an unidentified distinctive landmark a known negative just to grow a slice.
+The corpus is a deliberately difficult, access-constrained sample, not a random sample of all social posts. Tourism, nature and waterfalls are overrepresented. Business/branch, misleading and no-place slices are retained in holdout and calibration, but per-slice intervals remain wide. Repeated branches share connected components; source count does not equal independent evidence count. Seen/unseen status follows explicit accepted group granularity rather than inferred model pretraining familiarity.
+
+Metadata ablations share sources and are paired observations, not extra independent cases. No-op LOCATION_HIDDEN inputs are excluded from effect estimates. Baseline/provider latency and cost remain unmeasured.
+
+Separate agent contexts performed source-timeline reviews and reference reconciliation; they are not independent human annotators. Review density varies among historical 1–2 fps packets and newer 4 fps packets. Strict heldout multis additionally require retained transition/tail review. No continuous audiovisual playback is claimed. Initial source-only freezes and later reference exposure are recorded separately; source captions alone do not establish depicted identity.

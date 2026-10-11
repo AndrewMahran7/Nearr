@@ -1,21 +1,22 @@
-# Actual evidence ablations
+# Materialized evidence ablations
 
-Snapshot 2026-10-09T21:14:03.025Z. Materialization created or byte-checked 452 current inputs across 109 accepted source cases; 0 failures. These are saved runnable evidence inputs, not eligibility estimates and not model results.
+Snapshot 2026-10-11T00:33:08.172Z: 886 current inputs, 0 failures.
 
-| View | Actual cases | Evidence rule |
+| View | Cases | Rule |
 | --- | --- | --- |
-| FULL | 109 | All retained source text/metadata, frames and any captured speech transcript |
-| DESCRIPTION_HIDDEN | 109 | Remove caption, description and hashtags; retain genuine speech and other permitted metadata |
-| LOCATION_HIDDEN | 13 | Remove location tag and structured source geography |
-| VISUAL_AUDIO | 4 | Retained frames plus spoken-audio transcript; no social metadata |
-| VISUAL_ONLY | 109 | Retained frames only, including legitimate in-video text |
-| TEXT_ONLY | 108 | Retained text/transcript/metadata; no frames |
-| VISUAL_PIXEL_TEXT_MASKED | 0 | Not produced; no claim that OCR text was erased |
+| FULL | 208 | Retained creator text/metadata, frames and captured speech if available |
+| DESCRIPTION_HIDDEN | 208 | Caption, description and hashtags removed |
+| LOCATION_HIDDEN effective | 11 | Populated location/geography removed |
+| LOCATION_HIDDEN no-op | 40 | Compatibility duplicates; exclude from effect estimates |
+| VISUAL_ONLY | 208 | Frames and source timing; legitimate pixel text retained |
+| VISUAL_AUDIO | 4 | Frames plus captured spoken-audio transcript |
+| TEXT_ONLY | 207 | Retained text; no frames |
+| PIXEL_TEXT_MASKED | 0 | Not produced |
 
-Only 62 inventory cases are explicitly audited/tagged description-revealed; 55 are accepted. This conservative discovery subset is separate from the 109 technically materialized description-hidden cases. Unreviewed heuristics are not used to reach 75/50. 22 accepted exact cases qualify as strong scene-only; generic negative examples do not enlarge that number.
+109 accepted cases are explicitly audited as description-revealed, among 116 such inventory rows. Technical DESCRIPTION_HIDDEN availability is a different count. Strong scene-only exact cases: 68. Generic negatives do not enlarge that count.
 
-FULL represents all **retained** evidence, not automatic native-video or continuous-audio inference. Most videos have no captured transcript; four have local Whisper speech sidecars with two-model cross-checks, timestamp/model/media hashes and visible subtitle checks. Direct acoustic listening was unavailable. Audio has not been synthesized, transcribed from the caption, or converted into a truth label. One accepted case has no usable text-only evidence. LOCATION_HIDDEN is counted only where an actual source location/geography field is removed, avoiding meaningless duplicate variants.
+All current visual input paths align with source-derived timestamps and duration. Immutable generations include the full payload hash; the earlier generation is retained. Source timing does not contain labels. Only four historical VISUAL_AUDIO inputs contain retained speech sidecars. New negative-review ASR sidecars were not automatically forwarded as inference speech; direct acoustic listening is not claimed. No-op location-hidden duplicates are excluded from ablation-effect estimates.
 
-Caption/description/tag hiding is distinct from hiding pixel text. Ordinary VISUAL_ONLY preserves overlays, subtitles, venue signs and watermarks. No pixel-text-masked study is claimed. Neutral JPEG re-encoding strips image metadata; inference fields are allowlisted, original paths/IDs and answer annotations are absent, mappings remain private, and candidate caches are disabled.
+Inference receives only allowlisted creator evidence, neutral numbered JPEGs and source-derived duration/frame timestamps. Labels, source URLs/IDs, original paths, case/place groups, reviews, mappings and split assignments remain outside the input directory. Candidate-cache access is disabled. FULL/TEXT_ONLY may intentionally contain answer-bearing creator text; ordinary VISUAL_ONLY retains in-video text. These file-format controls do not by themselves isolate a runner with broad filesystem access.
 
-Baseline metrics for all six views are **NOT RUN** because the completion gates failed. Exact top-1, correct autonomous, autonomous precision, review rate, wrong-confident rate and candidate recall are unavailable, not zero. Future paired comparisons must use matching case IDs and a frozen label/group; multiple views are not independent source examples.
+Recognition effect estimates: not run.

@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-10",
+  "method": "Read-only Railway environment/config/deployment MCP and CLI variable lookup; only allowlisted nonsecret values retained.",
+  "project_id": "4037a3b5-d66f-409e-b734-56c22c244e3e",
+  "environment_id": "57d055b7-5326-4f96-a7a9-70523ee0d3f0",
+  "environment": "development",
+  "service_id": "3c8cd190-b118-4ee4-9338-407843ef4e1f",
+  "latest_successful_deployment": "11acd95c-90f3-407e-aefa-2f1d66fc05a9",
+  "deployment_created_at": "2026-09-15T19:36:39.266Z",
+  "source_branch": "integrate/safe-development-baseline",
+  "staged_changes": false,
+  "variables": {
+    "GEMINI_MODEL": "gemini-3.5-flash-lite",
+    "MEDIA_ANALYSIS_PROVIDER": "gemini",
+    "AUTOMATIC_DEEP_RECOGNITION_ENABLED": "true",
+    "AUTO_DEEP_RECOGNITION_ENABLED": "true",
+    "MEDIA_JOB_TIMEOUT_MS": "480000",
+    "MEDIA_MAX_SELECTED_FRAMES": "24",
+    "MEDIA_TRANSCRIPTION_PROVIDER": "openai",
+    "MEDIA_TRANSCRIPTION_MODEL": "whisper-1",
+    "PREMIUM_REQUESTS_ENABLED": "false",
+    "VAYRIN_ADAPTIVE_SOL_FRAMES_ENABLED": "false",
+    "VAYRIN_REGION_POI_CANDIDATE_LIMIT": "8",
+    "VAYRIN_VERIFICATION_V3_ENABLED": "true",
+    "VAYRIN_VISUAL_GEOLOCATION_ENABLED": "true"
+  },
+  "unset_frame_settings_use_current_code_defaults": {"interval_seconds": 1, "deep_frame_budget": 6, "deep_frame_strategy": "diverse"},
+  "legacy_flags": "Current ordinary worker entry point wraps selectModelProvider with Automatic Deep. Legacy Vayrin visual-geolocation fallback is not invoked by that path.",
+  "scope_limit": "This is a configuration snapshot, not a deployed-source SHA attestation. Local starting SHA and runtime source-file hashes are recorded for every experiment. No mutation or deployment occurred."
+}

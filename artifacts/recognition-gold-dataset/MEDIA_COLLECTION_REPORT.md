@@ -1,23 +1,19 @@
-# Media collection report
+# Media collection
 
-Snapshot 2026-10-09T21:14:03.025Z: **207 distinct cases, 109 READY, 98 candidates, 196 complete-timeline visual reviews**. Canonical retained reviewed frames: 3231; total reviewed video duration: 4199.211s. These are aggregate evidence facts, not a media archive or accepted-answer list.
+**DATASET SEALED; BASELINE NOT RUN. Snapshot 2026-10-11T00:33:08.172Z.** 347 canonical posts, 208 HIGH-confidence READY, 336 complete sampled-timeline reviews. READY classes: VERIFIED_EXACT_SINGLE: 124, VERIFIED_MULTI: 36, KNOWN_NEGATIVE: 46, VERIFIED_REGION_ONLY: 2.
 
-## Collection and coverage
+10546 selected reviewed frames retained across 7309.817 seconds of source duration. These are not unique place counts or continuous-playback claims. Full native contact sheets and transition packets remain private. Original unavailable cases remain inventoried; their missing media is explicit and they are not READY.
 
-| Source queue | Attempted | Public media acquired | Complete one-frame-per-second review stills | Retained SHA-256-hashed frames | Outcome |
-| --- | ---: | ---: | ---: | ---: | --- |
-| Historically exposed social references | 105 | 102 | 2,372 | 710 | Three YouTube requests returned HTTP 403. Two acquired posts overlap the separate new-source queue, leaving 100 distinct historical rows in the canonical overlay. |
-| Fresh YouTube no-place search | 40 | 33 | 543 | 165 | Four HTTP 403 responses and three other acquisition failures; seven sources were excluded from the media-backed batch. |
-| Fresh TikTok no-place search | 6 | 5 | 113 | 25 | One acquisition failure; the source-specific packet remains private. |
+| Platform | All posts | READY |
+| --- | --- | --- |
+| youtube | 168 | 106 |
+| instagram | 151 | 76 |
+| facebook | 13 | 13 |
+| tiktok | 14 | 13 |
+| other | 1 | 0 |
 
-These three bounded queues account for **151 attempts, 140 successful downloads, 3,028 full-timeline review stills, and 900 retained frames before cross-queue deduplication**. They are collection counts, not independent benchmark case counts. Other newly researched public posts in the canonical dataset have separate collection records. At final integration, 196 canonical cases have complete visual review, including all 109 READY cases; 11 lack full-timeline review. Every READY case had at least three retained frames with matching recorded hashes and opening, middle, and ending coverage.
+Separate agent contexts performed source-timeline reviews and reference reconciliation; they are not independent human annotators. Review density varies among historical 1–2 fps packets and newer 4 fps packets. Strict heldout multis additionally require retained transition/tail review. No continuous audiovisual playback is claimed. Initial source-only freezes and later reference exposure are recorded separately; source captions alone do not establish depicted identity.
 
-Successful historical media retrieval timestamps run from **2026-10-08 23:58:55.603 UTC** through **2026-10-09 01:14:12.268 UTC**. The 33 fresh YouTube downloads run from **2026-10-09 19:09:09.065 UTC** through **19:10:18.727 UTC**; the five TikTok downloads run from **19:17:47.455190 UTC** through **19:17:53.073533 UTC**. Thus the audited successful-download window across these queues is 2026-10-08 23:58:55.603 to 2026-10-09 19:17:53.073533 UTC. Failed-attempt inventories record the date and reason, but not an exact attempt time. These timestamps do not represent person-hours.
+Canonical manifest, labels, source identities, complete captions, media, review packets, mappings and split membership remain private outside Git or in the ignored local evaluation directory. Public reports contain aggregate statistics. The preserved public source-history files and 207-row evidence CSV are not the runnable benchmark.
 
-Acquisition used direct public source URLs without sign-in or browser cookies, with bounded `yt-dlp` retries and a capped video format for the fresh YouTube set. `ffprobe` measured duration; `ffmpeg` sampled the **entire** playable timeline at one frame per second for contact sheets. Reviewers inspected those sheets, the complete available title/caption/description, and source context. Representative original-pixel JPEGs were retained at opening, middle, and ending points, plus scene changes or distinct depicted segments. Source bytes and retained frames were SHA-256 hashed; a matching file hash and temporal coverage are promotion gates. Normal `visual_only` preserves text that creators placed inside the video pixels. The stricter scene-only subset is counted separately from ordinary visual-only eligibility.
-
-Source posts and media remain the creators' material. Public access and a recorded `permitted_media_derivative` review support this temporary local evaluation workflow; they are **not** a claim of copyright ownership or a general redistribution license. Videos, full captions, contact sheets, and original frames are outside Git. Historical media records have a `retained_until` date of **2026-11-07**; fresh-negative records have **2026-11-08**. Removal at those dates still needs an operational check. Inaccessibility, rights changes, or a hash mismatch requires case demotion or re-review, not an invented replacement frame.
-
-Four accepted videos also have a private spoken-audio sidecar produced with cached local Whisper models (`base.en` and `medium`). Raw transcripts, time-coded segments, model hashes, and review notes are preserved privately. Two ASR passes were compared with the creator's visible subtitles and source caption; direct acoustic listening was unavailable, and the sidecar states that limit. No ASR output was treated as a place label. The collection and adjudication workflows made **zero paid recognition or acquisition API calls; actual paid API spend was $0**. No production data or application behavior changed.
-
-Additional collection packets cover 33 root captures (6 original-source queue plus 27 fresh YouTube captures) and 23 Instagram captures, with source hashes, retrieval times, complete captions, all native 2 fps frame sheets and per-case acquisition inventories. Public Instagram search audit records 12 queries during 19:17–19:41UTC, 16 caption/modal triage rejects and 3 thumbnail rejects; these were not full-video reviews or gold negatives. Other root searches covered landmarks, short city itineraries, cafes/branches and `best waterfalls shorts`. Root acquisition timestamps bound download effort; no invented person-hour estimate is supplied. Rejections include unresolved opening scenes, wrong captions, visually altered footage, uncertain exact beaches and incomplete branch identity. Source-specific fresh-root and TikTok packets remain private.
+No liking, following, commenting, messaging, account-setting changes or private-content access was performed by collection. Temporary retention follows each packet; earliest combined expiry remains 2026-11-07, newer caches 2026-11-08, unless separately reviewed.

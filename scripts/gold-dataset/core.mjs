@@ -19,6 +19,16 @@ const fail = (code) => { throw new Error(code); };
 const array = (x) => Array.isArray(x) ? x : [];
 const str = (x) => typeof x === 'string' ? x : '';
 export const norm = (x) => str(x).normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+const countryAliases = new Map();
+const countryNames = new Intl.DisplayNames(['en'], { type: 'region' });
+for (let first = 65; first <= 90; first++) for (let second = 65; second <= 90; second++) {
+  const code = String.fromCharCode(first, second), name = countryNames.of(code);
+  if (name && name !== code) { countryAliases.set(norm(code), norm(name)); countryAliases.set(norm(name), norm(name)); }
+}
+for (const [canonical, aliases] of [['United States', ['USA', 'U.S.A.', 'United States of America']], ['United Kingdom', ['UK', 'U.K.', 'Great Britain']], ['United Arab Emirates', ['UAE', 'U.A.E.']]]) {
+  for (const alias of aliases) countryAliases.set(norm(alias), norm(canonical));
+}
+const countryNorm = (value) => countryAliases.get(norm(value)) ?? norm(value);
 function sourceUrlKey(raw) {
   const url = new URL(raw);
   if (!['http:', 'https:'].includes(url.protocol)) fail('invalid_public_url');
@@ -255,7 +265,11 @@ export function inferencePayload(record, label, view) {
     input_id: `i_${sha256(`${record.case_id}\0${view}`).slice(0, 24)}`,
     view,
     evidence,
-    media: { frames: frames.map((_, i) => `frames/${String(i).padStart(3, '0')}.jpg`) },
+    media: {
+      frames: frames.map((_, i) => `frames/${String(i).padStart(3, '0')}.jpg`),
+      duration_seconds: record.visual_review?.duration_seconds ?? null,
+      frame_timestamps_seconds: visual ? structuredClone(record.visual_review?.frame_timestamps_seconds ?? []) : [],
+    },
     cache_policy: 'disabled',
   };
   // The label object is deliberately never spread or serialized into the payload.
@@ -278,10 +292,18 @@ export function placeMatches(pred, truth) {
   if (truth.place_id && pred.place_id && truth.place_id.split(':')[0] === pred.place_id.split(':')[0]) return false;
   const aliases = [truth.name, ...array(truth.aliases)].map(norm).filter(Boolean);
   if (!aliases.includes(norm(pred.name))) return false;
-  for (const key of ['country', 'region', 'city']) if (truth[key] && (!pred[key] || norm(truth[key]) !== norm(pred[key]))) return false;
-  if (truth.coordinates && pred.coordinates) return distanceMeters(truth.coordinates, pred.coordinates) <= (truth.accepted_radius_meters ?? 100);
+  if (truth.coordinates && pred.coordinates) {
+    if (![truth.coordinates.lat, truth.coordinates.lng, pred.coordinates.lat, pred.coordinates.lng].every(Number.isFinite) || Math.abs(pred.coordinates.lat) > 90 || Math.abs(pred.coordinates.lng) > 180) return false;
+    // Exact provider coordinates are a physical anchor; Places does not always
+    // return separately parsed city/region/country fields. Never fill them from truth.
+    if (truth.country && pred.country && countryNorm(truth.country) !== countryNorm(pred.country)) return false;
+    return distanceMeters(truth.coordinates, pred.coordinates) <= (truth.accepted_radius_meters ?? 100);
+  }
+  for (const key of ['country', 'region', 'city']) if (truth[key] && (!pred[key] || (key === 'country' ? countryNorm(truth[key]) !== countryNorm(pred[key]) : norm(truth[key]) !== norm(pred[key])))) return false;
   if (truth.branch_disambiguation === true && !truth.coordinates && !truth.address && !array(truth.accepted_addresses).length) return false;
   if (truth.address || array(truth.accepted_addresses).length) return Boolean(pred.address && [truth.address, ...array(truth.accepted_addresses)].map(norm).includes(norm(pred.address)));
+  // A branch label with a coordinate anchor cannot be proved by brand and city alone.
+  if (truth.branch_disambiguation === true) return false;
   // Exact names without geographic anchors are insufficient for physical identity.
   return Boolean(truth.country && (truth.region || truth.city));
 }
@@ -297,6 +319,13 @@ function matchCount(predicted, expected) {
   return predicted.reduce((n, _, i) => n + Number(augment(i, new Set())), 0);
 }
 const ratio = (n, d) => ({ numerator: n, denominator: d, rate: d ? n / d : null });
+export function wilsonInterval(successes, count, z = 1.959963984540054) {
+  if (!count) return { lower: null, upper: null, n: 0 };
+  const p = successes / count, denominator = 1 + z * z / count;
+  const center = (p + z * z / (2 * count)) / denominator;
+  const half = z * Math.sqrt(p * (1 - p) / count + z * z / (4 * count * count)) / denominator;
+  return { lower: Math.max(0, center - half), upper: Math.min(1, center + half), n: count };
+}
 export function scoreOne(record, label, observation, split, view) {
   if (observation?.input_id !== `i_${sha256(`${record.case_id}\0${view}`).slice(0, 24)}` || observation.view !== view) fail(`observation_identity_mismatch:${record.case_id}`);
   if (!['completed', 'review', 'failed'].includes(observation.status)) fail(`invalid_observation_status:${record.case_id}`);
@@ -305,7 +334,7 @@ export function scoreOne(record, label, observation, split, view) {
   if (observation.wrong_confident_cache != null && typeof observation.wrong_confident_cache !== 'boolean') fail(`invalid_cache_signal:${record.case_id}`);
   if (observation.cost_usd != null && (!Number.isFinite(observation.cost_usd) || observation.cost_usd < 0)) fail(`invalid_observation_cost:${record.case_id}`);
   if (observation.elapsed_ms != null && (!Number.isFinite(observation.elapsed_ms) || observation.elapsed_ms < 0)) fail(`invalid_observation_elapsed:${record.case_id}`);
-  if (label.label_class === 'VERIFIED_MULTI' && typeof observation.multi_place_detected !== 'boolean') fail(`missing_multi_detection:${record.case_id}`);
+  if (label.label_class === 'VERIFIED_MULTI' && typeof observation.multi_place_detected !== 'boolean' && !(observation.status === 'failed' && observation.multi_place_detected == null)) fail(`missing_multi_detection:${record.case_id}`);
   const places = array(observation.places), candidates = array(observation.candidates);
   const expected = array(label.expected_places).filter((p) => p.role !== 'mentioned_only');
   const exactEligible = ['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI'].includes(label.label_class);
@@ -313,11 +342,14 @@ export function scoreOne(record, label, observation, split, view) {
   const exactSet = exactEligible ? tp === expected.length && places.length === expected.length : null;
   const autonomous = observation.autonomous === true;
   const autonomousPlaceOutput = autonomous && places.length > 0;
-  const correctAutonomous = exactEligible ? autonomous && exactSet : null;
-  const wrongConfident = observation.wrong_confident_cache === true || (autonomousPlaceOutput && (exactEligible ? !exactSet : ['KNOWN_NEGATIVE', 'VERIFIED_REGION_ONLY'].includes(label.label_class)));
+  const multiDecisionCorrect = label.label_class !== 'VERIFIED_MULTI' || observation.multi_place_detected === true;
+  const correctAutonomous = exactEligible ? autonomous && exactSet && multiDecisionCorrect : null;
+  const wrongConfident = observation.wrong_confident_cache === true || (autonomousPlaceOutput && (exactEligible ? !exactSet || !multiDecisionCorrect : ['KNOWN_NEGATIVE', 'VERIFIED_REGION_ONLY'].includes(label.label_class)));
   const geographic = label.geography ?? (expected.length === 1 ? expected[0] : {});
   const statedGeo = [observation.geography, ...places].filter(Boolean);
-  const wrongCountry = Boolean(autonomous && geographic.country && statedGeo.some((p) => p.country && norm(p.country) !== norm(geographic.country)));
+  const countryCheckable = Boolean(autonomous && geographic.country && statedGeo.some((p) => p.country));
+  const regionCheckable = Boolean(autonomous && geographic.region && statedGeo.some((p) => p.region));
+  const wrongCountry = Boolean(autonomous && geographic.country && statedGeo.some((p) => p.country && countryNorm(p.country) !== countryNorm(geographic.country)));
   const wrongRegion = Boolean(autonomous && geographic.region && statedGeo.some((p) => p.region && norm(p.region) !== norm(geographic.region)));
   const multiDetected = label.label_class === 'VERIFIED_MULTI' && typeof observation.multi_place_detected === 'boolean' ? observation.multi_place_detected : null;
   return {
@@ -328,13 +360,17 @@ export function scoreOne(record, label, observation, split, view) {
     candidate_recall_at_1: exactEligible ? matchCount(candidates.slice(0, 1), expected) / expected.length : null,
     candidate_recall_at_3: exactEligible ? matchCount(candidates.slice(0, 3), expected) / expected.length : null,
     candidate_recall_at_5: exactEligible ? matchCount(candidates.slice(0, 5), expected) / expected.length : null,
+    candidate_recall_at_n: exactEligible ? matchCount(candidates, expected) / expected.length : null,
+    candidate_count: candidates.length,
     true_positives: tp, predicted_places: places.length, expected_places: expected.length,
     multi_detected: multiDetected, extras: exactEligible ? places.length - tp : null, misses: exactEligible ? expected.length - tp : null,
     negative_correct_abstention: label.label_class === 'KNOWN_NEGATIVE' ? observation.status !== 'failed' && !wrongConfident && places.length === 0 : null,
     negative_unsupported_exact: label.label_class === 'KNOWN_NEGATIVE' ? autonomousPlaceOutput : null,
     region_correct: label.label_class === 'VERIFIED_REGION_ONLY' ? observation.status !== 'failed' && !wrongCountry && !wrongRegion && Boolean(observation.geography?.country || observation.geography?.region) && (!geographic.country || norm(observation.geography?.country) === norm(geographic.country)) && (!geographic.region || norm(observation.geography?.region) === norm(geographic.region)) : null,
     region_unsupported_exact: label.label_class === 'VERIFIED_REGION_ONLY' ? autonomousPlaceOutput : null,
-    wrong_country: wrongCountry, wrong_region: wrongRegion,
+    wrong_country: wrongCountry, wrong_region: wrongRegion, country_checkable: countryCheckable, region_checkable: regionCheckable,
+    branch_expected: expected.some((p) => p.branch_disambiguation === true) || record.categories.includes('branch_disambiguation'),
+    wrong_or_unverified_branch: autonomousPlaceOutput && (expected.some((p) => p.branch_disambiguation === true) || record.categories.includes('branch_disambiguation')) && !exactSet,
     elapsed_ms: Number.isFinite(observation.elapsed_ms) ? observation.elapsed_ms : null,
     time_to_correct_usable_ms: observation.status !== 'failed' && exactSet && Number.isFinite(observation.first_usable_result_ms) ? observation.first_usable_result_ms : null,
     cost_usd: measuredCost(observation, record.case_id),
@@ -354,7 +390,8 @@ function measuredCost(observation, caseId) {
   return sum;
 }
 export function summarizeScores(rows) {
-  const expected = rows.filter((r) => r.exact_eligible && r.reasonable_autonomous_expected);
+  // Primary coverage/correctness always includes every exact case, including hard cases.
+  const expected = rows.filter((r) => r.exact_eligible);
   const correct = expected.filter((r) => r.correct_autonomous === true);
   const adjudicable = rows.filter((r) => !['AMBIGUOUS', 'UNVERIFIED'].includes(r.label_class));
   const automatic = adjudicable.filter((r) => r.autonomous_place_output);
@@ -381,15 +418,23 @@ export function summarizeScores(rows) {
   return {
     cases: rows.length,
     correct_autonomous_resolution: ratio(correct.length, expected.length),
+    autonomous_coverage: ratio(expected.filter((r) => r.autonomous_place_output).length, expected.length),
+    autonomous_submission_coverage: ratio(automatic.length, adjudicable.length),
     autonomous_precision: ratio(automatic.filter((r) => r.correct_autonomous === true).length, automatic.length),
+    review_rate: ratio(rows.filter((r) => r.status === 'review').length, rows.length),
+    failure_rate: ratio(rows.filter((r) => r.status === 'failed').length, rows.length),
+    candidate_recall: Object.fromEntries([1, 3, 5, 'n'].map((k) => [String(k), { macro: expected.length ? sum(expected, `candidate_recall_at_${k}`) / expected.length : null, complete_set: ratio(expected.filter((r) => r[`candidate_recall_at_${k}`] === 1).length, expected.length) }])),
+    confidence_intervals: { method: '95% Wilson, descriptive case-level; use source/place-group paired bootstrap for variant comparisons', correct_autonomous_resolution: wilsonInterval(correct.length, expected.length), autonomous_precision: wilsonInterval(automatic.filter((r) => r.correct_autonomous === true).length, automatic.length), wrong_confident: wilsonInterval(adjudicable.filter((r) => r.wrong_confident).length, adjudicable.length) },
     autonomous_unadjudicable_outputs: rows.filter((r) => r.autonomous && ['AMBIGUOUS', 'UNVERIFIED'].includes(r.label_class)).length,
     wrong_confident: ratio(adjudicable.filter((r) => r.wrong_confident).length, adjudicable.length),
-    single: { cases: singles.length, exact_top1: ratio(singles.filter((r) => r.exact_top1).length, singles.length), candidate_recall_at_1: ratio(singles.filter((r) => r.candidate_recall_at_1 === 1).length, singles.length), correct_autonomous: ratio(singles.filter((r) => r.correct_autonomous).length, singles.filter((r) => r.reasonable_autonomous_expected).length) },
+    single: { cases: singles.length, exact_top1: ratio(singles.filter((r) => r.exact_top1).length, singles.length), candidate_recall_at_1: ratio(singles.filter((r) => r.candidate_recall_at_1 === 1).length, singles.length), correct_autonomous: ratio(singles.filter((r) => r.correct_autonomous).length, singles.length) },
     multi: { cases: multi.length, detection: ratio(multi.filter((r) => r.multi_detected).length, multi.length), place_precision: ratio(mp, pp), place_recall: ratio(mp, ep), f1: pp + ep ? 2 * mp / (pp + ep) : null, exact_set: ratio(multiAutomatic.filter((r) => r.exact_set).length, multi.length), extra_places: sum(multiAutomatic, 'extras'), missed_places: ep - mp, review_proposal_exact_set: ratio(multiReview.filter((r) => r.exact_set).length, multiReview.length) },
     negative: { cases: negative.length, correct_abstention: ratio(negative.filter((r) => r.negative_correct_abstention).length, negative.length), unsupported_exact: ratio(negative.filter((r) => r.negative_unsupported_exact).length, negative.length) },
     region: { cases: region.length, correct_geography: ratio(region.filter((r) => r.region_correct).length, region.length), unsupported_exact: ratio(region.filter((r) => r.region_unsupported_exact).length, region.length) },
     wrong_country: ratio(rows.filter((r) => r.wrong_country).length, adjudicable.length),
     wrong_region: ratio(rows.filter((r) => r.wrong_region).length, adjudicable.length),
+    geography_check_coverage: { country: ratio(rows.filter((r) => r.country_checkable).length, automatic.length), region: ratio(rows.filter((r) => r.region_checkable).length, automatic.length), limitation: 'Missing provider geography is unknown, never filled from gold labels or counted as a verified country/region match.' },
+    wrong_or_unverified_branch: ratio(rows.filter((r) => r.wrong_or_unverified_branch).length, rows.filter((r) => r.branch_expected).length),
     latency: { submitted: distribution(rows.map((r) => r.elapsed_ms)), correct_usable: distribution(rows.map((r) => r.time_to_correct_usable_ms)), correct_autonomous: distribution(correct.map((r) => r.elapsed_ms)) },
     cost: { total_usd: totalCost, per_submission: totalCost === null ? null : totalCost / rows.length, per_correct_result: totalCost === null || !correctUsable.length ? null : totalCost / correctUsable.length, per_correct_autonomous: totalCost === null || !correct.length ? null : totalCost / correct.length },
   };

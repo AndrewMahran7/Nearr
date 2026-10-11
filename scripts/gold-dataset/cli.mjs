@@ -8,6 +8,7 @@ import { benchmarkReadiness, heldoutRunKey, holdoutEligibility, independentGroup
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const dataset = path.join(repo, 'artifacts/recognition-gold-dataset');
 const local = path.join(repo, '.local/recognition-gold-dataset');
+const plannedMilestones = Object.freeze(['baseline_v1', 'final_candidate_v1']);
 const defaults = {
   manifest: path.join(dataset, 'dataset_manifest.jsonl'),
   labels: path.join(dataset, 'dataset_labels_private.jsonl'),
@@ -67,13 +68,13 @@ function materialize(opts) {
   if (!VIEWS.includes(opts.view)) throw new Error('unknown_view');
   const splits = splitsFile(opts, manifest, labels);
   if (splits.assignments[record.case_id] === 'held_out') {
-    if (!opts.explicit_heldout || opts.milestone !== 'baseline_v1') throw new Error('heldout_materialization_requires_explicit_baseline');
-    checkedSeal(opts);
+    if (!opts.explicit_heldout || !plannedMilestones.includes(opts.milestone)) throw new Error('heldout_materialization_requires_explicit_frozen_milestone');
+    if (!checkedSeal(opts).allowed_milestones.includes(opts.milestone)) throw new Error('heldout_milestone_not_frozen');
   }
   const label = labels.find((l) => l.case_id === opts.case);
   const input = inferencePayload(record, label, opts.view);
   const root = path.join(local, 'materialized');
-  const runName = sha256(`${input.input_id}\0${sha256(JSON.stringify(record.evidence))}`).slice(0, 24);
+  const runName = sha256(`${input.input_id}\0${sha256(JSON.stringify(record.evidence))}\0${sha256(JSON.stringify(input))}`).slice(0, 24);
   const dir = path.join(root, runName);
   fs.mkdirSync(root, { recursive: true });
   fs.mkdirSync(dir); // Immutable materialization: a repeated attempt must not overwrite evidence.
@@ -147,7 +148,7 @@ function checkedSeal(opts) {
   const splits = splitsFile(opts, manifest, labels);
   const { held, groups, independentGroups } = ensureHoldoutQuality(manifest, labels, splits);
   if (held.length !== sealDoc.heldout_cases || groups.size !== sealDoc.heldout_source_groups || independentGroups !== sealDoc.heldout_independent_groups) throw new Error('invalid_holdout_seal_counts');
-  if (!sealDoc.allowed_milestones?.includes('baseline_v1')) throw new Error('invalid_holdout_seal_milestones');
+  if (!Array.isArray(sealDoc.allowed_milestones) || !sealDoc.allowed_milestones.includes('baseline_v1') || sealDoc.allowed_milestones.some((m) => !plannedMilestones.includes(m))) throw new Error('invalid_holdout_seal_milestones');
   return sealDoc;
 }
 function seal(opts) {
@@ -160,7 +161,8 @@ function seal(opts) {
     manifest_sha256: sha256(fs.readFileSync(opts.manifest ?? defaults.manifest)),
     labels_sha256: sha256(fs.readFileSync(opts.labels ?? defaults.labels)),
     splits_sha256: sha256(fs.readFileSync(opts.splits ?? defaults.splits)),
-    source_group_ids: [...groups].sort(), allowed_milestones: ['baseline_v1'],
+    source_group_ids: [...groups].sort(), allowed_milestones: [...plannedMilestones],
+    evaluation_policy: 'One immutable score per milestone and view. Tune on development/calibration only; final candidate configuration must be frozen before heldout inference. Retain both baseline and candidate results. Individual heldout failures must not guide same-generation tuning.',
   };
   writeOnce(opts.seal ?? defaults.seal, JSON.stringify(sealDoc, null, 2) + '\n');
   return { heldout_cases: held.length, heldout_source_groups: groups.size, heldout_independent_groups: independentGroups, seal_path: opts.seal ?? defaults.seal };
@@ -171,13 +173,13 @@ function score(opts) {
   const { manifest, labels } = read(opts);
   const splits = splitsFile(opts, manifest, labels);
   if (opts.split === 'held_out') {
-    if (!opts.explicit_heldout || opts.milestone !== 'baseline_v1') throw new Error('heldout_requires_explicit_baseline_milestone');
+    if (!opts.explicit_heldout || !plannedMilestones.includes(opts.milestone)) throw new Error('heldout_requires_explicit_frozen_milestone');
     const sealDoc = checkedSeal(opts);
     if (!sealDoc.allowed_milestones?.includes(opts.milestone)) throw new Error('heldout_milestone_not_frozen');
     const runMarker = path.join(local, 'heldout_runs', `${heldoutRunKey(sealDoc, opts.milestone, opts.view)}.json`);
     if (fs.existsSync(runMarker)) throw new Error('heldout_milestone_already_scored');
   }
-  const selected = manifest.filter((r) => splits.assignments[r.case_id] === opts.split && r.view_eligibility[opts.view]);
+  const selected = manifest.filter((r) => r.state === 'ready' && splits.assignments[r.case_id] === opts.split && r.view_eligibility[opts.view]);
   if (!selected.length) throw new Error('empty_score_slice');
   const byLabel = new Map(labels.map((l) => [l.case_id, l]));
   const observations = parseJsonl(opts.observations);

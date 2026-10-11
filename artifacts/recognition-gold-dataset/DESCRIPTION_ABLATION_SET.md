@@ -1,3 +1,3 @@
-# Description-ablation set
+# Description ablation coverage
 
-109 accepted cases have actual DESCRIPTION_HIDDEN input. 55 accepted cases are explicitly audited as description-revealed, out of 62 such inventory candidates. These counts measure different things. See [evidence rules and actual view counts](DESCRIPTION_ABLATION_REPORT.md). Ordinary visual-only preserves pixel text; the scene-only subset is reported separately. Baselines were not run.
+208 READY cases have materialized DESCRIPTION_HIDDEN inputs; 109 are explicitly audited description-revealed. 68 are strong scene-only exact cases. See DESCRIPTION_ABLATION_REPORT.md. These are evidence counts, not accuracy results.

@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "frozen_before_any_new_paid_inference": true,
+  "date": "2026-10-10",
+  "starting_commit": "6cb3084d4bea4357610a028e613db41fdf99a3b7",
+  "priority": ["correct_autonomous_resolution_and_safety", "latency_to_correct_result", "cost_per_correct_autonomous_result"],
+  "baseline": {
+    "recognition_path": "current repaired worker provider, automatic deep wrapper, grounded evidence, ordinary resolver and shared authoritative finalization planner",
+    "gemini_model": "gemini-3.5-flash-lite",
+    "automatic_deep": true,
+    "deep_model": "gpt-5.6-sol",
+    "frame_schedule": "runtime 1-second schedule capped at 24, nearest retained timestamps, production perceptual deduplication",
+    "deep_frame_selection": "6 diverse frames, current broad recovery if zero specific hypotheses",
+    "decision_context": "An authorized autosave user with a valid audit record; this is a fixed evaluation context, not a claim that every deployed user is allowlisted.",
+    "initial_boundary": "Retained timed frames and already-retained transcript through server finalization planning. Acquisition, fresh ASR, queueing, database I/O and client rendering are excluded and must not be reported as measured end-to-end production latency.",
+    "raw_media_extension": "Neutral stripped source video may be added through immutable hash-linked derivatives for separate ASR/frame experiments. Compare like-for-like evidence and include preparation costs/times. Canonical sealed labels and split assignments stay unchanged."
+  },
+  "mandatory_safety_gates": [
+    "No newly wrong confident autonomous result on any paired development, calibration or sealed comparison.",
+    "Preserve source-geography, entity-role, exact-branch and server-owned confidence safeguards.",
+    "Failed jobs cannot become confident outputs.",
+    "No observed loss in multi-place exact autonomous sets on the sealed comparison.",
+    "Retain review for insufficient or contradictory evidence.",
+    "Include every attempted case, all failed calls and incomplete multi-place outputs in denominators and accounting."
+  ],
+  "winner_evidence": {
+    "accuracy_improvement": "Positive lower endpoint of a paired 95% connected source/place-group bootstrap interval for correct autonomous resolution delta, plus all safety gates.",
+    "performance_improvement": "Same or better observed autonomous decisions, all safety gates, and a paired 95% interval excluding no improvement for latency or cost. Suggested material point targets: at least20% p90 latency reduction or at least10% cost-per-correct-autonomous-result reduction.",
+    "no_equivalence_overclaim": "Identical observed decisions do not prove population equivalence. Report finite-sample uncertainty and observed error counts; never infer99% precision from a small zero-error sample.",
+    "statistical_unit": "Connected source/repost/near-duplicate/place components; keep all views of one source grouped.",
+    "baseline_and_final_holdout": "Only baseline_v1 and final_candidate_v1 per declared view. Freeze final candidate policy/config before opening final holdout results. No individual held-out failure tuning within this generation.",
+    "development": "Architecture, features and supervised fit use development only; thresholds use calibration only. Collect a fresh generation if held-out findings require redesign."
+  },
+  "architectures": ["deterministic_rules", "calibrated_scoring", "small_supervised_router", "hybrid_rules_and_learned_router"],
+  "standalone_ablations": ["text_metadata", "adaptive_frames", "selective_asr", "selective_ocr", "places_candidate_generation", "deep_escalation", "retrieval", "multi_place_temporal_handling"],
+  "views": ["full", "description_hidden", "visual_only", "text_only", "other_eligible_views_when_informative"],
+  "paid_budget": {
+    "maximum_new_usd": 50,
+    "lower_project_limit_found": false,
+    "dataset_construction_paid_spend_usd": 0,
+    "prebatch": "Freeze expected calls/providers/cost and hard worst-case including retries before dispatch.",
+    "accounting": "Provider usage/request units times frozen published tariffs. Invoice spend is separately unknown unless billing evidence is available; free caps, credits and taxes are not assumed.",
+    "guard": "Persist per-request reservation before dispatch, retain unknown reservations, serialize batches, enforce cumulative cap and stop further paid work on unresolved charges."
+  },
+  "deployment": "Development-only integration after a measured winner and regression checks. Production and Nearr1.5 are out of scope."
+}

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "status": "not_run",
-  "reason": "completion_gates_failed_and_no_sealed_holdout",
-  "seal_created": false,
-  "held_out_cases": 0,
+  "reason": "baseline_pending",
+  "seal_created": true,
+  "held_out_cases": 62,
   "baseline_observations": 0,
   "metrics": null
 }

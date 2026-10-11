@@ -1,7 +1,7 @@
-# Verified no-place set
+# No-place set
 
-Accepted count: **39**. Target: 25; remaining: **0**. Snapshot 2026-10-09T21:14:03.025Z.
+Snapshot 2026-10-11T00:33:08.172Z: **46 READY**. Full sampled source review distinguishes no identifiable place from uncertain venue identity. A named venue insert remains a positive candidate. Fresh negative reviews include local audio-audit provenance where retained.
 
-Mostly instructional/product close-up videos; category bias is explicit. Ordinary failure to identify a distinctive site does not establish a negative.
+Frozen READY allocation: 112 development, 34 calibration and 62 held out. Holdout contains 60 independent source/place components.
 
-Per-case truth and adjudication are private. All current cases are development; no sealed-holdout or baseline performance claim. See [completion gate](DATASET_COMPLETION_GATE.md).
+Canonical manifest, labels, source identities, complete captions, media, review packets, mappings and split membership remain private outside Git or in the ignored local evaluation directory. Public reports contain aggregate statistics. The preserved public source-history files and 207-row evidence CSV are not the runnable benchmark.

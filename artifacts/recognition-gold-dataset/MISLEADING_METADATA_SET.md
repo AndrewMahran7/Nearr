@@ -1,7 +1,7 @@
 # Misleading metadata set
 
-Accepted count: **8**. Target: 25; remaining: **17**. Snapshot 2026-10-09T21:14:03.025Z.
+Snapshot 2026-10-11T00:33:08.172Z: **26 READY**. Accepted flags require source-specific role/location conflict established through depiction and independent proof. Broad marketing alone is insufficient.
 
-Accepted only when the depicted identity or justified no-place conclusion is independently established. Suspicious but unresolved captions remain candidates.
+Frozen READY allocation: 112 development, 34 calibration and 62 held out. Holdout contains 60 independent source/place components.
 
-Per-case truth and adjudication are private. All current cases are development; no sealed-holdout or baseline performance claim. See [completion gate](DATASET_COMPLETION_GATE.md).
+Canonical manifest, labels, source identities, complete captions, media, review packets, mappings and split membership remain private outside Git or in the ignored local evaluation directory. Public reports contain aggregate statistics. The preserved public source-history files and 207-row evidence CSV are not the runnable benchmark.

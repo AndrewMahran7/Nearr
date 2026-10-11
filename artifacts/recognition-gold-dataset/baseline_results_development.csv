@@ -1,2 +1,2 @@
 split,status,reason,source_candidates,ready_full_cases,observations,correct_autonomous_rate,cost_per_correct_usd
-development,not_run,completion_slice_and_sealed_holdout_gates_failed,207,109,0,,
+development,not_run,baseline_pending,251,112,0,,

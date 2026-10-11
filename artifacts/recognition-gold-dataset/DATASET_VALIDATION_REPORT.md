@@ -1,27 +1,34 @@
 # Final local validation
 
-Completed 2026-10-09 at 21:15:12 UTC against a fixed collection snapshot: **207 posts, 109 READY, 196 complete-timeline visual reviews**. The canonical files did not change during this audit. This is a collection verification snapshot, not a sealed holdout.
+**DATASET SEALED; BASELINE NOT RUN. Snapshot 2026-10-11T00:33:08.172Z.** 347 canonical posts, 208 HIGH-confidence READY, 336 complete sampled-timeline reviews. READY classes: VERIFIED_EXACT_SINGLE: 124, VERIFIED_MULTI: 36, KNOWN_NEGATIVE: 46, VERIFIED_REGION_ONLY: 2.
+
+Frozen READY allocation: 112 development, 34 calibration and 62 held out. Holdout contains 60 independent source/place components.
 
 | Check | Result |
 | --- | --- |
-| Manifest and label Draft 2020-12 schemas, including formats | 0 errors |
-| Source MP4 SHA-256 | 196 verified; 1,082,136,670 bytes |
-| Retained original-pixel frame SHA-256 | 3,231 verified; 405,386,438 bytes |
-| READY reviewer identities, frame timestamps and segment bounds | All 109 pass; at least two distinct reviewers each |
-| Complete multi coordinates and coordinate sources | 15 videos / 61 depicted places; 0 gaps |
-| Expected evidence views and allowlisted inference payload equality | All 452 inputs match; 0 missing or unexpected views |
-| Neutral materialized JPEGs, mapping/hash/file inventories | 4,852 verified frame references; no EXIF/XMP/Photoshop metadata |
-| Private identity/path fields and cache access in inference inputs | 0 leaks found; candidate caches disabled |
-| Dataset tooling tests | 22 passed, 0 failed |
-| Application/recognition changes, provider calls, baseline calls | None |
+| Manifest/labels Draft2020-12 schemas and formats | 0 |
+| Original source MP4 hashes checked | 336 |
+| Retained selected-frame hashes checked | 10546 |
+| Source/frame integrity errors | 0 |
+| Input views matched to current inference payload | 886 |
+| Input/mapping/hash/private-field errors | 0 |
+| Neutral materialized JPEG files checked | 27246 |
+| READY cases missing two reviewer IDs | 0 |
+| Timestamp/segment integrity errors | 0 |
+| Complete multi cases / depicted places | 36 / 126 |
+| Missing multi coordinates | 0 |
 
-Current evidence views: FULL 109, DESCRIPTION_HIDDEN 109, LOCATION_HIDDEN 13, VISUAL_AUDIO 4, VISUAL_ONLY 109, TEXT_ONLY 108. Authentic creator text in permitted modalities and text embedded in video pixels are intentional evidence, not label-store leakage. Only 22 cases qualify as strong scene-only exact recognition examples.
+All source/selected-frame checks refer to saved bytes. Eleven historical cases lack saved source media/hashes and remain outside READY. All current payloads include neutral source timing. Cache access is disabled; private labels, paths, IDs and split records remain outside inference input folders. Authentic creator text and text visible in pixels are permitted evidence.
 
-Canonical SHA-256 fingerprints:
+Canonical snapshot SHA-256 fingerprints:
 
-- Private manifest: `1458cc737ddfcf7cbf3cfd6602380e0db262d019b94ab5232148ca93c5ed0abe`
-- Private labels: `d544b4f89b84f52ca8ed36a332efbd298c09c5ffe466c9106896ddef898ee059`
-- Private splits: `00f04592d21c6040f69908f87c5dcf377ac8f8b834abb7e16166d867dc4737f1`
-- Current materialization batch: `766b52e3a0c9d256cea567839a5df7f7f64e477b8eb09a5047f146ce31fb7908`
+- benchmark_manifest_private.jsonl: `6114876eced18915babed6e049e5cdae2ec16c1b6b139888aaf785fecbcd11d8`
+- benchmark_labels_private.jsonl: `b5b72faca6d3a9eba14944e948a86489956da06c202881173627896bae1b08f7`
+- benchmark_splits_private.json: `f00b41b075c15a78af6a945fd6c95a69ad10c994170d073d88ab6bd356fb148f`
+- materialization_batch_private.json: `3d4abe4f771103e9f586e56414609a37abf9db31a0579e48676385ee3f2222d0`
 
-Detailed checks, original/source hash records and per-input results remain in the external private `audit_final_verification` directory and recovery package. The public digest list reveals no labels or captions. Git whitespace checks passed. No inference adapter or recognition model was run. Dataset completion remains **NOT READY**: see [DATASET_COMPLETION_GATE.md](DATASET_COMPLETION_GATE.md).
+Current input hash aggregate: `83a432a781c18ca03b7f648f825c30567a639d3664d6379e6e3bde9c072f71da`. The private audit retains complete inventories and validation details; public reports contain no fresh source identities or truth labels.
+
+Separate agent contexts performed source-timeline reviews and reference reconciliation; they are not independent human annotators. Review density varies among historical 1–2 fps packets and newer 4 fps packets. Strict heldout multis additionally require retained transition/tail review. No continuous audiovisual playback is claimed. Initial source-only freezes and later reference exposure are recorded separately; source captions alone do not establish depicted identity.
+
+No recognition provider call or model baseline was performed by dataset preparation. Code testing and later experiments are reported by their own validated records. Collection gates pass and the strict split is sealed; see DATASET_COMPLETION_GATE.md and SEALED_HOLDOUT_MANIFEST.md.

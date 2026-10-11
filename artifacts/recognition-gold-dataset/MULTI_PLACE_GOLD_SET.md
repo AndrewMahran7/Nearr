@@ -1,7 +1,7 @@
-# Multi-place set
+# Complete multi-place set
 
-Accepted count: **15**. Target: 30; remaining: **15**. Snapshot 2026-10-09T21:14:03.025Z.
+Snapshot 2026-10-11T00:33:08.172Z: **36 READY**. 126 depicted-place appearances; 0 missing coordinates. Accepted sets distinguish depicted from mentioned-only places, with approximate segments and mapped feature/branch points.
 
-Accepted depicted appearances: 61. See [full collection report](MULTI_PLACE_COLLECTION_REPORT.md).
+Frozen READY allocation: 112 development, 34 calibration and 62 held out. Holdout contains 60 independent source/place components.
 
-Per-case truth and adjudication are private. All current cases are development; no sealed-holdout or baseline performance claim. See [completion gate](DATASET_COMPLETION_GATE.md).
+Canonical manifest, labels, source identities, complete captions, media, review packets, mappings and split membership remain private outside Git or in the ignored local evaluation directory. Public reports contain aggregate statistics. The preserved public source-history files and 207-row evidence CSV are not the runnable benchmark.

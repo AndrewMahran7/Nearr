@@ -99,6 +99,8 @@ test('evidence views keep only intended modalities and exclude paths, labels and
   const serialized = JSON.stringify(visual);
   assert.doesNotMatch(serialized, /Cala|Varques|instagram|example-123|private|source_url|place_id|candidate|case_id|answer_spans|ground_truth|debug_context/i);
   assert.deepEqual(visual.media.frames, ['frames/000.jpg', 'frames/001.jpg', 'frames/002.jpg']);
+  assert.equal(visual.media.duration_seconds, 10);
+  assert.deepEqual(visual.media.frame_timestamps_seconds, [1, 5, 9]);
   assert.equal(visual.cache_policy, 'disabled');
   assert.ok(Object.values(visual.evidence).every((x) => x === null));
   const visualAudio = inferencePayload(r, l, 'visual_audio');
@@ -108,6 +110,7 @@ test('evidence views keep only intended modalities and exclude paths, labels and
   assert.doesNotMatch(JSON.stringify(visualAudio), /instagram|source_url|cala\.varques|example-123|private/i);
   const text = inferencePayload(r, l, 'text_only');
   assert.deepEqual(text.media.frames, []);
+  assert.deepEqual(text.media.frame_timestamps_seconds, []);
   assert.match(text.evidence.caption, /Cala Varques/);
 });
 
@@ -222,6 +225,54 @@ test('single score requires exact physical identity and excludes review from aut
   assert.deepEqual(summary.autonomous_precision, { numerator: 1, denominator: 2, rate: 0.5 });
   assert.deepEqual(summary.wrong_confident, { numerator: 1, denominator: 3, rate: 1 / 3 });
   assert.equal(summary.latency.correct_autonomous.p90, 100);
+  assert.deepEqual(summary.autonomous_coverage, { numerator: 2, denominator: 3, rate: 2 / 3 });
+  assert.equal(summary.review_rate.rate, 1 / 3);
+  assert.ok(summary.confidence_intervals.autonomous_precision.lower < 0.5);
+  assert.ok(summary.confidence_intervals.autonomous_precision.upper > 0.5);
+});
+
+test('coordinate-anchored branch cannot pass on brand and city alone', () => {
+  const branch = { name: 'Cafe Chain', country: 'USA', city: 'New York', branch_disambiguation: true, coordinates: { lat: 40.7, lng: -74.0 }, accepted_radius_meters: 50 };
+  const unanchored = { name: 'Cafe Chain', country: 'USA', city: 'New York' };
+  assert.equal(placeMatches(unanchored, branch), false);
+  assert.equal(placeMatches({ ...unanchored, coordinates: { lat: 40.7, lng: -74.0 } }, branch), true);
+  assert.equal(placeMatches({ ...unanchored, coordinates: { lat: 40.72, lng: -74.0 } }, branch), false);
+  assert.equal(placeMatches({ ...unanchored, coordinates: { lat: NaN, lng: -74.0 } }, branch), false);
+});
+
+test('provider coordinates prove physical identity without invented geography fields', () => {
+  const truth = { name: 'Named Waterfall', country: 'USA', region: 'Oregon', city: 'Trailhead', coordinates: { lat: 45.5, lng: -122.0 }, accepted_radius_meters: 60 };
+  const provider = { name: 'Named Waterfall', country: null, city: null, region: null, coordinates: { lat: 45.5, lng: -122.0 } };
+  assert.equal(placeMatches(provider, truth), true);
+  assert.equal(placeMatches({ ...provider, country: 'United States' }, truth), true);
+  assert.equal(placeMatches({ ...provider, country: 'Canada' }, truth), false);
+  assert.equal(placeMatches({ ...provider, coordinates: { lat: 45.51, lng: -122.0 } }, truth), false);
+  assert.equal(placeMatches({ ...provider, coordinates: null }, truth), false);
+  const r = manifest(), l = label({ expected_places: [{ ...truth, role: 'depicted' }] });
+  const scored = scoreOne(r, l, observation(r, 'full', { places: [provider], candidates: [provider], geography: null }), 'development', 'full');
+  assert.equal(scored.correct_autonomous, true);
+  assert.equal(scored.country_checkable, false);
+  assert.equal(summarizeScores([scored]).geography_check_coverage.country.rate, 0);
+});
+
+test('hard exact cases remain in primary denominator and failed cases remain submitted', () => {
+  const r = manifest(), hard = label({ reasonable_autonomous_expected: false });
+  const failed = scoreOne(r, hard, observation(r, 'full', { status: 'failed', autonomous: false, places: [], candidates: [] }), 'development', 'full');
+  const good = scoreOne(r, label(), observation(r, 'full'), 'development', 'full');
+  const summary = summarizeScores([good, failed]);
+  assert.deepEqual(summary.correct_autonomous_resolution, { numerator: 1, denominator: 2, rate: 0.5 });
+  assert.equal(summary.single.correct_autonomous.rate, 0.5);
+  assert.equal(summary.failure_rate.rate, 0.5);
+  assert.equal(summary.candidate_recall.n.macro, 0.5);
+});
+
+test('recovering a multi set without detecting multiple places is not autonomous success', () => {
+  const r = manifest(), other = { ...pred, place_id: 'google:other', name: 'Other Place' };
+  const l = label({ label_class: 'VERIFIED_MULTI', expected_places: [label().expected_places[0], { ...label().expected_places[0], ...other }] });
+  const row = scoreOne(r, l, observation(r, 'full', { places: [pred, other], candidates: [pred, other], multi_place_detected: false }), 'development', 'full');
+  assert.equal(row.exact_set, true);
+  assert.equal(row.correct_autonomous, false);
+  assert.equal(row.wrong_confident, true);
 });
 
 test('branch name alone is insufficient when branch location cannot be checked', () => {
@@ -256,6 +307,12 @@ test('multi scores maximum distinct place assignment, extra and missed places', 
   assert.equal(summarizeScores([failed]).multi.place_precision.rate, null);
   assert.equal(summarizeScores([failed]).multi.place_recall.rate, 0);
   assert.equal(summarizeScores([failed]).multi.exact_set.rate, 0);
+  const interrupted = scoreOne(r, l, { ...o, status: 'failed', autonomous: false, places: [], candidates: [], multi_place_detected: null }, 'development', 'full');
+  const interruptedSummary = summarizeScores([interrupted]);
+  assert.equal(interruptedSummary.cases, 1);
+  assert.equal(interruptedSummary.failure_rate.rate, 1);
+  assert.equal(interruptedSummary.multi.detection.rate, 0);
+  assert.equal(interruptedSummary.correct_autonomous_resolution.rate, 0);
   const review = scoreOne(r, l, { ...o, status: 'review', autonomous: false, places: o.places.slice(0, 2) }, 'development', 'full');
   assert.equal(summarizeScores([review]).multi.place_precision.rate, null);
   assert.equal(summarizeScores([review]).multi.review_proposal_exact_set.rate, 1);
@@ -404,7 +461,7 @@ test('CLI scores a development observation and rejects an unsealed held-out atte
     assert.doesNotMatch(fs.readFileSync(resultFile, 'utf8'), /Cala Varques|google:123/);
     const held = spawnSync(process.execPath, [...command.slice(0, command.indexOf('--split')), '--split', 'held_out', ...command.slice(command.indexOf('--view'))], { cwd: root, encoding: 'utf8', windowsHide: true });
     assert.notEqual(held.status, 0);
-    assert.match(held.stderr, /heldout_requires_explicit_baseline_milestone|ineligible_holdout/);
+    assert.match(held.stderr, /heldout_requires_explicit_frozen_milestone|ineligible_holdout/);
     const heldSplitFile = path.join(scratch, 'held-splits.json'), fakeSealFile = path.join(scratch, 'fake-seal.json');
     fs.writeFileSync(heldSplitFile, JSON.stringify({ schema_version: 1, assignments: { [caseId]: 'held_out' } }));
     fs.writeFileSync(fakeSealFile, JSON.stringify({ heldout_cases: 1, heldout_source_groups: 1, manifest_sha256: sha256(fs.readFileSync(manifestFile)), labels_sha256: sha256(fs.readFileSync(labelsFile)), splits_sha256: sha256(fs.readFileSync(heldSplitFile)), allowed_milestones: ['baseline_v1'] }));

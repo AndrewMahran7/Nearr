@@ -24,6 +24,7 @@ expo-config.json
 # Python virtual environments
 .venv/
 **/.venv/
+__pycache__/
 
 # Local scratch / one-off developer test artifacts (e.g. Phase 2 reel
 # inspection). Never commit downloaded media, frames, transcripts, or any
