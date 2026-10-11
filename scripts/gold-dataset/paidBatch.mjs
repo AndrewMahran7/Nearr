@@ -48,6 +48,39 @@ export function accountExperiments(root) {
   return result;
 }
 
+/** Reconcile budget exposure, never billing: a completed batch may retain a
+ * fixed-tariff request whose response was lost. Carry its entire reservation.
+ * Token-priced calls, unfinished batches and unlisted attempts still block. */
+export function verifyFixedRequestCarry(root, file, account) {
+  const receipt = parse(file);
+  if (receipt.version !== 1 || receipt.scope !== 'budget_admission_only' || !receipt.reason ||
+      !Array.isArray(receipt.attempts) || receipt.attempts.length !== account.unresolved_attempts) fail('invalid_fixed_request_carry');
+  const seen = new Set(); let reserved = 0;
+  for (const item of receipt.attempts) {
+    if (!/^[a-z0-9][a-z0-9_-]{0,99}$/.test(item.batch) || !Number.isInteger(item.sequence) ||
+        !account.batches.some((batch) => batch.batch === item.batch && batch.unresolved_attempts > 0) ||
+        seen.has(`${item.batch}:${item.sequence}`)) fail('invalid_fixed_request_carry');
+    seen.add(`${item.batch}:${item.sequence}`);
+    const dir = path.join(root, item.batch), ledger = path.join(dir, 'runtime/provider-ledger.jsonl');
+    if (!fs.existsSync(path.join(dir, 'batch-completion.json')) || sha(fs.readFileSync(ledger)) !== item.ledger_sha256) fail('fixed_carry_requires_immutable_completed_batch');
+    const entry = fs.readFileSync(ledger, 'utf8').split('\n').filter((s) => s.trim()).map(JSON.parse)
+      .filter((row) => row.sequence === item.sequence).at(-1);
+    const rates = parse(path.join(dir, 'config.json')).budget.rates;
+    const rate = rates.find((r) => sha(JSON.stringify(r)) === entry?.rate_card_sha256);
+    if (!entry || entry.status !== 'unknown' || entry.dispatch_attempted !== true || entry.cost_usd !== null ||
+        !['provider_aborted_charge_unknown', 'provider_transport_charge_unknown'].includes(entry.failure_code) ||
+        !['google_text_search', 'google_legacy_search', 'google_geocode'].includes(entry.operation) ||
+        !rate || rate.operation !== entry.operation || !finite(rate.requestUsd) || rate.requestUsd <= 0 ||
+        rate.requestUsd !== entry.reservation_usd || rate.maxRequestUsd !== entry.reservation_usd ||
+        item.request_sha256 !== entry.request_sha256 || item.reserved_upper_usd !== entry.reservation_usd) fail('unbounded_or_unmatched_fixed_request_carry');
+    reserved += entry.reservation_usd;
+  }
+  if (account.batches.some((batch) => receipt.attempts.filter((item) => item.batch === batch.batch).length !== batch.unresolved_attempts)) fail('fixed_carry_attempt_set_mismatch');
+  if (Math.abs(reserved - account.reserved_unknown_usd) > 1e-12) fail('fixed_carry_reservation_mismatch');
+  return { receipt_sha256: sha(fs.readFileSync(file)), carried_upper_usd: reserved,
+    billing_still_unknown: true, treatment: 'Full reservation remains in cumulative committed exposure; no cost is imputed into provider ledgers.' };
+}
+
 /** Do not inherit application/DB credentials. Only explicit provider keys enter the child. */
 export function providerEnvironment(envText, parent = process.env) {
   const child = {};
@@ -81,7 +114,7 @@ export function verifyRuntimeSnapshot(root) {
   return sha(fs.readFileSync(receiptFile));
 }
 
-export function launchBatch({ root, batch, inputsFile, configFile, credentialEnv, tsxLoader, expected, runtimeRoot, projectCapUsd = 50, execute = false, child = spawnSync }) {
+export function launchBatch({ root, batch, inputsFile, configFile, credentialEnv, tsxLoader, expected, runtimeRoot, fixedRequestCarry, projectCapUsd = 50, execute = false, child = spawnSync }) {
   if (!/^[a-z0-9][a-z0-9_-]{0,99}$/.test(batch)) fail('invalid_batch_name');
   if (!finite(projectCapUsd) || projectCapUsd > 50) fail('authorized_cap_cannot_exceed_50_usd');
   if (!expected || !finite(expected.usd) || !Number.isInteger(expected.calls) || expected.calls < 1 || !Array.isArray(expected.providers) || !expected.providers.length || !expected.basis) fail('prebatch_expected_estimate_required');
@@ -96,7 +129,8 @@ export function launchBatch({ root, batch, inputsFile, configFile, credentialEnv
   fs.writeFileSync(lock, JSON.stringify({ pid: process.pid, batch, created_at: new Date().toISOString() }));
   try {
     const account = accountExperiments(root), committed = account.charged_rate_card_usd + account.reserved_unknown_usd;
-    if (account.unresolved_attempts) fail('unresolved_paid_attempts_require_reconciliation');
+    if (account.unresolved_attempts && !fixedRequestCarry) fail('unresolved_paid_attempts_require_reconciliation');
+    const carry = account.unresolved_attempts ? verifyFixedRequestCarry(root, fixedRequestCarry, account) : null;
     if (committed + config.budget.maxUsd > projectCapUsd + 1e-12) fail('cumulative_experiment_budget_exceeded');
     const repo = runtimeRoot ? path.resolve(runtimeRoot) : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
     const snapshotHash = runtimeRoot ? verifyRuntimeSnapshot(repo) : null;
@@ -104,6 +138,7 @@ export function launchBatch({ root, batch, inputsFile, configFile, credentialEnv
     const configBytes = fs.readFileSync(configFile), inputBytes = fs.readFileSync(inputsFile);
     const plan = { version: 1, batch, created_at: new Date().toISOString(), input_count: inputs.length, inputs_sha256: sha(inputBytes), configuration_sha256: sha(configBytes), expected_calls: expected.calls, expected_providers: expected.providers, expected_usd: expected.usd, expected_basis: expected.basis, worst_case_including_retries_usd: config.budget.maxUsd, worst_case_calls: config.budget.maxCalls, cumulative_prior_committed_usd: committed, authorized_total_cap_usd: projectCapUsd, run_directory: 'runtime', invoice_cost: 'Unknown; accounting uses actual provider usage multiplied by frozen rates, before credits/tax/discounts.', canonical_data_reads: false };
     plan.runtime_snapshot_sha256 = snapshotHash;
+    if (carry) plan.fixed_request_carry = carry;
     if (!execute) return { dry_run: true, plan, prior_account: account };
     if (config.budget.allowPaidRequests !== true) fail('paid_requests_disabled');
     const directory = path.join(root, batch);

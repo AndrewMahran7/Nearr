@@ -7,6 +7,7 @@
 // and never the final authority — Nearr's deterministic resolver decides.
 
 import { readFile } from 'node:fs/promises';
+import { recognitionPrompt } from '../prompts/adaptivePlaceEvidencePrompt.js';
 import type { WorkerConfig } from '../config/env.js';
 import type { OcrSegment, SelectedFrame, TranscriptSegment } from '../types/media.js';
 import type { PremiumRecognitionExecution } from '../premium/premiumRecognitionTypes.js';
@@ -21,7 +22,6 @@ import {
   type EvidenceParseDiagnostics,
 } from '../types/evidence.js';
 import {
-  PLACE_EVIDENCE_SYSTEM_PROMPT,
   PROMPT_VERSION,
   buildUserContext,
 } from '../prompts/placeEvidencePrompt.js';
@@ -137,6 +137,8 @@ export type AnalyzeOutput = {
     invoked: boolean;
     attempts: number;
     recoveryInvoked: boolean;
+    recoverySkippedNoNewEvidence?: boolean;
+    emptyEvidenceReview?: boolean;
     noUsableSourceEvidence: boolean;
     rejectionReason: string | null;
     normalResultSpecificity: string;
@@ -442,10 +444,11 @@ function parseTargetedAiNoteResponse(
 
 class GeminiModel implements ModelProvider {
   readonly name = 'gemini';
-  constructor(private cfg: WorkerConfig) {}
+  constructor(private cfg: WorkerConfig, private closedSignalVocabulary = false) {}
 
   async analyze(input: AnalyzeInput): Promise<AnalyzeOutput> {
-    const promptVersion = input.targetPlace ? AI_NOTE_PROMPT_VERSION : PROMPT_VERSION;
+    const recognition = recognitionPrompt(this.closedSignalVocabulary);
+    const promptVersion = input.targetPlace ? AI_NOTE_PROMPT_VERSION : recognition.version;
     if (!this.cfg.geminiApiKey) {
       if (input.targetPlace) throw new MediaError('provider_unavailable', 'gemini_missing_key');
       return {
@@ -488,7 +491,7 @@ class GeminiModel implements ModelProvider {
         });
 
     const parts: unknown[] = [{
-      text: input.targetPlace ? userText : `${PLACE_EVIDENCE_SYSTEM_PROMPT}\n\n${userText}`,
+      text: input.targetPlace ? userText : `${recognition.prompt}\n\n${userText}`,
     }];
     const sentTimestampsSeconds: number[] = [];
     for (const frame of input.frames.slice(0, this.cfg.maxSelectedFrames)) {
@@ -656,8 +659,9 @@ class GeminiModel implements ModelProvider {
 
 export function selectModelProvider(
   cfg: WorkerConfig,
+  options: { closedSignalVocabulary?: boolean } = {},
 ): ModelProvider {
-  const base = cfg.analysisProvider === 'gemini' ? new GeminiModel(cfg) : new HeuristicModel();
+  const base = cfg.analysisProvider === 'gemini' ? new GeminiModel(cfg, options.closedSignalVocabulary === true) : new HeuristicModel();
   return new MomentConsolidationModel(base);
 }
 

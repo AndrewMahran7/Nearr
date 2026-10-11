@@ -154,6 +154,8 @@ test('missing cache-write usage and unexpected tool output cannot produce a comp
 test('verified pilot configuration validates with paid requests disabled and unchanged model generation ceilings',async()=>{
   const run=JSON.parse(await readFile('../../scripts/gold-dataset/configs/retained-baseline-pilot-2026-10-10.json','utf8')) as GoldRunConfiguration;
   assert.equal(configuredWorker(run).geminiModel,'gemini-3.5-flash-lite');assert.equal(run.budget.allowPaidRequests,false);
+  const bounded=structuredClone(run);bounded.budget.rates.find((r)=>r.operation==='openai_responses')!.inputTokenPolicy='sol_high_image_patch_bound_v1';
+  assert.equal(configuredWorker(bounded).geminiModel,'gemini-3.5-flash-lite');
   const sol=run.budget.rates.find((r)=>r.operation==='openai_responses')!;
   assert.equal(sol.outputTokenPolicy,'verified_provider_ceiling');assert.equal(sol.cacheWriteInputUsdPerMillion,5);assert.equal(sol.longContext?.aboveInputTokens,272000);
   assert.equal(run.budget.rates.find((r)=>r.operation==='google_legacy_search')?.requestUsd,0.04);

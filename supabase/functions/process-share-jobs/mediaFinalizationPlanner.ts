@@ -16,7 +16,7 @@ import { renderMediaEvidenceCaption, mediaEvidenceExactIdentityStrength, mediaEv
 import { evaluateMediaAutoSave, MEDIA_AUTO_SAVE_RULE_VERSION } from './mediaAutoSaveGate.ts';
 import { planFromResolverDecision } from './decisionMapping.ts';
 import { planPostResolve } from './mediaFinalizePlan.ts';
-import { evaluateLegacyCandidateIdentity } from './adaptiveLegacyIdentity.ts';
+import { evaluateLegacyCandidateIdentity, evaluateLegacyParentCategory } from './adaptiveLegacyIdentity.ts';
 
 export function safeCandidate(c: any, aiNote: string | null = null) {
   const roleLimited = Array.isArray(c.reasons) && c.reasons.some((reason: unknown) =>
@@ -398,6 +398,7 @@ export function planLegacyMediaFinalization(args: {
   groundedEvidence: MediaPlaceEvidence;
   sourceGeography: SourceGeographyEvidence | null;
   requireCandidateIdentity?: boolean;
+  vetoParentCategory?: boolean;
 }) {
   const { ordinaryResult: result, groundedEvidence, sourceGeography } = args;
   const plan = planFromResolverDecision({
@@ -410,7 +411,8 @@ export function planLegacyMediaFinalization(args: {
   });
   const legacyExactIdentityStrength = mediaEvidenceExactIdentityStrength(groundedEvidence);
   const identityChecks = args.requireCandidateIdentity
-    ? (result.candidates ?? []).map((candidate: any) => evaluateLegacyCandidateIdentity(candidate, groundedEvidence)) : null;
+    ? (result.candidates ?? []).map((candidate: any) => evaluateLegacyCandidateIdentity(candidate, groundedEvidence))
+    : args.vetoParentCategory ? (result.candidates ?? []).map((candidate: any) => evaluateLegacyParentCategory(candidate, groundedEvidence)) : null;
   const legacyMediaCompletion = planAutomaticCompletion(
     (result.candidates ?? []).map((candidate: any, index: number) => ({
       ...candidate,
@@ -488,6 +490,11 @@ export type MediaFinalizationInput = {
   sourceGeography: SourceGeographyEvidence | null;
   context: FinalizationContext;
   requireLegacyCandidateIdentity?: boolean;
+  legacyParentCategoryVeto?: boolean;
+  /** Trusted worker stopping-policy flag; never inferred from model prose. */
+  deepRecoverySkippedNoNewEvidence?: boolean;
+  atomicMultiPlace?: boolean;
+  originalMultiPlaceEvidence?: MediaPlaceEvidence;
 };
 
 export type MediaFinalizationResult = {
@@ -507,7 +514,7 @@ export type MediaFinalizationResult = {
  * performed provider resolution, evidence grounding, and lifecycle/retry checks.
  * No confidence shortcut or benchmark-only acceptance policy belongs here.
  */
-export function planMediaFinalization(input: MediaFinalizationInput): MediaFinalizationResult {
+function planMediaFinalizationBaseline(input: MediaFinalizationInput): MediaFinalizationResult {
   const sourceGeography = input.sourceGeography;
   if (input.automaticDeepRuntime) {
     const runtimePlan = premiumRuntimePlan(input.automaticDeepRuntime);
@@ -517,6 +524,10 @@ export function planMediaFinalization(input: MediaFinalizationInput): MediaFinal
     const slots = runtimePlan.candidatePayload.mentionSlots ?? [];
     const candidates = runtimePlan.candidatePayload.candidates ?? [];
     if (runtimePlan.outcome !== 'PREMIUM_ACTIONABLE_RESULT' || runtimePlan.rankedCandidates.length === 0) {
+      if (input.deepRecoverySkippedNoNewEvidence === true &&
+          runtimePlan.outcome === 'PREMIUM_NO_USEFUL_RESULT' && runtimePlan.rankedCandidates.length === 0) {
+        return { ...base, status: 'needs_help', reasonCodes: ['insufficient_evidence_no_new_recovery_frames'], detail: { runtimePlan } };
+      }
       return { ...base, status: 'retry', multiPlaceDetected: slots.length > 1,
         reasonCodes: [runtimePlan.outcome], detail: { runtimePlan } };
     }
@@ -557,7 +568,7 @@ export function planMediaFinalization(input: MediaFinalizationInput): MediaFinal
     };
   }
   const planned = planLegacyMediaFinalization({ ordinaryResult: result, groundedEvidence: input.groundedEvidence, sourceGeography,
-    requireCandidateIdentity: input.requireLegacyCandidateIdentity });
+    requireCandidateIdentity: input.requireLegacyCandidateIdentity, vetoParentCategory: input.legacyParentCategoryVeto });
   const autoSave = planned.post.action === 'auto_save';
   return {
     lane: 'legacy', status: autoSave ? 'auto_save' : 'needs_help',
@@ -570,4 +581,25 @@ export function planMediaFinalization(input: MediaFinalizationInput): MediaFinal
       ...(planned.post.action === 'needs_help' && planned.post.downgraded ? ['media_autosave_ineligible'] : [])],
     detail: planned,
   };
+}
+
+/** Experimental transaction boundary: partial saves cannot masquerade as a
+ * complete multi-place resolution. This can only veto existing saves. */
+export function planMediaFinalization(input: MediaFinalizationInput): MediaFinalizationResult {
+  const plan = planMediaFinalizationBaseline(input);
+  if (!input.atomicMultiPlace) return plan;
+  const sources = [input.groundedEvidence, input.originalMultiPlaceEvidence].filter(Boolean) as MediaPlaceEvidence[];
+  const multi = plan.multiPlaceDetected || sources.some((source) => source.multipleIntentionalPlaces);
+  const incomplete = sources.some((source) => source.partialPlaces?.length || source.insufficientEvidence);
+  if (!multi || (!incomplete && plan.status === 'auto_save' && plan.autonomousPlaces.length >= 2)) return plan;
+  const seen = new Set<string>();
+  const reviewCandidates = [...plan.autonomousPlaces.map((p) => p.candidate), ...plan.reviewCandidates].filter((candidate) => {
+    const id = candidate?.googlePlaceId;
+    if (!id || seen.has(id)) return false;
+    seen.add(id); return true;
+  });
+  return { ...plan, status: plan.status === 'retry' || plan.status === 'invalid' ? plan.status : 'needs_help',
+    autonomousPlaces: [], reviewCandidates, multiPlaceDetected: true,
+    reasonCodes: [...new Set([...plan.reasonCodes, 'incomplete_multi_place_set_requires_review'])],
+    detail: { ...plan.detail, atomicMultiPlace: { complete: false, originalAutonomousPlaceCount: plan.autonomousPlaces.length } } };
 }

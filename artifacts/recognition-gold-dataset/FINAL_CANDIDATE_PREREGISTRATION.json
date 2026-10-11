@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "milestone": "final_candidate_v1",
+  "frozen_at": "2026-10-11T19:40:34.098518+00:00",
+  "name": "valid-empty-review-plus-food-parent-veto-v1",
+  "baseline_milestone": "baseline_v1",
+  "view": "full",
+  "seal_sha256": "da274a511502ee94690e875435ecb896f6b477a8ee395a4552c8cfcb1e07bf5f",
+  "baseline_configuration_file_sha256": "757c79cf01fe8cbec79aaaf2e6c800b125329a9b0c409f04c6d49130e9e68ada",
+  "candidate_configuration_file_sha256": "c24b59387e0db7804f4f4ea5dc9b985bf5f0344df72d4e57d86e03f53e295284",
+  "runtime_snapshot_receipt_sha256": "09a7a1e82e64462cba5a3dcbefe09925bb478b46cc896d52e46219a1450108ea",
+  "source_sha256": {
+    "services/media-worker/src/automaticDeep/emptyEvidencePolicy.ts": "7d6529ff1f474224a69395230d371e3a053e96dace9086e483eab4f13df320a5",
+    "services/media-worker/src/evaluation/emptyEvidenceReplay.ts": "c574d819817b4b44a4b9692567ce62263749c2757974f943d3c36cc3eb315b0e",
+    "scripts/gold-dataset/replayEmptyEvidence.ts": "f29a1a4eea84e6ec035b2e8ad7172f43e1299d8b7cb2b0fcf7ba5a3bf382f89e",
+    "scripts/gold-dataset/replayTenantGuard.ts": "3335926d118df194e0c137a25ef781ff23d21346d6afeec177d3469b1fbaf905",
+    "supabase/functions/process-share-jobs/adaptiveLegacyIdentity.ts": "8c7ffc44d72078953d0d63a48c49537cdacd47b27c5e2aa1fd5895e0e0496949",
+    "supabase/functions/process-share-jobs/mediaFinalizationPlanner.ts": "d330e347b754a4266a72065d717fec852b3f090d00b95b0f5ee38f0ba7cb0cee"
+  },
+  "policy": {
+    "healthy_empty_pass": "No identities, partials or multi intent; fully valid empty schema and successful normal provider. Return review without declaring a negative.",
+    "food_parent_veto": "Existing legacy autosave may only be downgraded when food evidence resolves exclusively to a nonfood parent category.",
+    "other_paths": "Unchanged baseline, including Deep review policy and multi-place handling."
+  },
+  "evaluation": {
+    "design": "Paired common-prefix evaluation. Run the repaired baseline once on 62 heldout inputs; freeze all provider outputs. Apply both deterministic changes label-free to that immutable run, then freeze the candidate before either heldout score is opened.",
+    "cost": "Counterfactual retained measured request usage for calls that the candidate executes. Record actual experiment spending separately; do not claim replay is a new paid run.",
+    "latency": "Retain full baseline latency plus local policy overhead; credit no avoided downstream latency.",
+    "thresholds": "No fitted numeric threshold. Freeze this rule set now.",
+    "safety": "No newly wrong confident outputs, no lost correct autonomous resolutions or complete multi sets. Use 10000 connected-group bootstrap draws, seed 20261011, for cost per correct autonomous ratio.",
+    "heldout_tuning": "No changes after opening this heldout generation. Any failure requires a new development generation."
+  },
+  "development_limits": [
+    "One correct development review candidate is lost under the empty-stop rule; autonomous correct decisions are preserved.",
+    "Overall observed autonomous precision remains low; this is a prospective cost comparison, not a high-precision population claim.",
+    "Schema-enumeration combined candidate is rejected after four new wrong/incomplete multi-place saves."
+  ],
+  "paid_guard": {
+    "project_cap_usd": 50,
+    "baseline_expected_usd": 6,
+    "baseline_expected_calls": 250,
+    "baseline_worst_case_including_retries_usd": 9.5,
+    "baseline_max_calls": 1000,
+    "final_replay_new_paid_calls": 0
+  }
+}

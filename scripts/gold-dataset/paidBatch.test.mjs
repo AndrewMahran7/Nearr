@@ -4,9 +4,53 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { accountLedger, providerEnvironment, launchBatch, verifyRuntimeSnapshot } from './paidBatch.mjs';
+import { accountLedger, accountExperiments, providerEnvironment, launchBatch, verifyRuntimeSnapshot, verifyFixedRequestCarry } from './paidBatch.mjs';
 
 const line = (row) => JSON.stringify(row) + '\n';
+test('fixed-price timeout carry reserves the full upper bound without claiming settled billing', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nearr-fixed-carry-'));
+  const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+  try {
+    const prior = path.join(root, 'prior'); fs.mkdirSync(path.join(prior, 'runtime'), { recursive: true });
+    fs.writeFileSync(path.join(prior, 'batch-plan.json'), JSON.stringify({ version: 1, run_directory: 'runtime' }));
+    fs.writeFileSync(path.join(prior, 'batch-completion.json'), '{}');
+    const rate = { operation: 'google_text_search', requestUsd: .032, maxRequestUsd: .032 };
+    fs.writeFileSync(path.join(prior, 'config.json'), JSON.stringify({ budget: { rates: [rate] } }));
+    const entry = { sequence: 1, operation: rate.operation, request_sha256: 'bounded-request',
+      rate_card_sha256: hash(JSON.stringify(rate)), reservation_usd: .032, status: 'unknown',
+      cost_usd: null, dispatch_attempted: true, failure_code: 'provider_aborted_charge_unknown' };
+    const ledger = path.join(prior, 'runtime/provider-ledger.jsonl'); fs.writeFileSync(ledger, line(entry));
+    const receipt = { version: 1, scope: 'budget_admission_only', reason: 'synthetic lost response', attempts: [{
+      batch: 'prior', sequence: 1, request_sha256: entry.request_sha256, reserved_upper_usd: .032,
+      ledger_sha256: hash(fs.readFileSync(ledger)) }] };
+    const carry = path.join(root, 'carry.json'); fs.writeFileSync(carry, JSON.stringify(receipt));
+    const account = accountExperiments(root);
+    const result = verifyFixedRequestCarry(root, carry, account);
+    assert.equal(result.carried_upper_usd, .032); assert.equal(result.billing_still_unknown, true);
+    assert.equal(account.charged_rate_card_usd, 0); assert.equal(account.reserved_unknown_usd, .032);
+    const config = path.join(root, 'next.json'), inputs = path.join(root, 'inputs.json');
+    fs.writeFileSync(config, JSON.stringify({ budget: { maxUsd: 49.98, maxCalls: 5, allowPaidRequests: true } }));
+    fs.writeFileSync(inputs, '["neutral/input.json"]');
+    const args = { root, batch: 'next', inputsFile: inputs, configFile: config, fixedRequestCarry: carry,
+      expected: { usd: .5, calls: 1, providers: ['google'], basis: 'synthetic bounded continuation' } };
+    assert.throws(() => launchBatch(args), /cumulative_experiment_budget_exceeded/);
+    fs.writeFileSync(config, JSON.stringify({ budget: { maxUsd: 1, maxCalls: 5, allowPaidRequests: true } }));
+    assert.equal(launchBatch(args).plan.cumulative_prior_committed_usd, .032);
+    assert.equal(launchBatch(args).plan.fixed_request_carry.billing_still_unknown, true);
+    receipt.attempts[0].reserved_upper_usd = 0; fs.writeFileSync(carry, JSON.stringify(receipt));
+    assert.throws(() => verifyFixedRequestCarry(root, carry, account), /unbounded_or_unmatched/);
+    receipt.attempts[0].reserved_upper_usd = .032;
+    fs.writeFileSync(ledger, line({ ...entry, operation: 'openai_responses' }));
+    receipt.attempts[0].ledger_sha256 = hash(fs.readFileSync(ledger)); fs.writeFileSync(carry, JSON.stringify(receipt));
+    assert.throws(() => verifyFixedRequestCarry(root, carry, account), /unbounded_or_unmatched/);
+    fs.writeFileSync(ledger, line(entry));
+    assert.throws(() => verifyFixedRequestCarry(root, carry, account), /immutable_completed_batch/);
+  } finally {
+    const resolved = path.resolve(root);
+    if (!resolved.startsWith(path.resolve(os.tmpdir()) + path.sep) || !path.basename(resolved).startsWith('nearr-fixed-carry-')) throw new Error('unsafe_cleanup');
+    fs.rmSync(resolved, { recursive: true, force: true });
+  }
+});
 test('cumulative ledger counts completed attempts once and retains unknown reservations', () => {
   const reserved = { sequence: 1, request_sha256: 'a', reservation_usd: 2, status: 'reserved', cost_usd: null, dispatch_attempted: false };
   const complete = { ...reserved, status: 'complete', cost_usd: .1, dispatch_attempted: true };

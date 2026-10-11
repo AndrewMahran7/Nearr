@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateLegacyCandidateIdentity } from '../../../supabase/functions/process-share-jobs/adaptiveLegacyIdentity.ts';
+import { evaluateLegacyCandidateIdentity, evaluateLegacyParentCategory } from '../../../supabase/functions/process-share-jobs/adaptiveLegacyIdentity.ts';
 import { planLegacyMediaFinalization } from '../../../supabase/functions/process-share-jobs/mediaFinalizationPlanner.ts';
 import { parseMediaEvidence } from '../../../supabase/functions/process-share-jobs/mediaEvidence.ts';
 
@@ -16,6 +16,16 @@ const candidate = (name = 'Silver Lantern Cafe', overrides = {}) => ({ name, goo
   latitude: 42, longitude: -71, formattedAddress: '42 Lantern Avenue, Westhaven, Testland',
   primaryType: 'cafe', types: ['cafe', 'food', 'establishment'], confidenceScore: .96, matchScore: .96,
   reasons: ['address_verified'], ...overrides });
+
+test('category-only veto blocks a food venue being replaced by its park or mall, without name or unit rewriting', () => {
+  for (const type of ['shopping_mall', 'park', 'locality', 'premise']) {
+    assert.equal(evaluateLegacyParentCategory(candidate('River Plaza', { types: [type], primaryType: type }), evidence()).eligible, false);
+  }
+  assert.equal(evaluateLegacyParentCategory(candidate('Silver Lantern Barbecue', { formattedAddress: '42 Lantern Avenue #L' }),
+    evidence('Silver Lantern BBQ', { address: '42 Lantern Avenue #I' })).eligible, true);
+  assert.equal(evaluateLegacyParentCategory(candidate('River Plaza', { types: ['shopping_mall', 'cafe'] }), evidence()).eligible, true);
+  assert.equal(evaluateLegacyParentCategory(candidate('River Plaza', { types: ['shopping_mall'], primaryType: 'shopping_mall' }), evidence('River Plaza', { category: 'shopping' })).eligible, true);
+});
 
 test('legacy address verification cannot bind a parent plaza to its tenant', () => {
   const source = evidence(), parent = candidate('River Plaza', { primaryType: 'shopping_mall', types: ['shopping_mall'] });

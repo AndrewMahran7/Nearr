@@ -2,6 +2,7 @@ import type { WorkerConfig } from '../config/env.js';
 import type { ModelProvider, AnalyzeOutput } from '../providers/model.js';
 import { groundClaimedEvidence } from '../providers/model.js';
 import { evaluateNormalResultSpecificity } from '../automaticDeep/normalResultSpecificity.js';
+import { canReviewEmptyEvidence } from '../automaticDeep/emptyEvidencePolicy.js';
 import { hammingDistanceHex } from '../util/hash.js';
 import { classifyRecognitionFinalResult } from '../pipeline/recognitionOutcome.js';
 import { parseMediaEvidence, buildVayrinPartialResult } from '../../../../supabase/functions/process-share-jobs/mediaEvidence.ts';
@@ -162,6 +163,13 @@ export async function executeGoldInput(args:{
     const normal=args.normalAnalysis?.()??(!analyzed.automaticDeepRecognition?analyzed:null);
     Object.assign(provenance,{model_evidence:privateObservation(analyzed.evidence),grounded_model_evidence:privateObservation(grounded),normal_model_evidence:normal?privateObservation(normal.evidence):null,normal_grounded_model_evidence:normal?privateObservation(groundClaimedEvidence(normal.evidence,prepared.analyzeInput)):null,normal_specificity:normal?privateObservation(evaluateNormalResultSpecificity(normal)):null,model_parse_diagnostics:privateObservation(analyzed.parseDiagnostics??null),recognition_failure_class:analyzed.recognitionFailureClass??null,automatic_deep_runtime:privateObservation(analyzed.automaticDeepRecognition??null),deterministic_features:evidenceFeatures(grounded,null,null)});
     const parsed=parseMediaEvidence(grounded);
+    if(adaptive.emptyEvidenceReview && analyzed.automaticDeep?.emptyEvidenceReview===true && canReviewEmptyEvidence(analyzed)){
+      return {...base,status:'review',autonomous:false,places:[],candidates:[],multi_place_detected:false,
+        elapsed_ms:performance.now()-started,first_usable_result_ms:null,...args.ledger.snapshot(sequence),
+        evidence_trace:trace,inference_evidence:provenance,runtime_finalization_status:'needs_help',
+        reason_codes:['valid_empty_evidence_requires_review'],runtime_model_input:analyzed.modelInput??null,
+        automatic_deep:analyzed.automaticDeep};
+    }
     let ordinaryResult:any,mediaMentions:any;
     if(!analyzed.automaticDeepRecognition){
       // Match the worker classifier: grounded survivors win over malformed siblings.
@@ -201,7 +209,10 @@ export async function executeGoldInput(args:{
     }
     // Automatic Deep intercepts ordinary manual routing in the Edge finalizer.
     if(!parsed.ok)throw new Error('grounded_evidence_schema_invalid');
-    const plan=planMediaFinalization({groundedEvidence:parsed.value,ordinaryResult,mediaMentions,automaticDeepRuntime:analyzed.automaticDeepRecognition,sourceGeography:prepared.sourceGeography,context:args.context,requireLegacyCandidateIdentity:adaptive.legacyTenantIdentity===true});
+    const plan=planMediaFinalization({groundedEvidence:parsed.value,ordinaryResult,mediaMentions,automaticDeepRuntime:analyzed.automaticDeepRecognition,sourceGeography:prepared.sourceGeography,context:args.context,requireLegacyCandidateIdentity:adaptive.legacyTenantIdentity===true,
+      deepRecoverySkippedNoNewEvidence:adaptive.deepRecoveryNewEvidenceOnly===true&&analyzed.automaticDeep?.recoverySkippedNoNewEvidence===true,
+      atomicMultiPlace:adaptive.atomicMultiPlace===true,originalMultiPlaceEvidence:normal?.evidence,
+      legacyParentCategoryVeto:adaptive.legacyParentCategoryVeto===true});
     provenance.finalization_plan=privateObservation(plan);provenance.deterministic_features=evidenceFeatures(grounded,ordinaryResult,plan);
     args.ledger.assertHealthy();args.signal.throwIfAborted();
     if(plan.status==='retry'||plan.status==='invalid')throw new Error('finalization_'+plan.status);

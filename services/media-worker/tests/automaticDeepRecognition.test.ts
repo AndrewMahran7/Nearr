@@ -7,6 +7,8 @@ import { buildSpecificPlacesQuery } from '../src/premium/premiumCanonicalization
 import type { PremiumRecognitionExecution } from '../src/premium/premiumRecognitionTypes.js';
 import type { AnalyzeInput, AnalyzeOutput, ModelProvider } from '../src/providers/model.js';
 import { emptyEvidence, type PlaceCandidateEvidence } from '../src/types/evidence.js';
+import { planMediaFinalization } from '../../../supabase/functions/process-share-jobs/mediaFinalizationPlanner.ts';
+import { parseAdaptiveRecognitionConfig } from '../../../lib/adaptiveRecognitionConfig.ts';
 
 const evidenceItem = { source: 'frame' as const, value: 'observed source evidence', timestampSeconds: 1 };
 function place(name: string, overrides: Partial<PlaceCandidateEvidence> = {}): PlaceCandidateEvidence {
@@ -58,6 +60,100 @@ const input: AnalyzeInput = {
 };
 const cfg = { automaticDeepRecognitionEnabled: true, vayrinFrameBudget: 6, maxSelectedFrames: 24,
   vayrinFrameStrategy: 'diverse', googlePlacesServerApiKey: '' } as any;
+
+function successfulEmpty(): PremiumRecognitionExecution {
+  const value = execution([]);
+  return { ...value, outcome: 'PREMIUM_NO_USEFUL_RESULT', chargeability: 'NON_CHARGEABLE_NO_RESULT', destinations: [],
+    telemetry: { ...value.telemetry, solBoundary: { ...value.telemetry.solBoundary, parseSuccess: true, parseFailureCode: null } } };
+}
+
+test('valid empty evidence can stop before Deep without inventing a negative or a saved place', async () => {
+  const normal = output([], { parseDiagnostics: { emitted: 0, accepted: 0, rejected: 0,
+    rejectionPaths: [], topLevelInvalid: false, partialPreserved: 0, validationErrorClass: 'none' } });
+  for (const enabled of [false, true]) {
+    let calls = 0;
+    const result = await withAutomaticDeepRecognition({ name: 'normal', analyze: async () => normal }, cfg,
+      async () => { calls++; return successfulEmpty(); }, { emptyEvidenceReview: enabled }).analyze(input);
+    assert.equal(calls, enabled ? 0 : 2);
+    assert.equal(result.automaticDeep?.emptyEvidenceReview, enabled ? true : undefined);
+    if (enabled) {
+      assert.deepEqual(result.evidence, normal.evidence);
+      assert.equal(result.recognitionFailureClass, undefined);
+      assert.equal(result.automaticDeepRecognition, undefined);
+    }
+  }
+});
+
+test('empty-evidence stopping preserves recovery for missing diagnostics, parse failures, partials, multi and missing source', async () => {
+  const parsed = { emitted: 0, accepted: 0, rejected: 0, rejectionPaths: [], topLevelInvalid: false,
+    partialPreserved: 0, validationErrorClass: 'none' as const };
+  const partial = output([], { parseDiagnostics: parsed }); partial.evidence.partialPlaces = [{ nameHint: 'second stop' }] as any;
+  const multi = output([], { parseDiagnostics: parsed }); multi.evidence.multipleIntentionalPlaces = true;
+  for (const normal of [output([]), output([], { parseDiagnostics: { ...parsed, rejected: 1 } }),
+    output([], { parseDiagnostics: parsed, recognitionFailureClass: 'model_provider_failure' }), partial, multi]) {
+    let calls = 0;
+    const result = await withAutomaticDeepRecognition({ name: 'normal', analyze: async () => normal }, cfg,
+      async () => { calls++; return successfulEmpty(); }, { emptyEvidenceReview: true }).analyze(input);
+    assert.equal(calls, 2); assert.notEqual(result.automaticDeep?.emptyEvidenceReview, true);
+  }
+  const missing = await withAutomaticDeepRecognition({ name: 'normal', analyze: async () => output([], { parseDiagnostics: parsed }) }, cfg,
+    async () => { throw new Error('source-less input must not dispatch'); }, { emptyEvidenceReview: true })
+    .analyze({ ...input, frames: [] });
+  assert.equal(missing.recognitionFailureClass, 'source_evidence_unavailable');
+  assert.notEqual(missing.automaticDeep?.emptyEvidenceReview, true);
+  assert.throws(() => parseAdaptiveRecognitionConfig({ version: 1, taxonomyCompatibility: false,
+    literalSourceStreet: false, emptyEvidenceReview: 'yes' }));
+});
+
+test('experimental unchanged-evidence stop uses one successful deep call and remains nonautonomous review', async () => {
+  let calls = 0;
+  const result = await withAutomaticDeepRecognition({ name: 'normal', analyze: async () => output([]) }, cfg,
+    async () => { calls++; return successfulEmpty(); }, { deepRecoveryNewEvidenceOnly: true }).analyze(input);
+  assert.equal(calls, 1);
+  assert.equal(result.automaticDeep?.attempts, 1);
+  assert.equal(result.automaticDeep?.recoveryInvoked, false);
+  assert.equal(result.automaticDeep?.recoverySkippedNoNewEvidence, true);
+  const args = { groundedEvidence: result.evidence, automaticDeepRuntime: result.automaticDeepRecognition,
+    sourceGeography: null, context: { autoSaveAuthorized: true, auditRecordPresent: true } };
+  assert.equal(planMediaFinalization(args).status, 'retry');
+  const plan = planMediaFinalization({ ...args, deepRecoverySkippedNoNewEvidence: true });
+  assert.equal(plan.status, 'needs_help');
+  assert.deepEqual(plan.autonomousPlaces, []);
+  assert.deepEqual(plan.reviewCandidates, []);
+});
+
+test('new recovery frames, normal identities, partial sets and technical errors retain both calls', async () => {
+  const many = { ...input, frames: Array.from({ length: 12 }, (_, i) => ({ ...input.frames[0]!,
+    path: `frame-${i}.jpg`, timestampSeconds: i, aHash: i.toString(16).repeat(16) })) };
+  const partial = output([]); partial.evidence.partialPlaces = [{ nameHint: 'second stop' }] as any;
+  const multi = output([]); multi.evidence.multipleIntentionalPlaces = true;
+  const technical = successfulEmpty(); technical.outcome = 'PREMIUM_TECHNICAL_FAILURE'; technical.failureCode = 'provider_failure';
+  const invalid = successfulEmpty(); invalid.telemetry.solBoundary.parseSuccess = false;
+  for (const [source, normal, first] of [
+    [many, output([]), successfulEmpty()], [input, output([place('waterfall')]), successfulEmpty()],
+    [input, partial, successfulEmpty()], [input, multi, successfulEmpty()], [input, output([]), technical],
+    [input, output([]), invalid], [input, output([], { recognitionFailureClass: 'model_schema_invalid' }), successfulEmpty()],
+  ] as const) {
+    let calls = 0;
+    const result = await withAutomaticDeepRecognition({ name: 'normal', analyze: async () => normal }, cfg,
+      async () => { calls++; return first; }, { deepRecoveryNewEvidenceOnly: true }).analyze(source);
+    assert.equal(calls, 2); assert.equal(result.automaticDeep?.recoverySkippedNoNewEvidence, false);
+  }
+  const retry = planMediaFinalization({ groundedEvidence: output([]).evidence, automaticDeepRuntime: technical,
+    sourceGeography: null, context: { autoSaveAuthorized: true, auditRecordPresent: true }, deepRecoverySkippedNoNewEvidence: true });
+  assert.equal(retry.status, 'retry');
+});
+
+test('unchanged-evidence policy is opt-in and accepts only boolean configuration', async () => {
+  for (const option of [{}, { deepRecoveryNewEvidenceOnly: false }]) {
+    let calls = 0;
+    const result = await withAutomaticDeepRecognition({ name: 'normal', analyze: async () => output([]) }, cfg,
+      async () => { calls++; return successfulEmpty(); }, option).analyze(input);
+    assert.equal(calls, 2); assert.equal(result.automaticDeep?.recoverySkippedNoNewEvidence, undefined);
+  }
+  assert.throws(() => parseAdaptiveRecognitionConfig({ version: 1, taxonomyCompatibility: false,
+    literalSourceStreet: false, deepRecoveryNewEvidenceOnly: 1 }), /invalid_adaptive_config/);
+});
 
 test('the actual deep boundary preserves rejection and requires review for model autosave', () => {
   const auto = execution();

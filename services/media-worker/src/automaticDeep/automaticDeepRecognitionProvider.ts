@@ -1,4 +1,6 @@
 import type { WorkerConfig } from '../config/env.js';
+import { canStopWithoutNewEvidence } from './adaptiveRecoveryPolicy.js';
+import { canReviewEmptyEvidence } from './emptyEvidencePolicy.js';
 import type { AnalyzeInput, AnalyzeOutput, ModelProvider } from '../providers/model.js';
 import { buildAutomaticFrameSets } from '../solParity/frames.js';
 import {
@@ -135,6 +137,8 @@ class AutomaticDeepRecognitionModel implements ModelProvider {
     private readonly cfg: WorkerConfig,
     private readonly runDeep: AutomaticDeepRecognitionRunner,
     private readonly evaluateSpecificity: AutomaticDeepSpecificityEvaluator = evaluateNormalResultSpecificity,
+    private readonly deepRecoveryNewEvidenceOnly = false,
+    private readonly emptyEvidenceReview = false,
   ) {
     this.name = `${inner.name}+automatic-deep`;
   }
@@ -177,6 +181,10 @@ class AutomaticDeepRecognitionModel implements ModelProvider {
       automaticDeep: { ...diagnostics, noUsableSourceEvidence: true },
     };
 
+    if (this.emptyEvidenceReview && canReviewEmptyEvidence(normal)) return {
+      ...normal, automaticDeep: { ...diagnostics, emptyEvidenceReview: true },
+    };
+
     const frameSets = buildAutomaticFrameSets(
       input.frames,
       Math.min(this.cfg.vayrinFrameBudget, this.cfg.maxSelectedFrames),
@@ -200,7 +208,10 @@ class AutomaticDeepRecognitionModel implements ModelProvider {
     const firstSpecificHypotheses = specificHypothesisCount(first);
     let recoverySpecificHypotheses = 0;
     let execution = first;
-    if (firstSpecificHypotheses === 0) {
+    const recoverySkippedNoNewEvidence = this.deepRecoveryNewEvidenceOnly &&
+      firstSpecificHypotheses === 0 && canStopWithoutNewEvidence(normal, first, frameSets);
+    const recoveryInvoked = firstSpecificHypotheses === 0 && !recoverySkippedNoNewEvidence;
+    if (recoveryInvoked) {
       const recovery = applyAutomaticDeepReviewPolicy(await this.runDeep({
         ...deepInput,
         frameSet: frameSets.F2,
@@ -243,8 +254,9 @@ class AutomaticDeepRecognitionModel implements ModelProvider {
       automaticDeep: {
         ...diagnostics,
         invoked: true,
-        attempts: firstSpecificHypotheses > 0 ? 1 : 2,
-        recoveryInvoked: firstSpecificHypotheses === 0,
+        attempts: recoveryInvoked ? 2 : 1,
+        recoveryInvoked,
+        ...(this.deepRecoveryNewEvidenceOnly ? { recoverySkippedNoNewEvidence } : {}),
         firstAttemptSpecificHypotheses: firstSpecificHypotheses,
         recoverySpecificHypotheses,
         top3Count,
@@ -259,10 +271,10 @@ export function withAutomaticDeepRecognition(
   inner: ModelProvider,
   cfg: WorkerConfig,
   runDeep: AutomaticDeepRecognitionRunner = runSimpleSolRecognition,
-  options: { evaluateSpecificity?: AutomaticDeepSpecificityEvaluator } = {},
+  options: { evaluateSpecificity?: AutomaticDeepSpecificityEvaluator; deepRecoveryNewEvidenceOnly?: boolean; emptyEvidenceReview?: boolean } = {},
 ): ModelProvider {
   return cfg.automaticDeepRecognitionEnabled
-    ? new AutomaticDeepRecognitionModel(inner, cfg, runDeep, options.evaluateSpecificity)
+    ? new AutomaticDeepRecognitionModel(inner, cfg, runDeep, options.evaluateSpecificity, options.deepRecoveryNewEvidenceOnly, options.emptyEvidenceReview)
     : inner;
 }
 

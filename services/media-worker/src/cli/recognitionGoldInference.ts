@@ -4,7 +4,7 @@ import { readFile,mkdir,writeFile,appendFile,readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { pathToFileURL,fileURLToPath } from 'node:url';
 import { loadConfig,type WorkerConfig } from '../config/env.js';
-import { selectModelProvider, type AnalyzeOutput } from '../providers/model.js';
+import { selectModelProvider, type AnalyzeOutput, type ModelProvider } from '../providers/model.js';
 import { withAutomaticDeepRecognition } from '../automaticDeep/automaticDeepRecognitionProvider.js';
 import { loadGoldInput,type GoldFrameConfig } from '../evaluation/goldInputAdapter.js';
 import { ProviderBudgetLedger,type ProviderBudgetConfig } from '../evaluation/providerBudgetLedger.js';
@@ -63,7 +63,7 @@ export function configuredWorker(run:GoldRunConfiguration):WorkerConfig{
   if(typeof run.decisionContext.autoSaveAuthorized!=='boolean'||typeof run.decisionContext.auditRecordPresent!=='boolean')throw new Error('decision_context_required');
   if(typeof run.runtime.automaticDeepRecognitionEnabled!=='boolean'||!['uniform','pipeline','diverse','all'].includes(run.runtime.vayrinFrameStrategy)||!['runtime_schedule','uniform','diverse','adaptive','text_only'].includes(run.frames.strategy)||!Number.isInteger(run.frames.maxFrames)||run.frames.maxFrames<1||run.frames.maxFrames>256||!Number.isFinite(run.frames.intervalSeconds)||run.frames.intervalSeconds<=0||typeof run.frames.deduplicate!=='boolean'||typeof run.frames.ffmpegPath!=='string'||!run.frames.ffmpegPath)throw new Error('explicit_frame_configuration_required');
   if(!Array.isArray(run.budget.rates)||typeof run.budget.allowPaidRequests!=='boolean')throw new Error('explicit_budget_configuration_required');
-  for(const rate of run.budget.rates){onlyKeys(rate,['operation','model','fieldMask','inputUsdPerMillion','cachedInputUsdPerMillion','cacheWriteInputUsdPerMillion','outputUsdPerMillion','maxInputTokens','longContext','requestUsd','audioUsdPerMinute','maxOutputTokens','outputTokenPolicy','outputTokenPolicyBasis','maxRequestUsd','maxCalls','source','verifiedAt']);if(rate.longContext)onlyKeys(rate.longContext,['aboveInputTokens','inputUsdPerMillion','cachedInputUsdPerMillion','cacheWriteInputUsdPerMillion','outputUsdPerMillion']);}
+  for(const rate of run.budget.rates){onlyKeys(rate,['operation','model','fieldMask','inputUsdPerMillion','cachedInputUsdPerMillion','cacheWriteInputUsdPerMillion','outputUsdPerMillion','maxInputTokens','inputTokenPolicy','longContext','requestUsd','audioUsdPerMinute','maxOutputTokens','outputTokenPolicy','outputTokenPolicyBasis','maxRequestUsd','maxCalls','source','verifiedAt']);if(rate.longContext)onlyKeys(rate.longContext,['aboveInputTokens','inputUsdPerMillion','cachedInputUsdPerMillion','cacheWriteInputUsdPerMillion','outputUsdPerMillion']);}
   // Constructing a ledger validates all numeric bounds without dispatching a call.
   new ProviderBudgetLedger(run.budget,async()=>{throw new Error('configuration_validation_no_network');},async()=>{});
   // No dotenv loading: the caller supplies only already-authorized provider credentials.
@@ -106,8 +106,12 @@ export async function runGoldInference(args:{inputs:string[];configuration:GoldR
   globalThis.fetch=ledger.fetch;
   let failures=0;
   try{
-    const normalModel=selectModelProvider(cfg);let normalAnalysis:AnalyzeOutput|null=null,adaptiveTaxonomyTrace:unknown=null;
-    const model=withAutomaticDeepRecognition({name:normalModel.name,async analyze(input){normalAnalysis=await normalModel.analyze(input);return normalAnalysis;}},cfg,undefined,adaptive.taxonomyCompatibility?{evaluateSpecificity(normal,input){const evaluated=evaluateAdaptiveNormalSpecificity(normal,adaptive,input);adaptiveTaxonomyTrace=evaluated.trace;return evaluated.specificity;}}:{});
+    const normalModel=selectModelProvider(cfg,{closedSignalVocabulary:adaptive.closedSignalVocabulary===true});let normalAnalysis:AnalyzeOutput|null=null,adaptiveTaxonomyTrace:unknown=null;
+    const model=withAutomaticDeepRecognition({name:normalModel.name,async analyze(input){normalAnalysis=await normalModel.analyze(input);return normalAnalysis;}},cfg,undefined,{
+      deepRecoveryNewEvidenceOnly:adaptive.deepRecoveryNewEvidenceOnly===true,
+      emptyEvidenceReview:adaptive.emptyEvidenceReview===true,
+      ...(adaptive.taxonomyCompatibility?{evaluateSpecificity(normal:AnalyzeOutput,input:Parameters<ModelProvider['analyze']>[0]){const evaluated=evaluateAdaptiveNormalSpecificity(normal,adaptive,input);adaptiveTaxonomyTrace=evaluated.trace;return evaluated.specificity;}}:{}),
+    });
     for(const input of loaded){
       normalAnalysis=null;
       adaptiveTaxonomyTrace=null;

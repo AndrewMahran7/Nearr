@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { solHighImageTokenBound } from './solInputTokenBound.js';
 
 export type ProviderOperation = 'openai_responses' | 'gemini_generate' | 'google_text_search' | 'google_legacy_search' | 'google_geocode' | 'openai_transcription';
 export type RateCard = {
@@ -12,6 +13,7 @@ export type RateCard = {
   outputUsdPerMillion?: number;
   /** A verified accepted-input ceiling, never an instruction to truncate. */
   maxInputTokens?: number;
+  inputTokenPolicy?: 'sol_high_image_patch_bound_v1';
   longContext?: { aboveInputTokens:number;inputUsdPerMillion:number;cachedInputUsdPerMillion:number;cacheWriteInputUsdPerMillion?:number;outputUsdPerMillion:number };
   requestUsd?: number;
   audioUsdPerMinute?: number;
@@ -49,6 +51,7 @@ export type ProviderLedgerEntry = {
   dispatch_attempted: boolean;
   status: 'reserved' | 'complete' | 'unknown';
   input_token_upper_bound?: number;
+  input_token_bound_basis?: 'request_bytes_plus_protocol' | 'sol_high_image_patch_bound_v1';
   input_tokens?: number;
   cached_input_tokens?: number;
   cache_write_tokens?: number;
@@ -119,6 +122,8 @@ export class ProviderBudgetLedger {
     if (!finite(config.maxUsd) || !integer(config.maxCalls) || config.maxCalls < 1 ||
         !integer(config.requestTimeoutMs) || config.requestTimeoutMs < 1 || !integer(config.maxRequestBytes) || config.maxRequestBytes < 1) throw new ProviderBudgetError('invalid_budget_config');
     for (const rate of config.rates) {
+      if (rate.inputTokenPolicy !== undefined && (rate.inputTokenPolicy !== 'sol_high_image_patch_bound_v1' ||
+          rate.operation !== 'openai_responses' || rate.model !== 'gpt-5.6-sol')) throw new ProviderBudgetError('invalid_input_token_policy');
       if (!finite(rate.maxRequestUsd) || !integer(rate.maxCalls) || rate.maxCalls < 1 || !rate.source || !Number.isFinite(Date.parse(rate.verifiedAt))) throw new ProviderBudgetError('invalid_rate_card');
       for (const key of ['inputUsdPerMillion','cachedInputUsdPerMillion','cacheWriteInputUsdPerMillion','outputUsdPerMillion','requestUsd','audioUsdPerMinute'] as const) {
         if (rate[key] !== undefined && !finite(rate[key])) throw new ProviderBudgetError('invalid_rate_price');
@@ -195,6 +200,7 @@ export class ProviderBudgetLedger {
     if (rates.length !== 1) return this.stop('missing_or_ambiguous_rate_card');
     const rate = rates[0]!;
     let tokenBound: number | undefined, reservation: number;
+    let inputBoundBasis: ProviderLedgerEntry['input_token_bound_basis'] = 'request_bytes_plus_protocol';
     if (isModel) {
       if (!finite(rate.inputUsdPerMillion) || !finite(rate.outputUsdPerMillion) || !integer(rate.maxOutputTokens) || rate.maxOutputTokens < 1) return this.stop('missing_model_budget_bounds');
       if (!['explicit_inference_override','verified_provider_ceiling'].includes(rate.outputTokenPolicy ?? '') || !rate.outputTokenPolicyBasis?.trim()) return this.stop('explicit_output_token_policy_required');
@@ -226,6 +232,13 @@ export class ProviderBudgetLedger {
       if (/"(?:image_url|file_uri|fileUri)"\s*:\s*"https?:/i.test(requestText)) return this.stop('remote_model_media_forbidden');
       requestBytes = Buffer.byteLength(requestText);
       tokenBound = Math.min(requestBytes + 4096,rate.maxInputTokens??Infinity);
+      if (rate.inputTokenPolicy === 'sol_high_image_patch_bound_v1') {
+        const imageBound = solHighImageTokenBound(body);
+        if (imageBound !== null) {
+          tokenBound = Math.min(imageBound, rate.maxInputTokens ?? Infinity);
+          inputBoundBasis = 'sol_high_image_patch_bound_v1';
+        }
+      }
       const reserveRates=[rate,...(rate.longContext&&tokenBound>rate.longContext.aboveInputTokens?[rate.longContext]:[])];
       const maxInputRate=Math.max(...reserveRates.flatMap((r)=>[r.inputUsdPerMillion!,r.cachedInputUsdPerMillion??0,r.cacheWriteInputUsdPerMillion??0]));
       reservation = (tokenBound * maxInputRate + rate.maxOutputTokens * Math.max(...reserveRates.map((r)=>r.outputUsdPerMillion!))) / 1e6;
@@ -248,7 +261,7 @@ export class ProviderBudgetLedger {
     const started = Date.now();
     const entry: ProviderLedgerEntry = {sequence:this.entries.length+1,operation,provider:operation.startsWith('openai')?'openai':'google',model:model ?? null,
       endpoint:url.origin+url.pathname,request_sha256:digest(requestText),original_request_sha256:digest(originalRequestText),transport_overrides:overrides,...(isModel?{output_token_policy:rate.outputTokenPolicy}:{}),rate_card_sha256:rateHash,started_at:new Date(started).toISOString(),reservation_usd:reservation,dispatch_attempted:false,status:'reserved',cost_usd:null,
-      ...(tokenBound !== undefined ? {input_token_upper_bound:tokenBound}:{}),...(audioSeconds !== undefined ? {audio_seconds:audioSeconds}:{})};
+      ...(tokenBound !== undefined ? {input_token_upper_bound:tokenBound,input_token_bound_basis:inputBoundBasis}:{}),...(audioSeconds !== undefined ? {audio_seconds:audioSeconds}:{})};
     this.entries.push(entry); this.committedUsd += reservation;
     try { await this.persist({...entry}); } catch { return this.stop('ledger_reservation_persistence_failed'); }
     this.assertHealthy();

@@ -1,6 +1,6 @@
 # Recognition baseline — ongoing research, no final winner
 
-Measured development snapshot, 2026-10-11. Calibration is running; the 62-case,
+Measured development/calibration snapshot, 2026-10-11. The 62-case,
 60-independent-group holdout has not been inferred or scored. Production and the
 Nearr 1.5 release are untouched.
 
@@ -81,3 +81,26 @@ finalization plans. The strict tenant-name veto removed one demonstrated wrong s
 but also two correctly identified results. It is rejected as a standalone replacement.
 The replay incurred zero new paid requests and adds its local veto compute to retained
 baseline latency; it is not a fresh runtime latency measurement.
+
+## Calibration and subsequent checks
+
+The 34-case baseline calibration run is frozen. It produced 3/26 correct autonomous
+exact results, 3/7 autonomous precision, 7/26 exact-positive coverage, four wrong or
+unverified confident results and six failures. p90 was 21.228 seconds; 115 physical
+requests cost $2.9632896. This is a calibration result, not the sealed benchmark.
+
+The full text-only lane and all four calibrated text-first routers are rejected;
+see [routing calibration](ROUTING_CALIBRATION.md). The adaptive frame pilot produced
+zero correct autonomous results and one new confident mismatch among five cases.
+
+The missing scene-change vocabulary fix produced one correct autonomous result,
+no new confident mismatch and $0.3791172 tariff in its five-case pilot. The empty
+recovery stop preserved zero autonomous outputs, converted the negative failure to
+review, and cost $0.4236806. These small pilots justify broader evaluation only.
+
+An isolated category-only parent veto removes the demonstrated restaurant-to-mall
+mistake without losing any of the 16 correct development saves. Calibration is
+unchanged. Development precision becomes 16/19; correct autonomous resolution stays
+16/78. The strict name/unit variant remains rejected. An atomic multi-place veto
+preserves all baseline autonomous outputs in both splits. These are zero-provider
+replays with exact baseline control parity; their timings are not fresh inference.

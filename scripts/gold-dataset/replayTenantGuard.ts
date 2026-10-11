@@ -11,7 +11,8 @@ import { verifyFrozenRun, freezeInferenceRun } from './experimentsCli.mjs';
 const hash = (v: string | Buffer) => createHash('sha256').update(v).digest('hex');
 const stable = (v: any): string => JSON.stringify(v && typeof v === 'object' ? Array.isArray(v) ? v.map((x) => JSON.parse(stable(x))) : Object.fromEntries(Object.keys(v).sort().filter((k) => v[k] !== undefined).map((k) => [k, JSON.parse(stable(v[k]))])) : v);
 
-export function replayTenantGuard(source: string, out: string, frozenOut: string) {
+export function replayTenantGuard(source: string, out: string, frozenOut: string, mode: 'tenant' | 'atomic_multi' | 'parent_category' = 'tenant') {
+  if (!['tenant', 'atomic_multi', 'parent_category'].includes(mode)) throw new Error('invalid_replay_mode');
   const verified = verifyFrozenRun(source);
   const originalRun = JSON.parse(fs.readFileSync(path.join(source, 'run.json'), 'utf8'));
   const context = originalRun.configuration.decisionContext ?? { autoSaveAuthorized: true, auditRecordPresent: true };
@@ -27,7 +28,9 @@ export function replayTenantGuard(source: string, out: string, frozenOut: string
     const control = planMediaFinalization(args);
     if (stable(control) !== stable(original)) throw new Error('frozen_finalizer_control_parity_failed');
     const started = performance.now();
-    const plan = planMediaFinalization({ ...args, requireLegacyCandidateIdentity: true });
+    const plan = planMediaFinalization({ ...args,
+      ...(mode === 'tenant' ? { requireLegacyCandidateIdentity: true } : mode === 'parent_category' ? { legacyParentCategoryVeto: true } :
+        { atomicMultiPlace: true, originalMultiPlaceEvidence: e.normal_grounded_model_evidence ?? undefined }) });
     const replayMs = performance.now() - started;
     const places = plan.autonomousPlaces.map((p: any) => observedPlace(p.candidate, p.logicalResultId)).filter(Boolean);
     if (places.some((p) => !observation.places.some((old: any) => stable(p) === stable(old)))) throw new Error('veto_ablation_created_identity');
@@ -46,7 +49,8 @@ export function replayTenantGuard(source: string, out: string, frozenOut: string
   }
   const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
   const files = ['scripts/gold-dataset/replayTenantGuard.ts', 'supabase/functions/process-share-jobs/mediaFinalizationPlanner.ts', 'supabase/functions/process-share-jobs/adaptiveLegacyIdentity.ts', 'services/media-worker/src/evaluation/goldRuntimeAdapter.ts'];
-  const configuration = { experiment: 'legacy_tenant_identity_veto_replay_v1', legacyTenantIdentity: true,
+  const configuration = { experiment: mode + '_veto_replay_v1',
+    ...(mode === 'tenant' ? { legacyTenantIdentity: true } : mode === 'parent_category' ? { legacyParentCategoryVeto: true } : { atomicMultiPlace: true }),
     decisionContext: context, parent_configuration_sha256: originalRun.configuration_sha256,
     parent_receipt_sha256: verified.receipt_sha256, replay_source_hashes: Object.fromEntries(files.map((f) => [f, hash(fs.readFileSync(path.join(repo, f)))])) };
   const run = { ...originalRun, started_at: new Date().toISOString(), configuration,
@@ -60,6 +64,6 @@ export function replayTenantGuard(source: string, out: string, frozenOut: string
   return { evaluated, changed, observations: rows.length, new_paid_requests: 0, frozen_receipt_sha256: frozen.receipt_sha256 };
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  if (process.argv.length !== 5) throw new Error('usage_source_out_frozen_out');
-  console.log(JSON.stringify(replayTenantGuard(process.argv[2]!, process.argv[3]!, process.argv[4]!)));
+  if (![5, 6].includes(process.argv.length)) throw new Error('usage_source_out_frozen_out_optional_mode');
+  console.log(JSON.stringify(replayTenantGuard(process.argv[2]!, process.argv[3]!, process.argv[4]!, process.argv[5] as 'tenant' | 'atomic_multi' | 'parent_category' | undefined)));
 }

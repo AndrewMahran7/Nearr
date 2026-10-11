@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "created_at": "2026-10-11T19:51:07.025Z",
+  "kind": "infrastructure_continuation_before_scoring",
+  "policy_sha256": "cd4dd234f4fb77ecc6f0a1a72eebe6bbade266148e66fda7eed131cb5dc5db7c",
+  "parent_receipt_sha256": "ec504e1ff8b790f171c34af18f4505e274f1dfce6f42a2f840a01d5ff2de5608",
+  "reason": "One dispatched Places request timed out. Its full $0.032 liability remains reserved. Fifty-two later inputs stopped before any provider call.",
+  "policy_changed": false,
+  "labels_or_scores_opened": false,
+  "continue_only_zero_dispatch_cases": true,
+  "retry_actual_failed_case": false,
+  "carry_receipt_sha256": "7d3e20fe122b953c3b8770dc061960c3530601d1ab24600998bd8a8473065dbb",
+  "prior_known_heldout_usd": 0.7834356000000003,
+  "unknown_fixed_request_usd": {
+    "lower": 0,
+    "upper": 0.032
+  },
+  "continuation_worst_case_usd": 8.5,
+  "combined_milestone_worst_case_below_original_9_5": true,
+  "accounting": "Original unknown ledger remains immutable. Primary exact-cost outputs stay unknown. Any cost comparison must disclose known-plus-reserved bounds and show worst-case sensitivity; never impute unknown cost as settled or zero."
+}
