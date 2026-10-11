@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-10",
+  "configuration_file": "retained-baseline-pilot-2026-10-10.json",
+  "funded_execution_enabled": false,
+  "scope": "Current repaired local runtime with reported Development environment settings, retained timed evidence and a simulated active recognition lifecycle. This does not assert byte-for-byte equivalence to the September 15 deployed build or full acquisition/ASR latency and cost.",
+  "runtime_environment": {
+    "reported_model": "gemini-3.5-flash-lite",
+    "latest_alias_used": false,
+    "automatic_deep": true,
+    "job_timeout_ms": 480000,
+    "selected_frames": 24,
+    "deep_frame_budget": 6,
+    "deep_frame_strategy": "diverse",
+    "frame_interval_seconds": 1,
+    "legacy_visual_flag_effect": "index.ts constructs withAutomaticDeepRecognition(selectModelProvider(cfg), cfg); it does not invoke withVayrinFallback. Legacy visual/V3 flags therefore do not activate an extra provider in this path.",
+    "decision_context_requirement": "autoSaveAuthorized=true and auditRecordPresent=true simulate the enabled audited recognition policy. These are explicit experiment context settings; Edge MEDIA_AUTO_SAVE_ENABLED/canary/audit state must be separately verified or the context declared as a controlled policy assumption."
+  },
+  "rate_verification": [
+    {
+      "operation": "gemini_generate",
+      "model": "gemini-3.5-flash-lite",
+      "usd_per_million": {"input": 0.3, "cached_input": 0.03, "output_including_thinking": 2.5},
+      "input_ceiling": 1048576,
+      "output_ceiling": 65536,
+      "sources": ["https://ai.google.dev/gemini-api/docs/pricing", "https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite"],
+      "notes": "Standard paid tier. No explicit cache creation, hourly storage API or grounding tools are used. Alias switching is not accepted as a reproducible model choice. The reported deployed model is already explicit."
+    },
+    {
+      "operation": "openai_responses",
+      "model": "gpt-5.6-sol",
+      "usd_per_million_standard": {"input": 4, "cached_input": 0.4, "cache_write": 5, "output": 20},
+      "usd_per_million_above_272000_input_tokens": {"input": 8, "cached_input": 0.8, "cache_write": 10, "output": 30},
+      "input_ceiling_conservative_context_bound": 1050000,
+      "output_ceiling": 128000,
+      "sources": ["https://developers.openai.com/api/docs/models/gpt-5.6-sol", "https://developers.openai.com/api/docs/guides/prompt-caching", "https://developers.openai.com/api/docs/guides/token-counting"],
+      "notes": "Promotion documented at least through November 21, 2026; reverify before later runs. Ordinary input = input_tokens - cached_tokens - cache_write_tokens. Output usage already includes reasoning; do not add reasoning_tokens again. Full request receives the long-context tier when input_tokens exceeds 272000. Missing cache_write_tokens is unknown cost, not assumed zero. Request model and provider-reported model/service tier are retained. Non-default service tiers are rejected as unpriced."
+    },
+    {
+      "operation": "google_text_search",
+      "sku": "Places API Text Search Pro",
+      "usd_per_successful_request_at_first_paid_global_tier": 0.032,
+      "sources": ["https://developers.google.com/maps/billing-and-pricing/sku-details", "https://developers.google.com/maps/billing-and-pricing/pricing"],
+      "notes": "Both exact runtime field masks contain displayName/location/types and trigger Pro. Ordinary photos field is metadata; no image-download request is issued. Different field masks require separate exact matching rate cards."
+    },
+    {
+      "operation": "google_legacy_search",
+      "usd_per_successful_request_at_first_paid_global_tier": 0.04,
+      "components": {"text_search": 0.032, "basic_data": 0, "contact_data": 0.003, "atmosphere_data": 0.005},
+      "sources": ["https://developers.google.com/maps/billing-and-pricing/sku-details", "https://developers.google.com/maps/billing-and-pricing/pricing"],
+      "notes": "Legacy Text Search does not support a field mask; official SKU documentation says it also triggers data SKUs. No free allowance, subscription or volume discount is assumed."
+    },
+    {
+      "operation": "google_geocode",
+      "usd_per_successful_request_at_first_paid_global_tier": 0.005,
+      "sources": ["https://developers.google.com/maps/billing-and-pricing/pricing"]
+    },
+    {
+      "operation": "web_search",
+      "enabled": false,
+      "external_reference_usd_per_tool_call": 0.01,
+      "sources": ["https://developers.openai.com/api/docs/pricing"],
+      "notes": "Official web-search fee also has search-content model token charges. Automatic Deep hardcodes webSearchEnabled=false; transport rejects nonempty request tools and treats unexpected tool-call outputs as unknown charge. A future web-enabled arm requires separate tool-call reservation and accounting; this config does not permit it."
+    }
+  ],
+  "reservation_bounds": {
+    "maximum_gemini_request_usd": 0.4784128,
+    "maximum_sol_request_usd": 14.34,
+    "run_usd_cap": 25,
+    "run_dispatch_attempt_cap": 100,
+    "explanation": "Input reservation uses the smaller of serialized request bytes plus 4096 or verified provider input ceiling; output reserves the provider ceiling. The highest cache-write/input and output rate among possible context tiers is reserved. Provider-bound inconsistencies and missing usage stop the run, keeping reservations outstanding. These are conservative admission bounds, not forecast spend or invoice totals."
+  },
+  "remaining_requirements": [
+    "Finalize seal and approved development pilot selection externally; the runner reads only neutral input.json paths.",
+    "Verify or explicitly declare decisionContext true/true as controlled enabled policy.",
+    "Create a private immutable copy of the configuration with allowPaidRequests=true only for the already-authorized funded execution.",
+    "Use paidBatch.mjs cumulative $50 guard and freeze all runtime outputs before scoring.",
+    "Supply provider-only credentials through the local launcher; no DB credentials are needed.",
+    "Disclose that retained transcripts exist only when materialized; fresh ASR/acquisition costs and latency are outside this baseline."
+  ]
+}

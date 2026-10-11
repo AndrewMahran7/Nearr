@@ -28,7 +28,7 @@ for (let first = 65; first <= 90; first++) for (let second = 65; second <= 90; s
 for (const [canonical, aliases] of [['United States', ['USA', 'U.S.A.', 'United States of America']], ['United Kingdom', ['UK', 'U.K.', 'Great Britain']], ['United Arab Emirates', ['UAE', 'U.A.E.']]]) {
   for (const alias of aliases) countryAliases.set(norm(alias), norm(canonical));
 }
-const countryNorm = (value) => countryAliases.get(norm(value)) ?? norm(value);
+export const countryNorm = (value) => countryAliases.get(norm(value)) ?? norm(value);
 function sourceUrlKey(raw) {
   const url = new URL(raw);
   if (!['http:', 'https:'].includes(url.protocol)) fail('invalid_public_url');
@@ -307,10 +307,10 @@ export function placeMatches(pred, truth) {
   // Exact names without geographic anchors are insufficient for physical identity.
   return Boolean(truth.country && (truth.region || truth.city));
 }
-function matchCount(predicted, expected) {
+function matchCount(predicted, expected, matches = placeMatches) {
   const owners = Array(expected.length).fill(-1);
   function augment(i, seen) {
-    for (let j = 0; j < expected.length; j++) if (!seen.has(j) && placeMatches(predicted[i], expected[j])) {
+    for (let j = 0; j < expected.length; j++) if (!seen.has(j) && matches(predicted[i], expected[j])) {
       seen.add(j);
       if (owners[j] < 0 || augment(owners[j], seen)) { owners[j] = i; return true; }
     }
@@ -326,7 +326,10 @@ export function wilsonInterval(successes, count, z = 1.959963984540054) {
   const half = z * Math.sqrt(p * (1 - p) / count + z * z / (4 * count * count)) / denominator;
   return { lower: Math.max(0, center - half), upper: Math.min(1, center + half), n: count };
 }
-export function scoreOne(record, label, observation, split, view) {
+export function scoreOne(record, label, observation, split, view, evaluator = null) {
+  if (evaluator !== null && (typeof evaluator?.placeMatches !== 'function' || typeof evaluator?.assertCase !== 'function')) fail('invalid_evaluator_context');
+  evaluator?.assertCase(record, label, split);
+  const matches = evaluator?.placeMatches ?? placeMatches;
   if (observation?.input_id !== `i_${sha256(`${record.case_id}\0${view}`).slice(0, 24)}` || observation.view !== view) fail(`observation_identity_mismatch:${record.case_id}`);
   if (!['completed', 'review', 'failed'].includes(observation.status)) fail(`invalid_observation_status:${record.case_id}`);
   if (observation.autonomous === true && observation.status !== 'completed') fail(`invalid_autonomous_status:${record.case_id}`);
@@ -338,7 +341,7 @@ export function scoreOne(record, label, observation, split, view) {
   const places = array(observation.places), candidates = array(observation.candidates);
   const expected = array(label.expected_places).filter((p) => p.role !== 'mentioned_only');
   const exactEligible = ['VERIFIED_EXACT_SINGLE', 'VERIFIED_MULTI'].includes(label.label_class);
-  const tp = exactEligible ? matchCount(places, expected) : null;
+  const tp = exactEligible ? matchCount(places, expected, matches) : null;
   const exactSet = exactEligible ? tp === expected.length && places.length === expected.length : null;
   const autonomous = observation.autonomous === true;
   const autonomousPlaceOutput = autonomous && places.length > 0;
@@ -356,11 +359,11 @@ export function scoreOne(record, label, observation, split, view) {
     case_id: record.case_id, source_group_id: record.source_group_id, split, view, label_class: label.label_class,
     status: observation.status, autonomous, autonomous_place_output: autonomousPlaceOutput, wrong_confident: wrongConfident, exact_eligible: exactEligible, reasonable_autonomous_expected: label.reasonable_autonomous_expected !== false,
     correct_autonomous: correctAutonomous, exact_set: exactSet,
-    exact_top1: label.label_class === 'VERIFIED_EXACT_SINGLE' ? Boolean(candidates[0] && placeMatches(candidates[0], expected[0])) : null,
-    candidate_recall_at_1: exactEligible ? matchCount(candidates.slice(0, 1), expected) / expected.length : null,
-    candidate_recall_at_3: exactEligible ? matchCount(candidates.slice(0, 3), expected) / expected.length : null,
-    candidate_recall_at_5: exactEligible ? matchCount(candidates.slice(0, 5), expected) / expected.length : null,
-    candidate_recall_at_n: exactEligible ? matchCount(candidates, expected) / expected.length : null,
+    exact_top1: label.label_class === 'VERIFIED_EXACT_SINGLE' ? Boolean(candidates[0] && matches(candidates[0], expected[0])) : null,
+    candidate_recall_at_1: exactEligible ? matchCount(candidates.slice(0, 1), expected, matches) / expected.length : null,
+    candidate_recall_at_3: exactEligible ? matchCount(candidates.slice(0, 3), expected, matches) / expected.length : null,
+    candidate_recall_at_5: exactEligible ? matchCount(candidates.slice(0, 5), expected, matches) / expected.length : null,
+    candidate_recall_at_n: exactEligible ? matchCount(candidates, expected, matches) / expected.length : null,
     candidate_count: candidates.length,
     true_positives: tp, predicted_places: places.length, expected_places: expected.length,
     multi_detected: multiDetected, extras: exactEligible ? places.length - tp : null, misses: exactEligible ? expected.length - tp : null,

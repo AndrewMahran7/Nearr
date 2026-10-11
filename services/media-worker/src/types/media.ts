@@ -182,7 +182,8 @@ export type SelectedFrame = {
 export type OcrSegment = {
   timestampSeconds: number;
   text: string;
-  confidence: number;
+  /** Null when the OCR engine does not report confidence. */
+  confidence: number | null;
 };
 
 /** The media task row as claimed from the DB (subset the worker needs). */

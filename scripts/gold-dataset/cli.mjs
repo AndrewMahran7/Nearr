@@ -4,6 +4,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { benchmarkReadiness, heldoutRunKey, holdoutEligibility, independentGroupCount, inferencePayload, proposeSplits, renderReview, scoreOne, sha256, summarizeScores, validateLabels, validateManifest, validateSplits, VIEWS } from './core.mjs';
+import { loadEvaluatorAliases } from './evaluatorAliases.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const dataset = path.join(repo, 'artifacts/recognition-gold-dataset');
@@ -172,6 +173,18 @@ function score(opts) {
   if (!['development', 'calibration', 'held_out'].includes(opts.split) || !VIEWS.includes(opts.view)) throw new Error('invalid_score_slice');
   const { manifest, labels } = read(opts);
   const splits = splitsFile(opts, manifest, labels);
+  if (!opts.evaluator_map && Object.keys(opts).some((key) => key.startsWith('evaluator_'))) throw new Error('evaluator_options_require_map');
+  const evaluator = opts.evaluator_map ? loadEvaluatorAliases({
+    mapPath: opts.evaluator_map, expectedMapSha256: opts.evaluator_map_sha256,
+    sealPath: opts.seal ?? defaults.seal, expectedSealSha256: opts.evaluator_seal_sha256,
+    sourceManifestPath: opts.evaluator_source_manifest ?? opts.manifest ?? defaults.manifest,
+    sourceLabelsPath: opts.evaluator_source_labels ?? opts.labels ?? defaults.labels,
+    sourceSplitsPath: opts.evaluator_source_splits ?? opts.splits ?? defaults.splits,
+  }) : null;
+  const evaluatorMetadata = {
+    ...(evaluator?.metadata ?? { evaluator_version: 'default-exact-name', core_sha256: sha256(fs.readFileSync(fileURLToPath(new URL('./core.mjs', import.meta.url)))) }),
+    cli_sha256: sha256(fs.readFileSync(fileURLToPath(import.meta.url))),
+  };
   if (opts.split === 'held_out') {
     if (!opts.explicit_heldout || !plannedMilestones.includes(opts.milestone)) throw new Error('heldout_requires_explicit_frozen_milestone');
     const sealDoc = checkedSeal(opts);
@@ -189,7 +202,7 @@ function score(opts) {
     const input = inferencePayload(r, byLabel.get(r.case_id), opts.view);
     const o = byInput.get(input.input_id);
     if (!o) throw new Error(`missing_observation:${r.case_id}`);
-    return scoreOne(r, byLabel.get(r.case_id), o, opts.split, opts.view);
+    return scoreOne(r, byLabel.get(r.case_id), o, opts.split, opts.view, evaluator);
   });
   if (observations.length !== rows.length) throw new Error('orphan_observation');
   const summary = summarizeScores(rows);
@@ -198,11 +211,11 @@ function score(opts) {
   if (fs.existsSync(out) || fs.existsSync(privateOut)) throw new Error('immutable_score_output_exists');
   if (opts.split === 'held_out') {
     const runMarker = path.join(local, 'heldout_runs', `${heldoutRunKey(checkedSeal(opts), opts.milestone, opts.view)}.json`);
-    writeOnce(runMarker, JSON.stringify({ milestone: opts.milestone, view: opts.view, output: path.relative(repo, out), observation_sha256: sha256(fs.readFileSync(opts.observations)), reserved_at: new Date().toISOString() }, null, 2) + '\n');
+    writeOnce(runMarker, JSON.stringify({ milestone: opts.milestone, view: opts.view, output: path.relative(repo, out), observation_sha256: sha256(fs.readFileSync(opts.observations)), evaluator: evaluatorMetadata, reserved_at: new Date().toISOString() }, null, 2) + '\n');
   }
   writeOnce(privateOut, csv(rows));
-  writeOnce(out, JSON.stringify({ schema_version: 1, split: opts.split, view: opts.view, observation_count: rows.length, summary, per_case_private_path: path.relative(repo, privateOut) }, null, 2) + '\n');
-  return { output: out, private_per_case: privateOut, summary };
+  writeOnce(out, JSON.stringify({ schema_version: 1, split: opts.split, view: opts.view, observation_count: rows.length, evaluator: evaluatorMetadata, summary, per_case_private_path: path.relative(repo, privateOut) }, null, 2) + '\n');
+  return { output: out, private_per_case: privateOut, evaluator: evaluatorMetadata, summary };
 }
 function review(opts) {
   const { manifest, labels } = read(opts);

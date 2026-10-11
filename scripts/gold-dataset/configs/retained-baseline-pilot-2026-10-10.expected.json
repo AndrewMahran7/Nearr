@@ -1,0 +1,6 @@
+{
+  "usd": 6.5,
+  "calls": 35,
+  "providers": ["gemini_generate", "openai_responses", "google_text_search", "google_legacy_search", "google_geocode"],
+  "basis": "Planning scenario for at most five inputs, not observed cost: five Gemini calls at 12000 input and 1200 output tokens ($0.033); ten Sol calls including a recovery per input at 12000 entirely cache-written input and 25000 output tokens ($5.60); twenty New Text Search Pro requests ($0.64). Scenario total $6.273, rounded to $6.50. Actual calls/routes/tokens unknown until measured. Frozen runtime guard caps aggregate reservation/usage at $25 and 100 calls; global experiment guard separately caps $50. Rates exclude unknown account credits, discounts and tax. Retained transcript boundary excludes fresh ASR and acquisition. No request is authorized by this estimate file."
+}

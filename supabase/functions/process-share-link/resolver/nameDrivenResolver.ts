@@ -921,7 +921,18 @@ export type NameDrivenDeps = {
   geocode?: (text: string, key: string) => Promise<{ lat: number; lng: number; region?: string } | null>;
   /** Max total Places text searches across all mentions. */
   globalRequestLimit?: number;
+  /** Optional retrieval-only suffix. Absent preserves the production query verbatim. */
+  queryExtension?: (baseQuery: string, mention: VenueMention, geo: MediaGeoContext) => string;
 };
+
+export function extendMentionQuery(baseQuery: string, mention: VenueMention, geo: MediaGeoContext, extension?: NameDrivenDeps['queryExtension']): string {
+  if (!extension) return baseQuery;
+  const candidate = extension(baseQuery, mention, geo);
+  // An experiment may narrow retrieval, never replace the original identity/geography.
+  return typeof candidate === 'string' && candidate.length <= baseQuery.length + 160 &&
+    (candidate === baseQuery || candidate.startsWith(baseQuery + ' ')) && !/[\r\n\u0000-\u001f]/.test(candidate)
+    ? candidate : baseQuery;
+}
 
 function buildMentionQuery(mention: VenueMention, geo: MediaGeoContext): string {
   // Name + bounded geo + a light category hint. Geo/category are RANKING
@@ -1107,7 +1118,7 @@ export async function resolveVenueMentions(args: {
   };
 
   for (const mention of mentions) {
-    const query = buildMentionQuery(mention, geoContext);
+    const query = extendMentionQuery(buildMentionQuery(mention, geoContext), mention, geoContext, args.deps?.queryExtension);
     const categoryOnly = mention.resolutionMode !== 'geographic' &&
       isCategoryOrDescriptivePlacePhrase(mention.primaryVenueName ?? mention.displayName);
     if (categoryOnly) {

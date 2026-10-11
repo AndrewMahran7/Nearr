@@ -179,13 +179,14 @@ test('18 automatic deep reserves, consumes, and releases zero tokens and creates
 
   const automaticSource = await readFile(new URL('../src/automaticDeep/automaticDeepRecognitionProvider.ts', import.meta.url), 'utf8');
   const finalizerSource = await readFile(new URL('../../../supabase/functions/process-share-jobs/index.ts', import.meta.url), 'utf8');
+  const finalizationPlannerSource = await readFile(new URL('../../../supabase/functions/process-share-jobs/mediaFinalizationPlanner.ts', import.meta.url), 'utf8');
   const cachePolicy = await readFile(new URL('../../../supabase/functions/_shared/recognitionCachePolicy.ts', import.meta.url), 'utf8');
   const detail = await readFile(new URL('../../../lib/shareJobDetailState.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(automaticSource, /reserve_place_find|consume_place_find|release_place_find|place_find_wallet/, '13-15 no token accounting');
   assert.match(finalizerSource, /__skipPremiumEligibility: true/, 'automatic path skips Premium eligibility');
   assert.match(finalizerSource, /automatic-deep-simple-sol/, 'automatic internal resolver is distinct');
   assert.match(cachePolicy, /const readsEnabled = normalized === 'true'/, '20 recognition answer cache is opt-in only');
-  assert.match(finalizerSource, /rankedCandidates\.slice\(0, 3\)/, 'top3 bounded');
+  assert.match(finalizationPlannerSource, /rankedCandidates\.slice\(0, 3\)/, 'top3 bounded in extracted shared planner');
   assert.match(detail, /We found a few likely matches/, '25 guesses precede correction');
   assert.match(detail, /canSearchManually: true/, '32 correction remains available');
   assert.match(finalizerSource, /deep_recognition_needed[\s\S]*deep_recognition_completed/, '33 deep analytics distinct');

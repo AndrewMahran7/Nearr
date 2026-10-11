@@ -26,7 +26,7 @@ import type {
 import { buildQueryPlan } from './queryBuilder.ts';
 import { scoreCandidates, toResolvedCandidate } from './placeScoring.ts';
 import { decide } from './decisionPolicy.ts';
-import { resolveVenueMentions, nameDrivenDecision } from './nameDrivenResolver.ts';
+import { resolveVenueMentions, nameDrivenDecision, type NameDrivenDeps } from './nameDrivenResolver.ts';
 import type {
   VenueMention,
   MediaGeoContext,
@@ -184,6 +184,8 @@ export async function resolveSharedPlace(args: {
   geoContext?: MediaGeoContext | null;
   /** Detected venue↔host relationships (diagnostics only). */
   relationships?: VenueRelationshipDiagnostic[] | null;
+  /** Optional experiment/test dependencies; no changes to ranking or save gates. */
+  nameDrivenDeps?: NameDrivenDeps;
 }): Promise<ResolverResult> {
   const { evidence, env } = args;
   const mentions = args.mentions ?? [];
@@ -229,6 +231,7 @@ export async function resolveSharedPlace(args: {
       geoContext,
       env,
       platform: evidence.platform,
+      deps: args.nameDrivenDeps,
     });
     diagnostics.nameDrivenMultiPlace = {
       mode: isSingle ? 'single' : 'multi',

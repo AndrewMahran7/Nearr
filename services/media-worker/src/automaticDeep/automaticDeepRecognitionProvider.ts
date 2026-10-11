@@ -11,11 +11,13 @@ import { isCategoryOnlyPlaceName } from '../vayrin/placeIdentityGuard.js';
 import {
   evaluateNormalResultSpecificity,
   NORMAL_RESULT_SPECIFICITY_VERSION,
+  type NormalResultSpecificity,
 } from './normalResultSpecificity.js';
 
 export const AUTOMATIC_DEEP_RECOGNITION_VERSION = 'automatic-deep-recognition.v2';
 
 export type AutomaticDeepRecognitionRunner = typeof runSimpleSolRecognition;
+export type AutomaticDeepSpecificityEvaluator = (normal: AnalyzeOutput, input: AnalyzeInput) => NormalResultSpecificity;
 
 const NON_SPECIFIC_ENTITY_TYPES = new Set(['ADMIN_AREA', 'BROAD_AREA', 'UNKNOWN']);
 
@@ -132,6 +134,7 @@ class AutomaticDeepRecognitionModel implements ModelProvider {
     private readonly inner: ModelProvider,
     private readonly cfg: WorkerConfig,
     private readonly runDeep: AutomaticDeepRecognitionRunner,
+    private readonly evaluateSpecificity: AutomaticDeepSpecificityEvaluator = evaluateNormalResultSpecificity,
   ) {
     this.name = `${inner.name}+automatic-deep`;
   }
@@ -140,7 +143,7 @@ class AutomaticDeepRecognitionModel implements ModelProvider {
     const normal = await this.inner.analyze(input);
     if (input.targetPlace || !this.cfg.automaticDeepRecognitionEnabled) return normal;
 
-    const specificity = evaluateNormalResultSpecificity(normal);
+    const specificity = this.evaluateSpecificity(normal, input);
     const diagnostics: NonNullable<AnalyzeOutput['automaticDeep']> = {
       version: AUTOMATIC_DEEP_RECOGNITION_VERSION,
       needed: !specificity.specific,
@@ -256,9 +259,10 @@ export function withAutomaticDeepRecognition(
   inner: ModelProvider,
   cfg: WorkerConfig,
   runDeep: AutomaticDeepRecognitionRunner = runSimpleSolRecognition,
+  options: { evaluateSpecificity?: AutomaticDeepSpecificityEvaluator } = {},
 ): ModelProvider {
   return cfg.automaticDeepRecognitionEnabled
-    ? new AutomaticDeepRecognitionModel(inner, cfg, runDeep)
+    ? new AutomaticDeepRecognitionModel(inner, cfg, runDeep, options.evaluateSpecificity)
     : inner;
 }
 

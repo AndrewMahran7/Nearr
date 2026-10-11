@@ -67,6 +67,7 @@ assert.equal(planNamedLeadAutomaticRecovery({ jobId: 'job', status: 'completed',
   leads: [decisiveLead] }).length, 0);
 
 const edge = readFileSync('supabase/functions/process-share-jobs/index.ts', 'utf8');
+const planner = readFileSync('supabase/functions/process-share-jobs/mediaFinalizationPlanner.ts', 'utf8');
 const worker = readFileSync('services/media-worker/src/pipeline/runMediaTask.ts', 'utf8');
 const migration = readFileSync('supabase/migrations/20260914000001_recognition_geography_state_consistency.sql', 'utf8');
 const card = readFileSync('components/CandidateConfirmationCard.tsx', 'utf8');
@@ -75,9 +76,14 @@ assert.match(edge, /evidence_snapshot: \[\]/);
 assert.match(edge, /source_geography: sourceGeography/);
 assert.match(worker, /retainedSourceGeographyLabel\(task\.source_geography\)/);
 assert.match(worker, /media\.metadataLocation \?\? retainedMetadataLocation/);
-for (const path of ['premium', 'automatic_deep', 'media_mention', 'legacy_media', 'metadata',
+for (const path of ['premium', 'metadata',
   'recognition_cache_v2', 'recognition_cache_candidate_set', 'recognition_cache_trusted']) {
   assert.match(edge, new RegExp(`path: '${path}'`));
+}
+for (const [path, fn] of [['automatic_deep', 'planAutomaticDeepFinalization'],
+  ['media_mention', 'planMediaMentionFinalization'], ['legacy_media', 'planLegacyMediaFinalization']]) {
+  assert.match(planner, new RegExp(`path: '${path}'`));
+  assert.match(edge, new RegExp(`${fn}\\(\\{`));
 }
 // 13. The DB is authoritative and updates aggregate, slot, ledger, and saved state together.
 for (const contract of ["'{candidates}'", "'{mentionSlots}'", "'saveState'", "'savedPlaceId'",

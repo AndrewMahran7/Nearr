@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "verified_at": "2026-10-11T00:46:42Z",
+  "paid_requests_enabled": false,
+  "baseline": "retained-baseline-pilot-2026-10-10.json",
+  "configurations": [
+    "openai-asr-pilot-2026-10-10.json",
+    "local-asr-pilot-2026-10-10.json"
+  ],
+  "inherited_rate_verification": "retained-baseline-pilot-2026-10-10.verification.json",
+  "audio_rate": {
+    "model": "whisper-1",
+    "usd_per_minute": 0.006,
+    "source": "https://developers.openai.com/api/docs/models/whisper-1",
+    "rounding": "Current official model page gives a per-minute rate but does not state a rounding rule. The ledger conservatively rounds measured PCM seconds up before multiplying by the tariff; do not present this as an invoice amount."
+  },
+  "expected_increment": {
+    "basis": "Scenario only: five audio-bearing sources of at most 60 seconds each.",
+    "additional_provider_requests": 5,
+    "conservative_audio_tariff_usd": 0.03,
+    "recognition_response_cost": "Unknown before observed model usage; the original recognition cost scenario is not an empirical ASR forecast."
+  },
+  "run_guard": {
+    "max_usd": 25,
+    "cumulative_launcher": "../paidBatch.mjs",
+    "overall_project_max_usd": 50
+  },
+  "neutral_contract": {
+    "source_video": "media.source_video:{path:'source/video.mp4',sha256}",
+    "permission": "media.audio_allowed must be true; prohibited for visual_only, visual_pixel_text_masked and text_only.",
+    "local_transcript": "media.local_transcript:{path:'source/transcript.local.json',sha256}; evaluation-only generation receipt, full source timeline and exact PCM hash. No sidecar required for media without an audio stream."
+  },
+  "latency_boundary": {
+    "openai": "Current extraction and API transcription latency included in observation elapsed_ms.",
+    "local_retained": "Current verification/extraction/load latency included; original local inference duration/hardware/configuration retained separately under inference_evidence.audio_evidence.trace. Original inference time is not silently counted as zero.",
+    "retained": "Original ASR generation time and cost unavailable, as in baseline."
+  },
+  "provider_keys": {
+    "openai_asr": "MEDIA_TRANSCRIPTION_API_KEY, matching production credential semantics. Never stored in inputs or receipts."
+  },
+  "test_scope": "Synthetic sources and model stubs only; production FFmpeg/probe/extraction and transcription provider plumbing tested without network requests. No local Whisper model process executed by infrastructure tests."
+}

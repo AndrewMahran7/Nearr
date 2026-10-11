@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "runtime": {
+    "analysisProvider": "gemini",
+    "geminiModel": "gemini-3.5-flash-lite",
+    "automaticDeepRecognitionEnabled": true,
+    "vayrinFrameBudget": 6,
+    "vayrinFrameStrategy": "diverse",
+    "jobTimeoutMs": 480000
+  },
+  "frames": {
+    "strategy": "runtime_schedule",
+    "maxFrames": 24,
+    "intervalSeconds": 1,
+    "deduplicate": true,
+    "ffmpegPath": "ffmpeg"
+  },
+  "decisionContext": {
+    "autoSaveAuthorized": true,
+    "auditRecordPresent": true
+  },
+  "budget": {
+    "allowPaidRequests": false,
+    "maxUsd": 25,
+    "maxCalls": 100,
+    "requestTimeoutMs": 480000,
+    "maxRequestBytes": 33554432,
+    "rates": [
+      {
+        "operation": "gemini_generate",
+        "model": "gemini-3.5-flash-lite",
+        "inputUsdPerMillion": 0.3,
+        "cachedInputUsdPerMillion": 0.03,
+        "outputUsdPerMillion": 2.5,
+        "maxInputTokens": 1048576,
+        "maxOutputTokens": 65536,
+        "outputTokenPolicy": "verified_provider_ceiling",
+        "outputTokenPolicyBasis": "Official model input/output ceilings; preserve production generationConfig without injecting a completion limit. Output accounting includes thinking tokens.",
+        "maxRequestUsd": 0.5,
+        "maxCalls": 5,
+        "source": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.5-flash-lite ; https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite",
+        "verifiedAt": "2026-10-11T00:31:14Z"
+      },
+      {
+        "operation": "openai_responses",
+        "model": "gpt-5.6-sol",
+        "inputUsdPerMillion": 4,
+        "cachedInputUsdPerMillion": 0.4,
+        "cacheWriteInputUsdPerMillion": 5,
+        "outputUsdPerMillion": 20,
+        "maxInputTokens": 1050000,
+        "longContext": {
+          "aboveInputTokens": 272000,
+          "inputUsdPerMillion": 8,
+          "cachedInputUsdPerMillion": 0.8,
+          "cacheWriteInputUsdPerMillion": 10,
+          "outputUsdPerMillion": 30
+        },
+        "maxOutputTokens": 128000,
+        "outputTokenPolicy": "verified_provider_ceiling",
+        "outputTokenPolicyBasis": "Official maximum output including non-visible reasoning; preserve production request with no added output limit. Reserve highest applicable full-request context tier and cache-write rate.",
+        "maxRequestUsd": 15,
+        "maxCalls": 10,
+        "source": "https://developers.openai.com/api/docs/models/gpt-5.6-sol ; https://developers.openai.com/api/docs/guides/prompt-caching",
+        "verifiedAt": "2026-10-11T00:31:14Z"
+      },
+      {
+        "operation": "google_text_search",
+        "fieldMask": "places.id,places.displayName,places.formattedAddress,places.shortFormattedAddress,places.location,places.primaryType,places.primaryTypeDisplayName,places.types,places.businessStatus,places.photos",
+        "requestUsd": 0.032,
+        "maxRequestUsd": 0.032,
+        "maxCalls": 50,
+        "source": "https://developers.google.com/maps/billing-and-pricing/sku-details ; https://developers.google.com/maps/billing-and-pricing/pricing",
+        "verifiedAt": "2026-10-11T00:31:14Z"
+      },
+      {
+        "operation": "google_text_search",
+        "fieldMask": "places.id,places.displayName,places.formattedAddress,places.location,places.types",
+        "requestUsd": 0.032,
+        "maxRequestUsd": 0.032,
+        "maxCalls": 50,
+        "source": "https://developers.google.com/maps/billing-and-pricing/sku-details ; https://developers.google.com/maps/billing-and-pricing/pricing",
+        "verifiedAt": "2026-10-11T00:31:14Z"
+      },
+      {
+        "operation": "google_legacy_search",
+        "requestUsd": 0.04,
+        "maxRequestUsd": 0.04,
+        "maxCalls": 25,
+        "source": "https://developers.google.com/maps/billing-and-pricing/sku-details ; https://developers.google.com/maps/billing-and-pricing/pricing",
+        "verifiedAt": "2026-10-11T00:31:14Z"
+      },
+      {
+        "operation": "google_geocode",
+        "requestUsd": 0.005,
+        "maxRequestUsd": 0.005,
+        "maxCalls": 25,
+        "source": "https://developers.google.com/maps/billing-and-pricing/pricing",
+        "verifiedAt": "2026-10-11T00:31:14Z"
+      },
+      {
+        "operation": "openai_transcription",
+        "model": "whisper-1",
+        "audioUsdPerMinute": 0.006,
+        "maxRequestUsd": 0.1,
+        "maxCalls": 5,
+        "source": "https://developers.openai.com/api/docs/models/whisper-1",
+        "verifiedAt": "2026-10-11T00:46:42Z"
+      }
+    ]
+  },
+  "audio": {
+    "mode": "openai",
+    "ffprobePath": "ffprobe"
+  }
+}

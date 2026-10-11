@@ -77,7 +77,9 @@ const migration = source('supabase/migrations/20260906000001_automatic_completio
 const detail = source('app/share-jobs/[jobId].tsx');
 const savedResult = source('components/SavedPlaceResult.tsx');
 const queue = source('app/share-jobs/index.tsx');
-assert.match(worker, /automaticDeepCandidates[\s\S]*nativeNearrPlaceId/); // 19 named lead native save
+const planner = source('supabase/functions/process-share-jobs/mediaFinalizationPlanner.ts');
+assert.match(worker, /planAutomaticDeepFinalization\(\{/);
+assert.match(planner, /automaticDeepCandidates[\s\S]*nativeNearrPlaceId/); // 19 named lead native save
 assert.match(worker, /status: 'completed'[\s\S]*automatic_deep_auto_completion/); // 20 no Search task
 assert.match(migration, /secondary_soft_saved/); // 21 durable soft state
 assert.match(migration, /promote_share_job_soft_alternative/); // 22 promote
