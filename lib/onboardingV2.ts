@@ -21,6 +21,7 @@ import {
   advanceSimulatedTutorial,
   advancePlaceTour,
   backOnboardingV2,
+  backOnboardingV2FromAccount,
   beginOnboardingSharingRehearsal,
   beginOnboardingSecondHalf,
   beginOnboardingRealPractice,
@@ -697,6 +698,10 @@ export function advanceOnboardingV2SimulatedTutorial(
 
 export function goBackOnboardingV2(): Promise<OnboardingV2State> {
   return applyTransition(backOnboardingV2);
+}
+
+export function goBackOnboardingV2FromAccount(): Promise<OnboardingV2State> {
+  return applyTransition(backOnboardingV2FromAccount);
 }
 
 /**

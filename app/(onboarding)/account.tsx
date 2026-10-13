@@ -14,7 +14,11 @@ import { Feather } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 
 import { trackEvent } from '@/lib/analytics';
-import { recordOnboardingV2AuthFailed, recordOnboardingV2SignInStarted } from '@/lib/onboardingV2';
+import {
+  goBackOnboardingV2FromAccount,
+  recordOnboardingV2AuthFailed,
+  recordOnboardingV2SignInStarted,
+} from '@/lib/onboardingV2';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { areDeveloperToolsVisible } from '@/lib/appEnvironment';
 import {
@@ -183,6 +187,7 @@ export default function AccountAuthScreen() {
   const [activeOperation, setActiveOperation] = useState<ActiveAuthOperation>(null);
   const activeOperationRef = useRef<ActiveAuthOperation>(null);
   const [accountTransitionBusy, setAccountTransitionBusy] = useState(false);
+  const signedInContinueRef = useRef(false);
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -251,9 +256,21 @@ export default function AccountAuthScreen() {
   }
 
   async function handleBack() {
+    // Once the permanent identity exists, going back cannot undo auth or the
+    // account transfer. The affordance is hidden in this state; keep the
+    // handler defensive in case a queued tap arrives during the session flip.
+    if (signedIn) return;
     if (anonymousOnboarding && authEntryIntent !== 'existing_account_sign_in') await cancelOnboardingAccountTransfer();
     if (mapBackupContext) {
-      router.replace('/');
+      // The durable cancellation moves this checkpoint to onboarding_complete;
+      // AuthGate owns the resulting map edge.
+      return;
+    }
+    if (anonymousOnboarding && authEntryIntent !== 'existing_account_sign_in') {
+      // Publish the stable previous onboarding stage first. AuthGate observes
+      // it and performs the only route replacement, so account_required cannot
+      // reassert this screen after Back.
+      await goBackOnboardingV2FromAccount();
       return;
     }
     if (router.canGoBack()) router.back();
@@ -305,11 +322,12 @@ export default function AccountAuthScreen() {
   async function completeAuthentication(
     userId: string,
     method = activeOperationRef.current ?? 'resume',
-    options: { retry?: boolean } = {},
+    options: { retry?: boolean; recoverCompletedNavigation?: boolean } = {},
   ) {
     const claim = claimOnboardingAccountTransition({
       userId,
       retry: options.retry,
+      recoverCompletedNavigation: options.recoverCompletedNavigation,
       run: async () => {
         const current = await supabase.auth.getUser();
         if (current.data.user?.id === userId) await persistNamesFromAuthUser(current.data.user);
@@ -322,9 +340,11 @@ export default function AccountAuthScreen() {
       },
     });
 
-    // A remount, auth-listener replay, or second tap observes the owner's
-    // promise. It never emits another error and never claims navigation.
-    if (!claim.owner) {
+    // Auth-listener and in-flight remount replays only observe the owner's
+    // promise. A deliberate signed-in Continue may claim one cached-route
+    // recovery after the backend work is already complete; this repairs a
+    // route dispatch lost to a remount without repeating the transfer.
+    if (!claim.owner && !claim.navigationOwner) {
       try {
         await claim.promise;
       } catch {
@@ -555,8 +575,16 @@ export default function AccountAuthScreen() {
 
   // Dev/QA preview: a session already exists → skip auth to the activation step.
   function handleContinueSignedIn() {
+    if (signedInContinueRef.current) return;
     const userId = session?.user.id;
-    if (userId) void completeAuthentication(userId, 'resume', { retry: true });
+    if (!userId) return;
+    signedInContinueRef.current = true;
+    void completeAuthentication(userId, 'resume', {
+      retry: true,
+      recoverCompletedNavigation: true,
+    }).finally(() => {
+      signedInContinueRef.current = false;
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -654,7 +682,7 @@ export default function AccountAuthScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <OnboardingScreenShell
-        onBack={() => void handleBack()}
+        onBack={signedIn ? undefined : () => void handleBack()}
       >
         <View style={styles.brand}>
           <Image source={require('../../assets/icon.png')} style={styles.brandIcon} accessibilityLabel="Nearr logo" />

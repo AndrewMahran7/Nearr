@@ -238,6 +238,7 @@
     "test:onboarding-final-journey": "ts-node -P scripts/tsconfig.json scripts/testOnboardingFinalJourney.ts",
     "test:onboarding-physical-qa-regressions": "ts-node -P scripts/tsconfig.json scripts/testOnboardingPhysicalQaRegressions.ts",
     "test:onboarding-account-transition": "ts-node -P scripts/tsconfig.json scripts/testOnboardingAccountTransitionRegression.ts",
+    "test:create-map-navigation": "ts-node -P scripts/tsconfig.json scripts/testCreateMapNavigationRegression.ts",
     "prove:onboarding-account-transition:dev": "ts-node -P scripts/tsconfig.json scripts/proveOnboardingAccountTransitionDev.ts",
     "test:onboarding-v2-hands-on-activation": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2HandsOnActivation.ts",
     "test:onboarding-v2-phase2-map": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2Phase2Map.ts",

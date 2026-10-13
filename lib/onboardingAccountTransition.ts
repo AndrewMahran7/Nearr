@@ -15,11 +15,14 @@ export type OnboardingAccountTransitionSnapshot<T> = {
 export type OnboardingAccountTransitionClaim<T> = {
   generation: number;
   owner: boolean;
+  navigationOwner: boolean;
+  replay: 'none' | 'in_flight' | 'complete' | 'error';
   promise: Promise<T>;
 };
 
 type TransitionRecord<T> = OnboardingAccountTransitionSnapshot<T> & {
   promise?: Promise<T>;
+  recoveryNavigationClaimed?: boolean;
 };
 
 let generation = 0;
@@ -29,14 +32,16 @@ let current: TransitionRecord<unknown> | null = null;
  * Claims the single post-auth account transition for a user.
  *
  * Callback replay, a component remount, and an auth-listener replay all share
- * the same promise while work is running. A completed transition is a no-op,
- * and a failed transition only starts again after an explicit retry action.
- * Only the owner may publish errors or navigate.
+ * the same promise while work is running. A completed transition is a no-op
+ * for passive replays; one explicit signed-in Continue may recover its cached
+ * route without rerunning backend work. A failed transition only starts again
+ * after an explicit retry action. Only the work owner may publish errors.
  */
 export function claimOnboardingAccountTransition<T>(options: {
   userId: string;
   run: () => Promise<T>;
   retry?: boolean;
+  recoverCompletedNavigation?: boolean;
 }): OnboardingAccountTransitionClaim<T> {
   const existing = current as TransitionRecord<T> | null;
   if (existing?.userId === options.userId) {
@@ -44,12 +49,25 @@ export function claimOnboardingAccountTransition<T>(options: {
       (existing.phase === 'ACCOUNT_TRANSITION_PENDING' || existing.phase === 'ACCOUNT_TRANSITION_IN_PROGRESS')
       && existing.promise
     ) {
-      return { generation: existing.generation, owner: false, promise: existing.promise };
-    }
-    if (existing.phase === 'ACCOUNT_TRANSITION_COMPLETE') {
       return {
         generation: existing.generation,
         owner: false,
+        navigationOwner: false,
+        replay: 'in_flight',
+        promise: existing.promise,
+      };
+    }
+    if (existing.phase === 'ACCOUNT_TRANSITION_COMPLETE') {
+      const navigationOwner = options.recoverCompletedNavigation === true &&
+        existing.recoveryNavigationClaimed !== true;
+      if (navigationOwner) {
+        current = { ...existing, recoveryNavigationClaimed: true };
+      }
+      return {
+        generation: existing.generation,
+        owner: false,
+        navigationOwner,
+        replay: 'complete',
         promise: Promise.resolve(existing.value as T),
       };
     }
@@ -57,6 +75,8 @@ export function claimOnboardingAccountTransition<T>(options: {
       return {
         generation: existing.generation,
         owner: false,
+        navigationOwner: false,
+        replay: 'error',
         promise: Promise.reject(existing.error),
       };
     }
@@ -84,6 +104,7 @@ export function claimOnboardingAccountTransition<T>(options: {
           generation: claimedGeneration,
           phase: 'ACCOUNT_TRANSITION_COMPLETE',
           value,
+          recoveryNavigationClaimed: false,
         };
       }
       return value;
@@ -101,12 +122,18 @@ export function claimOnboardingAccountTransition<T>(options: {
     });
 
   current = { ...current, promise };
-  return { generation: claimedGeneration, owner: true, promise };
+  return {
+    generation: claimedGeneration,
+    owner: true,
+    navigationOwner: true,
+    replay: 'none',
+    promise,
+  };
 }
 
 export function getOnboardingAccountTransitionSnapshot(): OnboardingAccountTransitionSnapshot<unknown> | null {
   if (!current) return null;
-  const { promise: _promise, ...snapshot } = current;
+  const { promise: _promise, recoveryNavigationClaimed: _recoveryNavigationClaimed, ...snapshot } = current;
   return snapshot;
 }
 

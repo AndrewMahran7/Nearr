@@ -1738,6 +1738,44 @@ export function backOnboardingV2(state: OnboardingV2State, now: string): Onboard
   );
 }
 
+/**
+ * Leave the account requirement through durable onboarding state.
+ *
+ * A plain router.back() cannot own this edge: AuthGate still sees
+ * `account_required` and immediately replaces the account route. The animated
+ * setup screens directly before this stage also auto-advance, so the stable
+ * previous product step is the notification decision in the current second
+ * half, or the first-magic checkpoint for an older persisted journey.
+ */
+export function backOnboardingV2FromAccount(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (
+    state.stage !== 'account_required' ||
+    !['anonymous_active', 'permanent_account_linking'].includes(state.identityLifecycle) ||
+    state.authCompletedAt
+  ) return unchanged(state);
+
+  const stage: OnboardingV2Stage = state.behavioralCompletedAt
+    ? 'onboarding_complete'
+    : state.secondHalfStartedAt || state.makingNearrYoursViewedAt
+      ? 'notification_education'
+      : state.tutorialSave
+        ? 'first_magic_moment_complete'
+        : 'overview';
+
+  return transition(state, {
+    stage,
+    identityLifecycle: 'anonymous_active',
+    accountLinkStartedAt: null,
+    authLastResult: 'cancelled',
+  }, now, [{
+    name: 'onboarding_back_tapped',
+    properties: { from: state.stage, to: stage },
+  }]);
+}
+
 export function bindAnonymousUser(
   state: OnboardingV2State,
   userId: string,

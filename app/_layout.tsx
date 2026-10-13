@@ -511,6 +511,17 @@ function AuthGate({
     }
 
     if (signedInSecondHalfContinuation) {
+      // The account screen's resolver owns the post-auth destination while
+      // its latch is raised. In particular, do not race its save-aware
+      // router.replace with this stage reconciliation when account_required
+      // becomes auth_success.
+      if ((inAuth || inOnboarding) && isPostAuthRoutingPending()) {
+        recordOnboardingV2RouteDiagnostic('auth_route_decision', {
+          route: currentRoute,
+          result: 'hold:post_auth_resolver',
+        });
+        return;
+      }
       if (shouldPreserveOnboardingV2ProductRoute({
         currentRoute,
         stage: onboardingV2?.stage,

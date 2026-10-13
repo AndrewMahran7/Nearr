@@ -113,10 +113,10 @@ async function main() {
 
   const account = fs.readFileSync(path.join(root, 'app/(onboarding)/account.tsx'), 'utf8');
   assert.match(account, /claimOnboardingAccountTransition/);
-  assert.match(account, /if \(!claim\.owner\) \{/);
+  assert.match(account, /if \(!claim\.owner && !claim\.navigationOwner\) \{/);
   assert.match(account, /handleContinueSignedIn[\s\S]*retry: true/);
   assert.doesNotMatch(account, /console\.warn\('\[onboarding-v2\] account_transition_failed'/);
-  pass('account screen grants navigation and error ownership only to the transition claimant');
+  pass('account screen separates transition/error ownership from explicit cached-route recovery');
 
   const migration = fs.readFileSync(
     path.join(root, 'supabase/migrations/20261009000001_onboarding_transfer_owner_order.sql'),
