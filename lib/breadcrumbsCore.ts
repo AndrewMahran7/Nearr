@@ -26,6 +26,9 @@ export const MAX_BREADCRUMBS = 30;
 export type BreadcrumbEvent =
   | 'app_launch'
   | 'appstate_change'
+  | 'root_layout_mounted'
+  | 'root_layout_first_layout'
+  | 'root_layout_unmounted'
   | 'root_layout_ready'
   | 'initial_url_received'
   | 'warm_url_received'
@@ -68,6 +71,7 @@ export type BreadcrumbFields = {
   jobId?: string | null;
   savedPlaceId?: string | null;
   notificationId?: string | null;
+  mountId?: string | null;
   appState?: string | null;
   result?: string | null; // classification, e.g. 'accepted' | 'rejected' | 'duplicate'
   errorName?: string | null;
@@ -97,6 +101,7 @@ export function sanitizeBreadcrumbFields(fields: BreadcrumbFields): BreadcrumbFi
     'jobId',
     'savedPlaceId',
     'notificationId',
+    'mountId',
     'appState',
     'result',
     'errorName',

@@ -70,6 +70,7 @@ import { NotificationTapController } from '@/components/NotificationTapControlle
 import { StartupSurface } from '@/components/StartupSurface';
 import { useStartupWatchdog } from '@/hooks/useStartupWatchdog';
 import { ownerForStartupRoute, resolveStartupPresentation } from '@/lib/startupWatchdogCore';
+import { hideNativeSplashWhenReady } from '@/lib/splashLifecycle';
 import { isOnboardingV2DevelopmentResetAvailable } from '@/lib/onboardingV2DevReset';
 import { setNotificationForegroundPathname } from '@/lib/notificationForegroundPolicy';
 
@@ -664,6 +665,15 @@ function RootLayoutContent() {
   const segments = useSegments();
   const pathname = usePathname();
   const { colors, resolvedTheme } = useTheme();
+  const rootMountIdRef = useRef(`root-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+  const rootLayoutReadyRef = useRef(false);
+  const handleRootLayout = useCallback(() => {
+    if (!rootLayoutReadyRef.current) {
+      rootLayoutReadyRef.current = true;
+      recordBreadcrumb('root_layout_first_layout', { mountId: rootMountIdRef.current });
+    }
+    void hideNativeSplashWhenReady();
+  }, []);
   // Terminal-state model for magic-link handling. `idle` before any link,
   // `processing` during the exchange, then a STICKY `succeeded`/`failed` that a
   // late-mounting auth-callback screen can always read — this closes the
@@ -740,6 +750,12 @@ function RootLayoutContent() {
   // ``nearr.devAuthEnabled=1`` persisted from before the UI entry point was
   // removed; without this, sign-out would silently re-enter Local UI Mode.
   useEffect(() => {
+    const mountId = rootMountIdRef.current;
+    recordBreadcrumb('root_layout_mounted', { mountId });
+    return () => recordBreadcrumb('root_layout_unmounted', { mountId });
+  }, []);
+
+  useEffect(() => {
     void clearDevAuth();
   }, []);
 
@@ -805,7 +821,7 @@ function RootLayoutContent() {
 
   return (
     <AppErrorBoundary onReturnToMap={() => router.replace('/(tabs)/map')}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={{ flex: 1 }} onLayout={handleRootLayout}>
         <SafeAreaProvider>
           <AuthLinkStatusContext.Provider value={authLinkStatus}>
           <AuthGate authLinkPending={authLinkPending}>
