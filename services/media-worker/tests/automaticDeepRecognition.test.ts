@@ -22,6 +22,51 @@ function output(places: PlaceCandidateEvidence[], overrides: Partial<AnalyzeOutp
     ...emptyEvidence(), places, insufficientEvidence: places.length === 0,
   }, ...overrides };
 }
+
+test('adaptive healthy empty review avoids Deep without authorizing an identity', async () => {
+  const normal = output([], { parseDiagnostics: { emitted: 0, accepted: 0, rejected: 0,
+    partialPreserved: 0, rejectionPaths: [], topLevelInvalid: false, validationErrorClass: 'none' } });
+  let calls = 0;
+  const result = await withAutomaticDeepRecognition({ name: 'normal', analyze: async () => normal },
+    { ...cfg, adaptiveEmptyEvidenceReviewEnabled: true }, async () => { calls++; return execution(); }).analyze(input);
+  assert.equal(calls, 0);
+  assert.equal(result.automaticDeep?.emptyEvidenceReview, true);
+  assert.deepEqual(result.evidence.places, []);
+  assert.equal(result.recognitionFailureClass, undefined);
+  assert.equal(result.automaticDeepRecognition, undefined);
+});
+
+test('adaptive empty review keeps partial, multi, invalid and failed outputs on Deep', async () => {
+  const valid = output([], { parseDiagnostics: { emitted: 0, accepted: 0, rejected: 0,
+    partialPreserved: 0, rejectionPaths: [], topLevelInvalid: false, validationErrorClass: 'none' } });
+  const cases = [
+    output([]),
+    { ...valid, parseDiagnostics: { ...valid.parseDiagnostics!, rejected: 1, emitted: 1 } },
+    { ...valid, evidence: { ...valid.evidence, multipleIntentionalPlaces: true } },
+    { ...valid, evidence: { ...valid.evidence, partialPlaces: [{ nameHint: 'Unresolved stop' }] as any } },
+    { ...valid, recognitionFailureClass: 'model_provider_failure' as const },
+  ];
+  for (const normal of cases) {
+    let calls = 0;
+    const result = await withAutomaticDeepRecognition({ name: 'normal', analyze: async () => normal },
+      { ...cfg, adaptiveEmptyEvidenceReviewEnabled: true }, async () => { calls++; return execution(); }).analyze(input);
+    assert.equal(calls, 1);
+    assert.equal(result.automaticDeep?.emptyEvidenceReview, undefined);
+  }
+});
+
+test('adaptive empty review flag off preserves old escalation and missing media failure', async () => {
+  const normal = output([], { parseDiagnostics: { emitted: 0, accepted: 0, rejected: 0,
+    partialPreserved: 0, rejectionPaths: [], topLevelInvalid: false, validationErrorClass: 'none' } });
+  let calls = 0;
+  const provider = { name: 'normal', analyze: async () => normal };
+  await withAutomaticDeepRecognition(provider, cfg, async () => { calls++; return execution(); }).analyze(input);
+  assert.equal(calls, 1);
+  const result = await withAutomaticDeepRecognition(provider, { ...cfg, adaptiveEmptyEvidenceReviewEnabled: true },
+    async () => { throw Error('must not dispatch'); }).analyze({ ...input, frames: [] });
+  assert.equal(result.recognitionFailureClass, 'source_evidence_unavailable');
+  assert.equal(result.automaticDeep?.emptyEvidenceReview, undefined);
+});
 function specific(value: AnalyzeOutput, terminalDecision?: string): boolean {
   return evaluateNormalResultSpecificity({ ...value, terminalDecision }).specific;
 }

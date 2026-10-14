@@ -1,0 +1,9 @@
+# Cost and latency validation — BLOCKED
+
+Historical qualification reported approximately 9.09% saving (reported 95% interval 2.17%–17.48%) with unchanged held-out autonomous identities. The private final_aggregate_metrics_v1.json also records older Development and Calibration replay arms: 112 cases $10.8241256 baseline versus $8.8140616 candidate, and 34 cases $2.9632896 baseline versus $2.3918256 candidate. Those arm figures use their own accounting and are not a measured saving for live Production. Holdout cost totals are null in that file.
+
+Current source logic proves only the conditional mechanism: valid empty evidence with the flag enabled skips a Deep call; a food/nonfood parent candidate with the Edge flag enabled is rejected by the current planner. The flags are absent in live Production, and no current-lineage replay of model usage, request tokens, Places calls or real recognition latency was run. Current expected percentage and dollar saving are therefore UNKNOWN. No paid inference was dispatched in this release task.
+
+Production Gemini is pinned to gemini-3.5-flash-lite; Sol uses the code default gpt-5.6-sol absent an override. Current provider tariffs should be recomputed from the official [Gemini pricing](https://ai.google.dev/gemini-api/docs/pricing) and [GPT-5.6 Sol pricing](https://developers.openai.com/api/docs/models/gpt-5.6-sol) with observed token usage before claiming a Production saving.
+
+Historical submitted-case latency from the older private replay: Development baseline/candidate p50 6637.23/6638.04 ms, p90 25127.84/25128.14 ms, p95 36440.84/36441.27 ms; Calibration p50 11224.40/11224.92 ms, p90 21227.65/21228.17 ms, p95 26769.36/26769.83 ms. These near-identical replay timings do not qualify current live latency. Current Production early-review, normal, and Deep p50/p90/p95 comparisons are UNKNOWN.

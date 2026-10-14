@@ -1,3 +1,4 @@
+import { canReviewEmptyEvidence } from './emptyEvidencePolicy.js';
 import type { WorkerConfig } from '../config/env.js';
 import type { AnalyzeInput, AnalyzeOutput, ModelProvider } from '../providers/model.js';
 import { buildAutomaticFrameSets } from '../solParity/frames.js';
@@ -172,6 +173,12 @@ class AutomaticDeepRecognitionModel implements ModelProvider {
       evidence: { ...normal.evidence, places: [], insufficientEvidence: true },
       recognitionFailureClass: 'source_evidence_unavailable',
       automaticDeep: { ...diagnostics, noUsableSourceEvidence: true },
+    };
+
+    // Frozen gold-v1 rule: healthy empty output becomes review; partials,
+    // provider/schema failures and multi intent retain the existing Deep path.
+    if (this.cfg.adaptiveEmptyEvidenceReviewEnabled && canReviewEmptyEvidence(normal)) return {
+      ...normal, automaticDeep: { ...diagnostics, emptyEvidenceReview: true },
     };
 
     const frameSets = buildAutomaticFrameSets(

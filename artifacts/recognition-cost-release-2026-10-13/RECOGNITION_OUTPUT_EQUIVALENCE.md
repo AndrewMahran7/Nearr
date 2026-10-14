@@ -1,0 +1,7 @@
+# Output-equivalence gate — BLOCKED
+
+The historical sealed benchmark comprises 208 READY cases: 112 Development, 34 Calibration, 62 Holdout V1, with 60 independent holdout groups. Its original measured arms used a different completion lineage from live Production. Current Production b309 has automatic-completion-2026-09-06.v1, whereas the measured candidate's base used the later exact-identity completion gate. A replay on the original arm therefore cannot establish Production baseline-versus-backport output equivalence.
+
+Local proof completed: 75 targeted policy/automatic-Deep tests pass, including unchanged flag-off Deep escalation, valid empty early REVIEW, invalid/partial/multi/failure continuation, and food-parent veto through the Production blocking-reason planner. A frozen Edge projection test reported 91 cases, 85 projected inputs, six unavailable runtime inputs, and zero differences; it checks result projection and notification finalization, not the new legacy candidate mapping. The canonical deterministic recognition regression passed with P10 classified TECHNICAL. These are narrower than the required paired 208-case release gate.
+
+No current-lineage paired Development/Calibration/Holdout replay was completed. Consequently autonomous identity changes, new wrong autosaves, lost correct autosaves, branch/multi-place differences and negative false autosaves are UNKNOWN, not asserted to be zero. No case-specific Holdout tuning was done. The release must not deploy until a replay proves all required counts and explains every difference.

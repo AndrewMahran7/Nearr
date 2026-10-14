@@ -137,6 +137,7 @@ export type AnalyzeOutput = {
     invoked: boolean;
     attempts: number;
     recoveryInvoked: boolean;
+    emptyEvidenceReview?: boolean;
     noUsableSourceEvidence: boolean;
     rejectionReason: string | null;
     normalResultSpecificity: string;

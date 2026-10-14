@@ -18,6 +18,7 @@
 // @ts-nocheck — Deno runtime.
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { applyLegacyParentCategoryVeto } from './adaptiveLegacyIdentity.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
 
 import { readEnv, validateEnv } from '../process-share-link/env.ts';
@@ -3300,7 +3301,12 @@ async function finalizeMediaTask(
     cleanSearchQuery: result.cleanSearchQuery,
     failureReason: result.failureReason,
   });
-  const legacyMediaCompletion = planAutomaticCompletion(result.candidates ?? []);
+  const parentCategoryVetoEnabled = (Deno.env.get('ADAPTIVE_LEGACY_PARENT_CATEGORY_VETO_ENABLED') ?? '').trim().toLowerCase() === 'true';
+  const legacyMediaCompletion = planAutomaticCompletion(
+    parentCategoryVetoEnabled
+      ? (result.candidates ?? []).map((candidate: any) => applyLegacyParentCategoryVeto(candidate, parsed.value))
+      : (result.candidates ?? []),
+  );
   // Post-resolve routing + the EXTRA media auto-save gate (never loosens
   // safeToAutoSave; can only downgrade a resolver auto_save to a confirmation).
   const post = planPostResolve({

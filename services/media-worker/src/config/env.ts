@@ -91,6 +91,7 @@ export type WorkerConfig = {
   scrapeCreatorsFacebookFallbackEnabled: boolean;
   /** Accuracy-first free recovery. Defaults ON and is independent of Premium. */
   automaticDeepRecognitionEnabled: boolean;
+  adaptiveEmptyEvidenceReviewEnabled: boolean;
 
   // ---- Supabase (service-role, used INTERNALLY only) ----
   supabaseUrl: string;
@@ -266,6 +267,7 @@ export function loadConfig(): WorkerConfig {
     scrapeCreatorsInstagramFallbackEnabled: bool('SCRAPECREATORS_INSTAGRAM_FALLBACK_ENABLED', false),
     scrapeCreatorsFacebookFallbackEnabled: bool('SCRAPECREATORS_FACEBOOK_FALLBACK_ENABLED', false),
     automaticDeepRecognitionEnabled: bool('AUTOMATIC_DEEP_RECOGNITION_ENABLED', false),
+    adaptiveEmptyEvidenceReviewEnabled: bool('ADAPTIVE_EMPTY_EVIDENCE_REVIEW_ENABLED', false),
 
     supabaseUrl,
     supabaseServiceRoleKey: str('SUPABASE_SERVICE_ROLE_KEY'),
@@ -375,6 +377,7 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
       scrapeCreatorsInstagramFallbackEnabled: cfg.scrapeCreatorsInstagramFallbackEnabled,
       scrapeCreatorsFacebookFallbackEnabled: cfg.scrapeCreatorsFacebookFallbackEnabled,
       automaticDeepRecognitionEnabled: cfg.automaticDeepRecognitionEnabled,
+      adaptiveEmptyEvidenceReviewEnabled: cfg.adaptiveEmptyEvidenceReviewEnabled,
       vayrinVisualGeolocationEnabled: cfg.vayrinVisualGeolocationEnabled,
       vayrinVerificationV3Enabled: cfg.vayrinVerificationV3Enabled,
       premiumSolWebSearchEnabled: cfg.premiumSolWebSearchEnabled,
