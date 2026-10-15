@@ -27,6 +27,7 @@ import {
   type SavedBrowseSort,
 } from '@/lib/savedPlacesBrowse';
 import { useTheme } from '@/lib/theme';
+import { useReduceMotion } from '@/lib/useReduceMotion';
 import type { SavedPlaceWithPlace } from '@/types';
 
 const EMPTY_FILTERS: SavedBrowseFilters = { categories: [], hasOriginalPost: false };
@@ -54,6 +55,7 @@ export function SavedPlacesLibrary({
 }: Props) {
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReduceMotion();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SavedBrowseSort>('recent');
@@ -267,7 +269,7 @@ export function SavedPlacesLibrary({
         maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
       />
 
-      <Modal visible={sortOpen} transparent animationType="slide" onRequestClose={() => setSortOpen(false)}>
+      <Modal visible={sortOpen} transparent animationType={reduceMotion ? 'none' : 'slide'} onRequestClose={() => setSortOpen(false)}>
         <SheetBackdrop label="Close sort" onClose={() => setSortOpen(false)} styles={styles}>
           <View style={styles.modalHandle} />
           <View style={styles.modalHeader}>
@@ -294,7 +296,7 @@ export function SavedPlacesLibrary({
         </SheetBackdrop>
       </Modal>
 
-      <Modal visible={filtersOpen} transparent animationType="slide" onRequestClose={() => setFiltersOpen(false)}>
+      <Modal visible={filtersOpen} transparent animationType={reduceMotion ? 'none' : 'slide'} onRequestClose={() => setFiltersOpen(false)}>
         <SheetBackdrop label="Close filters" onClose={() => setFiltersOpen(false)} styles={styles} tall>
           <View style={styles.modalHandle} />
           <View style={styles.modalHeader}>

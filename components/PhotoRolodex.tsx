@@ -66,6 +66,7 @@ type Props = {
   /** Saved-place galleries keep their existing adjacent warming behavior. */
   prefetchAdjacent?: boolean;
   onPhotoLoadStart?: (index: number, uri: string) => void;
+  onPhotoError?: (index: number, uri: string) => void;
 };
 
 /**
@@ -82,6 +83,7 @@ export function PhotoRolodexModal({
   loadOnlyVisited = false,
   prefetchAdjacent = true,
   onPhotoLoadStart,
+  onPhotoError,
 }: Props) {
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -313,7 +315,10 @@ export function PhotoRolodexModal({
                                 style={styles.image}
                                 resizeMode={resizeMode}
                                 onLoadStart={() => onPhotoLoadStart?.(index, item.uri)}
-                                onError={() => setFailedUris((current) => new Set([...current, item.uri]))}
+                                onError={() => {
+                                  setFailedUris((current) => new Set([...current, item.uri]));
+                                  onPhotoError?.(index, item.uri);
+                                }}
                                 accessible
                                 accessibilityLabel={item.accessibilityLabel}
                               />

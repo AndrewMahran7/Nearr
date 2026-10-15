@@ -14,6 +14,7 @@ import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { useTheme } from '@/lib/theme';
 import { hydrateSavedPlace } from '@/lib/savedPlaceHydration';
 import { placeSourceCards } from '@/lib/placeSources';
+import { savedPlacePhotoKind, type SavedPlacePhotoKind } from '@/lib/savedPlaceSnapshot';
 import type { SavedPlaceWithPlace } from '@/types';
 
 type Props = {
@@ -44,15 +45,17 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
     [saved],
   );
   const [savedImageUri, setSavedImageUri] = useState<string | null>(null);
+  const [savedImageKind, setSavedImageKind] = useState<SavedPlacePhotoKind>('unknown');
   const [imageResolution, setImageResolution] = useState<PlaceImageResolutionKind | null>(null);
   // A feature earns its space with a known saved photo. Missing or failed
   // imagery keeps the same compact, useful destination row as the collection.
-  const showFeature = featured && !!savedImageUri && imageResolution !== 'neutral';
+  const showFeature = featured && !!savedImageUri && savedImageKind !== 'source' && imageResolution !== 'neutral';
   const imageSize = showFeature ? Math.max(240, width - 48) : 72;
 
   useEffect(() => {
     let cancelled = false;
     setSavedImageUri(null);
+    setSavedImageKind('unknown');
     setImageResolution(null);
     void hydrateSavedPlace({
       userId: saved.user_id,
@@ -60,7 +63,11 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
       trigger: 'saved_library',
       knownImageUri: sourceImageUri,
     }).then((hydrated) => {
-      if (!cancelled) setSavedImageUri(hydrated.details.photoUrls[0] ?? null);
+      if (!cancelled) {
+        const uri = hydrated.details.photoUrls[0] ?? null;
+        setSavedImageUri(uri);
+        setSavedImageKind(uri ? savedPlacePhotoKind(hydrated.snapshot, uri) : 'unknown');
+      }
     });
     return () => { cancelled = true; };
   }, [saved.id, saved.place.google_place_id, saved.user_id, sourceImageUri]);
@@ -87,12 +94,15 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
           hydrationPolicy="saved_snapshot"
           initialPhotoUrls={savedImageUri ? [savedImageUri] : undefined}
           sourceUri={sourceImageUri}
+          preferPlacePhoto
           onResolvedKind={setImageResolution}
           size={imageSize}
           borderRadius={Radius.md}
           style={[styles.image, showFeature && styles.featuredImage]}
         />
-        {hasSource ? (
+        {imageResolution === 'source' || savedImageKind === 'source' ? (
+          <View style={[styles.imageOrigin, { backgroundColor: colors.surface }]}><Text style={styles.imageOriginText}>Post</Text></View>
+        ) : hasSource ? (
           <View style={styles.sourceBadge} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
             <Feather name="play" size={12} color={colors.textInverse} />
           </View>
@@ -140,7 +150,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     featured: { flexDirection: 'column', gap: Spacing.md, paddingTop: Spacing.sm, paddingBottom: Spacing.xl, marginBottom: Spacing.sm },
     largeTextCard: { flexWrap: 'wrap' },
-    featuredImageWrap: { width: '100%', height: undefined, aspectRatio: 1.55 },
+    featuredImageWrap: { width: '100%', height: undefined, aspectRatio: 2 },
     featuredImage: { width: '100%', height: '100%' },
     featuredName: { fontSize: 23, lineHeight: 28 },
     pressed: { backgroundColor: colors.surfaceElevated },
@@ -159,6 +169,8 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderWidth: 2,
       borderColor: colors.surface,
     },
+    imageOrigin: { position: 'absolute', left: 4, bottom: 4, borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 },
+    imageOriginText: { color: colors.textSecondary, fontSize: 12, lineHeight: 16 },
     copy: { flex: 1, minWidth: 140, paddingVertical: 2 },
     name: { color: colors.text, lineHeight: 21 },
     locality: { color: colors.textSecondary, marginTop: 3 },

@@ -8,6 +8,7 @@ const Module = require('node:module');
 const originalLoad = Module._load;
 let fontScale = 1;
 let hydratedPhotoUris = ['file:///saved-place.jpg'];
+let hydratedPhotoKind: 'destination' | 'source' = 'destination';
 const hydrationRequests: Array<{ trigger: string }> = [];
 const colors = new Proxy({}, { get: (_target, key) => key === 'textInverse' ? '#FFFFFF' : '#263A32' });
 const typography = { bodyStrong: {}, body: {}, caption: {}, label: {}, heading: {} };
@@ -29,8 +30,9 @@ Module._load = function(request: string, parent: unknown, isMain: boolean) {
   if (request === '@expo/vector-icons') return { Feather: 'Feather' };
   if (request === 'react-native-safe-area-context') return { useSafeAreaInsets: () => ({ top: 20, bottom: 0, left: 0, right: 0 }) };
   if (request === '@/lib/theme') return { useTheme: () => ({ colors, typography }) };
+  if (request === '@/lib/useReduceMotion') return { useReduceMotion: () => false };
   if (request === '@/lib/savedPlaceHydration') return { hydrateSavedPlace: async (args: { trigger: string }) => {
-    hydrationRequests.push(args); return { details: { photoUrls: hydratedPhotoUris } };
+    hydrationRequests.push(args); return { details: { photoUrls: hydratedPhotoUris }, snapshot: { source: 'save_payload', photoProvenance: Object.fromEntries(hydratedPhotoUris.map((uri) => [uri, hydratedPhotoKind])) } };
   } };
   if (request === './PlaceImage') return { PlaceImage: 'PlaceImage' };
   if (request === '@/components') return { Button, Input: 'Input', SavedPlaceBrowseCard: originalLoad(path.resolve(__dirname, '../components/SavedPlaceBrowseCard.tsx'), parent, isMain).SavedPlaceBrowseCard };
@@ -50,7 +52,7 @@ const fixture = (index: number) => ({
 const text = (node: any): string => node == null ? '' : typeof node === 'string' ? node : Array.isArray(node) ? node.map(text).join(' ') : text(node.children);
 async function main() {
   let assertions = 0;
-  for (const count of [0, 1, 5, 20, 50, 51, 100]) {
+  for (const count of [0, 1, 3, 5, 20, 50, 51, 125]) {
     let renderer!: ReturnType<typeof TestRenderer.create>;
     const places = Array.from({ length: count }, (_v, index) => fixture(index));
     await TestRenderer.act(async () => { renderer = TestRenderer.create(React.createElement(SavedPlacesLibrary, {
@@ -60,6 +62,8 @@ async function main() {
     const list = renderer.root.findByType('FlatList' as any);
     assert.equal(list.props.data.length, count > 0 && count <= 50 ? count - 1 : count); assertions++;
     assert.equal(renderer.root.findAll((node) => node.type === SavedPlaceBrowseCardView && node.props.featured).length, count > 0 && count <= 50 ? 1 : 0); assertions++;
+    const renderedIds = renderer.root.findAllByType(SavedPlaceBrowseCardView).map((node) => node.props.saved.id);
+    assert.equal(new Set(renderedIds).size, count, 'each saved identity appears exactly once'); assertions++;
     if (count === 0) { assert.match(text(renderer.toJSON()), /No saved places yet/); assertions++; }
     if (count > 1) {
       await TestRenderer.act(async () => renderer.root.findByType('Input' as any).props.onChangeText('Place 1'));
@@ -82,9 +86,18 @@ async function main() {
     const name = renderer.root.findAllByType('Text' as any).find((node) => node.props.children === saved.place.name)!;
     assert.equal(name.props.numberOfLines, fontScale >= 1.5 ? undefined : 2); assertions++;
     assert.equal(renderer.root.findByType('PlaceImage' as any).props.hydrationPolicy, 'saved_snapshot'); assertions++;
+    assert.equal(renderer.root.findByType('PlaceImage' as any).props.preferPlacePhoto, true, 'cached destination imagery wins over source thumbnail'); assertions++;
     await TestRenderer.act(async () => renderer.unmount());
   }
+  hydratedPhotoUris = ['file:///source-frame.jpg'];
+  hydratedPhotoKind = 'source';
+  let sourceRenderer!: ReturnType<typeof TestRenderer.create>;
+  await TestRenderer.act(async () => { sourceRenderer = TestRenderer.create(React.createElement(SavedPlaceBrowseCard, { saved: fixture(0), featured: true, onPress() {} })); });
+  assert.equal(sourceRenderer.root.findByType('PlaceImage' as any).props.size, 72, 'source frame does not reserve a large destination hero'); assertions++;
+  assert.match(text(sourceRenderer.toJSON()), /Post/, 'source frame has visible provenance'); assertions++;
+  await TestRenderer.act(async () => sourceRenderer.unmount());
   fontScale = 1;
+  hydratedPhotoKind = 'destination';
   const flatten = (style: any): any => Array.isArray(style) ? Object.assign({}, ...style.filter(Boolean).map(flatten)) : style ?? {};
   for (const hasPhoto of [false, true]) {
     hydratedPhotoUris = hasPhoto ? ['file:///saved-place.jpg'] : [];
@@ -107,6 +120,6 @@ async function main() {
     }
     await TestRenderer.act(async () => renderer.unmount());
   }
-  console.log(`PASS Fieldnotes Saved components (${assertions} assertions): 0/1/5/20/50/51/100 places, no duplicate lead, search/empty, exact selection, 3 text scales, compact no-photo/failed-photo fallback, snapshot photo policy`);
+  console.log(`PASS Fieldnotes Saved components (${assertions} assertions): 0/1/3/5/20/50/51/125 places, no duplicate lead, search/empty, exact selection, 3 text scales, compact no-photo/source/failed-photo fallback, snapshot photo policy`);
 }
 main().finally(() => { Module._load = originalLoad; }).catch((error) => { console.error(error); process.exitCode = 1; });

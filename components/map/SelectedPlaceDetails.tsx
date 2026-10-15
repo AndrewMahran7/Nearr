@@ -117,6 +117,7 @@ import {
   updateSavedPlacesCache,
 } from '@/hooks/useSavedPlaces';
 import { hydrateSavedPlace } from '@/lib/savedPlaceHydration';
+import { savedPlacePhotoKind, type SavedPlacePhotoKind } from '@/lib/savedPlaceSnapshot';
 import { loadPlaceRecommendations } from '@/services/placeRecommendationsService';
 import type { PlaceRecommendation } from '@/lib/placeRecommendations';
 import type { NearbyMapExplorerPayload } from '@/lib/nearbyMapExplorer';
@@ -244,6 +245,7 @@ export function SelectedPlaceDetails({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [richDetails, setRichDetails] = useState<PlaceRichDetails | null>(null);
+  const [photoKinds, setPhotoKinds] = useState<Record<string, SavedPlacePhotoKind>>({});
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [failedPhotoUrls, setFailedPhotoUrls] = useState<Record<string, true>>({});
   const [sourceEvidencePreviewUrls, setSourceEvidencePreviewUrls] = useState<Record<string, string>>({});
@@ -369,6 +371,7 @@ export function SelectedPlaceDetails({
   // provider-derived presentation when that association changes in place.
   useEffect(() => {
     setRichDetails(null);
+    setPhotoKinds({});
     setFailedPhotoUrls({});
   }, [saved.place.google_place_id]);
 
@@ -376,6 +379,7 @@ export function SelectedPlaceDetails({
     let canceled = false;
     setFailedPhotoUrls({});
     if (tutorialPhotoUris.length) {
+      setPhotoKinds(Object.fromEntries(tutorialPhotoUris.map((uri) => [uri, 'unknown'])));
       setRichDetails({
         googlePlaceId: '',
         name: saved.place.name,
@@ -407,7 +411,10 @@ export function SelectedPlaceDetails({
     const knownImageUri = placeSourceCards(saved).find((source) => !!source.thumbnailUrl)?.thumbnailUrl ?? null;
     void hydrateSavedPlace({ userId, saved, trigger: 'map_detail', knownImageUri })
       .then((hydrated) => {
-        if (!canceled) setRichDetails(hydrated.details);
+        if (!canceled) {
+          setRichDetails(hydrated.details);
+          setPhotoKinds(Object.fromEntries(hydrated.details.photoUrls.map((uri) => [uri, savedPlacePhotoKind(hydrated.snapshot, uri)])));
+        }
       })
       .finally(() => {
         if (!canceled) setDetailsLoading(false);
@@ -505,15 +512,18 @@ export function SelectedPlaceDetails({
   const photoUrls = useMemo(() => {
     if (tutorialPhotoUris.length) return tutorialPhotoUris.filter((url) => !failedPhotoUrls[url]);
     if (!richDetails?.photoUrls?.length) return [];
-    return richDetails.photoUrls.filter((url) => !failedPhotoUrls[url]).slice(0, 5);
-  }, [failedPhotoUrls, richDetails?.photoUrls, tutorialPhotoUris]);
+    return richDetails.photoUrls.filter((url) => !failedPhotoUrls[url] && photoKinds[url] !== 'source').slice(0, 5);
+  }, [failedPhotoUrls, photoKinds, richDetails?.photoUrls, tutorialPhotoUris]);
 
   const photoRolodexItems = useMemo(() => photoUrls.map((uri, index) => ({
     key: uri,
     uri,
     accessibilityLabel: `${saved.place.name}, photo ${index + 1} of ${photoUrls.length}`,
-    footerLabel: `Destination photo ? ${saved.place.name}`,
-  })), [photoUrls, saved.place.name]);
+    footerLabel: `${photoKinds[uri] === 'destination' ? 'Destination photo' : 'Saved photo'} · ${saved.place.name}`,
+  })), [photoKinds, photoUrls, saved.place.name]);
+  useEffect(() => {
+    if (galleryOpen && photoUrls.length === 0) setGalleryOpen(false);
+  }, [galleryOpen, photoUrls.length]);
 
   // Owner media is requested first; the privacy-filtered community page is a
   // second, non-blocking request so public discovery never delays Place Detail.
@@ -550,7 +560,10 @@ export function SelectedPlaceDetails({
     ),
     [communityPlaceVideos, ownerPlaceVideos, photoUrls, videoGalleryEnabled],
   );
-  const sourceHeroUri = primarySource?.thumbnailUrl?.trim() || null;
+  const sourceHeroUri = [
+    ...(richDetails?.photoUrls.filter((uri) => photoKinds[uri] === 'source') ?? []),
+    primarySource?.thumbnailUrl?.trim(),
+  ].find((uri) => !!uri && !failedPhotoUrls[uri]) || null;
   const heroUri = videoHero?.uri ?? sourceHeroUri;
   useEffect(() => {
     if (!videoHero || videoHero.kind === 'PROVIDER' || !videoHero.video) return;
@@ -929,7 +942,7 @@ export function SelectedPlaceDetails({
   }
 
   function openHeroMedia() {
-    if (!videoHero) return;
+    if (!videoHero) { if (sourceHeroUri && sourceUrl) void openSource(); return; }
     if (videoHero.kind === 'PROVIDER') openGalleryAt(0);
     else if (videoHero.video) void openPlaceVideo(videoHero.video);
   }
@@ -1024,15 +1037,13 @@ export function SelectedPlaceDetails({
         </Pressable>
       </View>
 
-      {/* Hero: the photo carries the page. Name + context sit ON the image
-          under a layered scrim so the first thing read is the place itself,
-          not a stack of equal-weight cards. The same geometry is used when
-          there is no photo, so the layout never jumps once photos resolve. */}
+      {/* Destination imagery leads; retained source media is explicitly labeled.
+          Identity stays below the image on the warm Fieldnotes canvas. */}
       <Pressable
-        disabled={!videoHero}
+        disabled={!videoHero && !(sourceHeroUri && sourceUrl)}
         onPress={openHeroMedia}
-        accessibilityRole={videoHero ? 'button' : undefined}
-        accessibilityLabel={videoHero?.kind === 'PROVIDER' ? `View photos of ${saved.place.name}` : videoHero ? `Open original video for ${saved.place.name}` : undefined}
+        accessibilityRole={videoHero || (sourceHeroUri && sourceUrl) ? 'button' : undefined}
+        accessibilityLabel={videoHero?.kind === 'PROVIDER' ? `View photos of ${saved.place.name}` : heroUri ? `Open original post for ${saved.place.name}` : undefined}
         style={({ pressed }) => [styles.hero, pressed && styles.heroPressed]}
       >
         {heroUri ? (
@@ -1044,6 +1055,7 @@ export function SelectedPlaceDetails({
               if (videoHero?.kind === 'PROVIDER') setFailedPhotoUrls((prev) => ({ ...prev, [videoHero.uri]: true }));
               else if (videoHero?.video?.ownership === 'OWNER') setOwnerPlaceVideos((current) => current.filter((video) => video.sourceId !== videoHero.video?.sourceId));
               else if (videoHero?.video) setCommunityPlaceVideos((current) => current.filter((video) => video.sourceId !== videoHero.video?.sourceId));
+              else if (heroUri) setFailedPhotoUrls((prev) => ({ ...prev, [heroUri]: true }));
             }}
           />
         ) : (
@@ -1074,9 +1086,9 @@ export function SelectedPlaceDetails({
       </Pressable>
 
       {photoUrls.length > 1 && !largeText ? (
-        <View style={styles.photoThumbnails} accessibilityLabel={`${photoUrls.length} destination photos`}>
-          {photoUrls.map((uri, index) => <Pressable key={uri} onPress={() => openGalleryAt(index)} accessibilityRole="button" accessibilityLabel={`View destination photo ${index + 1} of ${photoUrls.length}`} style={styles.photoThumbnailButton}>
-            <Image source={{ uri }} resizeMode="cover" style={styles.photoThumbnail} />
+        <View style={styles.photoThumbnails} accessibilityLabel={`${photoUrls.length} saved photos`}>
+          {photoUrls.map((uri, index) => <Pressable key={uri} onPress={() => openGalleryAt(index)} accessibilityRole="button" accessibilityLabel={`View ${photoKinds[uri] === 'destination' ? 'destination' : 'saved'} photo ${index + 1} of ${photoUrls.length}`} style={styles.photoThumbnailButton}>
+            <Image source={{ uri }} resizeMode="cover" style={styles.photoThumbnail} onError={() => setFailedPhotoUrls((prev) => ({ ...prev, [uri]: true }))} />
           </Pressable>)}
         </View>
       ) : null}
@@ -1140,6 +1152,7 @@ export function SelectedPlaceDetails({
         items={photoRolodexItems}
         initialIndex={galleryIndex}
         onClose={closeGallery}
+        onPhotoError={(_index, uri) => setFailedPhotoUrls((prev) => ({ ...prev, [uri]: true }))}
         prefetchAdjacent={false}
         loadOnlyVisited
         resizeMode="contain"
@@ -1623,10 +1636,7 @@ function createStyles(
     },
 
     // ----- hero ------------------------------------------------------------
-    // Cinematic 1.9:1 rather than the old boxy 358×250 (1.43:1), and it bleeds
-    // past the sheet's own padding so the photo — not the margin — is what the
-    // eye lands on. Height follows width, so it stays proportional at every
-    // device size instead of being a fixed 250pt slab on a small screen.
+    // Fieldnotes keeps destination imagery at 4:3 with identity on the canvas.
     detailNavigation: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
     detailNavigationLabel: { ...typography.caption, color: colors.textSecondary },
     moreButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.pill, backgroundColor: colors.surface },

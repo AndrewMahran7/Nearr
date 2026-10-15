@@ -9,6 +9,8 @@ export type SavedPlaceSnapshotSource =
   | 'google_fallback'
   | 'durable_fallback';
 
+export type SavedPlacePhotoKind = 'destination' | 'source' | 'unknown';
+
 export type SavedPlaceSnapshot = {
   schemaVersion: typeof SAVED_PLACE_SNAPSHOT_SCHEMA_VERSION;
   ownerUserId: string;
@@ -26,6 +28,8 @@ export type SavedPlaceSnapshot = {
   localImageUri: string | null;
   /** Stable ordered local gallery, capped at the product contract of five. */
   localPhotoUris: string[];
+  /** Optional v3 extension: provenance survives local persistence and restart. */
+  photoProvenance?: Record<string, SavedPlacePhotoKind>;
   /**
    * `not_attempted` permits one bounded recovery. `unavailable` prevents an
    * every-open retry loop after a completed no-photo or failed-write attempt.
@@ -124,6 +128,11 @@ export function isSavedPlaceSnapshot(value: unknown): value is SavedPlaceSnapsho
     && Array.isArray(candidate.localPhotoUris)
     && candidate.localPhotoUris.length <= 5
     && candidate.localPhotoUris.every((uri) => typeof uri === 'string' && uri.startsWith('file://'))
+    && (candidate.photoProvenance === undefined || (
+      candidate.photoProvenance !== null && typeof candidate.photoProvenance === 'object'
+      && !Array.isArray(candidate.photoProvenance)
+      && Object.values(candidate.photoProvenance).every((kind) => ['destination', 'source', 'unknown'].includes(kind))
+    ))
     && ['available', 'not_attempted', 'unavailable'].includes(candidate.visualRecoveryStatus ?? '')
     && typeof candidate.providerHydrationComplete === 'boolean'
     && typeof candidate.capturedAt === 'string'
@@ -265,6 +274,7 @@ export function buildSavedPlaceSnapshot(args: {
   utcOffsetMinutes?: number | null;
   localImageUri?: string | null;
   localPhotoUris?: readonly string[] | null;
+  photoProvenance?: Record<string, SavedPlacePhotoKind>;
   visualRecoveryStatus?: SavedPlaceSnapshot['visualRecoveryStatus'];
   providerHydrationComplete: boolean;
   source: SavedPlaceSnapshotSource;
@@ -289,6 +299,7 @@ export function buildSavedPlaceSnapshot(args: {
         .map((uri) => uri?.trim())
         .filter((uri): uri is string => !!uri && uri.startsWith('file://')),
     )].slice(0, 5),
+    ...(args.photoProvenance ? { photoProvenance: args.photoProvenance } : {}),
     visualRecoveryStatus: args.visualRecoveryStatus
       ?? (args.localPhotoUris?.some((uri) => !!uri?.trim()) || args.localImageUri?.trim()
         ? 'available'
@@ -297,6 +308,14 @@ export function buildSavedPlaceSnapshot(args: {
     capturedAt: new Date().toISOString(),
     source: args.source,
   };
+}
+
+/** Older saved payloads mixed photos and source frames. Never invent their origin. */
+export function savedPlacePhotoKind(snapshot: SavedPlaceSnapshot, uri: string): SavedPlacePhotoKind {
+  if (snapshot.photoProvenance?.[uri]) return snapshot.photoProvenance[uri];
+  if (snapshot.source === 'google_fallback') return 'destination';
+  if (snapshot.source === 'durable_fallback') return 'source';
+  return 'unknown';
 }
 
 export function recordSavedPlaceSnapshotEvent(

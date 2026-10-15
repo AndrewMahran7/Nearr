@@ -3,9 +3,11 @@ import {
   readSavedPlaceSnapshot,
   recordSavedPlaceSnapshotEvent,
   removeSavedPlaceSnapshot,
+  savedPlacePhotoKind,
   writeSavedPlaceSnapshot,
   type SavedPlaceSnapshot,
   type SavedPlaceSnapshotRead,
+  type SavedPlacePhotoKind,
 } from './savedPlaceSnapshot';
 import {
   isUsableSavedPlaceImage,
@@ -105,6 +107,9 @@ async function persistPhotoSet(args: {
   sourceUris: readonly (string | null | undefined)[];
   persistImage: NonNullable<SavedPlaceHydrationDependencies['persistImage']>;
   startIndex?: number;
+  photoProvenance?: Record<string, SavedPlacePhotoKind>;
+  sourceKind?: SavedPlacePhotoKind;
+  sourceKinds?: Readonly<Record<string, SavedPlacePhotoKind>>;
 }): Promise<string[]> {
   const persisted: string[] = [];
   const sources = distinctPlacePhotoUris(args.sourceUris);
@@ -118,7 +123,10 @@ async function persistPhotoSet(args: {
       sourceUri: sources[index],
       index: startIndex + index,
     });
-    if (uri) persisted.push(uri);
+    if (uri) {
+      persisted.push(uri);
+      if (args.photoProvenance) args.photoProvenance[uri] = args.sourceKinds?.[sources[index]] ?? args.sourceKind ?? 'unknown';
+    }
   }
   return persisted;
 }
@@ -186,8 +194,14 @@ export async function hydrateSavedPlace(
     ?? (dependencies === productionDependencies ? isUsableSavedPlaceImage : async () => false);
   const key = memoryKey(args.userId, args.saved.id);
   const googlePlaceId = args.saved.place.google_place_id?.trim() || null;
+  // Read only imagery already acquired in this process. This never hydrates
+  // Google merely to replace a source thumbnail with a prettier hero.
+  const knownRichDetails = dependencies.peekRichDetails(googlePlaceId);
+  const knownDestinationUrls = distinctPlacePhotoUris(knownRichDetails?.photoUrls ?? []);
   const cached = memory.get(key);
-  if (cached && cached.googlePlaceId === googlePlaceId) {
+  const canUpgradeCachedSource = cached && knownDestinationUrls.length > 0
+    && !cached.value.snapshot.localPhotoUris.some((uri) => savedPlacePhotoKind(cached.value.snapshot, uri) === 'destination');
+  if (cached && cached.googlePlaceId === googlePlaceId && !canUpgradeCachedSource) {
     const localPhotos = await usableLocalPhotos(cached.value.snapshot, isImageUsable);
     if (cached.value.snapshot.localPhotoUris.length === 0 || localPhotos.length > 0) {
       dependencies.record('saved_place_snapshot_hit', {
@@ -222,6 +236,26 @@ export async function hydrateSavedPlace(
       googlePlaceId,
       requireProviderHydration: true,
     });
+    if (knownDestinationUrls.length > 0 && (local.status === 'miss'
+      || !local.snapshot.localPhotoUris.some((uri) => savedPlacePhotoKind(local.snapshot, uri) === 'destination'))) {
+      const photoProvenance: Record<string, SavedPlacePhotoKind> = {};
+      const localPhotoUris = await persistPhotoSet({
+        userId: args.userId, savedPlaceId: args.saved.id, sourceUris: knownDestinationUrls,
+        persistImage, photoProvenance, sourceKind: 'destination',
+      });
+      if (localPhotoUris.length > 0) {
+        const snapshot = buildSavedPlaceSnapshot({
+          userId: args.userId, saved: args.saved, localPhotoUris, photoProvenance,
+          openingHours: knownRichDetails?.openingHours ?? (local.status === 'hit' ? local.snapshot.openingHours : null),
+          utcOffsetMinutes: knownRichDetails?.utcOffsetMinutes ?? (local.status === 'hit' ? local.snapshot.utcOffsetMinutes : null),
+          providerHydrationComplete: true, source: 'save_payload',
+        });
+        await recordWrite(snapshot, trigger, dependencies);
+        const value: HydratedSavedPlace = { details: detailsFromSnapshot(args.saved, snapshot, localPhotoUris), source: 'snapshot', snapshot };
+        memory.set(key, { googlePlaceId, value });
+        return value;
+      }
+    }
     if (local.status === 'hit') {
       const localPhotos = await usableLocalPhotos(local.snapshot, isImageUsable);
       if (localPhotos.length > 0) {
@@ -241,9 +275,10 @@ export async function hydrateSavedPlace(
       }
       const knownImageUri = args.knownImageUri?.trim() || null;
       if (knownImageUri) {
+        const photoProvenance: Record<string, SavedPlacePhotoKind> = {};
         const localPhotoUris = await persistPhotoSet({
           userId: args.userId, savedPlaceId: args.saved.id,
-          sourceUris: [knownImageUri], persistImage,
+          sourceUris: [knownImageUri], persistImage, photoProvenance, sourceKind: 'source',
         });
         const persistedImageUri = localPhotoUris[0] ?? null;
         const snapshot = buildSavedPlaceSnapshot({
@@ -253,6 +288,7 @@ export async function hydrateSavedPlace(
           utcOffsetMinutes: local.snapshot.utcOffsetMinutes,
           localImageUri: persistedImageUri,
           localPhotoUris,
+          photoProvenance,
           visualRecoveryStatus: persistedImageUri ? 'available' : 'unavailable',
           providerHydrationComplete: true,
           source: 'durable_fallback',
@@ -285,9 +321,10 @@ export async function hydrateSavedPlace(
 
     const knownImageUri = args.knownImageUri?.trim() || null;
     if (knownImageUri) {
+      const photoProvenance: Record<string, SavedPlacePhotoKind> = {};
       const localPhotoUris = await persistPhotoSet({
         userId: args.userId, savedPlaceId: args.saved.id,
-        sourceUris: [knownImageUri], persistImage,
+        sourceUris: [knownImageUri], persistImage, photoProvenance, sourceKind: 'source',
       });
       const persistedImageUri = localPhotoUris[0] ?? null;
       const snapshot = buildSavedPlaceSnapshot({
@@ -295,6 +332,7 @@ export async function hydrateSavedPlace(
         saved: args.saved,
         localImageUri: persistedImageUri,
         localPhotoUris,
+        photoProvenance,
         visualRecoveryStatus: persistedImageUri ? 'available' : 'unavailable',
         providerHydrationComplete: true,
         source: 'durable_fallback',
@@ -321,11 +359,13 @@ export async function hydrateSavedPlace(
       });
       try {
         const google = await dependencies.fetchGoogle(googlePlaceId);
+        const photoProvenance: Record<string, SavedPlacePhotoKind> = {};
         const localPhotoUris = await persistPhotoSet({
           userId: args.userId,
           savedPlaceId: args.saved.id,
           sourceUris: google.photoUrls,
           persistImage,
+          photoProvenance, sourceKind: 'destination',
         });
         const localImageUri = localPhotoUris[0] ?? null;
         const snapshot = buildSavedPlaceSnapshot({
@@ -335,6 +375,7 @@ export async function hydrateSavedPlace(
           utcOffsetMinutes: google.utcOffsetMinutes,
           localImageUri,
           localPhotoUris,
+          photoProvenance,
           visualRecoveryStatus: localImageUri ? 'available' : 'unavailable',
           providerHydrationComplete: true,
           source: 'google_fallback',
@@ -421,12 +462,17 @@ export async function persistSavedPlaceSnapshotAfterSave(
     ? existing.snapshot
     : null;
   const priorLocalPhotoUris = prior ? await usableLocalPhotos(prior, isImageUsable) : [];
-  const availablePhotoUris = distinctPlacePhotoUris([
+  const sourceFrameUri = (args.candidate as PlaceCandidate & { sourceFrameUrl?: string | null }).sourceFrameUrl;
+  const destinationPhotoUris = distinctPlacePhotoUris([
     ...(args.candidate.photoUrls ?? []),
     args.candidate.photoUrl,
-    (args.candidate as PlaceCandidate & { sourceFrameUrl?: string | null }).sourceFrameUrl,
     ...(alreadyRich?.photoUrls ?? []),
-  ]);
+  ]).filter((uri) => uri !== sourceFrameUri);
+  const availablePhotoUris = distinctPlacePhotoUris([...destinationPhotoUris, sourceFrameUri]);
+  const sourceKinds = Object.fromEntries(availablePhotoUris.map((uri) => [uri, destinationPhotoUris.includes(uri) ? 'destination' : 'source'])) as Record<string, SavedPlacePhotoKind>;
+  const photoProvenance: Record<string, SavedPlacePhotoKind> = prior
+    ? Object.fromEntries(priorLocalPhotoUris.map((uri) => [uri, savedPlacePhotoKind(prior, uri)]))
+    : {};
   const localPhotoUris = priorLocalPhotoUris.length
     ? priorLocalPhotoUris
     : await persistPhotoSet({
@@ -434,6 +480,7 @@ export async function persistSavedPlaceSnapshotAfterSave(
         savedPlaceId: args.saved.id,
         sourceUris: availablePhotoUris.slice(0, 1),
         persistImage,
+        photoProvenance, sourceKinds,
       });
   const localImageUri = localPhotoUris[0] ?? null;
   const snapshot = buildSavedPlaceSnapshot({
@@ -444,6 +491,7 @@ export async function persistSavedPlaceSnapshotAfterSave(
     utcOffsetMinutes: alreadyRich?.utcOffsetMinutes ?? prior?.utcOffsetMinutes ?? null,
     localImageUri,
     localPhotoUris,
+    photoProvenance,
     visualRecoveryStatus: localImageUri
       ? 'available'
       : availablePhotoUris.length ? 'unavailable' : googlePlaceId ? 'not_attempted' : 'unavailable',
@@ -472,6 +520,7 @@ export async function persistSavedPlaceSnapshotAfterSave(
         sourceUris: availablePhotoUris.slice(1),
         persistImage,
         startIndex: 1,
+        photoProvenance, sourceKinds,
       });
       if (remaining.length === 0) return;
       const current = await dependencies.readSnapshot({
@@ -485,6 +534,7 @@ export async function persistSavedPlaceSnapshotAfterSave(
         ...base,
         localImageUri: completedPhotos[0] ?? null,
         localPhotoUris: completedPhotos,
+        photoProvenance,
         visualRecoveryStatus: completedPhotos.length ? 'available' : base.visualRecoveryStatus,
         capturedAt: new Date().toISOString(),
       }, args.trigger ?? 'save', dependencies as SavedPlaceHydrationDependencies);

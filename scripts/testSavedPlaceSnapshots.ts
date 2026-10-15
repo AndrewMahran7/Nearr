@@ -9,6 +9,7 @@ import {
   deserializeSavedPlaceSnapshot,
   readSavedPlaceSnapshot,
   savedPlaceSnapshotKey,
+  savedPlacePhotoKind,
   serializeSavedPlaceSnapshot,
   setSavedPlaceSnapshotStore,
   writeSavedPlaceSnapshot,
@@ -182,6 +183,102 @@ async function run() {
   assert.equal(afterRestart.source, 'snapshot');
   assert.equal(afterRestart.details.photoUrls.length, 5, 'all five photos survive app restart');
   assert.ok(first.events.includes('saved_place_snapshot_hit'));
+  assert.equal(savedPlacePhotoKind(afterRestart.snapshot, afterRestart.details.photoUrls[0]), 'destination', 'photo provenance survives progressive persistence and restart');
+
+  // Existing v3 source-only snapshots remain readable without clearing the
+  // cache, another provider fetch, or inventing destination-photo evidence.
+  const sourceSnapshot = buildSavedPlaceSnapshot({
+    userId: 'user-a', saved, localPhotoUris: ['file://source-only.jpg'],
+    providerHydrationComplete: true, source: 'durable_fallback',
+  });
+  localAssets.add('file://source-only.jpg');
+  await writeSavedPlaceSnapshot(sourceSnapshot);
+  resetSavedPlaceHydrationMemoryForTests();
+  const sourceOnly = await hydrateSavedPlace({ userId: 'user-a', saved }, first.deps);
+  assert.equal(savedPlacePhotoKind(sourceOnly.snapshot, sourceOnly.details.photoUrls[0]), 'source');
+  assert.equal(googleCalls, 0, 'legacy source snapshot does not cause new Google traffic');
+  assert.equal(savedPlacePhotoKind({ ...sourceSnapshot, source: 'save_payload' }, 'file://source-only.jpg'), 'unknown', 'ambiguous legacy save is not labeled destination');
+
+  const cachedDestination = {
+    ...first.deps,
+    peekRichDetails: () => ({
+      googlePlaceId: 'google-1', name: saved.place.name, formattedAddress: saved.place.formatted_address,
+      latitude: saved.place.latitude, longitude: saved.place.longitude, category: 'cafe', googleMapsUrl: null,
+      websiteUrl: null, formattedPhoneNumber: null, internationalPhoneNumber: null,
+      openingHours: null, utcOffsetMinutes: null, photoUrls: ['https://photos.test/cached-destination.jpg'],
+    }),
+  };
+  const upgraded = await hydrateSavedPlace({ userId: 'user-a', saved, knownImageUri: 'https://posts.test/source.jpg' }, cachedDestination);
+  assert.equal(savedPlacePhotoKind(upgraded.snapshot, upgraded.details.photoUrls[0]), 'destination', 'already acquired destination replaces source-only snapshot, including a memory hit');
+  assert.equal(googleCalls, 0, 'destination preference consumes cached metadata only');
+  resetSavedPlaceHydrationMemoryForTests();
+  const upgradedRestart = await hydrateSavedPlace({ userId: 'user-a', saved }, first.deps);
+  assert.equal(savedPlacePhotoKind(upgradedRestart.snapshot, upgradedRestart.details.photoUrls[0]), 'destination');
+
+  // Photo promotion must retain the hours already acquired with those photos.
+  // Marking a metadata-empty snapshot hydrated would otherwise lose these
+  // details permanently, because subsequent opens correctly avoid refetches.
+  await clearSavedPlaceSnapshots('user-a');
+  resetSavedPlaceHydrationMemoryForTests();
+  const cachedDestinationWithHours = {
+    ...cachedDestination,
+    peekRichDetails: () => ({
+      ...cachedDestination.peekRichDetails(),
+      openingHours: googleDetails.openingHours,
+      utcOffsetMinutes: googleDetails.utcOffsetMinutes,
+    }),
+  };
+  const cacheOnlyHydration = await hydrateSavedPlace({ userId: 'user-a', saved }, cachedDestinationWithHours);
+  assert.deepEqual(cacheOnlyHydration.details.openingHours, googleDetails.openingHours, 'cached destination hydration retains existing provider hours');
+  assert.equal(cacheOnlyHydration.details.utcOffsetMinutes, googleDetails.utcOffsetMinutes, 'cached destination hydration retains UTC offset');
+  resetSavedPlaceHydrationMemoryForTests();
+  const cacheOnlyRestart = await hydrateSavedPlace({ userId: 'user-a', saved }, first.deps);
+  assert.deepEqual(cacheOnlyRestart.details.openingHours, googleDetails.openingHours, 'retained hours survive restart');
+  assert.equal(cacheOnlyRestart.details.utcOffsetMinutes, googleDetails.utcOffsetMinutes);
+  assert.equal(googleCalls, 0, 'preserving cached metadata never adds a provider request');
+
+  await writeSavedPlaceSnapshot({ ...sourceSnapshot, openingHours: googleDetails.openingHours, utcOffsetMinutes: 0 });
+  resetSavedPlaceHydrationMemoryForTests();
+  const sourceMetadataUpgrade = await hydrateSavedPlace({ userId: 'user-a', saved }, cachedDestination);
+  assert.deepEqual(sourceMetadataUpgrade.details.openingHours, googleDetails.openingHours, 'source snapshot hours survive when the cached photo has no hours');
+  assert.equal(sourceMetadataUpgrade.details.utcOffsetMinutes, 0, 'zero UTC offset is preserved');
+
+  // A candidate source frame is persisted for provenance but never relabeled
+  // just because it also appeared in the legacy first-photo field.
+  await clearSavedPlaceSnapshots('user-a');
+  resetSavedPlaceHydrationMemoryForTests();
+  const sourceCandidate = { ...candidate, photoUrls: [], photoUrl: 'https://posts.test/frame.jpg', sourceFrameUrl: 'https://posts.test/frame.jpg' };
+  await persistSavedPlaceSnapshotAfterSave({ userId: 'user-a', saved, candidate: sourceCandidate }, first.deps);
+  const sourceSaved = await hydrateSavedPlace({ userId: 'user-a', saved }, first.deps);
+  assert.equal(sourceSaved.details.photoUrls.length, 1);
+  assert.equal(savedPlacePhotoKind(sourceSaved.snapshot, sourceSaved.details.photoUrls[0]), 'source');
+  assert.equal(googleCalls, 0);
+
+  for (const count of [0, 1, 2, 5]) {
+    await clearSavedPlaceSnapshots('user-a');
+    resetSavedPlaceHydrationMemoryForTests();
+    const photos = candidate.photoUrls!.slice(0, count);
+    const photoCaseSaved = count === 0 ? { ...saved, place: { ...saved.place, google_place_id: null } } : saved;
+    await persistSavedPlaceSnapshotAfterSave({ userId: 'user-a', saved: photoCaseSaved, candidate: { ...candidate, photoUrls: photos, photoUrl: photos[0] ?? null } }, first.deps);
+    await waitForProgressiveSavedPlacePhotosForTests();
+    resetSavedPlaceHydrationMemoryForTests();
+    const reopened = await hydrateSavedPlace({ userId: 'user-a', saved: photoCaseSaved }, first.deps);
+    assert.equal(reopened.details.photoUrls.length, count, `${count} actual photos stay ${count} after restart`);
+    assert.ok(reopened.details.photoUrls.every((uri) => savedPlacePhotoKind(reopened.snapshot, uri) === 'destination'));
+  }
+  assert.equal(googleCalls, 0, '0/1/2/5-photo saves preserve the no-extra-provider-request contract');
+  localAssets.clear();
+  resetSavedPlaceHydrationMemoryForTests();
+  let missingImageRecoveryCalls = 0;
+  const missingImageDependencies = dependencies(store, async () => {
+    missingImageRecoveryCalls++;
+    return { ...googleDetails, photoUrls: [] };
+  });
+  const missingImage = await hydrateSavedPlace({ userId: 'user-a', saved }, missingImageDependencies.deps);
+  assert.equal(missingImage.details.photoUrls.length, 0, 'removed local files cannot inflate a usable gallery count');
+  resetSavedPlaceHydrationMemoryForTests();
+  await hydrateSavedPlace({ userId: 'user-a', saved }, missingImageDependencies.deps);
+  assert.equal(missingImageRecoveryCalls, 1, 'missing-image recovery remains bounded after restart');
 
   // A legacy/transitional incomplete snapshot gets exactly one minimal
   // provider fallback and persists the recovered first image locally.
