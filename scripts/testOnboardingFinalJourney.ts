@@ -130,11 +130,8 @@ function runSecondHalf(state: OnboardingV2State, permission: 'granted' | 'denied
     permanentUserId: 'permanent-founder', destinationWasEstablished: false,
     tutorialSavedPlaceId: 'transferred-tutorial-place',
   }, at(31)).state;
-  assert.equal(state.stage, 'auth_success');
-  state = step(state, continueOnboardingAfterAuth, 32);
-  state = step(state, showOnboardingActivationChallenge, 33);
-  state = completeOnboardingSecondHalf(state, 'explore_map', at(34)).state;
-  assert.equal(state.stage, 'onboarding_complete');
+  assert.equal(state.stage, 'onboarding_complete', 'Create your map persists completion with the account transfer');
+  assert.equal(state.behavioralCompletedAt, at(31));
   assert.equal(expectedOnboardingV2Route(state.stage), '/(tabs)/map');
   return state;
 }

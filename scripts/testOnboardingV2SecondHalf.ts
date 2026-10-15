@@ -103,28 +103,21 @@ state = mapReady.state;
 assert.equal(state.stage, 'account_required');
 assert.equal(mapReady.events.some((event) => event.name === 'onboarding_map_ready_viewed'), true);
 state = step(state, beginPermanentAccountLink, 9);
-state = completePermanentAccountLink(state, {
+const completed = completePermanentAccountLink(state, {
   permanentUserId: 'permanent-user',
   destinationWasEstablished: false,
-}, at(9)).state;
-assert.equal(state.stage, 'auth_success');
-state = step(state, continueOnboardingAfterAuth, 9);
-assert.equal(state.stage, 'personalized_activation');
-state = step(state, showOnboardingActivationChallenge, 10);
-assert.equal(state.stage, 'activation_challenge');
-assert.equal(expectedOnboardingV2Route(state.stage), '/(onboarding)');
-const completed = completeOnboardingSecondHalf(state, 'explore_map', at(11));
+}, at(9));
 assert.equal(completed.state.stage, 'onboarding_complete');
 assert.equal(completed.state.identityLifecycle, 'permanent_account', 'permanent auth is required before final map entry');
-assert.equal(completed.state.behavioralCompletedAt, at(11));
+assert.equal(completed.state.behavioralCompletedAt, at(9));
 assert.equal(completed.state.tutorialSave?.savedPlaceId, save.savedPlaceId);
 assert.equal(completed.events.some((event) => event.name === 'onboarding_v2_completed'), true);
-assert.equal(completed.events.find((event) => event.name === 'onboarding_v2_completed')?.properties?.time_to_map, 11_000);
+assert.equal(completed.events.find((event) => event.name === 'onboarding_v2_completed')?.properties?.time_to_map, 9_000);
 assert.equal(isOnboardingV2InProgressState(completed.state), false);
 assert.equal(expectedOnboardingV2Route(completed.state.stage), '/(tabs)/map');
 const restored = decodeOnboardingV2State(encodeOnboardingV2State(completed.state));
 assert.equal(restored?.stage, 'onboarding_complete', 'second-half completion survives process restart');
-assert.equal(restored?.activationChoice, 'explore_map');
+assert.equal(restored?.activationChoice, null);
 assert.equal(restored?.desiredValue, 'organize_map');
 assert.equal(restored?.tutorialSave?.savedPlaceId, save.savedPlaceId);
 

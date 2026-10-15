@@ -52,6 +52,7 @@ import {
   registerPushTokenForCurrentUser,
 } from '@/lib/pushTokens';
 import { logDebug, logInfo } from '@/lib/logger';
+import { hashCreateMapTraceId, traceCreateMapContinue } from '@/lib/createMapContinueTrace';
 import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import {
   checkProximityOnce,
@@ -446,6 +447,23 @@ function AuthGate({
       router.replace(expectedRoute);
     };
     const expectedV2Route = expectedOnboardingV2Route(onboardingV2?.stage);
+    traceCreateMapContinue('authgate_decision', {
+      auth_session: !session ? 'none' : isAnonymousSession ? 'anonymous' : 'permanent',
+      auth_user_hash: hashCreateMapTraceId(session?.user.id),
+      durable_stage: onboardingV2?.stage ?? null,
+      transition_state: onboardingV2?.identityLifecycle ?? null,
+      account_established: onboardingV2?.permanentAccountEstablished ?? null,
+      map_owned: expectedV2Route === '/(tabs)/map',
+      authgate_branch: !session
+        ? 'logged_out'
+        : isAnonymousSession
+        ? 'anonymous'
+        : signedInSecondHalfContinuation
+        ? 'signed_in_second_half'
+        : 'signed_in_product',
+      route_before: currentRoute,
+      route_requested: expectedV2Route,
+    });
 
     // Development QA is an intentionally independent recovery owner. It must
     // remain reachable while logged out, anonymous, or permanently signed in,

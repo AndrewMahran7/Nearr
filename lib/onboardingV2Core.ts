@@ -1870,8 +1870,14 @@ export function completePermanentAccountLink(
   if (state.secondHalfStartedAt) {
     const startedMs = state.startedAt ? Date.parse(state.startedAt) : Number.NaN;
     const timeToAuth = Number.isFinite(startedMs) ? Math.max(0, Date.parse(now) - startedMs) : null;
+    const duration = Number.isFinite(startedMs) ? Math.max(0, Date.parse(now) - startedMs) : null;
     return transition(state, {
-      stage: 'auth_success',
+      // Create your map is the final checkpoint for the compact second-half
+      // journey. Once the server has atomically established the permanent
+      // owner, persist the terminal stage before any route is requested. This
+      // makes the durable record the sole post-auth routing authority and
+      // prevents AuthGate from reasserting account_required after Continue.
+      stage: 'onboarding_complete',
       identityLifecycle: 'permanent_account',
       boundUserId: input.permanentUserId,
       permanentUserId: input.permanentUserId,
@@ -1879,6 +1885,8 @@ export function completePermanentAccountLink(
       authCompletedAt: now,
       authLastResult: 'completed',
       authSuccessShownAt: now,
+      behavioralCompletedAt: now,
+      onboardingV2CompletedAt: now,
       tutorialSave,
     }, now, [
       { name: 'onboarding_signin_completed', properties: { established_account: input.destinationWasEstablished } },
@@ -1887,6 +1895,17 @@ export function completePermanentAccountLink(
         auth_result: 'completed',
         established_account: input.destinationWasEstablished,
         time_to_auth: timeToAuth,
+      } },
+      { name: 'onboarding_v2_completed', properties: {
+        choice: 'create_map_continue',
+        total_onboarding_duration: duration,
+        time_to_map: duration,
+        location_foreground_result: state.locationForegroundResult,
+        location_background_result: state.locationBackgroundResult,
+        notification_permission_result: state.notificationPermissionResult,
+        auth_provider: state.authProvider,
+        account_backed_up: true,
+        desired_value: state.desiredValue,
       } },
     ]);
   }

@@ -7,7 +7,7 @@ import {
   getOnboardingV2State,
 } from '@/lib/onboardingV2';
 import { finishOnboardingAccountTransition } from '@/lib/anonymousOnboarding';
-import { resolveOpenSavedPlaceRoute, type MapRouteTarget } from '@/lib/openSavedPlace';
+import type { MapRouteTarget } from '@/lib/openSavedPlace';
 import { supabase } from '@/lib/supabase';
 import { pendingSharedPlaceRoute } from '@/lib/sharedPlaceIntent';
 
@@ -20,15 +20,15 @@ export type PostAuthRoute = '/activate' | '/(onboarding)' | '/(tabs)/map' | MapR
  * recovery all funnel through this one function, so there is no
  * provider-specific routing anywhere in the app:
  *
- *   - a V2 tutorial conversion          → exact transferred Place Detail
+ *   - a completed V2 account transfer   → `/(tabs)/map`
  *   - a user with no saved places yet   → `/activate` (first-save activation)
  *   - an established user               → `/(tabs)/map`
  *
  * It never marks `first_save_completed` or re-resolves a tutorial place. The
- * V2 transition finalizes the existing row, then routes by its returned id.
+ * durable V2 transition chooses the destination before navigation begins.
  */
 export async function resolvePostAuthRoute(userId: string): Promise<PostAuthRoute> {
-  let onboardingTransferRoute: MapRouteTarget | null = null;
+  let onboardingTransitionRoute: '/(tabs)/map' | '/(onboarding)' | null = null;
   let continueOnboardingV2 = false;
   if (isOnboardingV2Enabled()) {
     const state = await getOnboardingV2State();
@@ -44,15 +44,13 @@ export async function resolvePostAuthRoute(userId: string): Promise<PostAuthRout
           destinationWasEstablished: false,
         });
         continueOnboardingV2 = next.stage === 'auth_success';
+        if (next.stage === 'onboarding_complete' || next.stage === 'graduated') {
+          onboardingTransitionRoute = '/(tabs)/map';
+        }
       } else {
         const transition = await finishOnboardingAccountTransition(session.user);
         continueOnboardingV2 = transition.continueOnboardingV2;
-        if (!continueOnboardingV2 && transition.tutorialSavedPlaceId) {
-          onboardingTransferRoute = resolveOpenSavedPlaceRoute({
-            savedPlaceId: transition.tutorialSavedPlaceId,
-            source: 'onboarding_tutorial',
-          });
-        }
+        onboardingTransitionRoute = transition.route;
       }
     }
   }
@@ -63,8 +61,8 @@ export async function resolvePostAuthRoute(userId: string): Promise<PostAuthRout
   // above still completes first so an existing tutorial row is never orphaned.
   const sharedPlaceRoute = await pendingSharedPlaceRoute();
   if (sharedPlaceRoute) return sharedPlaceRoute;
+  if (onboardingTransitionRoute) return onboardingTransitionRoute;
   if (continueOnboardingV2) return '/(onboarding)';
-  if (onboardingTransferRoute) return onboardingTransferRoute;
 
   const status = await getOnboardingStatus(userId);
   if (isOnboardingV2Enabled() && status === 'complete') {

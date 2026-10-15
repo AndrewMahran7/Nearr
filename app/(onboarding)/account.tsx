@@ -80,6 +80,7 @@ import { persistNamesFromAuthUser } from '@/services/profileService';
 import { onboardingTransferErrorCopy } from '@/lib/onboardingTransferErrors';
 import { recordOnboardingV2RenderDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 import { claimOnboardingAccountTransition } from '@/lib/onboardingAccountTransition';
+import { hashCreateMapTraceId, traceCreateMapContinue } from '@/lib/createMapContinueTrace';
 
 /**
  * Gate for the DEBUGGING-ONLY developer login panel.
@@ -150,6 +151,18 @@ export default function AccountAuthScreen() {
       screen: 'account',
       mount_id: renderMountIdRef.current,
       reason: 'route_mounted',
+    });
+    traceCreateMapContinue('screen_mounted', {
+      mount_id: renderMountIdRef.current,
+      route_after: '/(onboarding)/account',
+      auth_session: signedIn ? 'permanent' : anonymousOnboarding ? 'anonymous' : 'none',
+      auth_user_hash: hashCreateMapTraceId(session?.user.id),
+      durable_stage: onboardingState?.stage ?? null,
+      transition_state: onboardingState?.identityLifecycle ?? null,
+    });
+    return () => traceCreateMapContinue('screen_unmounted', {
+      mount_id: renderMountIdRef.current,
+      route_before: '/(onboarding)/account',
     });
   }, []);
 
@@ -330,13 +343,42 @@ export default function AccountAuthScreen() {
       recoverCompletedNavigation: options.recoverCompletedNavigation,
       run: async () => {
         const current = await supabase.auth.getUser();
+        traceCreateMapContinue('transition_started', {
+          mount_id: renderMountIdRef.current,
+          route_before: '/(onboarding)/account',
+          auth_session: current.data.user?.is_anonymous === true ? 'anonymous' : current.data.user ? 'permanent' : 'none',
+          auth_user_hash: hashCreateMapTraceId(current.data.user?.id),
+          durable_stage: onboardingState?.stage ?? null,
+          transition_state: onboardingState?.identityLifecycle ?? null,
+        });
         if (current.data.user?.id === userId) await persistNamesFromAuthUser(current.data.user);
         const existing = await resolveExistingAccountSignIn(userId);
-        if (existing.kind === 'qualified') return QUALIFIED_EXISTING_ACCOUNT_ROUTE;
+        if (existing.kind === 'qualified') {
+          traceCreateMapContinue('destination_selected', {
+            profile_ready: true,
+            account_established: true,
+            map_owned: true,
+            resolved_destination: QUALIFIED_EXISTING_ACCOUNT_ROUTE,
+          });
+          return QUALIFIED_EXISTING_ACCOUNT_ROUTE;
+        }
         if (existing.kind === 'new_account') {
+          traceCreateMapContinue('destination_selected', {
+            profile_ready: true,
+            account_established: false,
+            map_owned: false,
+            resolved_destination: '/(onboarding)',
+          });
           return { pathname: '/(onboarding)' as const, params: { reason: 'new_account' } };
         }
-        return resolvePostAuthRoute(userId);
+        const route = await resolvePostAuthRoute(userId);
+        traceCreateMapContinue('destination_selected', {
+          profile_ready: 'not_queried',
+          account_established: onboardingState?.permanentAccountEstablished ?? null,
+          map_owned: route === '/(tabs)/map',
+          resolved_destination: typeof route === 'string' ? route : route.pathname,
+        });
+        return route;
       },
     });
 
@@ -360,6 +402,12 @@ export default function AccountAuthScreen() {
       const route = await claim.promise;
       clearPostAuthRoutingRetry();
       completeAuthenticatedTransaction();
+      traceCreateMapContinue('route_requested', {
+        mount_id: renderMountIdRef.current,
+        route_before: '/(onboarding)/account',
+        route_requested: typeof route === 'string' ? route : route.pathname,
+        transition_generation: claim.generation,
+      });
       router.replace(route);
     } catch (error) {
       requirePostAuthRoutingRetry();
@@ -368,12 +416,26 @@ export default function AccountAuthScreen() {
         generation: claim.generation,
         reason: error instanceof Error ? error.message : 'unknown',
       });
+      traceCreateMapContinue('transition_failed', {
+        mount_id: renderMountIdRef.current,
+        route_before: '/(onboarding)/account',
+        route_requested: null,
+        transition_generation: claim.generation,
+        diagnostic_reason: error instanceof Error ? error.message : 'unknown',
+      });
       if (mountedRef.current) {
         setErrorMessage(authEntryIntent === 'existing_account_sign_in'
           ? 'You’re signed in, but Nearr could not verify this account yet. Try Continue again.'
           : 'Your account signed in, but Nearr could not preserve the tutorial yet. Try Continue again.');
       }
-      router.replace({ pathname: '/(onboarding)/account', params: { reason: 'account_verification_failed' } });
+      // The mounted account screen already owns this recoverable state. Do not
+      // replace it with itself: that remount hid the error, replayed the entry
+      // analytics, and looked like a successful transition bouncing backward.
+      // OAuth callbacks may finish after this screen unmounts; only that case
+      // needs a visible error owner restored.
+      if (!mountedRef.current) {
+        router.replace({ pathname: '/(onboarding)/account', params: { reason: 'account_verification_failed' } });
+      }
     } finally {
       if (mountedRef.current) setAccountTransitionBusy(false);
       endPostAuthRouting();
@@ -578,6 +640,14 @@ export default function AccountAuthScreen() {
     if (signedInContinueRef.current) return;
     const userId = session?.user.id;
     if (!userId) return;
+    traceCreateMapContinue('continue_tapped', {
+      mount_id: renderMountIdRef.current,
+      route_before: '/(onboarding)/account',
+      auth_session: 'permanent',
+      auth_user_hash: hashCreateMapTraceId(userId),
+      durable_stage: onboardingState?.stage ?? null,
+      transition_state: onboardingState?.identityLifecycle ?? null,
+    });
     signedInContinueRef.current = true;
     void completeAuthentication(userId, 'resume', {
       retry: true,

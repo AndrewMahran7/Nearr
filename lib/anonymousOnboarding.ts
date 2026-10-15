@@ -24,8 +24,14 @@ import { onboardingV2ResumeEligibility } from '@/lib/onboardingV2Core';
 import { supabase } from '@/lib/supabase';
 import { markOnboardingComplete } from '@/lib/onboarding';
 import { realSavedPlaceIds } from '@/lib/savedPlaceIdentity';
+import { hashCreateMapTraceId, traceCreateMapContinue } from '@/lib/createMapContinueTrace';
 
 const TRANSFER_KEY = 'nearr:onboarding:v2:account-transfer';
+// The server's original grant window is 24 hours. Keep the 256-bit bearer
+// secret for the bounded 29-day recovery grace that follows it, so a user who
+// returns to Create your map later can still prove ownership of the anonymous
+// journey. The server remains authoritative for the actual cutoff.
+const TRANSFER_RECOVERY_GRACE_MS = 29 * 24 * 60 * 60_000;
 
 type PendingTransfer = {
   onboardingSessionId: string;
@@ -45,7 +51,13 @@ async function readTransfer(): Promise<PendingTransfer | null> {
     const raw = await AsyncStorage.getItem(TRANSFER_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PendingTransfer;
-    if (!parsed.secret || !parsed.onboardingSessionId || Date.parse(parsed.expiresAt) <= Date.now()) {
+    const expiresAt = Date.parse(parsed.expiresAt);
+    if (
+      !parsed.secret ||
+      !parsed.onboardingSessionId ||
+      !Number.isFinite(expiresAt) ||
+      expiresAt + TRANSFER_RECOVERY_GRACE_MS <= Date.now()
+    ) {
       await AsyncStorage.removeItem(TRANSFER_KEY);
       return null;
     }
@@ -186,6 +198,16 @@ export async function finishOnboardingAccountTransition(user: User): Promise<{
   if (isAnonymousSupabaseUser(permanentUser)) throw new Error('permanent_token_not_refreshed');
   const state = await getOnboardingV2State();
   const transfer = await readTransfer();
+  traceCreateMapContinue('transfer_resolution_started', {
+    auth_session: 'permanent',
+    auth_user_hash: hashCreateMapTraceId(permanentUser.id),
+    durable_stage: state.stage,
+    transition_state: state.identityLifecycle,
+    grant_state: transfer
+      ? (Date.parse(transfer.expiresAt) > Date.now() ? 'pending_active' : 'pending_recovery_grace')
+      : 'local_secret_missing_resume_only',
+    real_save_count: transfer?.realSavedPlaceIds.length ?? null,
+  });
   let result;
   if (state.anonymousUserId === permanentUser.id) {
     const { data, error } = await supabase.rpc('finalize_onboarding_identity_link', {
@@ -208,6 +230,15 @@ export async function finishOnboardingAccountTransition(user: User): Promise<{
     permanentUserId: result.permanentUserId,
     destinationWasEstablished: result.destinationWasEstablished,
     tutorialSavedPlaceId: result.tutorialSavedPlaceId,
+  });
+  traceCreateMapContinue('transfer_resolution_completed', {
+    auth_user_hash: hashCreateMapTraceId(result.permanentUserId),
+    durable_stage: nextState.stage,
+    transition_state: nextState.identityLifecycle,
+    grant_state: result.replayed ? 'completed_replay' : 'completed',
+    account_established: result.destinationWasEstablished,
+    map_owned: nextState.stage === 'onboarding_complete' || nextState.stage === 'graduated',
+    resolved_destination: nextState.stage === 'auth_success' ? '/(onboarding)' : '/(tabs)/map',
   });
   if (result.destinationWasEstablished) {
     await markOnboardingComplete(result.permanentUserId);
