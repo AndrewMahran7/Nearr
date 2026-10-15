@@ -185,7 +185,9 @@ assert.match(map, /individualPlaces\.map\(\(p\) => \(\s*\n\s*<NearrMapMarker/, '
 assert.match(map, /clusterCandidates = useMemo\(/, 'clustering consumes the filtered set');
 assert.match(map, /visiblePlaces\.filter\(\(place\) => !alwaysIndividualIds\.has\(place\.id\)\)/, 'clustering input is filterPlacesForMap output');
 assert.match(map, /shouldRenderZoneCircle\(\{/, 'zone circles go through the density policy');
-assert.match(map, /onFitAll=\{visiblePlaces\.length > 0/, 'fit-all lives on the same control row');
+assert.match(map, /onFitAll=\{\(\) => fitVisiblePlaces\(\)\}/, 'filter menu retains explicit filtered framing');
+assert.match(map, /accessibilityLabel=\{mapCategoryFilter === MAP_FILTER_ALL \? 'Show all saved pins' : 'Show all filtered saved pins'\}/, 'Show All is directly discoverable with truthful filtered semantics');
+assert.match(map, /onResetAndFit=\{\(\) => fitVisiblePlaces\(true\)\}/, 'full collection can be restored and framed');
 assert.match(map, /setMapCategoryFilter\(MAP_FILTER_ALL\);\s*\n\s*if \(reminderOpen\)/, 'deep links reset the filter');
 assert.match(
   map,

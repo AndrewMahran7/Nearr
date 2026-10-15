@@ -24,30 +24,28 @@ assert.match(map, /const expandedSheetHeight = useMemo\(/);
 assert.match(map, /availableHeight - expandedSheetMapPeek\(safeTopInset\)/);
 assert.match(map, /previewExpanded && \{ height: expandedSheetHeight \}/);
 assert.match(map, /previewScroll: \{ flex: 1 \}/, 'the body fills the card, it does not define it');
-// The peek is DERIVED from the raised Queue pill, not from a percentage, so
-// "the detail owns the screen" and "the Queue stays tappable" cannot drift
-// apart. An earlier pass reserved 72% for the sheet to keep a big map header;
-// the product decision is now the opposite.
+// Preserve a real 156pt map viewport below Queue, so selection remains visible
+// even while the detail body scrolls. A minimum percentage of sheet coverage
+// would recreate the founder's pin occlusion on smaller phones.
 assert.match(map, /RAISED_QUEUE_PILL_HEIGHT = Spacing\.sm \+ 44/);
 assert.match(
   map,
-  /function expandedSheetMapPeek\(safeTopInset: number\): number \{[\s\S]{0,160}safeTopInset \+ RAISED_QUEUE_PILL_HEIGHT \+ Spacing\.md/,
+  /function expandedSheetMapPeek\(safeTopInset: number\): number \{[\s\S]{0,160}safeTopInset \+ RAISED_QUEUE_PILL_HEIGHT \+ 156/,
 );
 {
-  const peek = (safeTop: number) => safeTop + 8 + 44 + 12;
+  const peek = (safeTop: number) => safeTop + 8 + 44 + 156;
   const expanded = (available: number, safeTop: number) =>
-    Math.max(380, Math.round(available - peek(safeTop)));
+    Math.max(220, Math.round(available - peek(safeTop)));
   for (const [device, mapArea, safeTop] of [
     ['iPhone SE', 584, 24],
     ['iPhone 14', 761, 47],
     ['iPhone 14 Pro Max', 849, 59],
   ] as const) {
-    const share = expanded(mapArea, safeTop) / mapArea;
-    assert.ok(share >= 0.84, `${device}: the sheet takes ${(share * 100).toFixed(0)}% of the map area`);
+    assert.ok(expanded(mapArea, safeTop) >= 220, `${device}: detail retains a usable scrollable body`);
     const visibleMap = mapArea - expanded(mapArea, safeTop);
     assert.ok(
-      visibleMap > safeTop + 8 + 44,
-      `${device}: the ${visibleMap}pt strip still clears the raised Queue pill`,
+      visibleMap - (safeTop + 8 + 44) >= 156,
+      `${device}: the ${visibleMap}pt strip retains marker context below Queue`,
     );
   }
 }

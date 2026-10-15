@@ -31,6 +31,7 @@ import {
   type AppStateStatus,
   BackHandler,
   Image,
+  Keyboard,
   Linking,
   PanResponder,
   Platform,
@@ -98,7 +99,9 @@ import { Button, Card, DemoModeBanner, MapFallbackList } from '@/components';
 import { PlaceImage } from '@/components/PlaceImage';
 import { fieldnotesPhotoMarkerIds } from '@/lib/fieldnotesMapPresentation';
 import { useReduceMotion } from '@/lib/useReduceMotion';
-import { hapticSuccess } from '@/lib/haptics';
+import { hapticSelection, hapticSuccess } from '@/lib/haptics';
+import { mapKeyboardOverlap, mapUsableViewport, planSavedPinsCamera, planSelectedMarkerOcclusion, canApplySelectedMarkerCorrection } from '@/lib/mapViewportGeometry';
+import { savedPlacePhotoKind, type SavedPlacePhotoKind } from '@/lib/savedPlaceSnapshot';
 import { MapBrand, MapSavedDock, SelectedPlaceCard } from '@/components/map/FieldnotesMapChrome';
 import {
   FloatingMapActions,
@@ -354,14 +357,12 @@ const RAISED_QUEUE_PILL_HEIGHT = Spacing.sm + 44;
 /**
  * Map left visible above the expanded Place Detail sheet.
  *
- * Just the raised Queue pill's row plus a small gap — the detail owns the rest
- * of the screen. Deriving it from the pill (rather than picking a percentage)
- * is what keeps "the sheet is nearly full-screen" and "the Queue is always
- * tappable" from being in tension: the peek cannot shrink below the one piece
- * of chrome that has to survive it.
+ * Keep a usable geographical strip below the raised Queue row. Its 156pt
+ * includes a 60pt selected marker, breathing room and projection margins.
+ * The scrollable detail uses the remaining area, including on small phones.
  */
 function expandedSheetMapPeek(safeTopInset: number): number {
-  return safeTopInset + RAISED_QUEUE_PILL_HEIGHT + Spacing.md;
+  return safeTopInset + RAISED_QUEUE_PILL_HEIGHT + 156;
 }
 
 /**
@@ -473,6 +474,10 @@ const PREVIEW_INITIAL_REGION: Region = {
 export default function MapScreen() {
   const router = useRouter();
   const reduceMotion = useReduceMotion();
+  // The long-lived GPS watcher reads the latest accessibility preference
+  // without tearing down and restarting its location subscription.
+  const reduceMotionRef = useRef(reduceMotion);
+  reduceMotionRef.current = reduceMotion;
   const { colors, typography, resolvedTheme } = useTheme();
   const { state: onboardingV2State } = useOnboardingV2();
   const phase1Only = isOnboardingV2Phase1Only();
@@ -734,14 +739,19 @@ export default function MapScreen() {
   followModeRef.current = followMode;
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [selectedImageKind, setSelectedImageKind] = useState<SavedPlacePhotoKind>('unknown');
   useEffect(() => {
     let cancelled = false;
     setSelectedImageUri(null);
+    setSelectedImageKind('unknown');
     if (!selected) return () => { cancelled = true; };
     const localFixture = offlineFixtureByPlaceId(selected.place.id);
     if (localFixture) {
       const primary = offlineOnboardingMedia(localFixture.assetKey).placePhotoAssets[0];
       setSelectedImageUri(Image.resolveAssetSource(primary).uri);
+      // Bundled practice imagery is retained media, not proof of an
+      // independently acquired destination photograph.
+      setSelectedImageKind('unknown');
       return () => { cancelled = true; };
     }
     void hydrateSavedPlace({
@@ -750,7 +760,11 @@ export default function MapScreen() {
       trigger: 'map_detail',
       knownImageUri: placeSourceCards(selected).find((source) => !!source.thumbnailUrl)?.thumbnailUrl ?? null,
     }).then((hydrated) => {
-      if (!cancelled) setSelectedImageUri(hydrated.details.photoUrls[0] ?? null);
+      if (!cancelled) {
+        const uri = hydrated.details.photoUrls[0] ?? null;
+        setSelectedImageUri(uri);
+        setSelectedImageKind(savedPlacePhotoKind(hydrated.snapshot, uri));
+      }
     });
     return () => { cancelled = true; };
   }, [selected?.id, selected?.place.google_place_id, selected?.user_id]);
@@ -838,6 +852,7 @@ export default function MapScreen() {
   ): boolean => {
     let cameraTransactionId: number | null = null;
     if (source === 'gesture') {
+      selectionUserMovedRef.current = true;
       const cancelled = cameraTransactionCoordinatorRef.current.cancelActive('user_gesture');
       if (cancelled) {
         recordMapLiveLedger({
@@ -988,7 +1003,13 @@ export default function MapScreen() {
     onboardingPlaceTourPreparedRef.current = savedPlaceId;
     setSheetMode('saved');
     setSheetOpenSignal((value) => value + 1);
-    focusZone(target);
+    // The retrieval lesson intentionally opens Saved without selecting a card.
+    // Preserve its preparatory focus independently of selected-card layout.
+    if (beginCameraMovement('programmatic', { reason: 'programmatic_focus' })) {
+      mapRef.current?.fitToCoordinates(radiusBoundingCoords(target.place.latitude, target.place.longitude, effectiveRadiusMeters(target)), {
+        edgePadding: { top: 100, right: 100, bottom: 220, left: 100 }, animated: !reduceMotion,
+      });
+    }
   }, [mapReady, onboardingV2State?.stage, onboardingV2State?.tutorialSave?.savedPlaceId, validPlaces]);
   // Bumped when something asks a minimized sheet to re-open to its partial snap.
   const [sheetOpenSignal, setSheetOpenSignal] = useState(0);
@@ -1061,100 +1082,13 @@ export default function MapScreen() {
 
   const handleSelectMapCategory = useCallback((next: MapVisibilityFilter) => {
     setMapCategoryFilter(next);
+    hapticSelection();
     // Deliberately does NOT move the camera: the user may be inspecting an
     // area, and yanking the viewport on every chip tap is disorienting. The
     // fit control on the same row is the explicit "reframe" action.
     void trackEvent('map_filter_changed', { filter: next });
   }, []);
 
-  /**
-   * Frame every CURRENTLY VISIBLE place. This is the former "View All" pill,
-   * unchanged in behavior (fit the zones + get the sheet out of the way) —
-   * only its input narrowed from every saved place to the filtered set, so
-   * "fit" and "what's on screen" agree.
-   */
-  const fitVisiblePlaces = useCallback(() => {
-    if (!mapRef.current) return;
-    if (visiblePlaces.length === 0) return;
-    setSheetMinimizeSignal((n) => n + 1);
-    const coords = allZoneBoundingCoords(visiblePlaces);
-    if (coords.length === 0) return;
-    try {
-      // Camera center uses the average of coordinates (center of mass) so a
-      // single distant outlier doesn't drag the camera into empty space
-      // between clusters. Zoom is still derived from the full bounding box.
-      let sumLat = 0;
-      let sumLng = 0;
-      for (const p of visiblePlaces) {
-        sumLat += p.place.latitude;
-        sumLng += p.place.longitude;
-      }
-      const centerLat = sumLat / visiblePlaces.length;
-      const centerLng = sumLng / visiblePlaces.length;
-
-      let minLat = coords[0].latitude;
-      let maxLat = coords[0].latitude;
-      let minLng = coords[0].longitude;
-      let maxLng = coords[0].longitude;
-      for (const c of coords) {
-        if (c.latitude < minLat) minLat = c.latitude;
-        if (c.latitude > maxLat) maxLat = c.latitude;
-        if (c.longitude < minLng) minLng = c.longitude;
-        if (c.longitude > maxLng) maxLng = c.longitude;
-      }
-
-      // Extreme-spread guard: for globally distant points, center-of-mass
-      // framing can hide places off-screen or misframe across the
-      // antimeridian. Fall back to fitToCoordinates for very large spans.
-      const latSpan = maxLat - minLat;
-      const lngSpan = maxLng - minLng;
-      const lngsSorted = visiblePlaces
-        .map((p) => p.place.longitude)
-        .sort((a, b) => a - b);
-      let maxLngGap = 0;
-      for (let i = 1; i < lngsSorted.length; i++) {
-        const gap = lngsSorted[i] - lngsSorted[i - 1];
-        if (gap > maxLngGap) maxLngGap = gap;
-      }
-      if (lngsSorted.length > 1) {
-        const wrapGap = 360 - (lngsSorted[lngsSorted.length - 1] - lngsSorted[0]);
-        if (wrapGap > maxLngGap) maxLngGap = wrapGap;
-      }
-      const crossesDateLine = maxLngGap > 180;
-
-      if (latSpan > 45 || lngSpan > 90 || crossesDateLine) {
-        if (!beginCameraMovement('programmatic', { reason: 'programmatic_focus' })) return;
-        mapRef.current.fitToCoordinates(coords, {
-          edgePadding: { top: 100, right: 100, bottom: 180, left: 100 },
-          animated: true,
-        });
-        return;
-      }
-
-      // Cluster-focused zoom: size the viewport from the SPREAD around the
-      // centroid (standard deviation) instead of the single farthest point,
-      // so one distant outlier can't force an extreme zoom-out.
-      let varLat = 0;
-      let varLng = 0;
-      for (const p of visiblePlaces) {
-        varLat += (p.place.latitude - centerLat) ** 2;
-        varLng += (p.place.longitude - centerLng) ** 2;
-      }
-      const stdLat = Math.sqrt(varLat / visiblePlaces.length);
-      const stdLng = Math.sqrt(varLng / visiblePlaces.length);
-      const SPREAD_SIGMAS = 2;
-      const PAD = 1.3;
-      const MIN_DELTA = 0.02; // single-place / tight-cluster floor
-      const latitudeDelta = Math.max(stdLat * SPREAD_SIGMAS * 2 * PAD, MIN_DELTA);
-      const longitudeDelta = Math.max(stdLng * SPREAD_SIGMAS * 2 * PAD, MIN_DELTA);
-
-      const targetRegion = { latitude: centerLat, longitude: centerLng, latitudeDelta, longitudeDelta };
-      if (!beginCameraMovement('programmatic', { reason: 'programmatic_focus', targetRegion })) return;
-      mapRef.current.animateToRegion(targetRegion, 400);
-    } catch (e) {
-      if (__DEV__) console.debug('[map] fit skipped', e);
-    }
-  }, [beginCameraMovement, visiblePlaces]);
   // In-app search overlay (replaces the old native Alert on the search bar).
   const [searchVisible, setSearchVisible] = useState(false);
   // Post-save "Saved to your map" snackbar with optional Undo.
@@ -1204,6 +1138,39 @@ export default function MapScreen() {
   const { height: windowHeight, width: windowWidth, fontScale } = useWindowDimensions();
   const [mapAreaHeight, setMapAreaHeight] = useState(0);
   const [mapAreaWidth, setMapAreaWidth] = useState(0);
+  const [topChromeBottom, setTopChromeBottom] = useState(0);
+  const [queueChromeBottom, setQueueChromeBottom] = useState(0);
+  const [selectedCardHeight, setSelectedCardHeight] = useState(0);
+  const [keyboardOverlap, setKeyboardOverlap] = useState(0);
+  const mapContainerRef = useRef<View | null>(null);
+  const keyboardScreenYRef = useRef<number | null>(null);
+  const mapFrameMeasurementRevisionRef = useRef(0);
+  const [selectionFocusRequest, setSelectionFocusRequest] = useState(0);
+  const selectionFocusRequestRef = useRef(0);
+  const selectionUserMovedRef = useRef(false);
+  const selectedCorrectionKeyRef = useRef('');
+  const showAllRequestKeyRef = useRef('');
+  const measureMapKeyboardOverlap = useCallback(() => {
+    const container = mapContainerRef.current;
+    const requestedRevision = ++mapFrameMeasurementRevisionRef.current;
+    if (!container) return;
+    container.measureInWindow((_x, y, _width, height) => {
+      if (mapContainerRef.current !== container || requestedRevision !== mapFrameMeasurementRevisionRef.current) return;
+      setKeyboardOverlap(mapKeyboardOverlap({ mapY: y, mapHeight: height, keyboardScreenY: keyboardScreenYRef.current }));
+    });
+  }, []);
+  useEffect(() => {
+    const shown = Keyboard.addListener('keyboardDidShow', event => {
+      keyboardScreenYRef.current = event.endCoordinates.screenY;
+      measureMapKeyboardOverlap();
+    });
+    const hidden = Keyboard.addListener('keyboardDidHide', () => {
+      keyboardScreenYRef.current = null;
+      mapFrameMeasurementRevisionRef.current += 1;
+      setKeyboardOverlap(0);
+    });
+    return () => { shown.remove(); hidden.remove(); };
+  }, [measureMapKeyboardOverlap]);
   const [mapGroupSelectorHeight, setMapGroupSelectorHeight] = useState(0);
   const availableHeight = mapAreaHeight || windowHeight;
   const sheetPartialHeight = useMemo(
@@ -1213,19 +1180,15 @@ export default function MapScreen() {
   /**
    * Expanded Place Detail height.
    *
-   * The detail is the screen once it is open. It keeps a strip of map at the
-   * top — enough to place the rounded edge against something, and enough for
-   * the Queue pill to sit in — but no more than that. An earlier pass reserved
-   * 72% for the sheet specifically to preserve a large map header; on device
-   * that read as a cramped card under a mostly-empty map, so the reservation
-   * is gone.
+   * The expanded detail scrolls below a usable map strip, so its selected
+   * marker and surrounding geography remain visible above the card.
    *
    * The peek is measured from the top of the map AREA (tab bar already
    * excluded), and it is what guarantees the raised Queue pill and the sheet
    * never occupy the same points — see scripts/testMapQueueEntryPoint.ts.
    */
   const expandedSheetHeight = useMemo(
-    () => Math.max(380, Math.round(availableHeight - expandedSheetMapPeek(safeTopInset))),
+    () => Math.max(220, Math.round(availableHeight - expandedSheetMapPeek(safeTopInset))),
     [availableHeight, safeTopInset],
   );
   const { nearbyPlaces, locationState, requestLocationPermission } = useNearbyPlaces(data);
@@ -1264,6 +1227,118 @@ export default function MapScreen() {
     filterOptionCount: mapFilterChoices.length,
   });
   const shouldShowMapControls = mapChromeDecision.topChromeRendered;
+  const usableMapViewport = useMemo(() => mapUsableViewport({
+    width: mapAreaWidth || windowWidth,
+    height: availableHeight,
+    top: Math.max(shouldShowMapControls ? topChromeBottom : safeTopInset, queueChromeBottom),
+    margin: 40,
+    bottom: Math.max(keyboardOverlap, sourceGroupBrowseActive
+      ? mapGroupSelectorHeight + Spacing.lg + insets.bottom
+      : selected
+      ? (previewExpanded ? expandedSheetHeight : selectedCardHeight + insets.bottom + 84)
+      : insets.bottom + 76 + 58),
+  }), [mapAreaWidth, windowWidth, availableHeight, shouldShowMapControls, topChromeBottom, safeTopInset,
+    queueChromeBottom, keyboardOverlap, selected?.id, previewExpanded, expandedSheetHeight, selectedCardHeight, insets.bottom,
+    sourceGroupBrowseActive, mapGroupSelectorHeight]);
+
+  // Show All is explicit navigation. It retires older ownership once, then
+  // frames every eligible coordinate, never a reminder radius or a centroid.
+  const fitVisiblePlaces = useCallback((allPlaces = false) => {
+    const currentMap = mapRef.current;
+    if (!currentMap || !mapReady) return;
+    const eligible = allPlaces ? mapPlaces : filterEligiblePlaces;
+    const requestKey = eligible.map(place => `${place.id}:${place.place.latitude}:${place.place.longitude}`).join('|');
+    if (cameraTransactionCoordinatorRef.current.active()?.reason === 'show_all' && showAllRequestKeyRef.current === requestKey) return;
+    const viewport = mapUsableViewport({
+      width: mapAreaWidth || windowWidth, height: availableHeight,
+      top: Math.max(topChromeBottom, queueChromeBottom, safeTopInset),
+      bottom: Math.max(insets.bottom + 76 + 58,
+        mapGroupRequest ? mapGroupSelectorHeight + Spacing.lg + insets.bottom : 0,
+        nearbyExplorer ? explorerCarouselHeight + insets.bottom : 0),
+      margin: 40,
+    });
+    const plan = planSavedPinsCamera({ coordinates: eligible.map(place => place.place), viewport });
+    if (plan.kind === 'none') {
+      showSnackbar(plan.reason === 'no_coordinates' ? 'No saved map locations in this view yet.' : 'The map is still getting ready.');
+      return;
+    }
+    Keyboard.dismiss();
+    selectionUserMovedRef.current = true;
+    resetClusterExpansionRef.current();
+    cameraTransactionCoordinatorRef.current.cancelActive('show_all_requested');
+    followModeRef.current = false;
+    setFollowMode(false);
+    didFitRef.current = true;
+    setSelected(null);
+    setPreviewExpanded(false);
+    setSheetMinimizeSignal(value => value + 1);
+    if (allPlaces) setMapCategoryFilter(MAP_FILTER_ALL);
+    if (!beginCameraMovement('programmatic', { reason: 'show_all' })) return;
+    showAllRequestKeyRef.current = requestKey;
+    try {
+      hapticSelection();
+      if (plan.uniqueCoordinateCount === 1 || plan.crossesAntimeridian) {
+        currentMap.animateToRegion(plan.region, reduceMotion ? 0 : 360);
+      } else {
+        currentMap.fitToCoordinates(plan.coordinates, { edgePadding: plan.edgePadding, animated: !reduceMotion });
+      }
+    } catch (error) {
+      cameraTransactionCoordinatorRef.current.cancelActive('show_all_failed');
+      showSnackbar('Could not frame the map. Try again.');
+    }
+  }, [mapReady, mapPlaces, filterEligiblePlaces, mapAreaWidth, windowWidth, availableHeight,
+    topChromeBottom, queueChromeBottom, safeTopInset, insets.bottom, beginCameraMovement, reduceMotion, showSnackbar,
+    mapGroupRequest, mapGroupSelectorHeight, nearbyExplorer, explorerCarouselHeight]);
+
+  // Native projection accounts for zoom, rotation and actual overlay sizes.
+  // A key is consumed once per selection/layout; camera samples only retry a
+  // pending transaction. A user gesture permanently retires this selection's
+  // correction until another deliberate place/open action requests ownership.
+  useEffect(() => {
+    if (!selected || !mapReady || !(sourceGroupBrowseActive ? mapGroupSelectorHeight : selectedCardHeight) || !usableMapViewport.valid || (nearbyExplorer && !explorerSavedDetailOpen)) return;
+    if (selectionUserMovedRef.current || cameraTransactionCoordinatorRef.current.active()) return;
+    const key = `${selected.id}:${selectionFocusRequest}:${previewExpanded}:${usableMapViewport.width}:${usableMapViewport.height}:${usableMapViewport.top}:${usableMapViewport.bottom}`;
+    if (selectedCorrectionKeyRef.current === key) return;
+    let cancelled = false;
+    const requestedCameraRevision = cameraRevisionRef.current;
+    const requestedSelectionRevision = selectionFocusRequestRef.current;
+    const requestedSelectionId = selected.id;
+    const currentMap = mapRef.current;
+    if (!currentMap) return;
+    const stillOwned = () => !cancelled && canApplySelectedMarkerCorrection({
+      requestedSelectionId, currentSelectionId: selectedRef.current?.id ?? null,
+      requestedCameraRevision, currentCameraRevision: cameraRevisionRef.current,
+      requestedSelectionRevision, currentSelectionRevision: selectionFocusRequestRef.current,
+      userHasMoved: selectionUserMovedRef.current,
+    });
+    let issuedTransactionId: number | null = null;
+    void (async () => {
+      try {
+        const point = await currentMap.pointForCoordinate(selected.place);
+        if (!stillOwned()) return;
+        const plan = planSelectedMarkerOcclusion({ point, viewport: usableMapViewport });
+        if (plan.kind === 'none') {
+          if (plan.reason === 'visible') selectedCorrectionKeyRef.current = key;
+          return;
+        }
+        const center = await currentMap.coordinateForPoint(plan.cameraCenterPoint);
+        if (!stillOwned()) return;
+        if (!beginCameraMovement('programmatic', { reason: 'programmatic_focus' })) return;
+        issuedTransactionId = cameraTransactionCoordinatorRef.current.active()?.id ?? null;
+        selectedCorrectionKeyRef.current = key;
+        currentMap.animateCamera({ center }, { duration: reduceMotion ? 0 : 300 });
+      } catch (error) {
+        if (issuedTransactionId != null && cameraTransactionCoordinatorRef.current.active()?.id === issuedTransactionId) {
+          cameraTransactionCoordinatorRef.current.cancelActive('selected_projection_failed');
+          selectedCorrectionKeyRef.current = '';
+        }
+        if (__DEV__) console.debug('[map] selected viewport correction unavailable', error);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selected?.id, selected?.place.latitude, selected?.place.longitude, selectionFocusRequest, mapReady,
+    selectedCardHeight, usableMapViewport, previewExpanded, nearbyExplorer, explorerSavedDetailOpen, sourceGroupBrowseActive,
+    mapGroupSelectorHeight, viewportSnapshot?.viewportRevision, beginCameraMovement, reduceMotion]);
   const lastMapChromeDiagnosticRef = useRef('');
   useEffect(() => {
     if (!__DEV__) return;
@@ -1420,12 +1495,12 @@ export default function MapScreen() {
       try {
         const targetRegion = explorerSelectionRegion(lastRegionRef.current, item);
         if (!beginCameraMovement('programmatic', { reason: 'programmatic_focus', targetRegion })) return;
-        mapRef.current?.animateToRegion(targetRegion, 280);
+        mapRef.current?.animateToRegion(targetRegion, reduceMotion ? 0 : 280);
       } catch (error) {
         if (__DEV__) console.debug('[nearby-explorer] selection recenter skipped', error);
       }
     },
-    [beginCameraMovement],
+    [beginCameraMovement, reduceMotion],
   );
 
   const handleOpenExplorerDetails = useCallback(
@@ -1448,6 +1523,7 @@ export default function MapScreen() {
         return;
       }
       setSelected(saved);
+      focusZone(saved);
       setExplorerSavedDetailOpen(true);
       setPreviewExpanded(true);
       previewTranslateY.setValue(0);
@@ -1485,7 +1561,7 @@ export default function MapScreen() {
         targetRegion: singleTarget,
       })) return;
       if (fitItems.length === 1) {
-        mapRef.current?.animateToRegion(singleTarget!, 350);
+        mapRef.current?.animateToRegion(singleTarget!, reduceMotion ? 0 : 350);
       } else {
         mapRef.current?.fitToCoordinates(
           fitItems.map((item) => ({ latitude: item.latitude, longitude: item.longitude })),
@@ -1495,14 +1571,14 @@ export default function MapScreen() {
               carouselHeight: explorerCarouselHeight,
               bottomInset: insets.bottom,
             }),
-            animated: true,
+            animated: !reduceMotion,
           },
         );
       }
     } catch (error) {
       if (__DEV__) console.debug('[nearby-explorer] initial fit skipped', error);
     }
-  }, [beginCameraMovement, explorerCarouselHeight, insets.bottom, mapAreaHeight, mapReady, nearbyExplorer, safeTopInset]);
+  }, [beginCameraMovement, explorerCarouselHeight, insets.bottom, mapAreaHeight, mapReady, nearbyExplorer, safeTopInset, reduceMotion]);
 
   // ---- live foreground location tracking --------------------------------
   // A single `watchPositionAsync` subscription, its last-accepted reading (for
@@ -1676,7 +1752,7 @@ export default function MapScreen() {
                 if (!beginCameraMovement('programmatic', { reason: 'user_location' })) return;
                 mapRef.current?.animateCamera(
                   { center: { latitude: sample.latitude, longitude: sample.longitude } },
-                  { duration: LIVE_LOCATION_FOLLOW_ANIMATION_MS },
+                  { duration: reduceMotionRef.current ? 0 : LIVE_LOCATION_FOLLOW_ANIMATION_MS },
                 );
               } catch (err) {
                 if (__DEV__) console.debug('[map] follow animate skipped', err);
@@ -2428,11 +2504,11 @@ export default function MapScreen() {
         return;
       }
       if (request.target.kind === 'region') {
-        currentMap.animateToRegion(request.targetRegion, 350);
+        currentMap.animateToRegion(request.targetRegion, reduceMotion ? 0 : 350);
       } else if (request.target.kind === 'fit') {
         currentMap.fitToCoordinates([...request.target.coordinates], {
           edgePadding: { top: 100, right: 80, bottom: 220, left: 80 },
-          animated: true,
+          animated: !reduceMotion,
         });
       } else {
         executeClusterExpansionRef.current(clusterExpansionCoordinatorRef.current.cameraFailed());
@@ -2484,7 +2560,7 @@ export default function MapScreen() {
       });
       executeClusterExpansionRef.current(clusterExpansionCoordinatorRef.current.cameraFailed());
     }
-  }, [beginCameraMovement, clearClusterExpansionTimer, emitClusterDiagnostic]);
+  }, [beginCameraMovement, clearClusterExpansionTimer, emitClusterDiagnostic, reduceMotion]);
   executeClusterExpansionRef.current = executeClusterExpansion;
 
   const expansionRegionFor = useCallback((args: {
@@ -2641,11 +2717,11 @@ export default function MapScreen() {
     didFitRef.current = true;
     try {
       if (!beginCameraMovement('programmatic', { reason: 'user_location', targetRegion: userRegion })) return;
-      mapRef.current?.animateToRegion(userRegion, 400);
+      mapRef.current?.animateToRegion(userRegion, reduceMotion ? 0 : 400);
     } catch (e) {
       if (__DEV__) console.debug('[map] animateToRegion skipped', e);
     }
-  }, [beginCameraMovement, mapPreview, mapReady, userRegion]);
+  }, [beginCameraMovement, mapPreview, mapReady, userRegion, reduceMotion]);
 
   // ---- deep-link target: focus a specific saved place -------------------
   // Triggered by the "Show on map" action elsewhere in the app. Runs once
@@ -2653,7 +2729,7 @@ export default function MapScreen() {
   // list has loaded. We:
   //   1. find the matching saved place
   //   2. mark it as `selected` (opens the preview card)
-  //   3. frame its full radius zone via fitToCoordinates (not just a pin)
+  //   3. measure its card and bring its marker into the unobstructed map
   //   4. mark `didFitRef` so the multi-zone auto-fit doesn't run after us
   // If the id doesn't match anything, we silently fall back to the normal
   // map behavior.
@@ -2930,6 +3006,7 @@ export default function MapScreen() {
     handleUserInteraction('sheet_dismiss');
 
     markerRefs.current[selected.id]?.hideCallout?.();
+    selectionFocusRequestRef.current += 1;
     previewTranslateY.stopAnimation();
     previewTranslateY.setValue(0);
     setSelected(null);
@@ -2939,26 +3016,15 @@ export default function MapScreen() {
   dismissSelectedPlaceRef.current = dismissSelectedPlace;
 
   /**
-   * Frame the map around a single saved place's zone (marker + radius
-   * bubble). Called when the user taps a marker so the selection feels
-   * like "zoom into this zone" instead of "jump to a pin".
+   * Request one measured viewport correction for a deliberate selection.
    */
-  function focusZone(item: SavedPlaceWithPlace) {
-    if (!mapRef.current) return;
-    const coords = radiusBoundingCoords(
-      item.place.latitude,
-      item.place.longitude,
-      effectiveRadiusMeters(item),
-    );
-    try {
-      if (!beginCameraMovement('programmatic', { reason: 'programmatic_focus' })) return;
-      mapRef.current.fitToCoordinates(coords, {
-        edgePadding: { top: 100, right: 100, bottom: 220, left: 100 },
-        animated: true,
-      });
-    } catch (e) {
-      if (__DEV__) console.debug('[map] focusZone skipped', e);
-    }
+  function focusZone(_item: SavedPlaceWithPlace) {
+    // Layout owns the camera request so the card is measured first. Preserve
+    // the current zoom; reminder radii only describe notification behavior.
+    selectionUserMovedRef.current = false;
+    selectedCorrectionKeyRef.current = '';
+    selectionFocusRequestRef.current += 1;
+    setSelectionFocusRequest(value => value + 1);
   }
 
   function fitCurrentMapGroup() {
@@ -2992,7 +3058,7 @@ export default function MapScreen() {
             topChromeHeight: safeTopInset + topChromeClearance,
             bottomOverlayHeight: mapGroupSelectorHeight + insets.bottom,
           }),
-          animated: true,
+          animated: !reduceMotion,
         },
       );
     } catch (e) {
@@ -3027,6 +3093,7 @@ export default function MapScreen() {
     setSelected(item);
     setPreviewExpanded(false);
     previewTranslateY.setValue(0);
+    focusZone(item);
   }
 
   function openSourceGroupPlaceDetails(item: SavedPlaceWithPlace) {
@@ -3050,7 +3117,7 @@ export default function MapScreen() {
       closeMapGroup();
       return;
     }
-    if (selected) setPreviewExpanded(true);
+    if (selected) { focusZone(selected); setPreviewExpanded(true); }
   }
 
   function handleSelectedSourceGroupMemberRemoved(removedId: string) {
@@ -3081,6 +3148,7 @@ export default function MapScreen() {
   }
 
   function selectPlace(item: SavedPlaceWithPlace) {
+    hapticSelection();
     // Selecting a place is manual navigation to a specific spot — stop the
     // follow camera so it doesn't yank back to the user's live location while
     // they're examining this place. The user dot keeps updating; tapping the
@@ -3292,6 +3360,7 @@ export default function MapScreen() {
 
           // Collapsed: upward drag expands, larger downward drag dismisses.
           if (vertical && gestureState.dy < -40) {
+            selectionUserMovedRef.current = false;
             setPreviewExpanded(true);
             if (__DEV__) console.log('[map-sheet] expanded');
             springBack();
@@ -3308,7 +3377,7 @@ export default function MapScreen() {
           Animated.spring(previewTranslateY, {
             toValue: 0,
             useNativeDriver: true,
-            bounciness: 6,
+            bounciness: 0,
           }).start();
         },
       }),
@@ -3561,7 +3630,6 @@ export default function MapScreen() {
       selectAfterSave = true,
     ): Promise<SavedPlaceWithPlace | null> => {
       if (savingPlace) return null;
-      if (flow === 'map_search') setSearchVisible(false);
       setSavingPlace(true);
       try {
         const result = await saveSavedPlace({
@@ -3575,6 +3643,7 @@ export default function MapScreen() {
         // the network within the freshness window and the marker wouldn't
         // appear until later).
         await refresh();
+        if (flow === 'map_search') setSearchVisible(false);
         if (result.status === 'duplicate') {
           const existing = result.saved ?? (
             result.savedPlaceId != null
@@ -3691,7 +3760,7 @@ export default function MapScreen() {
     if (userRegion) {
       try {
         if (!beginCameraMovement('programmatic', { reason: 'user_location', targetRegion: userRegion })) return;
-        mapRef.current?.animateToRegion(userRegion, 400);
+        mapRef.current?.animateToRegion(userRegion, reduceMotion ? 0 : 400);
       } catch (e) {
         if (__DEV__) console.debug('[map] recenter skipped', e);
       }
@@ -3732,14 +3801,14 @@ export default function MapScreen() {
       setPermission('granted');
       try {
         if (!beginCameraMovement('programmatic', { reason: 'user_location', targetRegion: region })) return;
-        mapRef.current?.animateToRegion(region, 400);
+        mapRef.current?.animateToRegion(region, reduceMotion ? 0 : 400);
       } catch (e) {
         if (__DEV__) console.debug('[map] recenter animate skipped', e);
       }
     } catch (e) {
       if (__DEV__) console.debug('[map] recenter failed', e);
     }
-  }, [beginCameraMovement, userRegion]);
+  }, [beginCameraMovement, userRegion, reduceMotion]);
 
   const photoMarkerIds = useMemo(() => fieldnotesPhotoMarkerIds(individualPlaces, selectedMarkerId, markerDetailLevel), [individualPlaces, selectedMarkerId, markerDetailLevel]);
 
@@ -3768,10 +3837,14 @@ export default function MapScreen() {
   // -----------------------------------------------------------------------
   return (
     <View
+      ref={mapContainerRef}
       style={styles.container}
       onLayout={(e) => {
         setMapAreaWidth(e.nativeEvent.layout.width);
         setMapAreaHeight(e.nativeEvent.layout.height);
+        // Android adjustResize can remove keyboard space before this layout;
+        // only reserve any keyboard area that still intersects the map.
+        measureMapKeyboardOverlap();
       }}
     >
       {/* MapView ALWAYS mounts. Empty / loading / no-GPS states render as
@@ -3958,6 +4031,7 @@ export default function MapScreen() {
       {/* Preview card */}
       {selected && shouldRenderSelectedPlaceDetail ? (
         <Animated.View
+          onLayout={event => setSelectedCardHeight(event.nativeEvent.layout.height)}
           onStartShouldSetResponderCapture={() => {
             handleUserInteraction('press');
             return false;
@@ -4012,8 +4086,8 @@ export default function MapScreen() {
                 ) : null}
               </View>
               {previewExpanded ? null : <SelectedPlaceCard
-                place={selected} imageUri={selectedImageUri}
-                onOpen={() => setPreviewExpanded(true)}
+                place={selected} imageUri={selectedImageUri} imageKind={selectedImageKind}
+                onOpen={() => { selectionUserMovedRef.current = false; setPreviewExpanded(true); hapticSelection(); }}
                 onClose={() => dismissSelectedPlace()}
               />}
             </View>
@@ -4135,23 +4209,25 @@ export default function MapScreen() {
           dropdown is open so there is only ever ONE visible search input. */}
       {shouldShowMapControls && (sheetSnap !== 'full' || !!selected) ? (
         <><LinearGradient pointerEvents="none" colors={[colors.bg, `${colors.bg}F2`, `${colors.bg}00`]} locations={[0, 0.65, 1]} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: safeTopInset + 190 }} />
-        <View style={styles.topChrome} pointerEvents="box-none">
+        <View style={styles.topChrome} pointerEvents="box-none" onLayout={event => setTopChromeBottom(event.nativeEvent.layout.y + event.nativeEvent.layout.height)}>
           <View style={styles.brandRow}>
             <MapBrand />
             <MapTopSearchBar onPress={() => setSearchVisible(true)} offline={offline} />
           </View>
           <View style={styles.mapContextRow}>
-            <View style={styles.mapContextCopy} pointerEvents="none">
-              <Text style={styles.mapEyebrow}>YOUR WORLD</Text>
-              <Text style={styles.mapContext} numberOfLines={2}>{validPlaces.length ? `${validPlaces.length} ${validPlaces.length === 1 ? 'place' : 'places'} to remember` : 'Places you want to go'}</Text>
-            </View>
+            <Pressable onPress={() => fitVisiblePlaces()} accessibilityRole="button"
+              accessibilityLabel={mapCategoryFilter === MAP_FILTER_ALL ? 'Show all saved pins' : 'Show all filtered saved pins'}
+              style={({ pressed }) => [styles.showAllButton, { backgroundColor: pressed ? colors.surfaceElevated : colors.surface, borderColor: colors.border }]}>
+              <Feather name="maximize" size={18} color={colors.primary} /><Text style={typography.label}>Show all pins</Text>
+            </Pressable>
             {!phase2MapActive ? <MapCategoryFilterBar
               options={mapFilterChoices} value={mapCategoryFilter}
               onChange={handleSelectMapCategory}
-              onFitAll={visiblePlaces.length > 0 ? fitVisiblePlaces : undefined}
+              onFitAll={() => fitVisiblePlaces()}
+              onResetAndFit={() => fitVisiblePlaces(true)}
             /> : null}
           </View>
-          {phase2MapActive ? <MapCategoryFilterBar options={mapFilterChoices} value={mapCategoryFilter} onChange={handleSelectMapCategory} expanded onFitAll={visiblePlaces.length > 0 && !mapPreview ? fitVisiblePlaces : undefined} /> : null}
+          {phase2MapActive ? <MapCategoryFilterBar options={mapFilterChoices} value={mapCategoryFilter} onChange={handleSelectMapCategory} expanded onFitAll={() => fitVisiblePlaces()} onResetAndFit={() => fitVisiblePlaces(true)} /> : null}
         </View></>
       ) : null}
 
@@ -4161,7 +4237,7 @@ export default function MapScreen() {
             options={mapFilterChoices}
             value={mapCategoryFilter}
             onChange={handleSelectMapCategory}
-            onFitAll={visiblePlaces.length > 0 && !mapPreview ? fitVisiblePlaces : undefined}
+            onFitAll={() => fitVisiblePlaces()}
           />
         </View>
       ) : null}
@@ -4189,6 +4265,7 @@ export default function MapScreen() {
             !shouldShowMapControls && styles.queueChromeRaised,
           ]}
           pointerEvents="box-none"
+          onLayout={event => setQueueChromeBottom(event.nativeEvent.layout.y + event.nativeEvent.layout.height)}
         >
           <ShareQueueButton />
         </View>
@@ -4266,7 +4343,7 @@ export default function MapScreen() {
         topInset={safeTopInset + Spacing.md}
         savedPlaces={data}
         offline={offline}
-        onSelectSaved={(place) => { setSearchVisible(false); selectPlace(place); setPreviewExpanded(true); }}
+        onSelectSaved={(place) => { setSearchVisible(false); selectPlace(place); }}
         onSaveFromLink={handlePasteLink}
         locationBias={userRegion ? { lat: userRegion.latitude, lng: userRegion.longitude } : undefined}
         onClose={() => setSearchVisible(false)}
@@ -4319,6 +4396,7 @@ function createStyles(
   const pillTop = insetTop + topChromeClearance;
   return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
+  showAllButton: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, borderWidth: StyleSheet.hairlineWidth, borderRadius: 24, paddingHorizontal: 14, paddingVertical: 8 },
 
   topChrome: {
     position: 'absolute',
@@ -4328,7 +4406,7 @@ function createStyles(
   },
 
   brandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 56, minHeight: 44 },
-  mapContextRow: { flexDirection: 'row', gap: 12, alignItems: 'center', marginTop: 16 },
+  mapContextRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginTop: 16 },
   mapContextCopy: { flex: 1 },
   mapEyebrow: { color: colors.accent, fontSize: 11, lineHeight: 16, fontWeight: '700', letterSpacing: 1.2 },
   mapContext: { ...typography.heading, fontSize: 19, lineHeight: 24, marginTop: 4 },

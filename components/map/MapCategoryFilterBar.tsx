@@ -6,9 +6,9 @@ import { useReduceMotion } from '@/lib/useReduceMotion';
 import { useTheme } from '@/lib/theme';
 import { MAP_FILTER_ALL, type MapFilterOption, type MapVisibilityFilter } from '@/lib/mapVisibility';
 
-type Props = { options: MapFilterOption[]; value: MapVisibilityFilter; onChange: (next: MapVisibilityFilter) => void; onFitAll?: () => void; expanded?: boolean };
+type Props = { options: MapFilterOption[]; value: MapVisibilityFilter; onChange: (next: MapVisibilityFilter) => void; onFitAll?: () => void; onResetAndFit?: () => void; expanded?: boolean };
 /** One quiet control in normal use; the actual filter choices remain visible for Phase 2 teaching. */
-export function MapCategoryFilterBar({ options, value, onChange, onFitAll, expanded = false }: Props) {
+export function MapCategoryFilterBar({ options, value, onChange, onFitAll, onResetAndFit, expanded = false }: Props) {
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReduceMotion();
@@ -27,7 +27,7 @@ export function MapCategoryFilterBar({ options, value, onChange, onFitAll, expan
         <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay }]} onPress={() => setOpen(false)} accessibilityRole="button" accessibilityLabel="Close filters" />
         <View accessibilityViewIsModal style={[styles.sheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.header}><Text style={[typography.heading, styles.flex]}>Your map, your way</Text><Pressable onPress={() => setOpen(false)} accessibilityRole="button" accessibilityLabel="Close filters" style={styles.close}><Feather name="x" size={22} color={colors.text} /></Pressable></View>
-          <ScrollView keyboardShouldPersistTaps="handled">{choices}{onFitAll ? <Pressable onPress={() => { setOpen(false); onFitAll(); }} accessibilityRole="button" accessibilityLabel="Fit all visible places on the map" style={styles.choice}><Feather name="maximize" size={20} color={colors.text} /><Text style={typography.bodyStrong}>Show these places on the map</Text></Pressable> : null}</ScrollView>
+          <ScrollView keyboardShouldPersistTaps="handled">{choices}{onFitAll ? <Pressable onPress={() => { setOpen(false); onFitAll(); }} accessibilityRole="button" accessibilityLabel="Fit all visible places on the map" style={styles.choice}><Feather name="maximize" size={20} color={colors.text} /><Text style={typography.bodyStrong}>Show these pins</Text></Pressable> : null}{onResetAndFit && value !== MAP_FILTER_ALL ? <Pressable onPress={() => { setOpen(false); onResetAndFit(); }} accessibilityRole="button" style={styles.choice}><Feather name="globe" size={20} color={colors.primary} /><Text style={[typography.bodyStrong, styles.flex]}>All places · Show all pins</Text></Pressable> : null}</ScrollView>
         </View>
       </View>
     </Modal>
