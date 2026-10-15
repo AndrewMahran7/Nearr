@@ -17,12 +17,14 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 import { Button, ErrorBoundary, ShareJobsHeader } from '@/components';
 import { PlaceImage } from '@/components/PlaceImage';
+import { activitySourceFrameUri } from '@/lib/activitySourceFrame';
 import { ShareJobsSheet } from '@/components/ShareJobsSheet';
 import { SwipeableRow } from '@/components/SwipeableRow';
 import { Radius, Spacing } from '@/constants';
@@ -278,6 +280,7 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
   }, []);
   const router = useRouter();
   const { colors, typography } = useTheme();
+  const { fontScale } = useWindowDimensions();
   const vayrinEnabled = isVayrinProductUiEnabled();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const live = useShareJobs();
@@ -709,6 +712,9 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
     const firstCandidate = Array.isArray(job.candidate_payload?.candidates)
       ? job.candidate_payload?.candidates[0]
       : null;
+    // The receipt can already contain a source frame before recognition has a
+    // candidate. Keep that provenance visible through processing and failure.
+    const sourceFrameUri = activitySourceFrameUri(firstCandidate, job.extraction_payload);
     const retainedSourceGeography = sourceGeographyFromExtractionPayload(job.extraction_payload);
     const locality = isProcessing
       ? sourceGeographyLabel(retainedSourceGeography)
@@ -723,9 +729,9 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
       >
         <PlaceImage
           googlePlaceId={firstCandidate?.googlePlaceId}
-          sourceUri={firstCandidate?.sourceFrameUrl}
+          sourceUri={sourceFrameUri}
           allowGoogleLookup={false}
-          fallbackSourceUri={firstCandidate?.sourceFrameUrl}
+          fallbackSourceUri={sourceFrameUri}
           size={64}
           borderRadius={12}
           presentationMode="candidate"
@@ -741,15 +747,15 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
           accessibilityLabel="From the original post"
         />
         <View style={styles.rowMain}>
-          <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={2}>
+          <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={fontScale >= 1.5 ? undefined : 2}>
             {jobTitle(job)}
           </Text>
           {locality ? (
-            <Text style={[typography.caption, styles.rowLocality]} numberOfLines={1}>{locality}</Text>
+            <Text style={[typography.metadata, styles.rowLocality]} numberOfLines={fontScale >= 1.5 ? undefined : 1}>{locality}</Text>
           ) : null}
           <View style={styles.rowDetail}>
-            <Text style={[typography.caption, styles.rowSubtitle]}>{subtitle}</Text>
-            <Text style={[typography.caption, styles.rowMeta]} numberOfLines={1}>
+            <Text style={[typography.metadata, styles.rowSubtitle]}>{subtitle}</Text>
+            <Text style={[typography.metadata, styles.rowMeta]} numberOfLines={fontScale >= 1.5 ? undefined : 1}>
               {shouldShowHost(job)
                 ? `${hostOf(job.canonical_url ?? job.source_url)} · ${relativeTime(job.created_at)}`.replace(/^ · /, '')
                 : relativeTime(job.created_at)}
@@ -842,11 +848,11 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
         contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
         showsVerticalScrollIndicator={false} onScrollBeginDrag={() => swipeCoordinator.closeActive()}
-        ListHeaderComponent={<View style={styles.pageIntro}>
+        ListHeaderComponent={hasContent ? <View style={styles.pageIntro}>
           <Text style={[typography.title, styles.pageTitle]}>Finding your places</Text>
           <Text style={[typography.body, styles.intro]}>From your posts. Into your world.</Text>
           {previewActive ? <Text style={[typography.caption, { color: colors.accent }]}>Development preview - Read-only fixtures</Text> : null}
-        </View>}
+        </View> : null}
         ListEmptyComponent={loading ? <View style={styles.loadingWrap}><ActivityIndicator color={colors.primary} /><Text style={styles.emptyBody}>Loading your activity…</Text></View> :
           <View style={styles.emptyState}>
             <View style={styles.emptyIcon}><Feather name="check" size={22} color={colors.primary} /></View>
@@ -936,7 +942,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       paddingHorizontal: Spacing.sm,
       marginRight: -Spacing.sm,
     },
-    emptyState: { alignItems: 'center', paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl },
+    emptyState: { alignItems: 'center', paddingHorizontal: Spacing.lg, paddingTop: Spacing.md },
     emptyIcon: {
       width: 52,
       height: 52,

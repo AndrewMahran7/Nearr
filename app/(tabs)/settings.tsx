@@ -516,6 +516,7 @@ export default function SettingsScreen() {
   }
 
   async function handleSendTestNotification() {
+    if (!isOnboardingV2DevelopmentResetAvailable()) return;
     const ok = await ensureNotificationPermission();
     if (!ok) {
       Alert.alert(
@@ -642,6 +643,7 @@ export default function SettingsScreen() {
   }
 
   function handleTestOnboarding() {
+    if (!isOnboardingV2DevelopmentResetAvailable()) return;
     setOnboardingPreview(true);
     router.push('/(onboarding)?preview=1');
   }
@@ -1048,14 +1050,14 @@ export default function SettingsScreen() {
           </>
         ) : null}
 
-        {/* --- Testing (dev/debug builds only) ------------------------ */}
-        {__DEV__ ? (
+        {/* Same verified Development boundary as the actions and QA route. */}
+        {onboardingResetAvailable ? (
           <>
             <View style={{ height: Spacing.xxl }} />
             <Text style={styles.sectionLabel}>Testing</Text>
             <Card style={styles.section}>
               <Text style={[typography.caption, styles.muted]}>
-                Dev/debug only. Hidden in production builds.
+                Development app only. Tools for checking this build.
               </Text>
               <Button
                 title="Send test notification"

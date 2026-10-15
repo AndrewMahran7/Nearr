@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -41,14 +42,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemColorScheme = useColorScheme();
   const [themePreference, setThemePreferenceState] = useState<ThemePreference>('light');
   const [isThemeReady, setIsThemeReady] = useState(false);
+  const preferenceRevision = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
+    const revisionAtRead = preferenceRevision.current;
 
     void (async () => {
       try {
         const storedPreference = await AsyncStorage.getItem(THEME_PREFERENCE_KEY);
-        if (!cancelled && isThemePreference(storedPreference)) {
+        if (!cancelled && preferenceRevision.current === revisionAtRead && isThemePreference(storedPreference)) {
           setThemePreferenceState(storedPreference);
         }
       } catch {
@@ -66,6 +69,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setThemePreference = useCallback((preference: ThemePreference) => {
+    // A slow initial storage read must not undo an explicit Appearance choice.
+    preferenceRevision.current += 1;
     setThemePreferenceState(preference);
     void AsyncStorage.setItem(THEME_PREFERENCE_KEY, preference).catch(() => undefined);
   }, []);
