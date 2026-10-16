@@ -1,0 +1,20 @@
+﻿[
+    {
+        "id":  "01a1420f-ceb8-7ace-bfa4-f3dfd9c0a04c",
+        "group":  "0cb3a6cb-f50f-4d35-a635-c6b87102ad57",
+        "platform":  "ios",
+        "runtimeVersion":  "1.6.59",
+        "gitCommitHash":  "ef26080c7e78689f3aa3c1b7fc5166b647703f4b",
+        "createdAt":  "2026-10-16T00:14:54.648Z",
+        "message":  "Fieldnotes October 15: Show All, visible selected pins, and frontend polish"
+    },
+    {
+        "id":  "01a1420f-ceb8-74dc-9338-e9f15526807f",
+        "group":  "0cb3a6cb-f50f-4d35-a635-c6b87102ad57",
+        "platform":  "android",
+        "runtimeVersion":  "1.6.59",
+        "gitCommitHash":  "ef26080c7e78689f3aa3c1b7fc5166b647703f4b",
+        "createdAt":  "2026-10-16T00:14:54.648Z",
+        "message":  "Fieldnotes October 15: Show All, visible selected pins, and frontend polish"
+    }
+]

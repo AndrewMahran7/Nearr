@@ -1,0 +1,12 @@
+﻿{
+    "id":  "01a01c76-1061-7244-81bb-85c3f26841db",
+    "name":  "development",
+    "isPaused":  false,
+    "branchMapping":  "{\"data\":[{\"branchId\":\"01a01c76-0fb5-7711-811f-42e6d5d552a7\",\"branchMappingLogic\":\"true\"}],\"version\":0}",
+    "branches":  [
+                     {
+                         "id":  "01a01c76-0fb5-7711-811f-42e6d5d552a7",
+                         "name":  "development"
+                     }
+                 ]
+}

@@ -21,4 +21,4 @@ git pull --ff-only
 npm start -- --dev-client --lan --clear
 ```
 
-Use the phone and workstation on the same LAN. The temporary QA Metro servers use ports 8082/8083 during automation; stop them before starting the normal interactive session if needed. Do not enable `EXPO_PUBLIC_MAP_PREVIEW_MODE` for founder live-data QA.
+Use the phone and workstation on the same LAN. Task-owned QA servers on 8082/8083 were stopped after verification. The pre-existing user Metro on 8081 was preserved; resolve that port choice when starting another session. Do not enable `EXPO_PUBLIC_MAP_PREVIEW_MODE` for founder live-data QA.

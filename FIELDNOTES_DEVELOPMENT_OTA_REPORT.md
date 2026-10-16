@@ -26,15 +26,33 @@ The original dirty main workspace and the clean external Fieldnotes worktree wer
 - Actual Android before/after captures, 15 comparison boards, cold-start font scales 1.3/2.0, and debug performance observations are retained under `artifacts/fieldnotes-oct15/`. Invalid/hot-config baseline records are explicitly excluded from matched visual proof.
 - Physical iPhone, Apple Maps world limits, VoiceOver, real provider sign-in/transfer and real Share Extension handoff remain founder QA. The named founder video was unavailable; no recording timestamps or physical-device result is invented.
 
-## Publication
+## Published Development update
 
-Publication is pending at this source checkpoint. The only authorized command is the existing guarded Development wrapper:
+Status: **FIXED / DEVELOPMENT OTA READY / AWAITING FOUNDER QA**.
+
+Exactly one final Development update group was published successfully with the existing guarded wrapper:
 
 ```powershell
 npm run dev:update -- -m "Fieldnotes October 15: Show All, visible selected pins, and frontend polish" --non-interactive
 ```
 
-It passes explicit Development channel/environment and validates the Nearr-Dev backend before publication. QA preview environment flags must be absent from the release process. One final update group will be published for iOS and Android on runtime 1.6.59; this report will then record the returned identifiers and source SHA in a documentation-only commit.
+The wrapper validated `app=development`, `backend=development`, and `Nearr-Dev(qnfx…dtvs)`. The release process and the listed EAS variables had no QA map-preview override. Both platform bundles exported successfully; existing assets were reused, with no new native build.
+
+| Published item | Value |
+| --- | --- |
+| Published source SHA | `ef26080c7e78689f3aa3c1b7fc5166b647703f4b` |
+| Published at | `2026-10-16T00:14:54.648Z` (October 15, 5:14 PM Pacific) |
+| Update group | `0cb3a6cb-f50f-4d35-a635-c6b87102ad57` |
+| iOS update | `01a1420f-ceb8-7ace-bfa4-f3dfd9c0a04c` |
+| Android update | `01a1420f-ceb8-74dc-9338-e9f15526807f` |
+| Branch / runtime | `development` / `1.6.59` |
+| Message | Fieldnotes October 15: Show All, visible selected pins, and frontend polish |
+
+[EAS update dashboard](https://expo.dev/accounts/andrewmahran/projects/nearr/updates/0cb3a6cb-f50f-4d35-a635-c6b87102ad57). Readback evidence is stored in `artifacts/fieldnotes-oct15/development-ota-verification.json` and `development-channel-verification.json`; it excludes manifests, client configuration values and signed asset URLs.
+
+The publication source was clean and pushed before release. A final documentation-only commit records the OTA identifiers and verification; it does not alter the published application. Final branch HEAD and push/clean status are recorded in the delivery handoff. Application checkpoints are `3f3fc22`, `bdcba91`, `33aa149`, and `19cb9a0`; QA/release-source checkpoint is `ef26080`.
+
+Task-owned Metro servers on 8082/8083 and task-created ADB forwarding were stopped/removed. The pre-existing user Metro on 8081 was preserved. Emulator font scale is restored to 1.0. Use the LAN instructions in the retest report for a new interactive session.
 
 ## Production boundary
 
