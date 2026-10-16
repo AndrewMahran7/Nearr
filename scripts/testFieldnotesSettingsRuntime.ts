@@ -2,6 +2,8 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import React from 'react';
+import ts from 'typescript';
+import { Radius, Spacing } from '../constants/spacing';
 import { canRunOnboardingV2DevelopmentReset } from '../lib/onboardingV2DevResetCore';
 import { NEARR_DEV_SUPABASE_REF, resolveEnvironment } from '../lib/appEnvironmentCore';
 
@@ -72,6 +74,21 @@ async function main() {
   assert.equal((operations.match(/if \(!isOnboardingV2DevelopmentResetAvailable\(\)\)/g) ?? []).length, 2, 'both reset operations repeat their own hard guard');
   assert.match(settings, /const \{ colors, typography, themePreference, setThemePreference \} = useTheme\(\)/);
   assert.doesNotMatch(settings, /DarkColors|DarkPalette|backgroundColor: ['"]#(?:000|000000|171A18)['"]/i);
-  console.log('PASS Fieldnotes settings runtime: theme hydration race, first-install Light, persisted Dark, system changes, read failure/invalid value; Development-only actions, Production/deep-link/operation guards');
+  const parsedSettings = ts.createSourceFile('settings.tsx', settings, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const stylesFunction = parsedSettings.statements.find(statement => ts.isFunctionDeclaration(statement) && statement.name?.text === 'createStyles');
+  assert.ok(stylesFunction, 'test uses the production Settings styles');
+  const stylesCode = ts.transpileModule(stylesFunction.getText(parsedSettings), { compilerOptions: { target: ts.ScriptTarget.ES2020 } }).outputText;
+  const createSettingsStyles = new Function('StyleSheet', 'Spacing', 'Radius', `${stylesCode}; return createStyles;`)({ create: (styles: unknown) => styles }, Spacing, Radius);
+  for (const fontScale of [1, 1.3, 1.5, 2, 3]) {
+    const settingsStyles = createSettingsStyles(theme.colors, theme.typography, fontScale);
+    assert.equal(settingsStyles.themeOptionsRow.flexDirection, fontScale >= 1.5 ? 'column' : 'row', 'accessibility text gets full-width appearance choices');
+    assert.equal(settingsStyles.unitOption.flex, fontScale >= 1.5 ? 0 : 1, 'stacked choices keep intrinsic height instead of sharing horizontal width');
+    assert.equal(settingsStyles.unitOption.minHeight, 44, 'appearance choice remains a full-size touch target');
+  }
+  assert.match(settings, /const \{ fontScale \} = useWindowDimensions\(\)/, 'layout reacts to native text scale');
+  assert.match(settings, /createStyles\(colors, typography, fontScale\)/);
+  assert.match(settings, /<View style=\{styles.themeOptionsRow\}>/);
+  assert.doesNotMatch(settings, /maxFontSizeMultiplier|allowFontScaling=\{false\}/, 'appearance fix does not suppress accessibility text sizing');
+  console.log('PASS Fieldnotes settings runtime: theme hydration race, first-install Light, persisted Dark, system changes, read failure/invalid value; responsive appearance controls at five text scales; Development-only actions, Production/deep-link/operation guards');
 }
 main().finally(() => { Module._load = originalLoad; }).catch(error => { console.error(error); process.exitCode = 1; });

@@ -26,6 +26,7 @@ import {
   StyleSheet,
   Switch,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import Constants from 'expo-constants';
@@ -120,7 +121,8 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { user, isDevSession, isLocalUiSession } = useAuth();
   const { colors, typography, themePreference, setThemePreference } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const { fontScale } = useWindowDimensions();
+  const styles = useMemo(() => createStyles(colors, typography, fontScale), [colors, typography, fontScale]);
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -781,7 +783,7 @@ export default function SettingsScreen() {
           <Text style={[typography.caption, styles.muted]}>
             Choose how Nearr looks on this device.
           </Text>
-          <View style={styles.unitRow}>
+          <View style={styles.themeOptionsRow}>
             <ThemeOption
               label="System"
               active={themePreference === 'system'}
@@ -1254,6 +1256,7 @@ function ToggleRow({
 function createStyles(
   colors: ReturnType<typeof useTheme>['colors'],
   typography: ReturnType<typeof useTheme>['typography'],
+  fontScale = 1,
 ) {
   return StyleSheet.create({
     scroll: { padding: Spacing.xl, paddingBottom: 64 },
@@ -1306,10 +1309,14 @@ function createStyles(
       flexDirection: 'row',
       gap: Spacing.sm,
     },
+    themeOptionsRow: {
+      flexDirection: fontScale >= 1.5 ? 'column' : 'row',
+      gap: Spacing.sm,
+    },
     unitOption: {
       minHeight: 44,
       justifyContent: 'center',
-      flex: 1,
+      flex: fontScale >= 1.5 ? 0 : 1,
       paddingVertical: Spacing.sm,
       paddingHorizontal: Spacing.md,
       borderRadius: Radius.pill,
