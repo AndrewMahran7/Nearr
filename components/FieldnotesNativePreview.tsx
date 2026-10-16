@@ -62,6 +62,7 @@ export function FieldnotesNativePreview({ surface }: { surface: string }) {
   if (surface === 'account') return <AccountAuthScreen />;
   if (surface === 'onboarding') return <OnboardingScreen />;
   if (surface === 'activity') return <ShareJobsScreen previewData={activityData} />;
+  if (surface === 'activity-empty') return <ShareJobsScreen previewData={{ jobs: [], recentAutoSaves: [] }} />;
   if (surface === 'review') return <ShareJobDetailScreen />;
   return null;
 }

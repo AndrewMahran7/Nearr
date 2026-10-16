@@ -1,0 +1,11 @@
+{
+  "source": "adb framebuffer",
+  "route": "nearr://dev-qa?fieldnotes=real-saved&theme=light",
+  "sourceSha": "working-tree-oct15-polish",
+  "capturedAt": "2026-10-15T23:52:35.811Z",
+  "width": 1080,
+  "height": 2400,
+  "fontScale": "1.0",
+  "platform": "Android debug Pixel 8a AVD",
+  "physicalIos": false
+}

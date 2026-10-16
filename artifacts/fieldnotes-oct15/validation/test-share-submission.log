@@ -1,0 +1,37 @@
+
+> nearr@0.1.0 test:share-submission
+> ts-node -P scripts/tsconfig.json scripts/testShareSubmission.ts
+
+PASS same url + same bucket => same id (cold/warm collapse)
+PASS same url + later bucket => different id (deliberate re-share)
+PASS different url => different id
+PASS derived id is well-formed
+PASS derive is case-insensitive on url
+PASS minted ids are well-formed
+PASS minted ids differ
+PASS append adds sid param
+PASS extract roundtrips sid
+PASS append is idempotent (no double sid)
+PASS append to path with no query uses ?
+PASS extract null when absent
+PASS extract rejects malformed sid
+PASS Instagram handoff uses canonical empty-host /share route
+PASS Instagram handoff source URL decodes exactly once
+PASS Instagram handoff carries the same invocation id
+PASS resolve prefers valid deep-link sid
+PASS resolve derives when no deep-link sid
+PASS resolve derives when deep-link sid malformed
+PASS concurrent same-id => single doSubmit call
+PASS both concurrent callers get the job
+PASS accepted id: doSubmit called exactly once
+PASS accepted replay returns same job
+PASS accepted replay flagged duplicate
+PASS hasAccepted true after ok
+PASS failed submit not cached (retry calls doSubmit again)
+PASS first failed
+PASS retry succeeded
+PASS thrown submit propagates
+PASS thrown submit is retryable
+PASS distinct ids each submit
+
+ALL SHARE SUBMISSION TESTS PASSED

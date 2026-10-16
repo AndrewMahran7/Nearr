@@ -8,6 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
+    "test:fieldnotes-oct15": "ts-node -P scripts/tsconfig.json scripts/testMapViewportGeometry.ts && ts-node -P scripts/tsconfig.json scripts/testFieldnotesMapCameraRuntime.ts && ts-node -P scripts/tsconfig.json scripts/testFieldnotesSelectedCard.ts && ts-node -P scripts/tsconfig.json scripts/testFieldnotesSavedSheet.ts && ts-node -P scripts/tsconfig.json scripts/testFieldnotesSearchRuntime.ts && ts-node -P scripts/tsconfig.json scripts/testFieldnotesSettingsRuntime.ts && ts-node -P scripts/tsconfig.json scripts/testFieldnotesActivityPolish.ts && npm run test:map-camera && npm run test:map-camera-transaction-hotfix && npm run test:map-visibility && npm run test:place-detail && npm run test:place-detail-v2 && npm run test:place-detail-convergence && npm run test:photo-carousel && npm run test:saved-place-images && npm run test:place-photo-contract",
     "test:monetization-token-ux": "ts-node -P scripts/tsconfig.json scripts/testMonetizationTokenUx.ts",
     "test:monetization-integration": "ts-node -P scripts/tsconfig.json scripts/testMonetizationIntegration.ts",
     "test:monetization-suspension-contract": "ts-node -P scripts/tsconfig.json scripts/testMonetizationSuspensionContract.ts",

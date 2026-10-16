@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:onboarding-routing
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingRouting.ts
+
+testOnboardingRouting: all assertions passed

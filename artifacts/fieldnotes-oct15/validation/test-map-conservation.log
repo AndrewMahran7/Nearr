@@ -1,0 +1,23 @@
+
+> nearr@0.1.0 test:map-conservation
+> ts-node -P scripts/tsconfig.json scripts/testMapConservation.ts
+
+CAMERA MATRIX: PASS
+FILTER / ALL: PASS
+SELECTION / MUTATION / STALE FETCH / FOREGROUND: PASS
+CLUSTERING BYPASS: PASS
+STRESS operations=1000 missing=0 duplicates=0 invalid_members=0 silent_taps=0 camera_loops=0 unbounded_renders=0
+BENCH 20: cluster index p95=0.08ms query p95=0.04ms raw-prep p95=0.11ms raw-models=20
+BENCH 100: cluster index p95=0.24ms query p95=0.07ms raw-prep p95=0.05ms raw-models=100
+BENCH 250: cluster index p95=1.20ms query p95=0.31ms raw-prep p95=0.01ms raw-models=250
+BENCH 500: cluster index p95=3.93ms query p95=0.97ms raw-prep p95=0.02ms raw-models=500
+BENCH 1000: cluster index p95=7.57ms query p95=2.10ms raw-prep p95=0.04ms raw-models=1000
+BENCH 2000: cluster index p95=13.38ms query p95=5.85ms raw-prep p95=0.24ms raw-models=2000
+BENCH 5000: cluster index p95=36.32ms query p95=13.44ms raw-prep p95=0.43ms raw-models=5000
+BENCH 10000: cluster index p95=77.12ms query p95=23.77ms raw-prep p95=1.97ms raw-models=10000
+TUNING radius=56px representations(z:nodes) 11:2 13:17 15:76 16:54
+TUNING radius=40px representations(z:nodes) 11:3 13:28 15:120 16:69
+TUNING radius=32px representations(z:nodes) 11:3 13:47 15:165 16:78
+TUNING radius=24px representations(z:nodes) 11:7 13:74 15:226 16:91
+SAFE RAW MARKER LIMIT: 500
+MAP CONSERVATION TESTS PASSED

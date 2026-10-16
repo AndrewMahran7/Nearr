@@ -1,0 +1,39 @@
+﻿{
+  "startedAt": "2026-10-15T23:35:10.808Z",
+  "completedAt": "2026-10-15T23:35:34.269Z",
+  "sourceCommit": "f51dfdb75dcdee3e02ceb848875e2cea46632d42",
+  "source": "Exact unique npm commands from pretest:prebuild and test:prebuild; each retains lifecycle; plus October 15 search/settings runtime tests. Sources include concurrent uncommitted changes; failed modified modules rerun after stabilization.",
+  "concurrency": 3,
+  "passed": 4,
+  "failed": 0,
+  "results": [
+    {
+      "name": "test:update-args",
+      "command": "npm run test:update-args",
+      "exitCode": 0,
+      "seconds": 0.96,
+      "log": "test-update-args.log"
+    },
+    {
+      "name": "test:video-ai-note-guarantee",
+      "command": "npm run test:video-ai-note-guarantee",
+      "exitCode": 0,
+      "seconds": 2.65,
+      "log": "test-video-ai-note-guarantee.log"
+    },
+    {
+      "name": "test:share-worker-boot",
+      "command": "npm run test:share-worker-boot",
+      "exitCode": 0,
+      "seconds": 4,
+      "log": "test-share-worker-boot.log"
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "seconds": 23.42,
+      "log": "typecheck.log"
+    }
+  ]
+}

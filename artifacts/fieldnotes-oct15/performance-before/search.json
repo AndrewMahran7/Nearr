@@ -1,0 +1,9 @@
+{
+  "source": "adb framebuffer",
+  "route": "nearr://dev-qa?fieldnotes=map&theme=light (local pizza query)",
+  "sourceSha": "f51dfdb75dcdee3e02ceb848875e2cea46632d42",
+  "capturedAt": "2026-10-15T23:41:09.880Z",
+  "width": 1080,
+  "height": 2400,
+  "physicalIos": false
+}

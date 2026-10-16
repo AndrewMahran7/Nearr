@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:place-category-migration
+> ts-node -P scripts/tsconfig.json scripts/testPlaceCategoryMigration.ts
+
+PASS category and undo migration contract

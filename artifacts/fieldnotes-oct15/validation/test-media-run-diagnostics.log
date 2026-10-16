@@ -1,0 +1,83 @@
+
+> nearr@0.1.0 test:media-run-diagnostics
+> ts-node -P scripts/tsconfig.json scripts/testMediaRunDiagnostics.ts
+
+PASS all valid: emitted persists
+PASS all valid: valid persists
+PASS all valid: rejected persists as 0
+PASS all valid: analysis-attempted persists
+PASS all valid: no rejection labels emitted
+PASS all valid: no geographic context dropped
+PASS all valid: no context labels emitted
+PASS all valid: four destination places
+PASS grouping telemetry: bounded counts persist
+PASS grouping telemetry: only closed reason codes persist
+PASS grouping telemetry: confidence and separation flag persist
+PASS partial: emitted 4
+PASS partial: valid 3
+PASS partial: rejected 1
+PASS partial: rejection label is the structural path+code only
+PASS partial: three destination places
+PASS all rejected: emitted 3
+PASS all rejected: valid 0 is persisted, not omitted
+PASS all rejected: rejected 3
+PASS all rejected: three labels
+PASS all rejected: zero destination places
+PASS all rejected: the evidence itself is untouched (still insufficient, still empty)
+PASS rio: emitted 3
+PASS rio: schema rejected none
+PASS rio: exactly one suppressed as source geographic context
+PASS rio: the label names the index, the model category, and the reason
+PASS rio: two legitimate destinations still reach the resolver
+PASS rio: the funnel reconstructs without the raw preview
+PASS back-compat: no diagnostics key at all does not throw and omits model counts
+PASS back-compat: no diagnostics key at all still yields the edge-computed half
+PASS back-compat: empty diagnostics object does not throw and omits model counts
+PASS back-compat: empty diagnostics object still yields the edge-computed half
+PASS back-compat: old-style bag with only the pre-existing fields does not throw and omits model counts
+PASS back-compat: old-style bag with only the pre-existing fields still yields the edge-computed half
+PASS back-compat: null does not throw and omits model counts
+PASS back-compat: null still yields the edge-computed half
+PASS back-compat: a non-object does not throw and omits model counts
+PASS back-compat: a non-object still yields the edge-computed half
+PASS hostile: negative count rejected
+PASS hostile: non-integer count rejected
+PASS hostile: non-numeric count rejected
+PASS hostile: non-array rejection paths ignored
+PASS hostile: null evidence omits the edge half entirely
+PASS bounds: rejection labels capped at 8
+PASS bounds: an over-long label is truncated to 120 chars
+PASS bounds: empty labels are dropped
+PASS bounds: every geographic place is counted (as peers here - none contains another)
+PASS bounds: context labels capped at 12
+PASS vayrin telemetry: invocation persisted
+PASS vayrin telemetry: extracted and considered remain distinct
+PASS vayrin telemetry: selected timestamps persisted
+PASS vayrin telemetry: actual transmitted frames persisted
+PASS vayrin telemetry: baseline model inputs persisted
+PASS vayrin telemetry: usage and cost persisted
+PASS vayrin telemetry: selector rationale persisted
+PASS privacy: no place name in the funnel
+PASS privacy: no transcript text in the funnel
+PASS privacy: no country/region strings in the funnel
+PASS privacy: only closed-vocabulary labels survive
+PASS automatic deep: invocation decision persisted
+PASS automatic deep: bounded normal outputs persisted
+PASS automatic deep: costs and provider calls persisted
+PASS agreement: "Rio de Janeiro" -> name_matches_city
+PASS agreement: "California" -> name_matches_region
+PASS agreement: "Brazil" -> name_matches_country
+PASS agreement: "Los Angeles, California" -> name_matches_compound_admin_context
+PASS agreement: "California Pizza Kitchen" -> destination
+PASS agreement: "Copacabana Beach" -> destination
+PASS agreement: "Brooklyn" -> destination
+PASS agreement: "Granada" -> destination
+PASS agreement: "(blank)" -> destination
+PASS reason: city match reports name_matches_city
+PASS reason: region match reports name_matches_region
+PASS reason: country match reports name_matches_country
+PASS reason: compound match reports name_matches_compound_admin_context
+PASS reason: the narrowest field wins precedence over a compound
+PASS summary: a clean multi-place reel reports zero dropped and no labels
+
+ALL PASS

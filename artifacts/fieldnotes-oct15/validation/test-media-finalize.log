@@ -1,0 +1,64 @@
+
+> nearr@0.1.0 test:media-finalize
+> ts-node -P scripts/tsconfig.json scripts/testMediaFinalizePlan.ts
+
+PASS isTerminalTaskStatus completed
+PASS terminal task completed => idempotent_task_terminal
+PASS isTerminalTaskStatus needs_help
+PASS terminal task needs_help => idempotent_task_terminal
+PASS isTerminalTaskStatus failed
+PASS terminal task failed => idempotent_task_terminal
+PASS isTerminalTaskStatus cancelled
+PASS terminal task cancelled => idempotent_task_terminal
+PASS processing task is not terminal
+PASS queued task is not terminal
+PASS parent cancelled => parent_already_terminal
+PASS parent completed => parent_already_terminal
+PASS parent needs_help => parent_already_terminal
+PASS parent failed => parent_already_terminal
+PASS completed metadata save with authoritative savedPlaceId => enrich existing place
+PASS post-save media failure is supplemental
+PASS outcome unavailable => manual_fallback needs_help
+PASS retrieved media with no place evidence => insufficient_evidence
+PASS outcome failed => manual_fallback failed
+PASS authentication_required survives worker -> finalizer planning
+PASS duration_too_long survives worker -> finalizer planning
+PASS download_timeout survives exhausted retry -> finalizer planning
+PASS malformed evidence => manual_fallback
+PASS insufficient evidence (0 rendered) => manual_fallback
+PASS valid evidence => resolve
+PASS terminal-task guard precedes everything
+PASS parent-terminal guard precedes resolve
+PASS auto_save + eligible => auto_save
+PASS auto_save + NOT eligible => needs_help single (downgraded)
+PASS needs_help single passthrough
+PASS needs_help multi passthrough
+PASS needs_help manual passthrough
+PASS auth: correct secret authorizes
+PASS auth: case-insensitive scheme authorizes
+PASS auth: wrong secret rejected
+PASS auth: secret prefix rejected
+PASS auth: secret superstring rejected
+PASS auth: missing header rejected
+PASS auth: empty header rejected
+PASS auth: non-bearer scheme rejected
+PASS auth: bearer without token rejected
+PASS auth: empty expected secret fails closed
+PASS auth: raw token without scheme rejected
+PASS extractBearerToken parses token
+PASS extractBearerToken trims token
+PASS extractBearerToken non-bearer => empty
+PASS worker: exact secret authorizes
+PASS worker: wrong secret rejected
+PASS worker: prefix rejected
+PASS worker: superstring rejected
+PASS worker: empty presented rejected
+PASS worker: null presented rejected
+PASS worker: empty expected fails closed
+PASS worker: null expected fails closed
+PASS ct: equal strings match
+PASS ct: different-length mismatch
+PASS ct: same-length one-char diff mismatch
+PASS ct: both empty match
+
+ALL MEDIA FINALIZE PLAN TESTS PASSED

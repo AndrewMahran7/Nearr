@@ -1,0 +1,53 @@
+
+> nearr@0.1.0 test:address-first
+> ts-node -P scripts/tsconfig.json scripts/testAddressFirst.ts
+
+PASS A1: address extracted
+PASS A2: street includes 19688 Beach Blvd
+PASS A3: city Huntington Beach
+PASS A4: state CA
+PASS A5: zip 92648
+PASS A6: paired venue uses handle-derived name (Capones Cucina)
+PASS A7: paired venue is NOT Beach Blvd
+PASS B1: address extracted
+PASS B2: street includes 30012 Crown Valley Pkwy
+PASS B3: suite preserved in raw
+PASS B4: city Laguna Niguel
+PASS B5: state CA
+PASS B6: zip 92677
+PASS B7: venue paired (Brooklyn City Pizzeria)
+PASS B8: paired venue remains Brooklyn City Pizzeria & Market
+PASS B9: paired venue is NOT Crown Valley Pkwy
+PASS C1: type-first address extracted (Paseo Adelanto)
+PASS C2: city San Juan Capistrano
+PASS C3: full state name normalized to CA
+PASS C4: zip 92675
+PASS D1: address extracted (126 Main St)
+PASS D2: city Huntington Beach
+PASS D3: state CA
+PASS D4: zip 92648
+PASS D5: paired venue is 2nd Floor
+PASS D6: paired venue is NOT Main St
+PASS E1: three addresses extracted
+PASS E2: Telegraph Rd present
+PASS E3: W Central Ave + suite present
+PASS E4: Railroad St present
+PASS E5: city Downey preserved
+PASS E6: city Brea preserved
+PASS E7: city City of Industry preserved
+PASS E8: pairing does not become Telegraph Rd
+PASS E9: pairing does not become Central Ave
+PASS E10: pairing does not become Railroad St
+PASS E1: extracted
+PASS E2: street + suite preserved
+PASS F1: extracted without zip
+PASS F2: city Huntington Beach
+PASS F3: state CA
+PASS F4: zip null
+PASS G1: no address from ratings/prices
+PASS H1: no address from list count
+PASS I1: phone number not an address
+PASS I2: bare number + noun not an address
+PASS I3: lowercase "via" prose not an address
+
+All address-first assertions passed.

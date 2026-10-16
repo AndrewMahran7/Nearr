@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:save-navigation
+> ts-node -P scripts/tsconfig.json scripts/testSaveCompletionNavigation.ts
+
+PASS save completion navigation dismisses the queue and focuses the map exactly once

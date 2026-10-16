@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:category-pipeline
+> ts-node -P scripts/tsconfig.json scripts/testCategoryPipelineContracts.ts
+
+PASS metadata, media, manual, multi-place, quick-check, duplicate, and correction category contracts

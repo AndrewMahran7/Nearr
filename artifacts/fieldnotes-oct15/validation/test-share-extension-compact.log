@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:share-extension-compact
+> ts-node -P scripts/tsconfig.json scripts/testShareExtensionCompact.ts
+
+PASS compact native share-extension layout and Swift structure

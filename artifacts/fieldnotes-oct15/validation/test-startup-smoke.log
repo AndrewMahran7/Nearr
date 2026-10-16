@@ -1,0 +1,23 @@
+
+> nearr@0.1.0 test:startup-smoke
+> ts-node -P scripts/tsconfig.json scripts/testStartupSmoke.ts
+
+PASS fresh signed-out launch: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS fresh anonymous onboarding launch: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS signed-in returning user: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS completed Phase 1 user: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS partially completed V2 user: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS deleted-account fresh start: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS stale V2 state: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS malformed V2 state: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS missing server checkpoint: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS transient Supabase failure: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS auth restore delayed: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS no network: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS OTA with legacy persisted state: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS post-account-link continuation: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS post-account-delete continuation: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS deep link during startup: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS notification tap during startup: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+
+All 17 cold-start scenarios selected visible UI.

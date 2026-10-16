@@ -1,0 +1,6 @@
+
+> nearr@0.1.0 test:place-recommendations
+> ts-node -P scripts/tsconfig.json scripts/testPlaceRecommendations.ts
+
+[places] recommendations unavailable { source: 'google_place_id', message: 'offline' }
+Place recommendations tests passed.

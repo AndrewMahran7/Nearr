@@ -1,0 +1,59 @@
+
+> nearr@0.1.0 test:account
+> ts-node -P scripts/tsconfig.json scripts/testAccountDeletion.ts && npm run test:onboarding-v2-deleted-account
+
+[test] account deletion
+  ok - first confirmation copy is exact
+  ok - final confirmation copy is exact
+  ok - retryable failure message is exact
+  ok - extracts a bearer token
+  ok - rejects missing / non-bearer auth
+  ok - deletion authority is always the token user
+  ok - classifies errors into stable reasons
+  ok - rapid repeated calls invoke the operation once
+  ok - guard resets after settle so a retry can run again
+  ok - a later call runs a fresh operation
+  ok - fresh anonymous bootstrap waits for deletion cleanup
+
+[test] account deletion: 11 checks passed
+
+> nearr@0.1.0 test:onboarding-v2-deleted-account
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingV2DeletedAccount.ts && npm run test:onboarding-v2-post-delete
+
+PASS 1 permanent progress -> confirmed delete -> fresh Welcome owner state
+PASS 2 deleted identity cannot qualify for Pick up where you left off
+PASS 3 server checkpoint is captured narrowly, then deleted after auth cannot hydrate it
+PASS 4 tutorial saved-place continuation and selections are cleared
+PASS 5 next anonymous identity starts a new funnel at Welcome
+PASS 6 post-delete Welcome remains converged across 50 renders
+PASS 7 legitimate force-quit Learn and Practice resumes remain eligible
+PASS 8 normal account linking still preserves the transferred tutorial place
+PASS 9 ordinary sign-out behavior is unchanged
+PASS 10 failed deletion returns before identity-bound local cleanup
+PASS 11 development reset remains unavailable outside the explicit Nearr-Dev lane
+PASS 12 root max-update-depth guard remains the sole V2 navigation authority
+PASS invalid persisted identities self-heal while pre-auth onboarding stays local
+
+All deleted-account Onboarding V2 regression scenarios passed.
+
+> nearr@0.1.0 test:onboarding-v2-post-delete
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingV2PostDeleteBootstrap.ts
+
+PASS 1 permanent account -> deletion clears identity-bound journey
+PASS 2 fresh V2 Welcome owns the post-delete route
+PASS 3 fresh anonymous bootstrap requires a valid Supabase session
+PASS 4 authenticated-role anonymous JWT can execute checkpoint RPC by contract
+PASS 5 fresh checkpoint persists
+PASS 6 platform/category/tutorial mutations persist locally
+PASS 7 force-close with restored anonymous JWT resumes tutorial
+PASS 8 deleted identity cannot resume
+PASS 9 missing JWT cannot leave an empty black onboarding surface
+PASS 10 transient sync failure retains usable local onboarding
+PASS 11 post-delete route does not ping-pong
+PASS 12 maximum-update-depth single-authority fix is preserved
+PASS 13 development reset remains available
+PASS 14 normal account linking remains valid
+PASS 15 normal force-quit resume remains valid
+PASS 16 unauthenticated RPC remains denied and deletion clears only the dead local session
+
+All post-delete black-screen regression scenarios passed.

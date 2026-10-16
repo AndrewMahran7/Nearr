@@ -1,0 +1,41 @@
+
+> nearr@0.1.0 test:update-args
+> ts-node -P scripts/tsconfig.json scripts/testUpdateArgs.ts
+
+PASS a spaced message survives as ONE argv element
+PASS the message is never split on spaces
+PASS the -m flag is still adjacent to its value
+PASS parseUpdateArgs reads the spaced message
+PASS parseUpdateArgs reads --message=value form
+PASS parseUpdateArgs strips --yes from passthrough
+PASS parseUpdateArgs reports confirmation
+PASS parseUpdateArgs defaults to unconfirmed
+PASS release record is stripped from EAS passthrough
+PASS shell metacharacters stay one argument: "msg; echo pwned"
+PASS shell metacharacters stay one argument: "msg && echo pwned"
+PASS shell metacharacters stay one argument: "msg $(echo pwned)"
+PASS shell metacharacters stay one argument: "msg `echo pwned`"
+PASS shell metacharacters stay one argument: "msg | echo pwned"
+PASS shell metacharacters stay one argument: "msg\" & echo pwned & \""
+PASS shell metacharacters stay one argument: "msg %PATH%"
+PASS development wrapper targets channel development
+PASS development wrapper targets environment development
+PASS preview wrapper targets channel preview
+PASS preview wrapper targets environment preview
+PASS production wrapper targets channel production
+PASS production wrapper targets environment production
+PASS development never mentions the production channel
+PASS preview never mentions the production channel
+PASS dev wrapper refuses --channel production
+PASS dev wrapper refuses --channel=production
+PASS dev wrapper refuses --environment production
+PASS dev wrapper refuses --branch
+PASS dev wrapper refuses --auto
+PASS preview wrapper refuses retargeting too
+PASS an unknown lane is refused
+PASS harmless flags are still forwarded
+PASS eas resolves to something runnable without a shell
+PASS eas is not resolved through a .cmd/.bat shim
+PASS eas resolves to a native executable or node + a JS entry
+
+All update-argument tests passed.

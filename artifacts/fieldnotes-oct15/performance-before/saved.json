@@ -1,0 +1,9 @@
+{
+  "source": "adb framebuffer",
+  "route": "nearr://dev-qa?fieldnotes=real-saved&theme=light",
+  "sourceSha": "f51dfdb75dcdee3e02ceb848875e2cea46632d42",
+  "capturedAt": "2026-10-15T23:39:52.079Z",
+  "width": 1080,
+  "height": 2400,
+  "physicalIos": false
+}

@@ -1,0 +1,44 @@
+
+> nearr@0.1.0 test:feature-flags
+> ts-node -P scripts/tsconfig.json scripts/testFeatureFlags.ts
+
+PASS unset env + unset extra => OFF
+PASS empty env + empty extra => OFF
+PASS null env + null extra => OFF
+PASS whitespace env => OFF
+PASS "false" => OFF
+PASS "0" => OFF
+PASS "no" => OFF
+PASS "off" => OFF
+PASS garbage => OFF
+PASS "true" => ON
+PASS "TRUE" (case) => ON
+PASS "1" => ON
+PASS "yes" => ON
+PASS "on" => ON
+PASS " true " (trimmed) => ON
+PASS env truthy wins over extra unset
+PASS env truthy wins over extra falsey
+PASS extra used when env empty
+PASS extra falsey when env empty => OFF
+PASS env "false" short-circuits extra "true" => OFF
+PASS isTruthyFlag("true")
+PASS isTruthyFlag(undefined)
+PASS isTruthyFlag(1 number)
+PASS Vayrin Product UI flag reads build env
+PASS Vayrin Product UI flag has app config fallback
+PASS app config exposes Vayrin Product UI flag
+PASS map clustering bypass reads build env
+PASS map clustering bypass has app config fallback
+PASS app config exposes map clustering bypass
+PASS onboarding v2 unset => OFF
+PASS onboarding v2 explicit true => ON
+PASS phase 1 rollout flag is exposed
+PASS phase 1 rollout defaults safe
+PASS app config exposes phase 1 boundary
+PASS enabled without backend capability falls back to legacy
+PASS enabled + backend + phase1 boundary selects phase1
+PASS enabled + backend + explicit phase2 selects full
+PASS app config exposes backend capability
+
+All feature-flag tests passed.

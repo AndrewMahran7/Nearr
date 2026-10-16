@@ -1,0 +1,6 @@
+
+> nearr@0.1.0 test:no-user-facing-vayrin
+> ts-node -P scripts/tsconfig.json scripts/testNoUserFacingVayrin.ts
+
+PASS no user-facing or accessibility Vayrin branding remains.
+Allowed: module paths, technical flags/contracts, analytics/fixture tokens, and one dev-only fixture error.

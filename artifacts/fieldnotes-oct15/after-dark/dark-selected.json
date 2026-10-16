@@ -1,0 +1,11 @@
+{
+  "source": "adb framebuffer",
+  "route": "nearr://dev-qa?fieldnotes=map&theme=dark&savedPlaceId=demo-saved-bantam&openRequestId=oct15-1792108416458",
+  "sourceSha": "working-tree-oct15-polish",
+  "capturedAt": "2026-10-15T23:53:45.599Z",
+  "width": 1080,
+  "height": 2400,
+  "fontScale": "1.0",
+  "platform": "Android debug Pixel 8a AVD",
+  "physicalIos": false
+}

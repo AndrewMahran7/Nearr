@@ -1,0 +1,53 @@
+
+> nearr@0.1.0 test:media-fallback
+> ts-node -P scripts/tsconfig.json scripts/testMediaFallbackTrigger.ts
+
+PASS matching canary user enables only its effective flags
+PASS different user stays Phase 1-only
+PASS invalid canary id cannot enable infrastructure
+PASS valid canary id keeps bounded recovery active
+PASS master flag off => no run
+PASS IG resolver flag off => no run
+PASS both flags off => no run (default prod state)
+PASS platform tiktok => no run (its resolver flag is off)
+PASS platform facebook => no run (its resolver flag is off)
+PASS platform youtube => no run (its resolver flag is off)
+PASS platform snapchat => no run (its resolver flag is off)
+PASS platform twitter => no run (its resolver flag is off)
+PASS platform genericWeb => no run (its resolver flag is off)
+PASS platform unknown => no run (its resolver flag is off)
+PASS isSupportedMediaPlatform instagram+flag => true
+PASS isSupportedMediaPlatform instagram no-flag => false
+PASS isSupportedMediaPlatform tiktok, flag off => false
+PASS tiktok + its flag on => RUN
+PASS isSupportedMediaPlatform tiktok+flag => true
+PASS youtube + its flag on => RUN
+PASS isSupportedMediaPlatform youtube+flag => true
+PASS facebook + its flag on => RUN
+PASS isSupportedMediaPlatform facebook+flag => true
+PASS snapchat + its flag on => RUN
+PASS isSupportedMediaPlatform snapchat+flag => true
+PASS tiktok flag on does not enable facebook
+PASS cancelled job => no run
+PASS terminal job => no run
+PASS media task already exists => no run
+PASS metadata safe auto-save => no run
+PASS multi-candidate resolved => no run (do not delay)
+PASS two explicit addresses => no run (multi-address intent)
+PASS places_error => no run (infra, not media)
+PASS roundup_post => run (video can preserve multiple places)
+PASS address-verified candidate => no run
+PASS manual_fallback => RUN
+PASS generic caption blocked (no explicit evidence) => RUN
+PASS resolver failed (recoverable) => RUN
+PASS weak candidate_confirmation => RUN
+PASS candidate_picker (weak) => RUN
+PASS auto_save that failed safety gate => RUN
+PASS degenerate multi (<=1 candidate) => RUN as manual
+PASS auto-save guard precedes any positive trigger
+PASS completed metadata auto-save => post-save enrichment runs
+PASS post-save retry cannot duplicate media task
+PASS post-save task waits for user-facing completion
+PASS unsupported source does not create enrichment task
+
+ALL MEDIA FALLBACK TRIGGER TESTS PASSED

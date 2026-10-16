@@ -1,0 +1,27 @@
+
+> nearr@0.1.0 test:dev-db-guard
+> ts-node -P scripts/tsconfig.json scripts/testDevDatabaseGuard.ts
+
+PASS production ref exits non-zero
+PASS production ref is named as production
+PASS production ref never reaches the Supabase CLI
+PASS unknown ref exits non-zero
+PASS unknown ref explains it cannot be proven safe
+PASS unknown ref never reaches the Supabase CLI
+PASS development ref is accepted
+PASS development ref reports the target
+PASS without --yes it is a dry run
+PASS without --yes it never reaches the Supabase CLI
+PASS a successful dry run confirms the CLI link agrees
+PASS dev:functions refuses the production ref
+PASS dev:functions names it as production
+PASS dev:functions never reaches the Supabase CLI for production
+PASS dev:functions refuses an unrecognised ref
+PASS dev:functions reads NEARR_DEV_SUPABASE_REF from .env.local
+PASS dev:functions requires --yes before deploying
+PASS dev:functions preserves the first positional function selector
+PASS dev:functions does not broaden a selected deploy to unrelated functions
+PASS dev:functions preserves a single positional target
+PASS dev:functions does not widen one target to all functions
+
+All dev-database-guard tests passed.

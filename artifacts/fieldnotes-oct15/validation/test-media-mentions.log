@@ -1,0 +1,76 @@
+
+> nearr@0.1.0 test:media-mentions
+> ts-node -P scripts/tsconfig.json scripts/testMediaMentions.ts
+
+PASS normalizeVenueName preserves ampersand
+PASS normalizeVenueName preserves apostrophe
+PASS normalizeVenueName collapses whitespace
+PASS eligible: proper venue name
+PASS eligible: ampersand brand
+PASS eligible: apostrophe brand
+PASS eligible: single-letter brand (X Eats)
+PASS eligible: region-tagged name
+PASS NOT eligible: bare cuisine "Pizza"
+PASS NOT eligible: "best pizza"
+PASS NOT eligible: vague "this pizza place"
+PASS NOT eligible: "the spot"
+PASS NOT eligible: CTA "Subscribe now"
+PASS NOT eligible: platform noise
+PASS distinctiveTokensOf drops generic
+PASS distinctiveTokensOf keeps brand
+PASS five explicit names => five mentions
+PASS mention ids are stable m1..m5
+PASS geoContext region from explicit field
+PASS geoContext city null (not inferred)
+PASS repeated visual+audio => one grouped mention
+PASS grouped mention combines sources
+PASS grouped mention records both name evidence sources
+PASS grouped mention marked repeated
+PASS grouped mention keeps both timestamps
+PASS handle-only name evidence is marked as creator identity
+PASS independent spoken name clears creator-only marker
+PASS apostrophe brand keeps speech name evidence
+PASS apostrophe variant keeps frame name evidence
+PASS ampersand brand keeps speech name evidence
+PASS ampersand variant keeps frame name evidence
+PASS same name different region => two mentions
+PASS two identities in one scene produce one logical mention
+PASS same-scene alternative is retained inside m1
+PASS distinct scene remains independent m2
+PASS scene timestamps remain isolated
+PASS cross-country scenes do not lend geography to each other
+PASS same-scene alternatives do not consume the logical-place cap
+PASS later distinct scene survives an alternative-heavy first scene
+PASS punctuation-only identity variants deduplicate
+PASS inferred-only place dropped
+PASS droppedInferredOnly counted
+PASS generic-only names + passing dropped, real kept
+PASS droppedIneligibleName counted
+PASS droppedPassingMention counted
+PASS insufficientEvidence => no mentions
+PASS normalizePhrase converts @ to at
+PASS detectRelationshipPhrase finds "at"
+PASS detectRelationshipPhrase finds @ (normalized)
+PASS detectRelationshipPhrase: no connector => null
+PASS "X Eats located at Brewery X" => one mention
+PASS merged displayName is "X Eats at Brewery X"
+PASS merged primaryVenueName
+PASS merged hostVenueName
+PASS merged relationshipType located_at
+PASS host retained as supportingEvidence
+PASS merged distinctiveTokens include host+primary
+PASS relationship diagnostic recorded
+PASS "X Eats @ Brewery X" => one mention
+PASS adjacent split relationship => one mention
+PASS adjacent split relationship groups host
+PASS split relationship outside one-second window stays separate
+PASS independently-featured host stays separate
+PASS relationship marked hostIndependentlyFeatured
+PASS two unrelated same-city venues stay separate
+PASS no relationship recorded for unrelated venues
+PASS five-pizza fixture => exactly 5 mention slots
+PASS one merged X Eats at Brewery X slot
+PASS no standalone Brewery X slot
+PASS single name => one mention, no relationship
+
+ALL MEDIA MENTIONS TESTS PASSED

@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:vayrin-ui
+> ts-node -P scripts/tsconfig.json scripts/testVayrinPresentationUi.ts
+
+PASS Vayrin feature gate, UI wiring, boundaries, and accessibility contracts

@@ -1,0 +1,2 @@
+[usePlacesSearch] error NETWORK offline
+PASS Fieldnotes search runtime: same-query retry, stale/debounced responses, exact saved selection, save lock/failure continuity, no-results, no duplicate provider call, offline, close and 3 text scales

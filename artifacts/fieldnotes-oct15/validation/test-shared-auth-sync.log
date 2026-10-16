@@ -1,0 +1,25 @@
+
+> nearr@0.1.0 test:shared-auth-sync
+> ts-node -P scripts/tsconfig.json scripts/testSharedAuthSync.ts
+
+PASS startup(valid) writes
+PASS late INITIAL_SESSION(null) is IGNORED (token preserved)
+PASS state stays established
+PASS INITIAL_SESSION(valid) writes
+PASS tokenless TOKEN_REFRESHED after valid is ignored
+PASS tokenless STARTUP_RESTORE after valid is ignored
+PASS SIGNED_IN writes
+PASS SIGNED_OUT clears
+PASS state reset after sign-out
+PASS USER_DELETED clears
+PASS genuine startup signed-out clears (absent)
+PASS state not established
+PASS startup restore with no session clears
+PASS after sign-out, tokenless INITIAL_SESSION clears (still signed out)
+PASS re-sign-in writes
+PASS final state established
+PASS TOKEN_REFRESHED(valid) writes
+PASS tokenless non-startup event before session is ignored
+PASS state untouched
+
+ALL SHARED AUTH SYNC TESTS PASSED

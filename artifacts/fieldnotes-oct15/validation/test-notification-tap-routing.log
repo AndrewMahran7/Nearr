@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:notification-tap-routing
+> ts-node -P scripts/tsconfig.json scripts/testNotificationTapRouting.ts
+
+PASS centralized notification tap routing, startup safety, stale fallback, and exactly-once delivery

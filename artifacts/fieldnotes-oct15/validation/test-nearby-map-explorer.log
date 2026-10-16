@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:nearby-map-explorer
+> ts-node -P scripts/tsconfig.json scripts/testNearbyMapExplorer.ts
+
+PASS nearby map explorer: 17 required behaviors, strict identity, save/filter/zoom/background conservation, bounded 10/50/100/500 scale (10:0.6ms, 50:1.9ms, 100:3.9ms, 500:22.3ms)

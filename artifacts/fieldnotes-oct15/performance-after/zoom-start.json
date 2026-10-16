@@ -1,0 +1,9 @@
+﻿{
+    "source":  "adb framebuffer",
+    "route":  "nearr://dev-qa?fieldnotes=map\u0026theme=light\u0026fieldnotesCount=20",
+    "sourceSha":  "19cb9a04f1e3b6d4310c2650ebe35285f387b6de",
+    "capturedAt":  "2026-10-16T00:08:41.342Z",
+    "width":  1080,
+    "height":  2400,
+    "physicalIos":  false
+}

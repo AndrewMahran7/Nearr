@@ -1,0 +1,212 @@
+[
+  {
+    "board": "light-map.png",
+    "originals": [
+      {
+        "path": "before\\light-map.png",
+        "sha256": "00477aa66db12ea28c36e58d8cda01fed58188f62a6345652f3a1bae22005a1f"
+      },
+      {
+        "path": "after\\light-map.png",
+        "sha256": "ca794bff746a529d3c203bc0fdfde1480bad26e4371ba6ae157c89b7e02a60d3"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "light-selected.png",
+    "originals": [
+      {
+        "path": "before\\light-selected.png",
+        "sha256": "08e31a60cfdc8b6f305dae618039597e3388f6e6419b0e0aa63369addfa96a6f"
+      },
+      {
+        "path": "after\\light-selected.png",
+        "sha256": "87727ee8e968967fa4d11e0a89a4cf31cbf7406e7d9cd889b152905ea2f8fb1f"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "light-real-saved.png",
+    "originals": [
+      {
+        "path": "before\\light-real-saved.png",
+        "sha256": "b5fe1d3a5a84f4c43677259b4de1cbffb0bab491ec5631dbb7700746d6ec286e"
+      },
+      {
+        "path": "after\\light-real-saved.png",
+        "sha256": "6eb0324366b6741b2fc28d982ff52e91a462a5eb084d41eebff66c025f572e3e"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "light-photo-place.png",
+    "originals": [
+      {
+        "path": "before\\light-photo-place.png",
+        "sha256": "759ee7cc5a6f11d239ce4989fb0beee6202ae7d2255464837d4e310dd84727ce"
+      },
+      {
+        "path": "after\\light-photo-place.png",
+        "sha256": "562cff85e03c2dd58021a90795684194276f5f3116bb147a7898d5dae4dea91c"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "light-real-place.png",
+    "originals": [
+      {
+        "path": "before\\light-real-place.png",
+        "sha256": "236b6104df6b879199af59f37b9152fae554873d6a2f8601df6e5a7f8c96cc43"
+      },
+      {
+        "path": "after\\light-real-place.png",
+        "sha256": "e5684411c1c09848cc63a69dfe7d4f2fe9ba8b0b9a48404f2629c82786b81d78"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "light-activity.png",
+    "originals": [
+      {
+        "path": "before\\light-activity.png",
+        "sha256": "94cda6e61ffa92e8c4a7bd8567abce5a21d64aa7e8d922befabf8cba37dc1856"
+      },
+      {
+        "path": "after\\light-activity.png",
+        "sha256": "4b2aeb3771a59f4e94d4b4a31e57c4faa5ff4def3328e65b506f47e936633b67"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "light-settings.png",
+    "originals": [
+      {
+        "path": "before\\light-settings.png",
+        "sha256": "cf1746f20d829f61de1f411c4e64d51922a00ba08fefa35467816af930552b2d"
+      },
+      {
+        "path": "after\\light-settings.png",
+        "sha256": "e8b45c9b5c5800184878b8395b51790d42c2f2a2b0dd4d9abe477cca0cc7e814"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "dark-dark-map.png",
+    "originals": [
+      {
+        "path": "before-dark\\dark-map.png",
+        "sha256": "7735d5b24045069a112803afb5797bf29020cdbe4017a57ffbe9b63ffbbdd996"
+      },
+      {
+        "path": "after-dark\\dark-map.png",
+        "sha256": "455d9eb0a3bcc9dd4f86ab3f93ef4ec539799f5cdef6d7540e97c63c173519fc"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "dark-dark-selected.png",
+    "originals": [
+      {
+        "path": "before-dark\\dark-selected.png",
+        "sha256": "5541a1de40801eae9bb3a7bd8a341ebf9e7c8613aae663dd24f2b06075794722"
+      },
+      {
+        "path": "after-dark\\dark-selected.png",
+        "sha256": "13680524acb87d4415a9dee7912be7deafaf628061fac447a1b5ae05c88073c6"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "dark-dark-real-saved.png",
+    "originals": [
+      {
+        "path": "before-dark\\dark-real-saved.png",
+        "sha256": "972493906104c625cacd68ba86b9202ea00927b413cb1f518db0fb1ab8a976a6"
+      },
+      {
+        "path": "after-dark\\dark-real-saved.png",
+        "sha256": "7b3d4b97168293383183221d0d7b586aaafd4be867d9445bc40b032a93f97005"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "dark-dark-photo-place.png",
+    "originals": [
+      {
+        "path": "before-dark\\dark-photo-place.png",
+        "sha256": "e37cfc93d8063ad4ac3234c32e7d2849dd8db6e95ecd617c50a53f54c6fb7392"
+      },
+      {
+        "path": "after-dark\\dark-photo-place.png",
+        "sha256": "7ade6f1a172e6ef7f65aaaf6c89913de93040bee729558e591e1e77714af4a31"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "dark-dark-activity.png",
+    "originals": [
+      {
+        "path": "before-dark\\dark-activity.png",
+        "sha256": "0c5a61b14c354c1aa0f55d09419af5d8de6ab79b7e7416fdc2cdaa85130065c5"
+      },
+      {
+        "path": "after-dark\\dark-activity.png",
+        "sha256": "8c5bbee4837d89b87d3c69c4c27353008155d168717f6fc6f79c907b1c363cee"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "dark-dark-settings.png",
+    "originals": [
+      {
+        "path": "before-dark\\dark-settings.png",
+        "sha256": "c2d3cd7d026f05c04a17fde2e4a0dbc6cf107275b7ed01f07f96fea897ea72d9"
+      },
+      {
+        "path": "after-dark\\dark-settings.png",
+        "sha256": "63f43dfd8edd1d506b9ab72b2868bb2f2584c6db392953fa51680becffc86cfb"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "light-search.png",
+    "originals": [
+      {
+        "path": "performance-before\\search.png",
+        "sha256": "ee4baf9104fbbad753e115698c4039d8eb74b8e75c2ac353ff8d41d82b980cb2"
+      },
+      {
+        "path": "performance-after\\search.png",
+        "sha256": "ff93cd7661f2e94949ae771e1b1688e307e3a8934510580c1cfeaefaea551948"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  },
+  {
+    "board": "light-gallery.png",
+    "originals": [
+      {
+        "path": "performance-before\\gallery.png",
+        "sha256": "28301ee6dbd7e23c38968a37b1cc03fa0448ee676777d9dc31df1fbf6d6c91d0"
+      },
+      {
+        "path": "performance-after\\gallery.png",
+        "sha256": "daafe311692aa905729399efacf88750f3393db08a41b88800b870e79d6709fb"
+      }
+    ],
+    "method": "Resized side by side only; original framebuffer pixels retained."
+  }
+]

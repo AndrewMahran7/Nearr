@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:place-share-source
+> ts-node -P scripts/tsconfig.json scripts/testPlaceShareSource.ts
+
+PASS saved-place source priority, normalization, safety, correction, auto-save, and multi-place isolation

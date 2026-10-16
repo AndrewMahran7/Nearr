@@ -1,0 +1,21 @@
+
+> nearr@0.1.0 test:address-match
+> ts-node -P scripts/tsconfig.json scripts/testAddressMatch.ts
+
+PASS 126 Main St vs Google formatted (ZIP + country)
+PASS St → Street suffix expansion
+PASS Street → St suffix contraction
+PASS Ave ↔ Avenue
+PASS Blvd ↔ Boulevard
+PASS Different street number rejected
+PASS Different street name rejected
+PASS Missing street number rejected (no false positive on just "Main St")
+PASS Null/empty rejected
+PASS Unit suffix ignored (Suite/#)
+PASS caption "126 Main St" + Places "126 Main St, …, USA" → address match
+PASS score crosses 0.75 places_strong_match floor (was 0.70)
+PASS name overlap recognised for "2nd Floor"
+PASS no-address path still scores city + name (regression: 0.70)
+PASS no-address path reports address=miss (no false positive)
+
+All address-comparator tests passed

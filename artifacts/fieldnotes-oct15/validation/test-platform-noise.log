@@ -1,0 +1,27 @@
+
+> nearr@0.1.0 test:platform-noise
+> ts-node -P scripts/tsconfig.json scripts/testPlatformNoise.ts
+
+PASS TikTok Inc. is noise (tiktok)
+PASS Tiktok Verification is noise
+PASS The Short Media - TikTok Marketing Agency is noise
+PASS ByteDance is noise (tiktok)
+PASS "Tik Tok" spaced is noise
+PASS NOVA Kitchen & Bar is NOT noise
+PASS Capo Leisure House is NOT noise
+PASS TikTok Inc. NOT noise for instagram
+PASS TikTok Inc. NOT noise for link
+PASS TikTok Inc. NOT noise for genericWeb
+PASS null name is not noise
+PASS "TikTok - Make Your Day" is boilerplate
+PASS "tiktok" is boilerplate
+PASS "Make Your Day" is boilerplate
+PASS "NOVA Kitchen & Bar" is NOT boilerplate
+PASS cleanPlacesSeed("TikTok - Make Your Day") → empty
+PASS cleanPlacesSeed keeps NOVA caption
+PASS B1 queries include "NOVA Kitchen & Bar"
+PASS B2 queries include the "and" variant
+PASS B3 NO query contains "tiktok"
+PASS A1 generic TikTok-only metadata yields NO query
+
+All platform-noise assertions passed.

@@ -1,0 +1,2808 @@
+{
+  "sourceCommit": "f51dfdb75dcdee3e02ceb848875e2cea46632d42",
+  "scope": "134 unique prebuild + search/settings commands, preserving initial, environment repair, and final integration records. Final source includes uncommitted changes at run timestamps.",
+  "inputs": [
+    "results.json",
+    "environment-retry-results.json",
+    "final-integration-results.json"
+  ],
+  "uniqueCommands": 134,
+  "passed": 134,
+  "failed": 0,
+  "executions": 144,
+  "initialFailures": [
+    "test:update-args",
+    "typecheck",
+    "test:share-worker-boot",
+    "test:video-ai-note-guarantee"
+  ],
+  "notes": [
+    "environment-retry-results.json restored exactly from the complete tool read of retry-results.json immediately before the final integration run overwrote that filename; no timings or statuses inferred.",
+    "Per-command .log files hold the most recent execution of that command; the immutable result records retain each execution duration and status.",
+    "Activity/foundation/map/photo supplemental suites are recorded separately and are not added to this aggregate count."
+  ],
+  "results": [
+    {
+      "name": "test:release-gate",
+      "command": "npm run test:release-gate",
+      "exitCode": 0,
+      "seconds": 0.89,
+      "log": "test-release-gate.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:startup-smoke",
+      "command": "npm run test:startup-smoke",
+      "exitCode": 0,
+      "seconds": 1.2,
+      "log": "test-startup-smoke.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:result-notifications",
+      "command": "npm run test:result-notifications",
+      "exitCode": 0,
+      "seconds": 1.06,
+      "log": "test-result-notifications.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:no-user-facing-vayrin",
+      "command": "npm run test:no-user-facing-vayrin",
+      "exitCode": 0,
+      "seconds": 2.13,
+      "log": "test-no-user-facing-vayrin.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:failure-messaging",
+      "command": "npm run test:failure-messaging",
+      "exitCode": 0,
+      "seconds": 1.17,
+      "log": "test-failure-messaging.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-failure-presentation",
+      "command": "npm run test:share-failure-presentation",
+      "exitCode": 0,
+      "seconds": 1.37,
+      "log": "test-share-failure-presentation.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:map-atomic-representation-stability",
+      "command": "npm run test:map-atomic-representation-stability",
+      "exitCode": 0,
+      "seconds": 1.71,
+      "log": "test-map-atomic-representation-stability.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:map-cluster-expansion",
+      "command": "npm run test:map-cluster-expansion",
+      "exitCode": 0,
+      "seconds": 1.52,
+      "log": "test-map-cluster-expansion.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:map-conservation",
+      "command": "npm run test:map-conservation",
+      "exitCode": 0,
+      "seconds": 3.14,
+      "log": "test-map-conservation.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:multi-save-tray-dismiss",
+      "command": "npm run test:multi-save-tray-dismiss",
+      "exitCode": 0,
+      "seconds": 1.22,
+      "log": "test-multi-save-tray-dismiss.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:nearby-map-explorer",
+      "command": "npm run test:nearby-map-explorer",
+      "exitCode": 0,
+      "seconds": 1.69,
+      "log": "test-nearby-map-explorer.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:vayrin-candidate-confirmation-v2",
+      "command": "npm run test:vayrin-candidate-confirmation-v2",
+      "exitCode": 0,
+      "seconds": 1.77,
+      "log": "test-vayrin-candidate-confirmation-v2.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:map-camera-transaction-hotfix",
+      "command": "npm run test:map-camera-transaction-hotfix",
+      "exitCode": 0,
+      "seconds": 6.69,
+      "log": "test-map-camera-transaction-hotfix.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:canonical-save-return-contract",
+      "command": "npm run test:canonical-save-return-contract",
+      "exitCode": 0,
+      "seconds": 1.54,
+      "log": "test-canonical-save-return-contract.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:vayrin-multi-place-review-redesign",
+      "command": "npm run test:vayrin-multi-place-review-redesign",
+      "exitCode": 0,
+      "seconds": 2,
+      "log": "test-vayrin-multi-place-review-redesign.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:multi-place-review-interactions",
+      "command": "npm run test:multi-place-review-interactions",
+      "exitCode": 0,
+      "seconds": 2.13,
+      "log": "test-multi-place-review-interactions.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:quick-check-rolodex-ux",
+      "command": "npm run test:quick-check-rolodex-ux",
+      "exitCode": 0,
+      "seconds": 2.01,
+      "log": "test-quick-check-rolodex-ux.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:quick-check-density",
+      "command": "npm run test:quick-check-density",
+      "exitCode": 0,
+      "seconds": 2.04,
+      "log": "test-quick-check-density.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:vayrin-quick-check-evidence-ui",
+      "command": "npm run test:vayrin-quick-check-evidence-ui",
+      "exitCode": 0,
+      "seconds": 2.61,
+      "log": "test-vayrin-quick-check-evidence-ui.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:e2e:harness",
+      "command": "npm run test:e2e:harness",
+      "exitCode": 0,
+      "seconds": 1.51,
+      "log": "test-e2e-harness.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:app-environment",
+      "command": "npm run test:app-environment",
+      "exitCode": 0,
+      "seconds": 1.1,
+      "log": "test-app-environment.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:google-places-config",
+      "command": "npm run test:google-places-config",
+      "exitCode": 0,
+      "seconds": 1.04,
+      "log": "test-google-places-config.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:root-layout-loop",
+      "command": "npm run test:root-layout-loop",
+      "exitCode": 0,
+      "seconds": 1.26,
+      "log": "test-root-layout-loop.log",
+      "recordFile": "final-integration-results.json",
+      "startedAt": "2026-10-15T23:46:11.143Z",
+      "completedAt": "2026-10-15T23:46:39.543Z"
+    },
+    {
+      "name": "test:dev-db-guard",
+      "command": "npm run test:dev-db-guard",
+      "exitCode": 0,
+      "seconds": 1.79,
+      "log": "test-dev-db-guard.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:notification-tap-routing",
+      "command": "npm run test:notification-tap-routing",
+      "exitCode": 0,
+      "seconds": 1.38,
+      "log": "test-notification-tap-routing.log",
+      "recordFile": "final-integration-results.json",
+      "startedAt": "2026-10-15T23:46:11.143Z",
+      "completedAt": "2026-10-15T23:46:39.543Z"
+    },
+    {
+      "name": "test:update-args",
+      "command": "npm run test:update-args",
+      "exitCode": 0,
+      "seconds": 0.96,
+      "log": "test-update-args.log",
+      "recordFile": "environment-retry-results.json",
+      "startedAt": "2026-10-15T23:35:10.808Z",
+      "completedAt": "2026-10-15T23:35:34.269Z"
+    },
+    {
+      "name": "test:share-extension-env",
+      "command": "npm run test:share-extension-env",
+      "exitCode": 0,
+      "seconds": 1.14,
+      "log": "test-share-extension-env.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:dev-login-gating",
+      "command": "npm run test:dev-login-gating",
+      "exitCode": 0,
+      "seconds": 1.17,
+      "log": "test-dev-login-gating.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:saved-place-edits",
+      "command": "npm run test:saved-place-edits",
+      "exitCode": 0,
+      "seconds": 0.98,
+      "log": "test-saved-place-edits.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-note",
+      "command": "npm run test:place-note",
+      "exitCode": 0,
+      "seconds": 0.96,
+      "log": "test-place-note.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-category",
+      "command": "npm run test:place-category",
+      "exitCode": 0,
+      "seconds": 1.11,
+      "log": "test-place-category.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:category-pipeline",
+      "command": "npm run test:category-pipeline",
+      "exitCode": 0,
+      "seconds": 1.16,
+      "log": "test-category-pipeline.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-category-migration",
+      "command": "npm run test:place-category-migration",
+      "exitCode": 0,
+      "seconds": 1,
+      "log": "test-place-category-migration.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:auto-save-undo",
+      "command": "npm run test:auto-save-undo",
+      "exitCode": 0,
+      "seconds": 0.91,
+      "log": "test-auto-save-undo.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:google-places-fields",
+      "command": "npm run test:google-places-fields",
+      "exitCode": 0,
+      "seconds": 1.36,
+      "log": "test-google-places-fields.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-extension-compact",
+      "command": "npm run test:share-extension-compact",
+      "exitCode": 0,
+      "seconds": 1.36,
+      "log": "test-share-extension-compact.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-completion",
+      "command": "npm run test:share-completion",
+      "exitCode": 0,
+      "seconds": 1.02,
+      "log": "test-share-completion.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:queue-inbox",
+      "command": "npm run test:queue-inbox",
+      "exitCode": 0,
+      "seconds": 1.21,
+      "log": "test-queue-inbox.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:source-enrichment",
+      "command": "npm run test:source-enrichment",
+      "exitCode": 0,
+      "seconds": 1.54,
+      "log": "test-source-enrichment.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:source-thumbnails",
+      "command": "npm run test:source-thumbnails",
+      "exitCode": 0,
+      "seconds": 1.29,
+      "log": "test-source-thumbnails.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-job-result",
+      "command": "npm run test:share-job-result",
+      "exitCode": 0,
+      "seconds": 1.16,
+      "log": "test-share-job-result.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:map-group-focus",
+      "command": "npm run test:map-group-focus",
+      "exitCode": 0,
+      "seconds": 1.32,
+      "log": "test-map-group-focus.log",
+      "recordFile": "final-integration-results.json",
+      "startedAt": "2026-10-15T23:46:11.143Z",
+      "completedAt": "2026-10-15T23:46:39.543Z"
+    },
+    {
+      "name": "test:save-navigation",
+      "command": "npm run test:save-navigation",
+      "exitCode": 0,
+      "seconds": 1.14,
+      "log": "test-save-navigation.log",
+      "recordFile": "final-integration-results.json",
+      "startedAt": "2026-10-15T23:46:11.143Z",
+      "completedAt": "2026-10-15T23:46:39.543Z"
+    },
+    {
+      "name": "test:phase2-ui-render",
+      "command": "npm run test:phase2-ui-render",
+      "exitCode": 0,
+      "seconds": 0.91,
+      "log": "test-phase2-ui-render.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:address-first",
+      "command": "npm run test:address-first",
+      "exitCode": 0,
+      "seconds": 1.56,
+      "log": "test-address-first.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:address-match",
+      "command": "npm run test:address-match",
+      "exitCode": 0,
+      "seconds": 1.31,
+      "log": "test-address-match.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:multi-address",
+      "command": "npm run test:multi-address",
+      "exitCode": 0,
+      "seconds": 1.17,
+      "log": "test-multi-address.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:multi-place-batch",
+      "command": "npm run test:multi-place-batch",
+      "exitCode": 0,
+      "seconds": 1.23,
+      "log": "test-multi-place-batch.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:multi-select-places",
+      "command": "npm run test:multi-select-places",
+      "exitCode": 0,
+      "seconds": 1.43,
+      "log": "test-multi-select-places.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-recommendations",
+      "command": "npm run test:place-recommendations",
+      "exitCode": 0,
+      "seconds": 1.34,
+      "log": "test-place-recommendations.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:recovery-hints",
+      "command": "npm run test:recovery-hints",
+      "exitCode": 0,
+      "seconds": 1.16,
+      "log": "test-recovery-hints.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:safety-description-only",
+      "command": "npm run test:safety-description-only",
+      "exitCode": 0,
+      "seconds": 1.16,
+      "log": "test-safety-description-only.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "seconds": 28.32,
+      "log": "typecheck.log",
+      "recordFile": "final-integration-results.json",
+      "startedAt": "2026-10-15T23:46:11.143Z",
+      "completedAt": "2026-10-15T23:46:39.543Z"
+    },
+    {
+      "name": "test:generic-caption-guard",
+      "command": "npm run test:generic-caption-guard",
+      "exitCode": 0,
+      "seconds": 1.02,
+      "log": "test-generic-caption-guard.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:platform-noise",
+      "command": "npm run test:platform-noise",
+      "exitCode": 0,
+      "seconds": 1.18,
+      "log": "test-platform-noise.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:manual-fallback",
+      "command": "npm run test:manual-fallback",
+      "exitCode": 0,
+      "seconds": 1.14,
+      "log": "test-manual-fallback.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:tiktok-url",
+      "command": "npm run test:tiktok-url",
+      "exitCode": 0,
+      "seconds": 1.01,
+      "log": "test-tiktok-url.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:evidence-provenance",
+      "command": "npm run test:evidence-provenance",
+      "exitCode": 0,
+      "seconds": 1.65,
+      "log": "test-evidence-provenance.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:notification-dedupe",
+      "command": "npm run test:notification-dedupe",
+      "exitCode": 0,
+      "seconds": 0.93,
+      "log": "test-notification-dedupe.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:platform-url-classification",
+      "command": "npm run test:platform-url-classification",
+      "exitCode": 0,
+      "seconds": 3.96,
+      "log": "test-platform-url-classification.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-job-mapping",
+      "command": "npm run test:share-job-mapping",
+      "exitCode": 0,
+      "seconds": 0.92,
+      "log": "test-share-job-mapping.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-job-routing",
+      "command": "npm run test:share-job-routing",
+      "exitCode": 0,
+      "seconds": 1.04,
+      "log": "test-share-job-routing.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:account",
+      "command": "npm run test:account",
+      "exitCode": 0,
+      "seconds": 3.36,
+      "log": "test-account.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-worker-boot",
+      "command": "npm run test:share-worker-boot",
+      "exitCode": 0,
+      "seconds": 4,
+      "log": "test-share-worker-boot.log",
+      "recordFile": "environment-retry-results.json",
+      "startedAt": "2026-10-15T23:35:10.808Z",
+      "completedAt": "2026-10-15T23:35:34.269Z"
+    },
+    {
+      "name": "test:share-url-validation",
+      "command": "npm run test:share-url-validation",
+      "exitCode": 0,
+      "seconds": 1.15,
+      "log": "test-share-url-validation.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:feature-flags",
+      "command": "npm run test:feature-flags",
+      "exitCode": 0,
+      "seconds": 1.25,
+      "log": "test-feature-flags.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:vayrin-ui",
+      "command": "npm run test:vayrin-ui",
+      "exitCode": 0,
+      "seconds": 1.39,
+      "log": "test-vayrin-ui.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:vayrin-presentation",
+      "command": "npm run test:vayrin-presentation",
+      "exitCode": 0,
+      "seconds": 1.8,
+      "log": "test-vayrin-presentation.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:shared-auth-session",
+      "command": "npm run test:shared-auth-session",
+      "exitCode": 0,
+      "seconds": 1.42,
+      "log": "test-shared-auth-session.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-routes",
+      "command": "npm run test:share-routes",
+      "exitCode": 0,
+      "seconds": 1.55,
+      "log": "test-share-routes.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:sanitize-error",
+      "command": "npm run test:sanitize-error",
+      "exitCode": 0,
+      "seconds": 1.49,
+      "log": "test-sanitize-error.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:breadcrumbs",
+      "command": "npm run test:breadcrumbs",
+      "exitCode": 0,
+      "seconds": 1.52,
+      "log": "test-breadcrumbs.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:once-latch",
+      "command": "npm run test:once-latch",
+      "exitCode": 0,
+      "seconds": 1.4,
+      "log": "test-once-latch.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:open-saved-place",
+      "command": "npm run test:open-saved-place",
+      "exitCode": 0,
+      "seconds": 1.48,
+      "log": "test-open-saved-place.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:shared-auth-sync",
+      "command": "npm run test:shared-auth-sync",
+      "exitCode": 0,
+      "seconds": 1.27,
+      "log": "test-shared-auth-sync.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-submission",
+      "command": "npm run test:share-submission",
+      "exitCode": 0,
+      "seconds": 1.28,
+      "log": "test-share-submission.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-job-client",
+      "command": "npm run test:share-job-client",
+      "exitCode": 0,
+      "seconds": 1.3,
+      "log": "test-share-job-client.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-jobs-dedupe",
+      "command": "npm run test:share-jobs-dedupe",
+      "exitCode": 0,
+      "seconds": 1.04,
+      "log": "test-share-jobs-dedupe.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-jobs-realtime",
+      "command": "npm run test:share-jobs-realtime",
+      "exitCode": 0,
+      "seconds": 1.18,
+      "log": "test-share-jobs-realtime.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:live-location",
+      "command": "npm run test:live-location",
+      "exitCode": 0,
+      "seconds": 1,
+      "log": "test-live-location.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-share",
+      "command": "npm run test:place-share",
+      "exitCode": 0,
+      "seconds": 1.38,
+      "log": "test-place-share.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:wrong-place",
+      "command": "npm run test:wrong-place",
+      "exitCode": 0,
+      "seconds": 1.35,
+      "log": "test-wrong-place.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-share-source",
+      "command": "npm run test:place-share-source",
+      "exitCode": 0,
+      "seconds": 1.5,
+      "log": "test-place-share-source.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:ai-place-note",
+      "command": "npm run test:ai-place-note",
+      "exitCode": 0,
+      "seconds": 1.31,
+      "log": "test-ai-place-note.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:note-editor",
+      "command": "npm run test:note-editor",
+      "exitCode": 0,
+      "seconds": 1.14,
+      "log": "test-note-editor.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:ai-note-integration",
+      "command": "npm run test:ai-note-integration",
+      "exitCode": 0,
+      "seconds": 1.56,
+      "log": "test-ai-note-integration.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:saved-browse",
+      "command": "npm run test:saved-browse",
+      "exitCode": 0,
+      "seconds": 1.59,
+      "log": "test-saved-browse.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-image",
+      "command": "npm run test:place-image",
+      "exitCode": 0,
+      "seconds": 1.26,
+      "log": "test-place-image.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:video-ai-note-guarantee",
+      "command": "npm run test:video-ai-note-guarantee",
+      "exitCode": 0,
+      "seconds": 2.65,
+      "log": "test-video-ai-note-guarantee.log",
+      "recordFile": "environment-retry-results.json",
+      "startedAt": "2026-10-15T23:35:10.808Z",
+      "completedAt": "2026-10-15T23:35:34.269Z"
+    },
+    {
+      "name": "test:open-original-post",
+      "command": "npm run test:open-original-post",
+      "exitCode": 0,
+      "seconds": 1.23,
+      "log": "test-open-original-post.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-jobs-ui",
+      "command": "npm run test:share-jobs-ui",
+      "exitCode": 0,
+      "seconds": 1.24,
+      "log": "test-share-jobs-ui.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:quick-check",
+      "command": "npm run test:quick-check",
+      "exitCode": 0,
+      "seconds": 1.12,
+      "log": "test-quick-check.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-phase1-ui",
+      "command": "npm run test:share-phase1-ui",
+      "exitCode": 0,
+      "seconds": 0.97,
+      "log": "test-share-phase1-ui.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-fallback",
+      "command": "npm run test:media-fallback",
+      "exitCode": 0,
+      "seconds": 1.02,
+      "log": "test-media-fallback.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-phase1-render",
+      "command": "npm run test:share-phase1-render",
+      "exitCode": 0,
+      "seconds": 1.56,
+      "log": "test-share-phase1-render.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-evidence",
+      "command": "npm run test:media-evidence",
+      "exitCode": 0,
+      "seconds": 1.21,
+      "log": "test-media-evidence.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:post-save-enrichment",
+      "command": "npm run test:post-save-enrichment",
+      "exitCode": 0,
+      "seconds": 0.76,
+      "log": "test-post-save-enrichment.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-finalize",
+      "command": "npm run test:media-finalize",
+      "exitCode": 0,
+      "seconds": 0.83,
+      "log": "test-media-finalize.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-reliability",
+      "command": "npm run test:media-reliability",
+      "exitCode": 0,
+      "seconds": 0.9,
+      "log": "test-media-reliability.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-adversarial",
+      "command": "npm run test:media-adversarial",
+      "exitCode": 0,
+      "seconds": 1.03,
+      "log": "test-media-adversarial.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-mentions",
+      "command": "npm run test:media-mentions",
+      "exitCode": 0,
+      "seconds": 1.47,
+      "log": "test-media-mentions.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-autosave",
+      "command": "npm run test:media-autosave",
+      "exitCode": 0,
+      "seconds": 1.56,
+      "log": "test-media-autosave.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:geographic-context",
+      "command": "npm run test:geographic-context",
+      "exitCode": 0,
+      "seconds": 1.44,
+      "log": "test-geographic-context.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:geographic-context-source",
+      "command": "npm run test:geographic-context-source",
+      "exitCode": 0,
+      "seconds": 1.77,
+      "log": "test-geographic-context-source.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-run-diagnostics",
+      "command": "npm run test:media-run-diagnostics",
+      "exitCode": 0,
+      "seconds": 1.26,
+      "log": "test-media-run-diagnostics.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:shared-geo-context",
+      "command": "npm run test:shared-geo-context",
+      "exitCode": 0,
+      "seconds": 1.79,
+      "log": "test-shared-geo-context.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:shared-city-context",
+      "command": "npm run test:shared-city-context",
+      "exitCode": 0,
+      "seconds": 1.86,
+      "log": "test-shared-city-context.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:geographic-destinations",
+      "command": "npm run test:geographic-destinations",
+      "exitCode": 0,
+      "seconds": 1.97,
+      "log": "test-geographic-destinations.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:source-location-tag",
+      "command": "npm run test:source-location-tag",
+      "exitCode": 0,
+      "seconds": 1.88,
+      "log": "test-source-location-tag.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:no-match-diagnostics",
+      "command": "npm run test:no-match-diagnostics",
+      "exitCode": 0,
+      "seconds": 1.68,
+      "log": "test-no-match-diagnostics.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:provider-api-path",
+      "command": "npm run test:provider-api-path",
+      "exitCode": 0,
+      "seconds": 1.52,
+      "log": "test-provider-api-path.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-routing",
+      "command": "npm run test:onboarding-routing",
+      "exitCode": 0,
+      "seconds": 0.96,
+      "log": "test-onboarding-routing.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-demo",
+      "command": "npm run test:onboarding-demo",
+      "exitCode": 0,
+      "seconds": 1.02,
+      "log": "test-onboarding-demo.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:name-driven",
+      "command": "npm run test:name-driven",
+      "exitCode": 0,
+      "seconds": 1.95,
+      "log": "test-name-driven.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-anonymous",
+      "command": "npm run test:onboarding-anonymous",
+      "exitCode": 0,
+      "seconds": 1.13,
+      "log": "test-onboarding-anonymous.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:auth-deeplink",
+      "command": "npm run test:auth-deeplink",
+      "exitCode": 0,
+      "seconds": 1.02,
+      "log": "test-auth-deeplink.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:auth-account-state",
+      "command": "npm run test:auth-account-state",
+      "exitCode": 0,
+      "seconds": 1.07,
+      "log": "test-auth-account-state.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:auth-errors",
+      "command": "npm run test:auth-errors",
+      "exitCode": 0,
+      "seconds": 1,
+      "log": "test-auth-errors.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:auth-recovery",
+      "command": "npm run test:auth-recovery",
+      "exitCode": 0,
+      "seconds": 1.16,
+      "log": "test-auth-recovery.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:auth-screen-contracts",
+      "command": "npm run test:auth-screen-contracts",
+      "exitCode": 0,
+      "seconds": 1.17,
+      "log": "test-auth-screen-contracts.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:nearby-arbitration",
+      "command": "npm run test:nearby-arbitration",
+      "exitCode": 0,
+      "seconds": 1.04,
+      "log": "test-nearby-arbitration.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:nearby-eligibility",
+      "command": "npm run test:nearby-eligibility",
+      "exitCode": 0,
+      "seconds": 1.11,
+      "log": "test-nearby-eligibility.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:reminder-distance-cleanup",
+      "command": "npm run test:reminder-distance-cleanup",
+      "exitCode": 0,
+      "seconds": 0.93,
+      "log": "test-reminder-distance-cleanup.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:offline-mode",
+      "command": "npm run test:offline-mode",
+      "exitCode": 0,
+      "seconds": 1.09,
+      "log": "test-offline-mode.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:offline-reminders",
+      "command": "npm run test:offline-reminders",
+      "exitCode": 0,
+      "seconds": 1.11,
+      "log": "test-offline-reminders.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:saved-place-snapshots",
+      "command": "npm run test:saved-place-snapshots",
+      "exitCode": 0,
+      "seconds": 1.12,
+      "log": "test-saved-place-snapshots.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-v2",
+      "command": "npm run test:onboarding-v2",
+      "exitCode": 0,
+      "seconds": 6.72,
+      "log": "test-onboarding-v2.log",
+      "recordFile": "final-integration-results.json",
+      "startedAt": "2026-10-15T23:46:11.143Z",
+      "completedAt": "2026-10-15T23:46:39.543Z"
+    },
+    {
+      "name": "test:onboarding-google-integration",
+      "command": "npm run test:onboarding-google-integration",
+      "exitCode": 0,
+      "seconds": 1.3,
+      "log": "test-onboarding-google-integration.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-no-live-services",
+      "command": "npm run test:onboarding-no-live-services",
+      "exitCode": 0,
+      "seconds": 1.02,
+      "log": "test-onboarding-no-live-services.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-fully-offline",
+      "command": "npm run test:onboarding-fully-offline",
+      "exitCode": 0,
+      "seconds": 1.39,
+      "log": "test-onboarding-fully-offline.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-authentic-phase2-auth",
+      "command": "npm run test:onboarding-authentic-phase2-auth",
+      "exitCode": 0,
+      "seconds": 1.25,
+      "log": "test-onboarding-authentic-phase2-auth.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-install-lifecycle",
+      "command": "npm run test:onboarding-install-lifecycle",
+      "exitCode": 0,
+      "seconds": 1.37,
+      "log": "test-onboarding-install-lifecycle.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "testFieldnotesSettingsRuntime",
+      "command": "npx ts-node -P scripts/tsconfig.json scripts/testFieldnotesSettingsRuntime.ts",
+      "exitCode": 0,
+      "seconds": 2.29,
+      "log": "testFieldnotesSettingsRuntime.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "testFieldnotesSearchRuntime",
+      "command": "npx ts-node -P scripts/tsconfig.json scripts/testFieldnotesSearchRuntime.ts",
+      "exitCode": 0,
+      "seconds": 4.09,
+      "log": "testFieldnotesSearchRuntime.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    }
+  ],
+  "history": [
+    {
+      "name": "test:release-gate",
+      "command": "npm run test:release-gate",
+      "exitCode": 0,
+      "seconds": 0.89,
+      "log": "test-release-gate.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:startup-smoke",
+      "command": "npm run test:startup-smoke",
+      "exitCode": 0,
+      "seconds": 1.2,
+      "log": "test-startup-smoke.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:result-notifications",
+      "command": "npm run test:result-notifications",
+      "exitCode": 0,
+      "seconds": 1.06,
+      "log": "test-result-notifications.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:no-user-facing-vayrin",
+      "command": "npm run test:no-user-facing-vayrin",
+      "exitCode": 0,
+      "seconds": 2.13,
+      "log": "test-no-user-facing-vayrin.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:failure-messaging",
+      "command": "npm run test:failure-messaging",
+      "exitCode": 0,
+      "seconds": 1.17,
+      "log": "test-failure-messaging.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-failure-presentation",
+      "command": "npm run test:share-failure-presentation",
+      "exitCode": 0,
+      "seconds": 1.37,
+      "log": "test-share-failure-presentation.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:map-atomic-representation-stability",
+      "command": "npm run test:map-atomic-representation-stability",
+      "exitCode": 0,
+      "seconds": 1.71,
+      "log": "test-map-atomic-representation-stability.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:map-cluster-expansion",
+      "command": "npm run test:map-cluster-expansion",
+      "exitCode": 0,
+      "seconds": 1.52,
+      "log": "test-map-cluster-expansion.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:map-conservation",
+      "command": "npm run test:map-conservation",
+      "exitCode": 0,
+      "seconds": 3.14,
+      "log": "test-map-conservation.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:multi-save-tray-dismiss",
+      "command": "npm run test:multi-save-tray-dismiss",
+      "exitCode": 0,
+      "seconds": 1.22,
+      "log": "test-multi-save-tray-dismiss.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:nearby-map-explorer",
+      "command": "npm run test:nearby-map-explorer",
+      "exitCode": 0,
+      "seconds": 1.69,
+      "log": "test-nearby-map-explorer.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:vayrin-candidate-confirmation-v2",
+      "command": "npm run test:vayrin-candidate-confirmation-v2",
+      "exitCode": 0,
+      "seconds": 1.77,
+      "log": "test-vayrin-candidate-confirmation-v2.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:map-camera-transaction-hotfix",
+      "command": "npm run test:map-camera-transaction-hotfix",
+      "exitCode": 0,
+      "seconds": 6.69,
+      "log": "test-map-camera-transaction-hotfix.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:canonical-save-return-contract",
+      "command": "npm run test:canonical-save-return-contract",
+      "exitCode": 0,
+      "seconds": 1.54,
+      "log": "test-canonical-save-return-contract.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:vayrin-multi-place-review-redesign",
+      "command": "npm run test:vayrin-multi-place-review-redesign",
+      "exitCode": 0,
+      "seconds": 2,
+      "log": "test-vayrin-multi-place-review-redesign.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:multi-place-review-interactions",
+      "command": "npm run test:multi-place-review-interactions",
+      "exitCode": 0,
+      "seconds": 2.13,
+      "log": "test-multi-place-review-interactions.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:quick-check-rolodex-ux",
+      "command": "npm run test:quick-check-rolodex-ux",
+      "exitCode": 0,
+      "seconds": 2.01,
+      "log": "test-quick-check-rolodex-ux.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:quick-check-density",
+      "command": "npm run test:quick-check-density",
+      "exitCode": 0,
+      "seconds": 2.04,
+      "log": "test-quick-check-density.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:vayrin-quick-check-evidence-ui",
+      "command": "npm run test:vayrin-quick-check-evidence-ui",
+      "exitCode": 0,
+      "seconds": 2.61,
+      "log": "test-vayrin-quick-check-evidence-ui.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:e2e:harness",
+      "command": "npm run test:e2e:harness",
+      "exitCode": 0,
+      "seconds": 1.51,
+      "log": "test-e2e-harness.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:app-environment",
+      "command": "npm run test:app-environment",
+      "exitCode": 0,
+      "seconds": 1.1,
+      "log": "test-app-environment.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:google-places-config",
+      "command": "npm run test:google-places-config",
+      "exitCode": 0,
+      "seconds": 1.04,
+      "log": "test-google-places-config.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:root-layout-loop",
+      "command": "npm run test:root-layout-loop",
+      "exitCode": 0,
+      "seconds": 0.89,
+      "log": "test-root-layout-loop.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:dev-db-guard",
+      "command": "npm run test:dev-db-guard",
+      "exitCode": 0,
+      "seconds": 1.79,
+      "log": "test-dev-db-guard.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:notification-tap-routing",
+      "command": "npm run test:notification-tap-routing",
+      "exitCode": 0,
+      "seconds": 1.1,
+      "log": "test-notification-tap-routing.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:update-args",
+      "command": "npm run test:update-args",
+      "exitCode": 1,
+      "seconds": 1.21,
+      "log": "test-update-args.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-extension-env",
+      "command": "npm run test:share-extension-env",
+      "exitCode": 0,
+      "seconds": 1.14,
+      "log": "test-share-extension-env.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:dev-login-gating",
+      "command": "npm run test:dev-login-gating",
+      "exitCode": 0,
+      "seconds": 1.17,
+      "log": "test-dev-login-gating.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:saved-place-edits",
+      "command": "npm run test:saved-place-edits",
+      "exitCode": 0,
+      "seconds": 0.98,
+      "log": "test-saved-place-edits.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-note",
+      "command": "npm run test:place-note",
+      "exitCode": 0,
+      "seconds": 0.96,
+      "log": "test-place-note.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-category",
+      "command": "npm run test:place-category",
+      "exitCode": 0,
+      "seconds": 1.11,
+      "log": "test-place-category.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:category-pipeline",
+      "command": "npm run test:category-pipeline",
+      "exitCode": 0,
+      "seconds": 1.16,
+      "log": "test-category-pipeline.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-category-migration",
+      "command": "npm run test:place-category-migration",
+      "exitCode": 0,
+      "seconds": 1,
+      "log": "test-place-category-migration.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:auto-save-undo",
+      "command": "npm run test:auto-save-undo",
+      "exitCode": 0,
+      "seconds": 0.91,
+      "log": "test-auto-save-undo.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:google-places-fields",
+      "command": "npm run test:google-places-fields",
+      "exitCode": 0,
+      "seconds": 1.36,
+      "log": "test-google-places-fields.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-extension-compact",
+      "command": "npm run test:share-extension-compact",
+      "exitCode": 0,
+      "seconds": 1.36,
+      "log": "test-share-extension-compact.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-completion",
+      "command": "npm run test:share-completion",
+      "exitCode": 0,
+      "seconds": 1.02,
+      "log": "test-share-completion.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:queue-inbox",
+      "command": "npm run test:queue-inbox",
+      "exitCode": 0,
+      "seconds": 1.21,
+      "log": "test-queue-inbox.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:source-enrichment",
+      "command": "npm run test:source-enrichment",
+      "exitCode": 0,
+      "seconds": 1.54,
+      "log": "test-source-enrichment.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:source-thumbnails",
+      "command": "npm run test:source-thumbnails",
+      "exitCode": 0,
+      "seconds": 1.29,
+      "log": "test-source-thumbnails.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-job-result",
+      "command": "npm run test:share-job-result",
+      "exitCode": 0,
+      "seconds": 1.16,
+      "log": "test-share-job-result.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:map-group-focus",
+      "command": "npm run test:map-group-focus",
+      "exitCode": 0,
+      "seconds": 1.32,
+      "log": "test-map-group-focus.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:save-navigation",
+      "command": "npm run test:save-navigation",
+      "exitCode": 0,
+      "seconds": 1.04,
+      "log": "test-save-navigation.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:phase2-ui-render",
+      "command": "npm run test:phase2-ui-render",
+      "exitCode": 0,
+      "seconds": 0.91,
+      "log": "test-phase2-ui-render.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:address-first",
+      "command": "npm run test:address-first",
+      "exitCode": 0,
+      "seconds": 1.56,
+      "log": "test-address-first.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:address-match",
+      "command": "npm run test:address-match",
+      "exitCode": 0,
+      "seconds": 1.31,
+      "log": "test-address-match.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:multi-address",
+      "command": "npm run test:multi-address",
+      "exitCode": 0,
+      "seconds": 1.17,
+      "log": "test-multi-address.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:multi-place-batch",
+      "command": "npm run test:multi-place-batch",
+      "exitCode": 0,
+      "seconds": 1.23,
+      "log": "test-multi-place-batch.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:multi-select-places",
+      "command": "npm run test:multi-select-places",
+      "exitCode": 0,
+      "seconds": 1.43,
+      "log": "test-multi-select-places.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-recommendations",
+      "command": "npm run test:place-recommendations",
+      "exitCode": 0,
+      "seconds": 1.34,
+      "log": "test-place-recommendations.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:recovery-hints",
+      "command": "npm run test:recovery-hints",
+      "exitCode": 0,
+      "seconds": 1.16,
+      "log": "test-recovery-hints.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:safety-description-only",
+      "command": "npm run test:safety-description-only",
+      "exitCode": 0,
+      "seconds": 1.16,
+      "log": "test-safety-description-only.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "exitCode": 2,
+      "seconds": 29.17,
+      "log": "typecheck.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:generic-caption-guard",
+      "command": "npm run test:generic-caption-guard",
+      "exitCode": 0,
+      "seconds": 1.02,
+      "log": "test-generic-caption-guard.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:platform-noise",
+      "command": "npm run test:platform-noise",
+      "exitCode": 0,
+      "seconds": 1.18,
+      "log": "test-platform-noise.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:manual-fallback",
+      "command": "npm run test:manual-fallback",
+      "exitCode": 0,
+      "seconds": 1.14,
+      "log": "test-manual-fallback.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:tiktok-url",
+      "command": "npm run test:tiktok-url",
+      "exitCode": 0,
+      "seconds": 1.01,
+      "log": "test-tiktok-url.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:evidence-provenance",
+      "command": "npm run test:evidence-provenance",
+      "exitCode": 0,
+      "seconds": 1.65,
+      "log": "test-evidence-provenance.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:notification-dedupe",
+      "command": "npm run test:notification-dedupe",
+      "exitCode": 0,
+      "seconds": 0.93,
+      "log": "test-notification-dedupe.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:platform-url-classification",
+      "command": "npm run test:platform-url-classification",
+      "exitCode": 0,
+      "seconds": 3.96,
+      "log": "test-platform-url-classification.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-job-mapping",
+      "command": "npm run test:share-job-mapping",
+      "exitCode": 0,
+      "seconds": 0.92,
+      "log": "test-share-job-mapping.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-job-routing",
+      "command": "npm run test:share-job-routing",
+      "exitCode": 0,
+      "seconds": 1.04,
+      "log": "test-share-job-routing.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:account",
+      "command": "npm run test:account",
+      "exitCode": 0,
+      "seconds": 3.36,
+      "log": "test-account.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-worker-boot",
+      "command": "npm run test:share-worker-boot",
+      "exitCode": 1,
+      "seconds": 24.69,
+      "log": "test-share-worker-boot.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-url-validation",
+      "command": "npm run test:share-url-validation",
+      "exitCode": 0,
+      "seconds": 1.15,
+      "log": "test-share-url-validation.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:feature-flags",
+      "command": "npm run test:feature-flags",
+      "exitCode": 0,
+      "seconds": 1.25,
+      "log": "test-feature-flags.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:vayrin-ui",
+      "command": "npm run test:vayrin-ui",
+      "exitCode": 0,
+      "seconds": 1.39,
+      "log": "test-vayrin-ui.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:vayrin-presentation",
+      "command": "npm run test:vayrin-presentation",
+      "exitCode": 0,
+      "seconds": 1.8,
+      "log": "test-vayrin-presentation.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:shared-auth-session",
+      "command": "npm run test:shared-auth-session",
+      "exitCode": 0,
+      "seconds": 1.42,
+      "log": "test-shared-auth-session.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-routes",
+      "command": "npm run test:share-routes",
+      "exitCode": 0,
+      "seconds": 1.55,
+      "log": "test-share-routes.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:sanitize-error",
+      "command": "npm run test:sanitize-error",
+      "exitCode": 0,
+      "seconds": 1.49,
+      "log": "test-sanitize-error.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:breadcrumbs",
+      "command": "npm run test:breadcrumbs",
+      "exitCode": 0,
+      "seconds": 1.52,
+      "log": "test-breadcrumbs.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:once-latch",
+      "command": "npm run test:once-latch",
+      "exitCode": 0,
+      "seconds": 1.4,
+      "log": "test-once-latch.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:open-saved-place",
+      "command": "npm run test:open-saved-place",
+      "exitCode": 0,
+      "seconds": 1.48,
+      "log": "test-open-saved-place.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:shared-auth-sync",
+      "command": "npm run test:shared-auth-sync",
+      "exitCode": 0,
+      "seconds": 1.27,
+      "log": "test-shared-auth-sync.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-submission",
+      "command": "npm run test:share-submission",
+      "exitCode": 0,
+      "seconds": 1.28,
+      "log": "test-share-submission.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-job-client",
+      "command": "npm run test:share-job-client",
+      "exitCode": 0,
+      "seconds": 1.3,
+      "log": "test-share-job-client.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-jobs-dedupe",
+      "command": "npm run test:share-jobs-dedupe",
+      "exitCode": 0,
+      "seconds": 1.04,
+      "log": "test-share-jobs-dedupe.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-jobs-realtime",
+      "command": "npm run test:share-jobs-realtime",
+      "exitCode": 0,
+      "seconds": 1.18,
+      "log": "test-share-jobs-realtime.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:live-location",
+      "command": "npm run test:live-location",
+      "exitCode": 0,
+      "seconds": 1,
+      "log": "test-live-location.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-share",
+      "command": "npm run test:place-share",
+      "exitCode": 0,
+      "seconds": 1.38,
+      "log": "test-place-share.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:wrong-place",
+      "command": "npm run test:wrong-place",
+      "exitCode": 0,
+      "seconds": 1.35,
+      "log": "test-wrong-place.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-share-source",
+      "command": "npm run test:place-share-source",
+      "exitCode": 0,
+      "seconds": 1.5,
+      "log": "test-place-share-source.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:ai-place-note",
+      "command": "npm run test:ai-place-note",
+      "exitCode": 0,
+      "seconds": 1.31,
+      "log": "test-ai-place-note.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:note-editor",
+      "command": "npm run test:note-editor",
+      "exitCode": 0,
+      "seconds": 1.14,
+      "log": "test-note-editor.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:ai-note-integration",
+      "command": "npm run test:ai-note-integration",
+      "exitCode": 0,
+      "seconds": 1.56,
+      "log": "test-ai-note-integration.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:saved-browse",
+      "command": "npm run test:saved-browse",
+      "exitCode": 0,
+      "seconds": 1.59,
+      "log": "test-saved-browse.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:place-image",
+      "command": "npm run test:place-image",
+      "exitCode": 0,
+      "seconds": 1.26,
+      "log": "test-place-image.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:video-ai-note-guarantee",
+      "command": "npm run test:video-ai-note-guarantee",
+      "exitCode": 1,
+      "seconds": 2.84,
+      "log": "test-video-ai-note-guarantee.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:open-original-post",
+      "command": "npm run test:open-original-post",
+      "exitCode": 0,
+      "seconds": 1.23,
+      "log": "test-open-original-post.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-jobs-ui",
+      "command": "npm run test:share-jobs-ui",
+      "exitCode": 0,
+      "seconds": 1.24,
+      "log": "test-share-jobs-ui.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:quick-check",
+      "command": "npm run test:quick-check",
+      "exitCode": 0,
+      "seconds": 1.12,
+      "log": "test-quick-check.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-phase1-ui",
+      "command": "npm run test:share-phase1-ui",
+      "exitCode": 0,
+      "seconds": 0.97,
+      "log": "test-share-phase1-ui.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-fallback",
+      "command": "npm run test:media-fallback",
+      "exitCode": 0,
+      "seconds": 1.02,
+      "log": "test-media-fallback.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:share-phase1-render",
+      "command": "npm run test:share-phase1-render",
+      "exitCode": 0,
+      "seconds": 1.56,
+      "log": "test-share-phase1-render.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-evidence",
+      "command": "npm run test:media-evidence",
+      "exitCode": 0,
+      "seconds": 1.21,
+      "log": "test-media-evidence.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:post-save-enrichment",
+      "command": "npm run test:post-save-enrichment",
+      "exitCode": 0,
+      "seconds": 0.76,
+      "log": "test-post-save-enrichment.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-finalize",
+      "command": "npm run test:media-finalize",
+      "exitCode": 0,
+      "seconds": 0.83,
+      "log": "test-media-finalize.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-reliability",
+      "command": "npm run test:media-reliability",
+      "exitCode": 0,
+      "seconds": 0.9,
+      "log": "test-media-reliability.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-adversarial",
+      "command": "npm run test:media-adversarial",
+      "exitCode": 0,
+      "seconds": 1.03,
+      "log": "test-media-adversarial.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-mentions",
+      "command": "npm run test:media-mentions",
+      "exitCode": 0,
+      "seconds": 1.47,
+      "log": "test-media-mentions.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-autosave",
+      "command": "npm run test:media-autosave",
+      "exitCode": 0,
+      "seconds": 1.56,
+      "log": "test-media-autosave.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:geographic-context",
+      "command": "npm run test:geographic-context",
+      "exitCode": 0,
+      "seconds": 1.44,
+      "log": "test-geographic-context.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:geographic-context-source",
+      "command": "npm run test:geographic-context-source",
+      "exitCode": 0,
+      "seconds": 1.77,
+      "log": "test-geographic-context-source.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:media-run-diagnostics",
+      "command": "npm run test:media-run-diagnostics",
+      "exitCode": 0,
+      "seconds": 1.26,
+      "log": "test-media-run-diagnostics.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:shared-geo-context",
+      "command": "npm run test:shared-geo-context",
+      "exitCode": 0,
+      "seconds": 1.79,
+      "log": "test-shared-geo-context.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:shared-city-context",
+      "command": "npm run test:shared-city-context",
+      "exitCode": 0,
+      "seconds": 1.86,
+      "log": "test-shared-city-context.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:geographic-destinations",
+      "command": "npm run test:geographic-destinations",
+      "exitCode": 0,
+      "seconds": 1.97,
+      "log": "test-geographic-destinations.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:source-location-tag",
+      "command": "npm run test:source-location-tag",
+      "exitCode": 0,
+      "seconds": 1.88,
+      "log": "test-source-location-tag.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:no-match-diagnostics",
+      "command": "npm run test:no-match-diagnostics",
+      "exitCode": 0,
+      "seconds": 1.68,
+      "log": "test-no-match-diagnostics.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:provider-api-path",
+      "command": "npm run test:provider-api-path",
+      "exitCode": 0,
+      "seconds": 1.52,
+      "log": "test-provider-api-path.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-routing",
+      "command": "npm run test:onboarding-routing",
+      "exitCode": 0,
+      "seconds": 0.96,
+      "log": "test-onboarding-routing.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-demo",
+      "command": "npm run test:onboarding-demo",
+      "exitCode": 0,
+      "seconds": 1.02,
+      "log": "test-onboarding-demo.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:name-driven",
+      "command": "npm run test:name-driven",
+      "exitCode": 0,
+      "seconds": 1.95,
+      "log": "test-name-driven.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-anonymous",
+      "command": "npm run test:onboarding-anonymous",
+      "exitCode": 0,
+      "seconds": 1.13,
+      "log": "test-onboarding-anonymous.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:auth-deeplink",
+      "command": "npm run test:auth-deeplink",
+      "exitCode": 0,
+      "seconds": 1.02,
+      "log": "test-auth-deeplink.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:auth-account-state",
+      "command": "npm run test:auth-account-state",
+      "exitCode": 0,
+      "seconds": 1.07,
+      "log": "test-auth-account-state.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:auth-errors",
+      "command": "npm run test:auth-errors",
+      "exitCode": 0,
+      "seconds": 1,
+      "log": "test-auth-errors.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:auth-recovery",
+      "command": "npm run test:auth-recovery",
+      "exitCode": 0,
+      "seconds": 1.16,
+      "log": "test-auth-recovery.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:auth-screen-contracts",
+      "command": "npm run test:auth-screen-contracts",
+      "exitCode": 0,
+      "seconds": 1.17,
+      "log": "test-auth-screen-contracts.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:nearby-arbitration",
+      "command": "npm run test:nearby-arbitration",
+      "exitCode": 0,
+      "seconds": 1.04,
+      "log": "test-nearby-arbitration.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:nearby-eligibility",
+      "command": "npm run test:nearby-eligibility",
+      "exitCode": 0,
+      "seconds": 1.11,
+      "log": "test-nearby-eligibility.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:reminder-distance-cleanup",
+      "command": "npm run test:reminder-distance-cleanup",
+      "exitCode": 0,
+      "seconds": 0.93,
+      "log": "test-reminder-distance-cleanup.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:offline-mode",
+      "command": "npm run test:offline-mode",
+      "exitCode": 0,
+      "seconds": 1.09,
+      "log": "test-offline-mode.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:offline-reminders",
+      "command": "npm run test:offline-reminders",
+      "exitCode": 0,
+      "seconds": 1.11,
+      "log": "test-offline-reminders.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:saved-place-snapshots",
+      "command": "npm run test:saved-place-snapshots",
+      "exitCode": 0,
+      "seconds": 1.12,
+      "log": "test-saved-place-snapshots.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-v2",
+      "command": "npm run test:onboarding-v2",
+      "exitCode": 0,
+      "seconds": 7.14,
+      "log": "test-onboarding-v2.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-google-integration",
+      "command": "npm run test:onboarding-google-integration",
+      "exitCode": 0,
+      "seconds": 1.3,
+      "log": "test-onboarding-google-integration.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-no-live-services",
+      "command": "npm run test:onboarding-no-live-services",
+      "exitCode": 0,
+      "seconds": 1.02,
+      "log": "test-onboarding-no-live-services.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-fully-offline",
+      "command": "npm run test:onboarding-fully-offline",
+      "exitCode": 0,
+      "seconds": 1.39,
+      "log": "test-onboarding-fully-offline.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-authentic-phase2-auth",
+      "command": "npm run test:onboarding-authentic-phase2-auth",
+      "exitCode": 0,
+      "seconds": 1.25,
+      "log": "test-onboarding-authentic-phase2-auth.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:onboarding-install-lifecycle",
+      "command": "npm run test:onboarding-install-lifecycle",
+      "exitCode": 0,
+      "seconds": 1.37,
+      "log": "test-onboarding-install-lifecycle.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "testFieldnotesSettingsRuntime",
+      "command": "npx ts-node -P scripts/tsconfig.json scripts/testFieldnotesSettingsRuntime.ts",
+      "exitCode": 0,
+      "seconds": 2.29,
+      "log": "testFieldnotesSettingsRuntime.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "testFieldnotesSearchRuntime",
+      "command": "npx ts-node -P scripts/tsconfig.json scripts/testFieldnotesSearchRuntime.ts",
+      "exitCode": 0,
+      "seconds": 4.09,
+      "log": "testFieldnotesSearchRuntime.log",
+      "recordFile": "results.json",
+      "startedAt": "2026-10-15T23:32:54.818Z",
+      "completedAt": "2026-10-15T23:34:19.393Z"
+    },
+    {
+      "name": "test:update-args",
+      "command": "npm run test:update-args",
+      "exitCode": 0,
+      "seconds": 0.96,
+      "log": "test-update-args.log",
+      "recordFile": "environment-retry-results.json",
+      "startedAt": "2026-10-15T23:35:10.808Z",
+      "completedAt": "2026-10-15T23:35:34.269Z"
+    },
+    {
+      "name": "test:video-ai-note-guarantee",
+      "command": "npm run test:video-ai-note-guarantee",
+      "exitCode": 0,
+      "seconds": 2.65,
+      "log": "test-video-ai-note-guarantee.log",
+      "recordFile": "environment-retry-results.json",
+      "startedAt": "2026-10-15T23:35:10.808Z",
+      "completedAt": "2026-10-15T23:35:34.269Z"
+    },
+    {
+      "name": "test:share-worker-boot",
+      "command": "npm run test:share-worker-boot",
+      "exitCode": 0,
+      "seconds": 4,
+      "log": "test-share-worker-boot.log",
+      "recordFile": "environment-retry-results.json",
+      "startedAt": "2026-10-15T23:35:10.808Z",
+      "completedAt": "2026-10-15T23:35:34.269Z"
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "seconds": 23.42,
+      "log": "typecheck.log",
+      "recordFile": "environment-retry-results.json",
+      "startedAt": "2026-10-15T23:35:10.808Z",
+      "completedAt": "2026-10-15T23:35:34.269Z"
+    },
+    {
+      "name": "test:root-layout-loop",
+      "command": "npm run test:root-layout-loop",
+      "exitCode": 0,
+      "seconds": 1.26,
+      "log": "test-root-layout-loop.log",
+      "recordFile": "final-integration-results.json",
+      "startedAt": "2026-10-15T23:46:11.143Z",
+      "completedAt": "2026-10-15T23:46:39.543Z"
+    },
+    {
+      "name": "test:notification-tap-routing",
+      "command": "npm run test:notification-tap-routing",
+      "exitCode": 0,
+      "seconds": 1.38,
+      "log": "test-notification-tap-routing.log",
+      "recordFile": "final-integration-results.json",
+      "startedAt": "2026-10-15T23:46:11.143Z",
+      "completedAt": "2026-10-15T23:46:39.543Z"
+    },
+    {
+      "name": "test:save-navigation",
+      "command": "npm run test:save-navigation",
+      "exitCode": 0,
+      "seconds": 1.14,
+      "log": "test-save-navigation.log",
+      "recordFile": "final-integration-results.json",
+      "startedAt": "2026-10-15T23:46:11.143Z",
+      "completedAt": "2026-10-15T23:46:39.543Z"
+    },
+    {
+      "name": "test:map-group-focus",
+      "command": "npm run test:map-group-focus",
+      "exitCode": 0,
+      "seconds": 1.32,
+      "log": "test-map-group-focus.log",
+      "recordFile": "final-integration-results.json",
+      "startedAt": "2026-10-15T23:46:11.143Z",
+      "completedAt": "2026-10-15T23:46:39.543Z"
+    },
+    {
+      "name": "test:onboarding-v2",
+      "command": "npm run test:onboarding-v2",
+      "exitCode": 0,
+      "seconds": 6.72,
+      "log": "test-onboarding-v2.log",
+      "recordFile": "final-integration-results.json",
+      "startedAt": "2026-10-15T23:46:11.143Z",
+      "completedAt": "2026-10-15T23:46:39.543Z"
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "seconds": 28.32,
+      "log": "typecheck.log",
+      "recordFile": "final-integration-results.json",
+      "startedAt": "2026-10-15T23:46:11.143Z",
+      "completedAt": "2026-10-15T23:46:39.543Z"
+    }
+  ]
+}

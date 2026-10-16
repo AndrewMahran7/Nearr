@@ -1,0 +1,50 @@
+{
+  "startedAt": "2026-10-15T23:46:11.143Z",
+  "sourceCommit": "f51dfdb75dcdee3e02ceb848875e2cea46632d42",
+  "completed": 6,
+  "remaining": 0,
+  "results": [
+    {
+      "name": "test:root-layout-loop",
+      "command": "npm run test:root-layout-loop",
+      "exitCode": 0,
+      "seconds": 1.26,
+      "log": "test-root-layout-loop.log"
+    },
+    {
+      "name": "test:notification-tap-routing",
+      "command": "npm run test:notification-tap-routing",
+      "exitCode": 0,
+      "seconds": 1.38,
+      "log": "test-notification-tap-routing.log"
+    },
+    {
+      "name": "test:save-navigation",
+      "command": "npm run test:save-navigation",
+      "exitCode": 0,
+      "seconds": 1.14,
+      "log": "test-save-navigation.log"
+    },
+    {
+      "name": "test:map-group-focus",
+      "command": "npm run test:map-group-focus",
+      "exitCode": 0,
+      "seconds": 1.32,
+      "log": "test-map-group-focus.log"
+    },
+    {
+      "name": "test:onboarding-v2",
+      "command": "npm run test:onboarding-v2",
+      "exitCode": 0,
+      "seconds": 6.72,
+      "log": "test-onboarding-v2.log"
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "seconds": 28.32,
+      "log": "typecheck.log"
+    }
+  ]
+}

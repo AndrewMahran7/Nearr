@@ -1,0 +1,20 @@
+
+> nearr@0.1.0 test:share-routes
+> ts-node -P scripts/tsconfig.json scripts/testShareRoutes.ts
+
+PASS route is /share-jobs
+PASS deeplink path is share-jobs
+PASS deeplink has no leading slash
+PASS deeplink derived from route
+PASS scheme is nearr
+PASS buildHostDeepLink yields empty-host form nearr:///share-jobs
+PASS exported SHARE_JOBS_DEEP_LINK is nearr:///share-jobs
+PASS buildHostDeepLink tolerates a leading slash too
+PASS empty-host form resolves to /share-jobs
+PASS host form also resolves to /share-jobs
+PASS generated deep link parses back to the route
+PASS trailing slash tolerated
+PASS non-scheme string => null
+PASS auth-callback link parses to its own path (not /share-jobs)
+
+All share-routes tests passed.

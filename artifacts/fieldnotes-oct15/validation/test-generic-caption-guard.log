@@ -1,0 +1,19 @@
+
+> nearr@0.1.0 test:generic-caption-guard
+> ts-node -P scripts/tsconfig.json scripts/testGenericCaptionGuard.ts
+
+PASS casual: "pretty cool spot!! glad i stopped by..."
+PASS casual: "I’ll def be back"
+PASS casual: "so good must try"
+PASS casual: "obsessed with the vibes"
+PASS NOT casual: "NOVA Kitchen & Bar"
+PASS NOT casual: "Capo Leisure House"
+PASS A1 casual prose + no evidence → zero queries
+PASS A2 casual prose filtered even when generic seed allowed
+PASS D1 generic prose + no evidence → zero queries
+PASS B1 venue query present
+PASS B2 no tiktok query
+PASS C1 venue+city query present with gate OFF
+PASS E1 address query present with gate OFF
+
+All generic-caption-guard assertions passed.

@@ -1,0 +1,34 @@
+
+> nearr@0.1.0 test:provider-api-path
+> ts-node -P scripts/tsconfig.json scripts/testProviderApiPath.ts
+
+PASS new: primaryType survives normalization
+PASS new: types survive normalization
+PASS new: display label retained
+PASS new: id/name/coords retained
+PASS legacy: primaryType is absent, never guessed from types
+PASS legacy: types still present
+PASS legacy: the first type is NOT promoted to primaryType
+PASS new success: provider path recorded as places_new
+PASS new success: no fallback flagged
+PASS new success: no fallback reason
+PASS new success: exactly one provider call (no double billing)
+PASS new success: primaryType reached the resolver
+PASS service blocked: provider path recorded as places_legacy
+PASS service blocked: fallback flagged
+PASS service blocked: reason is the bounded code
+PASS service blocked: reason is a closed vocabulary, not a raw error
+PASS transient error: still attributed to the new path
+PASS transient error: not reported as a fallback
+PASS transient error: outcome is provider_error
+PASS mixed: one degraded search marks the whole task degraded
+PASS mixed: fallback flagged
+PASS unknown path: absent apiPath is not invented
+PASS unknown path: fallback not asserted
+PASS trace: a no-match records which surface produced it
+PASS trace: reason still derived normally
+PASS privacy: no api key in diagnostics
+PASS privacy: no endpoint url
+PASS privacy: no raw google error text
+
+ALL PASS

@@ -35,7 +35,7 @@ Normal motion uses a 360ms region transition, or native fit animation. Reduce Mo
 
 ## Executed validation
 
-`npx.cmd ts-node -P scripts/tsconfig.json scripts/testMapViewportGeometry.ts` — **29/29 passed**. Cases include 0, 1, 2, 5, 20, 100 and 1,000 pins; duplicates; invalid coordinates; an isolated international outlier among 100 nearby pins; opposite hemispheres; antimeridian neighbors; filtered inputs; safe-area/overlay padding; phone sizes; landscape; and deterministic repetition.
+`npx.cmd ts-node -P scripts/tsconfig.json scripts/testMapViewportGeometry.ts` — **30/30 passed**. Cases include 0, 1, 2, 5, 20, 100 and 1,000 pins; duplicates; invalid coordinates; an isolated international outlier among 100 nearby pins; opposite hemispheres; antimeridian neighbors; filtered inputs; safe-area/overlay padding; actual keyboard/frame overlap; phone sizes; landscape; and deterministic repetition.
 
 `npx.cmd ts-node -P scripts/tsconfig.json scripts/testFieldnotesMapCameraRuntime.ts` — **passed**. This mounts the actual source-loaded production camera closures in React with native-host mocks. It verifies filtered/all/empty/date-line behavior, measured padding, repeated taps, and Reduce Motion. It is not a native map rendering test.
 

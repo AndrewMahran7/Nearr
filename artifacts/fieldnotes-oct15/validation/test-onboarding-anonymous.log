@@ -1,0 +1,9 @@
+
+> nearr@0.1.0 test:onboarding-anonymous
+> ts-node -P scripts/tsconfig.json scripts/testAnonymousOnboardingV2.ts
+
+PASS anonymous creation/resume contract
+PASS same-user and cross-user conversion contracts
+PASS transfer authorization/idempotency/analytics contracts
+PASS anonymous cleanup eligibility and retention contracts
+All anonymous Onboarding V2 tests passed.

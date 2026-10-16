@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:auth-screen-contracts
+> ts-node -P scripts/tsconfig.json scripts/testAuthScreenContracts.ts
+
+testAuthScreenContracts: all assertions passed

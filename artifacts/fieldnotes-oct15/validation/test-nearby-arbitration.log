@@ -1,0 +1,15 @@
+
+> nearr@0.1.0 test:nearby-arbitration
+> ts-node -P scripts/tsconfig.json scripts/testNearbyArbitration.ts
+
+PASS first nearby send in the window reserves the slot
+PASS a second nearby send 1.5s later (same window) is suppressed, not a burst
+PASS two truly concurrent geofence ENTER events -> exactly one notification wins
+PASS first send wins
+PASS just inside the window is still suppressed
+PASS a later, unrelated notification just past the window is never blocked
+PASS slot reserved before the (simulated) send attempt
+PASS a failed send releases the slot immediately, not for the rest of the window
+PASS arbitration wiring matches lib/notifications.ts
+
+ALL nearby-arbitration tests passed.

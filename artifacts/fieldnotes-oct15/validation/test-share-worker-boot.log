@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:share-worker-boot
+> deno run --no-config --allow-run --allow-net scripts/testProcessShareJobsBoot.js
+
+PASS process-share-jobs boots and reaches its auth guard

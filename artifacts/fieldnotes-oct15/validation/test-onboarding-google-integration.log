@@ -1,0 +1,20 @@
+
+> nearr@0.1.0 test:onboarding-google-integration
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingGoogleCostIntegration.ts
+
+PASS 1 onboarding navigation loads and retains the latest route-ownership guards
+PASS 2 hardcoded onboarding demonstration remains backend-independent
+PASS 3 zero-token Development share configuration remains suspended
+PASS 4 durable share acceptance still routes through the diagnosed queue/result flow
+PASS 5 recognized save writes a visual snapshot without an extra Google request
+PASS 6 restart uses persisted imagery with zero provider hydration
+PASS 7 manual search reuses visible imagery and suppresses offscreen fan-out
+PASS 8 five recognition candidates permit only the active visual fallback
+PASS 9 Wrong Place alternatives remain lazy until selected
+PASS 10 multi-place hydration follows only the inspected selection
+PASS 11 onboarding/source-backed places do not become legacy Google fallbacks
+PASS 12 latest share-result save path retains snapshot persistence and active imagery context
+PASS 13 integrated Development QA performs no token reserve or consume path
+PASS 14 suspension cannot activate as a Production bypass
+
+PASS combined onboarding + Google cost-control integration contract (14 cases)

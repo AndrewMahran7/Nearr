@@ -1,0 +1,37 @@
+
+> nearr@0.1.0 test:share-url-validation
+> ts-node -P scripts/tsconfig.json scripts/testShareUrlValidation.ts
+
+PASS https instagram ok
+PASS http ok
+PASS tiktok short ok
+PASS public ip 8.8.8.8 ok
+PASS public ipv4 172.32 ok (outside /12)
+PASS empty => empty
+PASS whitespace => empty
+PASS non-string => not_a_string
+PASS garbage => invalid_url
+PASS ftp => unsupported_scheme
+PASS file => unsupported_scheme
+PASS data => unsupported_scheme
+PASS javascript => unsupported_scheme
+PASS credentials => has_credentials
+PASS localhost blocked
+PASS 127.0.0.1 blocked
+PASS 0.0.0.0 blocked
+PASS 10.x blocked
+PASS 192.168.x blocked
+PASS 172.16.x blocked
+PASS 172.20.x blocked
+PASS 169.254 metadata blocked
+PASS cgnat 100.64 blocked
+PASS ipv6 loopback blocked
+PASS ipv6 link-local blocked
+PASS *.local blocked
+PASS *.internal blocked
+PASS metadata.google.internal blocked
+PASS isBlockedHost public host false
+PASS isBlockedHost 172.32 false
+PASS isBlockedHost 11.0.0.1 false
+
+All share-URL validation assertions passed.

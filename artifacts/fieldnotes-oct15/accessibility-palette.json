@@ -1,0 +1,85 @@
+{
+  "method": "sRGB relative luminance from constants/colors.ts; static opaque colors only, not map tiles/photographs",
+  "results": [
+    {
+      "theme": "light",
+      "pairs": [
+        {
+          "foreground": "text",
+          "background": "bg",
+          "foregroundHex": "#242621",
+          "backgroundHex": "#F7F4EE",
+          "contrast": 13.92
+        },
+        {
+          "foreground": "textSecondary",
+          "background": "bg",
+          "foregroundHex": "#62675B",
+          "backgroundHex": "#F7F4EE",
+          "contrast": 5.3
+        },
+        {
+          "foreground": "textSecondary",
+          "background": "surface",
+          "foregroundHex": "#62675B",
+          "backgroundHex": "#FFFDF8",
+          "contrast": 5.72
+        },
+        {
+          "foreground": "accent",
+          "background": "bg",
+          "foregroundHex": "#AD3A16",
+          "backgroundHex": "#F7F4EE",
+          "contrast": 5.64
+        },
+        {
+          "foreground": "textInverse",
+          "background": "primary",
+          "foregroundHex": "#FFFFFF",
+          "backgroundHex": "#263A32",
+          "contrast": 12.11
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "pairs": [
+        {
+          "foreground": "text",
+          "background": "bg",
+          "foregroundHex": "#F4F3EB",
+          "backgroundHex": "#171A18",
+          "contrast": 15.76
+        },
+        {
+          "foreground": "textSecondary",
+          "background": "bg",
+          "foregroundHex": "#B4BCAE",
+          "backgroundHex": "#171A18",
+          "contrast": 8.97
+        },
+        {
+          "foreground": "textSecondary",
+          "background": "surface",
+          "foregroundHex": "#B4BCAE",
+          "backgroundHex": "#222823",
+          "contrast": 7.7
+        },
+        {
+          "foreground": "accent",
+          "background": "bg",
+          "foregroundHex": "#FFA47B",
+          "backgroundHex": "#171A18",
+          "contrast": 9.06
+        },
+        {
+          "foreground": "textInverse",
+          "background": "primary",
+          "foregroundHex": "#18231B",
+          "backgroundHex": "#DCE9DC",
+          "contrast": 12.92
+        }
+      ]
+    }
+  ]
+}

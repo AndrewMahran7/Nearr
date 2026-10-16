@@ -1,0 +1,127 @@
+
+> nearr@0.1.0 test:e2e:harness
+> ts-node -P scripts/tsconfig.json scripts/testE2EHarness.ts
+
+PASS the production and development refs are readable from devTarget.mjs
+PASS the two refs are distinct
+PASS the guard refuses the same production ref the deployment scripts refuse
+PASS a development Supabase URL is accepted
+PASS the PRODUCTION Supabase project is refused
+PASS an unrecognised Supabase project is refused
+PASS a missing Supabase URL is refused
+PASS a non-Supabase URL is refused as ambiguous
+PASS refFromSupabaseUrl ignores a non-Supabase host
+PASS the development Railway lane is accepted
+PASS the PRODUCTION Railway environment is refused
+PASS the PRODUCTION Railway service is refused
+PASS an unrecognised Railway environment is refused
+PASS an unrecognised Railway project is refused
+PASS a Railway snapshot with no identity at all is refused
+PASS the development worker URL is accepted
+PASS a worker URL that does not match the deployment is refused
+PASS a non-HTTPS worker URL is refused
+PASS a worker URL on an unknown host with nothing to compare against is refused
+PASS a missing worker URL is refused
+PASS a correctly configured Nearr-Dev produces no required findings
+PASS a missing Edge MEDIA_FALLBACK_ENABLED is a REQUIRED failure
+PASS the MEDIA_FALLBACK_ENABLED failure explains the consequence
+PASS a missing Edge INSTAGRAM_MEDIA_RESOLVER_ENABLED is a REQUIRED failure
+PASS the INSTAGRAM_MEDIA_RESOLVER_ENABLED failure explains the consequence
+PASS a missing Edge TIKTOK_MEDIA_RESOLVER_ENABLED is a REQUIRED failure
+PASS the TIKTOK_MEDIA_RESOLVER_ENABLED failure explains the consequence
+PASS a missing Edge FACEBOOK_MEDIA_RESOLVER_ENABLED is a REQUIRED failure
+PASS the FACEBOOK_MEDIA_RESOLVER_ENABLED failure explains the consequence
+PASS an Edge flag whose value is not the literal "true" is a REQUIRED failure
+PASS the flag check never needs a plaintext value (sha256("true") is the whole test)
+PASS a missing Railway MEDIA_FALLBACK_ENABLED is a REQUIRED failure
+PASS a missing Railway INSTAGRAM_MEDIA_RESOLVER_ENABLED is a REQUIRED failure
+PASS a missing Railway TIKTOK_MEDIA_RESOLVER_ENABLED is a REQUIRED failure
+PASS a missing Railway FACEBOOK_MEDIA_RESOLVER_ENABLED is a REQUIRED failure
+PASS a missing Railway VAYRIN_VISUAL_GEOLOCATION_ENABLED is a REQUIRED failure
+PASS a SHARE_MEDIA_WORKER_SECRET mismatch between Edge and Railway is a REQUIRED failure
+PASS the SHARE_MEDIA_WORKER_SECRET mismatch report contains no secret value
+PASS a MEDIA_FINALIZE_SECRET mismatch between Edge and Railway is a REQUIRED failure
+PASS the MEDIA_FINALIZE_SECRET mismatch report contains no secret value
+PASS a SUPABASE_URL mismatch between Edge and Railway is a REQUIRED failure
+PASS the SUPABASE_URL mismatch report contains no secret value
+PASS a service-role key difference is reported as advisory drift
+PASS a service-role key difference does NOT fail readiness (the Edge copy is platform-injected)
+PASS a SUPABASE_URL mismatch is still required (the two services must address one project)
+PASS TikTok on for the worker but off for the Edge is reported as required drift
+PASS TikTok Edge/worker drift fails phone-test readiness
+PASS Facebook on for the Edge but off for the worker is required drift
+PASS Instagram flag drift IS a required failure
+PASS a missing Railway SUPABASE_SERVICE_ROLE_KEY is a REQUIRED failure
+PASS a wrong MEDIA_ANALYSIS_PROVIDER is a REQUIRED failure
+PASS a legal job path produces no violations
+PASS the job trail is human readable
+PASS a terminal job going back to processing is a violation
+PASS a task retry (processing -> queued) is legal
+PASS a terminal task being requeued is a violation
+PASS an undeclared status is a violation
+PASS declared job progress stages are recognised
+PASS an undeclared job progress stage is rejected
+PASS declared task progress stages are recognised
+PASS an undeclared task progress stage is rejected
+PASS an unclaimed task is not counted as claimed
+PASS a claimed task is recognised by attempts + lease
+PASS a missing task is not claimed
+PASS media_fallback_enqueued with no media task FAILS
+PASS media_fallback_enqueued with a media task passes
+PASS no fallback and no task passes
+PASS a completed worker with an unfinalized parent FAILS
+PASS a completed worker with a finalized parent passes
+PASS a terminal auto_save with no saved_place_id FAILS
+PASS a terminal auto_save with a saved place passes
+PASS a completed job with no decision at all FAILS
+PASS creator-name-only evidence that auto-saved FAILS
+PASS creator-name-only evidence that persisted a place FAILS even without auto_save
+PASS creator-name-only evidence routed to needs_help passes
+PASS the cheap path with no media task passes
+PASS the cheap path that created a media task FAILS
+PASS Fixture A no longer depends on Wikipedia
+PASS Fixture A uses the fixed Nearr-Dev metadata page and exact Google identity
+PASS auto_save with a saved place counts as resolved even with zero candidates
+PASS a confirmation route with candidates and no saved place counts as resolved
+PASS a multi-place batch that recorded savedPlaceIds counts as resolved
+PASS no saved place, no candidates and no batch saves FAILS
+PASS savedPlaceIdsOnPayload ignores a payload without the field
+PASS pollUntil returns as soon as the predicate holds
+PASS a timeout reports the LAST OBSERVED state rather than only the elapsed time
+PASS a row that never appears is a timeout with no last value
+PASS a long poll interval cannot overshoot the stage timeout
+PASS a stage timeout has a default
+PASS a stage timeout is overridable from the environment
+PASS an implausibly small override is ignored
+PASS create-share-job (12ms)
+FAIL Railway never claimed task (30.0s) — no claim within 30s
+       lastObservedTask: queued
+       correlationId: nearr-e2e-selftest
+       jobId: job-123
+       taskId: task-456
+PASS the reporter tracks failures
+PASS a run with a failure is not ok
+PASS a failure carries the identifiers needed to search the deployed logs
+PASS a (1ms)
+SKIP b — paid
+PASS a skipped stage does not fail the run
+PASS package.json declares test:e2e:dev
+PASS test:prebuild does NOT run test:e2e:dev
+PASS package.json declares test:e2e:dev:config
+PASS test:prebuild does NOT run test:e2e:dev:config
+PASS package.json declares test:e2e:dev:dispatch
+PASS test:prebuild does NOT run test:e2e:dev:dispatch
+PASS package.json declares test:e2e:dev:pipeline
+PASS test:prebuild does NOT run test:e2e:dev:pipeline
+PASS package.json declares test:e2e:dev:safety
+PASS test:prebuild does NOT run test:e2e:dev:safety
+PASS package.json declares test:e2e:dev:vayrin-live
+PASS test:prebuild does NOT run test:e2e:dev:vayrin-live
+PASS package.json declares verify:dev:e2e
+PASS test:prebuild does NOT run verify:dev:e2e
+PASS test:prebuild DOES run the offline harness test
+PASS the deployed commands all target scripts/e2e/
+PASS no E2E module hardcodes the production project ref
+PASS the Railway environment is hardcoded rather than taken from a flag
+
+All E2E harness tests passed.

@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:share-job-mapping
+> ts-node -P scripts/tsconfig.json scripts/testShareJobDecisionMapping.ts
+
+PASS share-job resolver decision mapping

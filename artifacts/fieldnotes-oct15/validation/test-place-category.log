@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:place-category
+> ts-node -P scripts/tsconfig.json scripts/testPlaceCategory.ts
+
+PASS expanded Nearr taxonomy, provider precedence, guarded fallback, regressions, and filters

@@ -1,0 +1,6 @@
+
+> nearr@0.1.0 test:multi-select-places
+> ts-node -P scripts/tsconfig.json scripts/testMultiSelectPlaces.ts
+
+PASS Fieldnotes review: 24 actual component renders across 2 appearances, 4 width/text configurations and 0/1/5 photos; independent controls, provenance, omission, disabled save, motion and virtualized Activity
+PASS multi-select place semantics, persistence, accessibility, and Vayrin integration

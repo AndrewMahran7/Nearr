@@ -1,0 +1,27 @@
+
+> nearr@0.1.0 test:share-extension-env
+> ts-node -P scripts/tsconfig.json scripts/testShareExtensionEnv.ts
+
+PASS the expo-share-extension plugin is configured
+PASS expo-updates is excluded from the extension (so an OTA cannot change it)
+PASS expo-dev-client is excluded from the extension (so Metro cannot serve it)
+PASS the extension reads the canonical environment declaration
+PASS the extension checks BLOCKING environment violations
+PASS the extension logs a non-secret environment identity
+PASS a misconfigured extension refuses instead of submitting
+PASS the environment guard runs BEFORE createShareJob
+PASS the environment guard also runs before legacy process-share-link fetch
+PASS legacy config errors never hand off to the equally misconfigured host
+PASS the extension resolves its endpoint rather than hardcoding one
+PASS no Supabase project URL is hardcoded in the extension
+PASS the extension never interpolates a credential value into a log
+PASS presence-only token logging is what it does instead
+PASS no ANON_KEY appears in the extension at all
+PASS no SERVICE_ROLE_KEY appears in the extension at all
+PASS no GEMINI_API_KEY appears in the extension at all
+PASS a development lane on a production backend is BLOCKING
+PASS an extension whose job endpoint drifted to another host is BLOCKING
+PASS a coherent development extension is allowed to submit
+PASS consistent production URLs cannot masquerade as development
+
+All share-extension environment tests passed.

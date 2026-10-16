@@ -1,0 +1,14 @@
+﻿{
+    "source":  "adb framebuffer",
+    "route":  "nearr://dev-qa?fieldnotes=map\u0026theme=light\u0026savedPlaceId=demo-saved-bantam\u0026openRequestId=oct15-1792107738680",
+    "sourceSha":  "f51dfdb75dcdee3e02ceb848875e2cea46632d42",
+    "capturedAt":  "2026-10-15T23:42:28.024Z",
+    "width":  1080,
+    "height":  2400,
+    "fontScale":  "2.0",
+    "platform":  "Android debug Pixel 8a AVD",
+    "physicalIos":  false,
+    "typographyComparisonValid":  false,
+    "evidenceCaveat":  "OS font scale changed without restarting React Native; not a matched native typography baseline.",
+    "surfaceValidation":  "REJECTED: captured surface does not match requested selection; not selection evidence."
+}

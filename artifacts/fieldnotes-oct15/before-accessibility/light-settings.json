@@ -1,0 +1,13 @@
+﻿{
+    "source":  "adb framebuffer",
+    "route":  "nearr://dev-qa?fieldnotes=settings\u0026theme=light",
+    "sourceSha":  "f51dfdb75dcdee3e02ceb848875e2cea46632d42",
+    "capturedAt":  "2026-10-15T23:42:48.114Z",
+    "width":  1080,
+    "height":  2400,
+    "fontScale":  "2.0",
+    "platform":  "Android debug Pixel 8a AVD",
+    "physicalIos":  false,
+    "typographyComparisonValid":  false,
+    "evidenceCaveat":  "OS font scale changed without restarting React Native; not a matched native typography baseline."
+}

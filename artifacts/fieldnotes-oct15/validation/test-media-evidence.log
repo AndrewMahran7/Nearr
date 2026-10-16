@@ -1,0 +1,29 @@
+
+> nearr@0.1.0 test:media-evidence
+> ts-node -P scripts/tsconfig.json scripts/testMediaEvidenceAdapter.ts
+
+PASS parse null => not ok
+PASS parse string => not ok
+PASS parse empty object => ok, empty places, insufficient false
+PASS parse valid => places=1, multiple=true
+PASS parse warnings preserved
+PASS parse drops malformed places (name required)
+PASS parse drops evidence with invalid source
+PASS confidence clamped to <= 1
+PASS confidence clamped to >= 0
+PASS coordinates never forwarded from model
+PASS hasExplicitEvidence true when explicit present
+PASS hasExplicitEvidence false when only inferred
+PASS render single explicit place => 1 place
+PASS render title = primary name
+PASS render description contains address + city
+PASS inferred-only place => rendered 0 (no fabrication)
+PASS insufficientEvidence => rendered 0
+PASS passing_mention excluded
+PASS secondary dropped when not multi-intent
+PASS secondary kept when multi-intent
+PASS multi description has both places on separate lines
+PASS primary ordered first
+PASS no places => rendered 0
+
+ALL MEDIA EVIDENCE ADAPTER TESTS PASSED

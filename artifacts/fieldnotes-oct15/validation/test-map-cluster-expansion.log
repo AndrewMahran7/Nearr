@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:map-cluster-expansion
+> ts-node -P scripts/tsconfig.json scripts/testMapClusterExpansion.ts
+
+PASS cluster expansion: repeated taps, rapid taps, map readiness, filters, pan, selection, navigation, lifecycle, stale ids, single-command failure, no selection fallback, and no-loop invariant
