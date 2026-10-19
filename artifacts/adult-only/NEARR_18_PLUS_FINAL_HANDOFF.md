@@ -2,7 +2,7 @@
 
 ## A. STATUS
 
-**PARTIALLY IMPLEMENTED / BLOCKED.** Adult-only changes are implemented locally; the additive Nearr-Dev migration and rollback-contained SQL gates passed. Modified Edge, Railway worker and new native client are not deployed; physical/live Development qualification and full `test:prebuild` are incomplete. This is **not** a releasable or Production-ready candidate.
+**PARTIALLY IMPLEMENTED / BLOCKED.** Adult-only changes are implemented locally; two additive Nearr-Dev migrations and rollback-contained SQL gates passed. Modified Edge, Railway worker and new native client are not deployed; physical/live Development qualification and full `test:prebuild` are incomplete. This is **not** a releasable or Production-ready candidate.
 
 ## B. PRODUCT POLICY
 
@@ -18,7 +18,7 @@ Offline Phase 1 remains local. Anonymous Phase 2 and permanent/restored sessions
 
 ## E. BACKEND
 
-Nearr-Dev migration `20261018000001_adult_age_eligibility.sql` adds RLS table, authenticated self-declaration RPC, service-role eligibility RPC and queue guards. Local `create-share-job`/`process-share-link` reject before metadata; `process-share-jobs` checks claimed jobs and callbacks; worker checks task start and immediately before transcription/OCR/model calls. Unknown, underage, revoked and check errors fail closed. Ownership comes from JWT or stored job/task owner, never a client age flag. Only the DB migration is deployed to Development.
+Nearr-Dev migration `20261018000001_adult_age_eligibility.sql` adds RLS table, authenticated self-declaration RPC, service-role eligibility RPC and queue guards; `20261018000002_adult_dispatch_transition_guard.sql` denies claims of previously queued ineligible rows by an old worker. Local `create-share-job`/`process-share-link` reject before metadata; `process-share-jobs` checks claimed jobs and callbacks; worker checks task start and immediately before transcription/OCR/model calls. Unknown, underage, revoked and check errors fail closed. Ownership comes from JWT or stored job/task owner, never a client age flag. Only the DB migrations are deployed to Development.
 
 ## F. OLD CLIENTS
 
@@ -50,11 +50,11 @@ Previously reported draft: 1.5.58, Prepare for Submission, Manual release; curre
 
 ## M. TESTS
 
-PASS: app typecheck; worker TypeScript build; Deno age helper (2 tests); worker no-provider negative dispatch test; share-job-client 403/no false success; privacy-policy, Terms (direct script), AI permission, onboarding V2, Share Extension compact, release gate, Dev DB guard; rollback-contained Dev SQL adult/underage/RLS, anonymous transfer, and both queue requeue guards. `git diff --check` passed. `test:prebuild` **did not pass**: first run exposed missing `.env.local` in the isolated worktree (fixed; Dev guard reran PASS); second run stopped at `test:update-args` because `eas` CLI is not installed. All later prebuild checks and physical/live Development proofs remain pending. Evidence/commands are in `AGE_ELIGIBILITY_TEST_RESULTS.md`.
+PASS: app typecheck; worker TypeScript build; Deno age helper (2 tests); worker no-provider negative dispatch test; share-job-client 403/no false success; privacy-policy, Terms (direct script), AI permission, onboarding V2, Share Extension compact, release gate, Dev DB guard; rollback-contained Dev SQL adult/underage/RLS, anonymous transfer, and both queue requeue/claim guards. `git diff --check` passed. `test:prebuild` **did not pass**: first run exposed missing `.env.local` in the isolated worktree (fixed; Dev guard reran PASS); second run stopped at `test:update-args` because `eas` CLI is not installed. All later prebuild checks and physical/live Development proofs remain pending. Evidence/commands are in `AGE_ELIGIBILITY_TEST_RESULTS.md`.
 
 ## N. DEVELOPMENT
 
-Supabase project `qnfxnmvxpjzfydgudtvs`: migration `20261018000001` applied. Post-test persisted age decisions: zero. No Edge function deployed: Dev `process-share-jobs` v142 was newer than the local base, and function source download failed safe-path validation; deployed source/rollback parity is unproven. No Railway deployment/config change: Dev worker `11acd95c-90f3-407e-aefa-2f1d66fc05a9` tracks `integrate/safe-development-baseline`, not this worktree. No EAS Dev/native build ID, IPA or OTA exists for this change. Development proof is incomplete.
+Supabase project `qnfxnmvxpjzfydgudtvs`: migrations `20261018000001` and `20261018000002` applied. Post-test persisted age decisions: zero; the pre-existing queued task remained queued and cannot be claimed without adult eligibility. No Edge function deployed: Dev `process-share-jobs` v142 was newer than the local base, and function source download failed safe-path validation; deployed source/rollback parity is unproven. No Railway deployment/config change: Dev worker `11acd95c-90f3-407e-aefa-2f1d66fc05a9` tracks `integrate/safe-development-baseline`, not this worktree. No EAS Dev/native build ID, IPA or OTA exists for this change. Development proof is incomplete.
 
 ## O. PRODUCTION PLAN
 
@@ -62,11 +62,11 @@ See `NEARR_15_PRODUCTION_AGE_ROLLOUT_PLAN.md`: founder-approved/quiesced cutover
 
 ## P. GIT
 
-Isolated worktree `C:\Users\andre\Desktop\Nearr\.tmp\nearr-1.5-adult-only`, branch `feat/nearr-15-adult-only-access`, starting commit `ca08c154347096fe5da0bf2739cf0b25c0b706b0`. Age-only commits: `6d7aa6e` (schema/Dev history), `1bda3ac` (Edge/worker) and `1ffad18` (client gate); documentation is committed separately. Final HEAD is recorded in the terminal handoff. The original dirty `release/nearr-1.5-privacy-corrected` worktree was not changed. This isolated tree still has copied pre-existing privacy changes plus overlapping uncommitted 18+ Share Extension/share-route edits; no merge or push. Keeping overlapping dirty files uncommitted avoids accidentally folding the earlier privacy work into an age-only commit.
+Isolated worktree `C:\Users\andre\Desktop\Nearr\.tmp\nearr-1.5-adult-only`, branch `feat/nearr-15-adult-only-access`, starting commit `ca08c154347096fe5da0bf2739cf0b25c0b706b0`. Age-only commits: `6d7aa6e` (schema/Dev history), `1bda3ac` (Edge/worker), `1ffad18` (client gate), `e6f4983` (documentation), `bd395b8` (pre-rollout claim guard), and the documentation follow-up. Final HEAD is recorded in the terminal handoff. The original dirty `release/nearr-1.5-privacy-corrected` worktree was not changed. This isolated tree still has copied pre-existing privacy changes plus overlapping uncommitted 18+ Share Extension/share-route edits; no merge or push. Keeping overlapping dirty files uncommitted avoids accidentally folding the earlier privacy work into an age-only commit.
 
 ## Q. PRODUCTION
 
-Production Supabase, Production Railway, public app, Production OTA, policy website and ASC were **not changed**. Only the explicitly verified Nearr-Dev schema migration was applied outside local files.
+Production Supabase, Production Railway, public app, Production OTA, policy website and ASC were **not changed**. Only the two explicitly verified Nearr-Dev age migrations were applied outside local files.
 
 ## R. FOUNDER APPROVAL NEEDED
 

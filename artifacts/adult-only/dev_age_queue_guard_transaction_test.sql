@@ -15,6 +15,12 @@ begin
   exception when others then
     if sqlerrm <> 'age_eligibility_required' then raise; end if;
   end;
+  begin
+    update public.share_jobs set status='processing_metadata' where id=v_job;
+    raise exception 'ineligible share job was claimed';
+  exception when others then
+    if sqlerrm <> 'age_eligibility_required' then raise; end if;
+  end;
 
   select t.id into v_task from public.share_media_tasks t
   where t.status <> 'queued'
@@ -27,7 +33,13 @@ begin
   exception when others then
     if sqlerrm <> 'age_eligibility_required' then raise; end if;
   end;
+  begin
+    update public.share_media_tasks set status='processing' where id=v_task;
+    raise exception 'ineligible media task was claimed';
+  exception when others then
+    if sqlerrm <> 'age_eligibility_required' then raise; end if;
+  end;
 end;
 $$;
 rollback;
-select 'share-job and media-task requeue guards passed and rolled back' as result;
+select 'share-job and media-task requeue/claim guards passed and rolled back' as result;
