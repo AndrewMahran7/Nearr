@@ -391,7 +391,14 @@ function coerceResult(parsed: unknown): AIExtractResult | null {
  */
 export async function extractPlaceAI(
   input: AIExtractInput,
+  options: { allowProviderCall?: boolean } = {},
 ): Promise<AIExtractResult> {
+  // Mobile bundles must never dispatch directly to a model provider: the
+  // server owns account eligibility and consent enforcement. Evaluation
+  // scripts retain the existing server-side model behavior.
+  if (options.allowProviderCall === false) {
+    return buildFallback(input, 'client_model_dispatch_disabled');
+  }
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     console.log(`${LOG} GEMINI_API_KEY missing -- falling back to heuristic query`);

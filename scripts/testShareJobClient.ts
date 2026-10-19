@@ -201,9 +201,20 @@ async function main() {
       requestId: undefined,
     });
 
+    const ageDenied = await runWithResponse(
+      new Response(JSON.stringify({ error: 'age_eligibility_required' }), { status: 403 }),
+    );
+    assert.deepEqual(ageDenied, {
+      ok: false,
+      reason: 'age_eligibility_required',
+      httpStatus: 403,
+      responseErrorCode: 'age_eligibility_required',
+      requestId: undefined,
+    });
+
     // Definite protocol failures must never be reclassified by a queue lookup.
     let definiteFailureLookups = 0;
-    for (const result of [missingJobId, serverFailure, unauthorized]) {
+    for (const result of [missingJobId, serverFailure, unauthorized, ageDenied]) {
       const preserved = await reconcileDurableShareAcceptance({
         result,
         clientRequestId: 'u_definite_failure',
