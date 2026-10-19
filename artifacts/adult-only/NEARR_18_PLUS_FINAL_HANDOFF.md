@@ -54,7 +54,7 @@ PASS: app typecheck; worker TypeScript build; Deno age helper (2 tests); worker 
 
 ## N. DEVELOPMENT
 
-Supabase project `qnfxnmvxpjzfydgudtvs`: migrations `20261018000001` and `20261018000002` applied. Post-test persisted age decisions: zero; the pre-existing queued task remained queued and cannot be claimed without adult eligibility. No Edge function deployed: Dev `process-share-jobs` v142 was newer than the local base, and function source download failed safe-path validation; deployed source/rollback parity is unproven. No Railway deployment/config change: Dev worker `11acd95c-90f3-407e-aefa-2f1d66fc05a9` tracks `integrate/safe-development-baseline`, not this worktree. No EAS Dev/native build ID, IPA or OTA exists for this change. Development proof is incomplete.
+Supabase project `qnfxnmvxpjzfydgudtvs`: migrations `20261018000001` and `20261018000002` applied. Post-test persisted age decisions: zero; the pre-existing queued task remained queued and cannot be claimed without adult eligibility. No Edge function deployed: Dev `process-share-jobs` v142's partially recovered entrypoint differs only by the intended age lines and six dependencies matched, but the full download failed on an invalid path; complete deployed source/rollback parity is unproven. No Railway deployment/config change: Dev worker `11acd95c-90f3-407e-aefa-2f1d66fc05a9` tracks `integrate/safe-development-baseline`, not this worktree. No EAS Dev/native build ID, IPA or OTA exists for this change. Development proof is incomplete.
 
 ## O. PRODUCTION PLAN
 
