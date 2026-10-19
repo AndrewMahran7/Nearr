@@ -2,6 +2,8 @@
 
 **2026-10-19 update:** In addition to the rollback-contained SQL tests below, live synthetic anonymous requests now passed: 401 unauthenticated, 403 undeclared/under-18 on both legacy and queued Edge routes, adult age pass before invalid-URL/metadata rejection, locked adult decision, and 200 cleanup for all test accounts. The pending-age claim regression passed again after the age-gated worker deployment. See `DEVELOPMENT_PROVENANCE_DEPLOYMENT_20261019.md` and `liveAgeGateSynthetic.mjs`. The unrun-live statement below describes the Oct 18 state only; real adult recognition/save and physical-client QA remain unrun.
 
+An additional `liveRevokedSynthetic.mjs` run revoked only one synthetic adult owner's Dev row, received 403 on both deployed Edge routes, deleted the account with HTTP 200, and confirmed aggregate age records returned to zero. This does not test a revocation racing an active claim.
+
 The following actually ran against Nearr-Dev `qnfxnmvxpjzfydgudtvs` using `supabase db query --linked --file ...`; each transaction deliberately rolled back:
 
 | Contract | Result |
