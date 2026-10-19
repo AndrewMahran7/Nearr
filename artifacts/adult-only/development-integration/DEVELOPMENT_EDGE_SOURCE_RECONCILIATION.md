@@ -1,5 +1,7 @@
 # Nearr-Dev Edge source reconciliation — 2026-10-18 PDT
 
+**2026-10-19 update:** The exact-source age candidates below were deployed to Nearr-Dev after freshness checks: `process-share-jobs` v143, `create-share-job` v74, `process-share-link` v87. Their ACTIVE status, unchanged JWT settings and new deployed fingerprints are in `DEVELOPMENT_PROVENANCE_DEPLOYMENT_20261019.md`. Table versions below are the recovered **pre-deployment** baseline, not current active versions.
+
 Project `qnfxnmvxpjzfydgudtvs` only. Supabase CLI 2.111.0 could not extract the deployed bundles on Windows (`UnsafeFunctionDownloadPathError` / invalid path). An isolated CLI 2.102.0 successfully downloaded all three using `functions download <slug> --project-ref qnfxnmvxpjzfydgudtvs --use-api --workdir <isolated directory>`. The complete recovered source is local under `.tmp/dev-edge-download-2102`, `.tmp/dev-edge-create-2102`, and `.tmp/dev-edge-link-2102`; it is not a Git branch or a Production source claim.
 
 | Function | Active Dev version | Exposed deployed EZBR SHA-256 | Complete recovered files / canonical source SHA-256 | Candidate canonical SHA-256 (not deployed) | Intended candidate difference | Recovery |

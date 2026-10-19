@@ -1,5 +1,7 @@
 # Age-gate Development backend deployment report — 2026-10-18 PDT
 
+**2026-10-19 update:** Superseded operational status: Nearr-Dev Edge functions are now v87/v74/v143 and the exact-source age worker `69831ef2-7da5-495d-95b4-f1618b2f0b6e` is healthy. Live synthetic negative routes, adult pre-provider checks, cleanup and DB aggregates passed. See `DEVELOPMENT_PROVENANCE_DEPLOYMENT_20261019.md`; the historical NOT-deployed status below is no longer current. Full device and recognition/save QA remains open.
+
 **Status: database deployed; Edge and Railway NOT deployed.** Nearr-Dev `qnfxnmvxpjzfydgudtvs` records `20261018000001_adult_age_eligibility.sql` and `20261018000002_adult_dispatch_transition_guard.sql`, with local/remote migration versions aligned. The age-decision table has zero persisted rows following rollback-contained tests; one queued task remains. The installed `share_media_tasks_age_eligibility_guard` trigger is enabled. No account was auto-marked adult and no saved-place data was removed.
 
 Current Edge versions: `create-share-job` v73, `process-share-link` v86, `process-share-jobs` v142. Current Development Railway worker: `11acd95c-90f3-407e-aefa-2f1d66fc05a9` SUCCESS, unchanged. Source and candidate hashes are in the reconciliation reports. The exact current worker source and fail-closed rollback remain unresolved, so the deployment preconditions in the prompt are not met. No Edge/Railway version or deployment ID was advanced; no OTA was published.

@@ -1,4 +1,6 @@
-# Development 18+ integration handoff — current state
+# Development 18+ integration handoff — 2026-10-19 update
+
+**Current status: Development backend deployed and synthetic route checks passed; full end-to-end/device QA pending.** Exact worker artifact provenance was established, temporary Railway SSH access removed, fail-closed stop tested, age-gated worker and all three Edge functions deployed only to Development. Details and exact recovery path are in `DEVELOPMENT_PROVENANCE_DEPLOYMENT_20261019.md`. Build 61 remains the QA candidate; no Production, OTA, policy, App Store or main changes were made. The older blocked-state narrative below is retained for audit history and is superseded by this update.
 
 **PARTIALLY IMPLEMENTED / BLOCKED.** Development DB migrations and SQL/RPC gates pass; complete Edge v142/v73/v86 source was recovered and age-only candidate trees pass local Deno checks. Full local prebuild passes on both the dirty integration and exact clean native-build source. First internal iOS Development build `2d07a667-e612-4da2-aa3c-ce95317a8c03` failed on an incompatible `latest` Xcode image; its clean replacement at `c4187f815aa50703f9612f83e999186d10c21218`, Nearr 1.5.59/runtime 1.5.59/build 61, **finished** as EAS build `4b64b0ef-483c-455e-b3fa-8caa0c1afa62`, and the IPA host/extension metadata was checked. Development Edge/worker age changes have not been deployed. No old-client/live provider/physical-iPhone proof has run.
 
