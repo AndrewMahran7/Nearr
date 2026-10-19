@@ -37,6 +37,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { AiSharePermissionPrompt } from './components/AiSharePermissionPrompt';
 import {
   ActivityIndicator,
   Animated,
@@ -399,6 +400,19 @@ type UiState =
   | { kind: 'error'; message: string };
 
 export default function ShareExtension(props: ExtensionInitialProps) {
+  const [aiPermissionGrantedUrl, setAiPermissionGrantedUrl] = useState<string | null>(null);
+  const sharedUrl = pickSharedUrl(props);
+  // The native controller only extracts the shared payload. Neither backend
+  // path may mount until this share's explicit AI permission is granted.
+  if (sharedUrl && aiPermissionGrantedUrl !== sharedUrl) {
+    return (
+      <AiSharePermissionPrompt
+        compact
+        onAllow={() => setAiPermissionGrantedUrl(sharedUrl)}
+        onCancel={close}
+      />
+    );
+  }
   // Feature-flagged: async submit-and-dismiss (new) vs the legacy synchronous
   // handoff (unchanged). Default OFF keeps the proven flow until rollout.
   if (isAsyncShareJobsEnabled()) {
@@ -551,6 +565,7 @@ type AsyncUi =
   | { kind: 'needs_setup' }
   | { kind: 'signed_out' }
   | { kind: 'session_expired' }
+  | { kind: 'age_eligibility_required' }
   | {
       kind: 'network_failure';
       reason: string;
@@ -802,6 +817,9 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
       // Instagram) or View queue (open the host app). The durable job is
       // already persisted server-side, so no auto-dismiss is needed.
       setUi({ kind: 'accepted', duplicate: result.duplicate });
+    } else if (result.reason === 'age_eligibility_required') {
+      console.log('[share-extension] job_accepted=false reason=age_eligibility_required');
+      setUi({ kind: 'age_eligibility_required' });
     } else if (result.reason === 'unauthorized' || result.reason === 'missing_auth') {
       // Server rejected the token we thought was valid (revoked / clock skew).
       // Recover through the host rather than looping on sign-in.
@@ -962,6 +980,25 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
           accessibilityLabel="Open Nearr"
         >
           <Text style={asyncStyles.primaryText}>Open Nearr</Text>
+        </Pressable>
+      </AsyncSurface>
+    );
+  }
+  if (ui.kind === 'age_eligibility_required') {
+    return (
+      <AsyncSurface onClose={finish} showClose={false}>
+        <Text style={asyncStyles.title}>Open Nearr to confirm eligibility</Text>
+        <Text style={asyncStyles.subtle}>
+          This post was not added to your queue. Nearr is available only to adults 18 and older.
+          Open the app to check your account before sharing again.
+        </Text>
+        <Pressable style={asyncStyles.primaryBtn} onPress={() => openHost('age_eligibility_required')}
+          accessibilityRole="button" accessibilityLabel="Open Nearr">
+          <Text style={asyncStyles.primaryText}>Open Nearr</Text>
+        </Pressable>
+        <Pressable style={asyncStyles.secondaryBtn} onPress={finish}
+          accessibilityRole="button" accessibilityLabel="Close without saving">
+          <Text style={asyncStyles.secondaryText}>Close</Text>
         </Pressable>
       </AsyncSurface>
     );

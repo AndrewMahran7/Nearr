@@ -19,7 +19,8 @@
  * V1 scope: no clustering, no caption editing, no in-screen map preview.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { AgeEligibilityAccessContext } from '@/lib/ageEligibilityAccess';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -37,6 +38,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Card, Input, Screen } from '@/components';
 import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
 import { ShareJobHandoff } from '@/components/ShareJobHandoff';
+import { AiSharePermissionPrompt } from '@/components/AiSharePermissionPrompt';
 import { VayrinPresentationHeader } from '@/components/VayrinPresentationHeader';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
 import { Radius, Spacing } from '@/constants';
@@ -399,6 +401,14 @@ function buildProfileDebugReason(profile: {
 }
 
 export default function ShareScreen() {
+  const adultAccess = useContext(AgeEligibilityAccessContext);
+  // Expo Router keeps the root Stack mounted under the age overlay. Do not
+  // mount any share effects while that hidden route is ineligible.
+  if (!adultAccess) return null;
+  return <AuthorizedShareScreen />;
+}
+
+function AuthorizedShareScreen() {
   const params = useLocalSearchParams<{ url?: string; sid?: string }>();
   const submissionId = typeof params.sid === 'string' ? params.sid : undefined;
   const [tracedSubmissionId, setTracedSubmissionId] = useState<string | null>(null);
@@ -427,6 +437,7 @@ export default function ShareScreen() {
   if (isAsyncShareJobsEnabled() && params.url && isLikelyUrl(params.url)) {
     return (
       <ShareJobHandoff
+        key={params.url}
         url={params.url}
         submissionId={submissionId}
       />
@@ -463,6 +474,9 @@ function LegacyShareScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [url, setUrl] = useState(params.url ?? '');
+  const [pendingAiPermissionUrl, setPendingAiPermissionUrl] = useState<string | null>(null);
+  const aiPermissionGrantedUrlRef = useRef<string | null>(null);
+  const aiPermissionDecisionRef = useRef(false);
   const [phase, setPhase] = useState<Phase>('idle');
   const [parsed, setParsed] = useState<ParsedShare | null>(null);
   const [extraction, setExtraction] = useState<PlaceExtraction | null>(null);
@@ -649,7 +663,6 @@ function LegacyShareScreen() {
     if (!incoming || !isLikelyUrl(incoming)) return;
     if (lastProcessedUrlRef.current === incoming) return;
     lastProcessedUrlRef.current = incoming;
-    void prepareOnboardingV2RealPracticeShare(incoming);
     logDebug('share', 'auto-running from incoming url param', incoming);
     // Cold/warm start from share extension (or deep link with ?url=...).
     void trackEvent('share_received', {
@@ -690,6 +703,14 @@ function LegacyShareScreen() {
       );
       return;
     }
+    // All callers, including deep links, Enter, buttons, and retries, must
+    // pass through this check before extraction or job submission begins.
+    if (aiPermissionGrantedUrlRef.current !== trimmed) {
+      aiPermissionDecisionRef.current = false;
+      setPendingAiPermissionUrl(trimmed);
+      return;
+    }
+    if (params.url?.trim() === trimmed) void prepareOnboardingV2RealPracticeShare(trimmed);
     if (vayrinEnabled) {
       void trackEvent('vayrin_started', {
         source: params.url && isLikelyUrl(trimmed) ? 'sync_share' : 'sync_paste',
@@ -1222,11 +1243,8 @@ function LegacyShareScreen() {
     }
 
     // ---- 2b. AI enhancement (best-effort, never blocks) ---------------
-    // extractPlaceAI is guaranteed never to throw and falls back to a
-    // low-confidence wrapper around fallbackQuery when GEMINI_API_KEY is
-    // not present (i.e. in the mobile bundle). That means in production
-    // RN this is a fast no-op; only server / EAS-with-secret builds will
-    // actually hit Gemini. UI must never block on AI failure.
+    // Keep this mobile fallback local, even if a key were accidentally
+    // bundled: only the backend can authorize AI provider dispatch.
     let ai: AIExtractResult | null = null;
     if (!serverExtraction) {
       pushShareDebug(
@@ -1249,7 +1267,7 @@ function LegacyShareScreen() {
           title: parsedResult.title ?? undefined,
           description: parsedResult.description ?? undefined,
           fallbackQuery: extracted?.query,
-        });
+        }, { allowProviderCall: false });
         setAiExtraction(ai);
         logDebug('share', 'ai extraction', {
           query: ai.query,
@@ -2602,6 +2620,29 @@ function LegacyShareScreen() {
       has_video_frame_fallback: false,
     });
   }, [internalRenderableCandidates.length, phase, renderableCandidates, syncCandidateMode, vayrinEnabled]);
+
+  if (pendingAiPermissionUrl) {
+    return (
+      <AiSharePermissionPrompt
+        onAllow={() => {
+          if (aiPermissionDecisionRef.current) return;
+          aiPermissionDecisionRef.current = true;
+          const selectedUrl = pendingAiPermissionUrl;
+          aiPermissionGrantedUrlRef.current = selectedUrl;
+          setPendingAiPermissionUrl(null);
+          void runSaveFlow(selectedUrl).catch((err) => {
+            console.warn('[share] save flow failed', (err as Error)?.message ?? err);
+          });
+        }}
+        onCancel={() => {
+          if (aiPermissionDecisionRef.current) return;
+          aiPermissionDecisionRef.current = true;
+          setPendingAiPermissionUrl(null);
+          if (params.url) router.replace('/(tabs)/map');
+        }}
+      />
+    );
+  }
 
   return (
     <Screen>
