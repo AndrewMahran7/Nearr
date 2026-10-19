@@ -19,7 +19,19 @@ Native visual capture was unavailable. Founder physical iPhone QA remains requir
 
 ## Development OTA
 
-Status: pending final Development head recheck and publication. This section will be filled with the EAS update group and platform update IDs after the single authorized publish.
+Status: published and post-publish head verified.
+
+- Previous group: `0cb3a6cb-f50f-4d35-a635-c6b87102ad57`
+- New group: `3cc30077-3ff3-46d8-9d74-e923ee1592a0`
+- Runtime: `1.6.59`
+- Platforms: Android and iOS
+- Android update: `01a15263-2d22-7643-b25f-36ab9693841b`
+- iOS update: `01a15263-2d22-729c-83d1-b723b29df7c0`
+- Message: `October 18 place detail and Quick Check completion`
+- Published application source: `aa96cdbdc558ba48980fe9cca3d418773f3c7eb5`
+- Dashboard: https://expo.dev/accounts/andrewmahran/projects/nearr/updates/3cc30077-3ff3-46d8-9d74-e923ee1592a0
+
+The first export attempt failed before publication because Metro could not follow the borrowed `node_modules` junction; the Development head remained on the previous group. A lockfile-defined local install fixed module resolution, and the sole successful publication created the group above. The post-publish list shows it directly ahead of the October 15 group, so shared Development advanced exactly once.
 
 ## Metro and local launch
 
