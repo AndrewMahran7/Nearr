@@ -58,4 +58,3 @@ export function resolveFieldnotesMapPresentation(input: {
     showEmptyFeedback: owner === 'normal_map' || owner === 'onboarding',
   };
 }
-

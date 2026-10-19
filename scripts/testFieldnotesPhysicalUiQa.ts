@@ -132,4 +132,3 @@ assert.match(activity, /title="Back to your map" onPress=\{returnToNormalMap\}/)
 assert.equal((layout.match(/animation: 'fade'/g) ?? []).length >= 2, true);
 
 console.log('PASS Fieldnotes physical UI QA: ownership, switch bounds, filters, navigation, search, camera, imagery, status bar');
-
