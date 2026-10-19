@@ -5,6 +5,7 @@ export type CameraTransactionReason =
   | 'fit_children'
   | 'user_location'
   | 'programmatic_focus'
+  | 'new_save'
   | 'show_all'
   | 'foreground_restore'
   | 'other';

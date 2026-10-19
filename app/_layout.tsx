@@ -887,7 +887,7 @@ function RootLayoutContent() {
                   headerShown: false,
                   title: 'Share queue',
                   presentation: 'transparentModal',
-                  animation: 'slide_from_bottom',
+                  animation: 'fade',
                   contentStyle: { backgroundColor: 'transparent' },
                 }}
               />
@@ -897,7 +897,7 @@ function RootLayoutContent() {
                   headerShown: false,
                   title: 'Finish saving',
                   presentation: 'transparentModal',
-                  animation: 'slide_from_bottom',
+                  animation: 'fade',
                   contentStyle: { backgroundColor: 'transparent' },
                 }}
               />

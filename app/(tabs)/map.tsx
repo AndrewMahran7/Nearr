@@ -49,6 +49,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 
 // iOS uses the default provider (Apple Maps) — the Google Maps iOS SDK
 // requires the `AirGoogleMaps` Xcode subproject, which we don't link in
@@ -98,6 +99,7 @@ const DARK_MAP_STYLE = [
 import { Button, Card, DemoModeBanner, MapFallbackList } from '@/components';
 import { PlaceImage } from '@/components/PlaceImage';
 import { fieldnotesPhotoMarkerIds } from '@/lib/fieldnotesMapPresentation';
+import { resolveFieldnotesMapPresentation } from '@/lib/fieldnotesPresentation';
 import { useReduceMotion } from '@/lib/useReduceMotion';
 import { hapticSelection, hapticSuccess } from '@/lib/haptics';
 import { expandedPlaceDetailHeight, mapKeyboardOverlap, mapMarkerViewportInsets, mapUsableViewport, planSavedPinsCamera, planSelectedMarkerOcclusion, canApplySelectedMarkerCorrection } from '@/lib/mapViewportGeometry';
@@ -516,6 +518,7 @@ export default function MapScreen() {
     mapGroupId: rawMapGroupId,
     fieldnotes: rawFieldnotesPreview,
     fieldnotesCount: rawFieldnotesCount,
+    mapResetId: rawMapResetId,
   } = useLocalSearchParams<{
     savedPlaceId?: string | string[];
     savedPlaceGoogleId?: string | string[];
@@ -527,6 +530,7 @@ export default function MapScreen() {
     mapGroupId?: string | string[];
     fieldnotes?: string | string[];
     fieldnotesCount?: string | string[];
+    mapResetId?: string | string[];
   }>();
   const savedPlaceId = firstParam(rawSavedPlaceId);
   const savedPlaceGoogleId = firstParam(rawSavedPlaceGoogleId);
@@ -546,6 +550,7 @@ export default function MapScreen() {
         : 'unknown';
   const nearbyCount = parsePositiveIntParam(rawNearbyCount);
   const mapGroupId = firstParam(rawMapGroupId);
+  const mapResetId = firstParam(rawMapResetId);
   const {
     data: liveData,
     loading: liveLoading,
@@ -1076,6 +1081,9 @@ export default function MapScreen() {
   }, [mapCategoryFilter, mapFilterChoices]);
 
   const handleSelectMapCategory = useCallback((next: MapVisibilityFilter) => {
+    // A Show All message belongs to the filter that produced it. Retire it
+    // synchronously before the next filter's pins and empty state render.
+    setSnackbar(null);
     setMapCategoryFilter(next);
     hapticSelection();
     // Deliberately does NOT move the camera: the user may be inspecting an
@@ -1198,6 +1206,19 @@ export default function MapScreen() {
   useEffect(() => { if (selected && fontScale >= 1.5) setPreviewExpanded(true); }, [selected?.id, fontScale]);
   const previewExpandedRef = useRef(false);
   previewExpandedRef.current = previewExpanded;
+  const handledMapResetIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!mapResetId || handledMapResetIdRef.current === mapResetId) return;
+    handledMapResetIdRef.current = mapResetId;
+    setSearchVisible(false);
+    setNearbyExplorer(null);
+    setSelectedExplorerRecommendation(null);
+    setSelected(null);
+    setPreviewExpanded(false);
+    previewTranslateY.setValue(0);
+    setSheetMode('nearby');
+    setSheetMinimizeSignal((value) => value + 1);
+  }, [mapResetId, previewTranslateY]);
   const previousPhase2MapActiveRef = useRef(phase2MapActive);
   useEffect(() => {
     const shouldRestore = shouldRestoreNormalMapChrome({
@@ -1222,7 +1243,22 @@ export default function MapScreen() {
     previewExpanded,
     filterOptionCount: mapFilterChoices.length,
   });
-  const shouldShowMapControls = mapChromeDecision.topChromeRendered;
+  const fieldnotesPresentation = resolveFieldnotesMapPresentation({
+    searchVisible,
+    nearbyExplorerActive: !!nearbyExplorer,
+    hasSelectedPlace: !!selected,
+    expandedPlace: previewExpanded,
+    savedLibraryExpanded: !selected && sheetSnap === 'full',
+    sourceGroupActive: sourceGroupBrowseActive,
+    onboardingOwnsMap: phase2MapActive,
+  });
+  const shouldShowMapControls = mapChromeDecision.topChromeRendered
+    && fieldnotesPresentation.showTopChrome;
+  const emptyStateTop = Math.max(
+    shouldShowMapControls ? topChromeBottom : safeTopInset,
+    fieldnotesPresentation.showActivity ? queueChromeBottom : 0,
+    safeTopInset + topChromeClearance,
+  ) + Spacing.md;
   const usableMapViewport = useMemo(() => mapUsableViewport({
     width: mapAreaWidth || windowWidth,
     height: availableHeight,
@@ -3628,6 +3664,7 @@ export default function MapScreen() {
     ): Promise<SavedPlaceWithPlace | null> => {
       if (savingPlace) return null;
       setSavingPlace(true);
+      const saveStartedAt = Date.now();
       try {
         const result = await saveSavedPlace({
           candidate: place,
@@ -3651,7 +3688,25 @@ export default function MapScreen() {
           showSnackbar('Already on your map', null);
           return existing ?? null;
         }
-        if (selectAfterSave) selectPlace(result.saved);
+        if (selectAfterSave) {
+          const currentMap = mapRef.current;
+          const plan = planSavedPinsCamera({
+            coordinates: [result.saved.place],
+            viewport: usableMapViewport,
+            maxZoom: 15,
+          });
+          if (currentMap && mapReady && plan.kind === 'camera') {
+            cameraTransactionCoordinatorRef.current.cancelActive('new_save_requested');
+            if (beginCameraMovement('programmatic', {
+              reason: 'new_save',
+              targetRegion: plan.region,
+              targetZoom: plan.zoom,
+            })) {
+              currentMap.animateToRegion(plan.region, reduceMotion ? 0 : 320);
+            }
+          }
+          selectPlace(result.saved);
+        }
         hapticSuccess();
         showSnackbar('Saved to your map', result.savedPlaceId);
         void trackEvent('save_success', {
@@ -3660,6 +3715,7 @@ export default function MapScreen() {
           google_place_id: place.googlePlaceId ?? null,
           saved_place_id: result.savedPlaceId,
           duplicate: false,
+          persistence_ms: Date.now() - saveStartedAt,
         });
         if (flow === 'recommendation') {
           void trackEvent('recommendation_saved', {
@@ -3676,7 +3732,7 @@ export default function MapScreen() {
         setSavingPlace(false);
       }
     },
-    [refresh, savingPlace, validPlaces],
+    [beginCameraMovement, mapReady, reduceMotion, refresh, savingPlace, usableMapViewport, validPlaces],
   );
 
   const handleSaveExplorerRecommendation = useCallback(
@@ -3844,6 +3900,7 @@ export default function MapScreen() {
         measureMapKeyboardOverlap();
       }}
     >
+      <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
       {/* MapView ALWAYS mounts. Empty / loading / no-GPS states render as
           non-blocking overlays on top of the map — never as replacements
           for it. This is what makes the screen feel alive instead of a
@@ -3971,8 +4028,8 @@ export default function MapScreen() {
       {/* Non-blocking empty/loading pill. The map keeps rendering underneath.
           A filter that matches nothing gets its own message plus a one-tap
           way back to All, so an empty map never reads as a broken app. */}
-      {visiblePlaces.length === 0 ? (
-        <View style={styles.emptyPill} pointerEvents="box-none">
+      {fieldnotesPresentation.showEmptyFeedback && visiblePlaces.length === 0 ? (
+        <View style={[styles.emptyPill, { top: emptyStateTop }]} pointerEvents="box-none">
           <Text style={styles.emptyPillText}>
             {liveLoading && validPlaces.length === 0
               ? 'Loading places…'
@@ -4133,6 +4190,8 @@ export default function MapScreen() {
                 <SelectedPlaceDetails
                   key={selected.id}
                   saved={selected}
+                  transitionImageUri={selectedImageUri}
+                  transitionImageKind={selectedImageKind}
                   showNavigation={false}
                   moreMenuRequest={placeMoreRequest}
                   allSavedPlaces={validPlaces}
@@ -4232,7 +4291,7 @@ export default function MapScreen() {
           as a box-none overlay so only the bar/chips capture touches and the
           rest of the map stays pannable underneath. Hidden while the search
           dropdown is open so there is only ever ONE visible search input. */}
-      {shouldShowMapControls && (sheetSnap !== 'full' || !!selected) ? (
+      {shouldShowMapControls ? (
         <><LinearGradient pointerEvents="none" colors={[colors.bg, `${colors.bg}F2`, `${colors.bg}00`]} locations={[0, 0.65, 1]} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: safeTopInset + 190 }} />
         <View style={styles.topChrome} pointerEvents="box-none" onLayout={event => setTopChromeBottom(event.nativeEvent.layout.y + event.nativeEvent.layout.height)}>
           <View style={styles.brandRow}>
@@ -4279,7 +4338,7 @@ export default function MapScreen() {
           dropdown, or dedicated Nearby Explorer, each of which owns the whole
           interaction surface.
           Regression covered by scripts/testMapQueueEntryPoint.ts. */}
-      {!searchVisible && !nearbyExplorer && (sheetSnap !== 'full' || !!selected) ? (
+      {fieldnotesPresentation.showActivity ? (
         <View
           style={[
             styles.queueChrome,
@@ -4289,7 +4348,7 @@ export default function MapScreen() {
             // takes that now-empty top row instead of floating over the sheet.
             !shouldShowMapControls && styles.queueChromeRaised,
           ]}
-          pointerEvents="box-none"
+          pointerEvents={fieldnotesPresentation.activityPointerEvents === 'auto' ? 'box-none' : 'none'}
           onLayout={event => setQueueChromeBottom(event.nativeEvent.layout.y + event.nativeEvent.layout.height)}
         >
           <ShareQueueButton />
@@ -4298,13 +4357,13 @@ export default function MapScreen() {
 
 
       {/* Recenter follows the memory peek; import lives in Search and Saved. */}
-      {nearbyExplorer || selected || sheetSnap === 'full' ? null : (
+      {fieldnotesPresentation.showFloatingActions ? (
         <FloatingMapActions
           onRecenter={recenterOnUser}
           bottomInset={insets.bottom + 76}
           liftY={actionsLift}
         />
-      )}
+      ) : null}
 
       {/* Map-first bottom sheet. Hidden while a place is selected so the
           existing selected-place preview card (rendered above) is the single
@@ -4375,7 +4434,7 @@ export default function MapScreen() {
         onPickPlace={handleSavePlaceCandidate}
       />
 
-      {!searchVisible && !nearbyExplorer && !previewExpanded && !phase2MapActive && !mapGroupRequest && !sourceGroupBrowseActive ? (
+      {fieldnotesPresentation.showDock && !mapGroupRequest ? (
         <MapSavedDock saved={!selected && sheetSnap === 'full'} bottom={insets.bottom + 12}
           onMap={() => { if (selected) dismissSelectedPlace(); setSheetMode('nearby'); setSheetMinimizeSignal(value => value + 1); }}
           onSaved={() => { if (selected) dismissSelectedPlace(); setSheetMode('saved'); setSheetOpenSignal(value => value + 1); }}
@@ -4532,7 +4591,6 @@ function createStyles(
 
   emptyPill: {
     position: 'absolute',
-    top: pillTop,
     alignSelf: 'center',
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,

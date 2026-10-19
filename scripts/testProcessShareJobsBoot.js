@@ -50,6 +50,10 @@ try {
 
   console.log('PASS process-share-jobs boots and reaches its auth guard');
 } finally {
-  child.kill('SIGTERM');
+  try {
+    child.kill('SIGTERM');
+  } catch (error) {
+    if (!(error instanceof TypeError && error.message.includes('already terminated'))) throw error;
+  }
   await child.status;
 }

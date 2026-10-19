@@ -7,11 +7,52 @@ import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { useTheme } from '@/lib/theme';
 import { currentSavedPlaces, searchSavedPlaces, savedPlaceNotePreview } from '@/lib/savedPlacesBrowse';
 import { placeSourceCards } from '@/lib/placeSources';
+import { readSavedPlaceSnapshot } from '@/lib/savedPlaceSnapshot';
+import { isUsableSavedPlaceImage } from '@/lib/savedPlaceImageStore';
 import type { PlaceCandidate } from '@/services/placesService';
 import type { SavedPlaceWithPlace } from '@/types';
 
 type Props = { visible: boolean; topInset: number; locationBias?: { lat: number; lng: number }; onClose: () => void; onPickPlace: (place: PlaceCandidate) => void | Promise<unknown>; savedPlaces?: SavedPlaceWithPlace[]; offline?: boolean; onSelectSaved?: (place: SavedPlaceWithPlace) => void; onSaveFromLink?: () => void };
 type SearchRow = { kind: 'saved'; place: SavedPlaceWithPlace } | { kind: 'new'; place: PlaceCandidate };
+
+function SavedSearchPlaceImage({ saved }: { saved: SavedPlaceWithPlace }) {
+  const [localPhotoUrls, setLocalPhotoUrls] = useState<string[]>([]);
+  const source = useMemo(() => placeSourceCards(saved)[0], [saved]);
+  useEffect(() => {
+    let cancelled = false;
+    setLocalPhotoUrls([]);
+    void readSavedPlaceSnapshot({
+      userId: saved.user_id,
+      savedPlaceId: saved.id,
+      googlePlaceId: saved.place.google_place_id?.trim() || null,
+    }).then(async (result) => {
+      if (cancelled || result.status !== 'hit') return;
+      const candidates = [...new Set([
+        ...(result.snapshot.localPhotoUris ?? []),
+        result.snapshot.localImageUri,
+      ].filter((uri): uri is string => !!uri))];
+      const checked = await Promise.all(candidates.map(async (uri) => ({
+        uri,
+        usable: await isUsableSavedPlaceImage(uri),
+      })));
+      if (!cancelled) setLocalPhotoUrls(checked.filter((item) => item.usable).map((item) => item.uri));
+    });
+    return () => { cancelled = true; };
+  }, [saved.id, saved.place.google_place_id, saved.user_id]);
+  return <PlaceImage
+    googlePlaceId={saved.place.google_place_id}
+    sourceUri={source?.thumbnailUrl}
+    initialPhotoUrls={localPhotoUrls}
+    size={72}
+    borderRadius={12}
+    preferPlacePhoto
+    presentationMode="candidate"
+    presentationActive={false}
+    hydrationPolicy="saved_snapshot"
+    presentationContext={{ trigger: 'manual_search' }}
+    accessibilityLabel={`Photo of ${saved.place.name}`}
+  />;
+}
 
 /** Local memory search and explicitly requested discovery share one calm, keyboard-safe surface. */
 export function MapPlaceSearchDropdown({ visible, topInset, locationBias, onClose, onPickPlace, savedPlaces = [], offline = false, onSelectSaved, onSaveFromLink }: Props) {
@@ -21,6 +62,7 @@ export function MapPlaceSearchDropdown({ visible, topInset, locationBias, onClos
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState<'saved' | 'new'>('saved');
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [saveErrorKey, setSaveErrorKey] = useState<string | null>(null);
   const savingRef = useRef(false);
   const { results, loading, error, lastQuery, search, reset } = usePlacesSearch();
   const inputRef = useRef<TextInput>(null);
@@ -30,7 +72,7 @@ export function MapPlaceSearchDropdown({ visible, topInset, locationBias, onClos
     void search(trimmedQuery, locationBias, { mode: 'manual', userLocation: locationBias ?? null, regionConfidence: 'none', sourceEvidence: [] });
   }, [visible, offline, scope, trimmedQuery, search, locationBias]);
 
-  useEffect(() => { if (visible) { setQuery(''); setScope(savedPlaces.length || offline ? 'saved' : 'new'); reset(); const id = setTimeout(() => inputRef.current?.focus(), 120); return () => clearTimeout(id); } reset(); }, [visible, reset]);
+  useEffect(() => { if (visible) { setQuery(''); setSaveErrorKey(null); setScope(savedPlaces.length || offline ? 'saved' : 'new'); reset(); const id = setTimeout(() => inputRef.current?.focus(), 120); return () => clearTimeout(id); } reset(); }, [visible, reset]);
   useEffect(() => {
     if (!visible || offline || scope !== 'new') return;
     if (trimmedQuery.length < 3 || trimmedQuery === lastQuery) return;
@@ -40,6 +82,7 @@ export function MapPlaceSearchDropdown({ visible, topInset, locationBias, onClos
 
   function changeQuery(next: string) {
     setQuery(next);
+    setSaveErrorKey(null);
     // Invalidate an in-flight response immediately, including during debounce.
     // A result for the previous query must never be selectable as the new one.
     if (next.trim() !== trimmedQuery) reset();
@@ -53,8 +96,13 @@ export function MapPlaceSearchDropdown({ visible, topInset, locationBias, onClos
     if (savingRef.current) return;
     savingRef.current = true;
     setSavingKey(key);
+    setSaveErrorKey(null);
     Keyboard.dismiss();
-    try { await onPickPlace(candidate); }
+    try {
+      const saved = await onPickPlace(candidate);
+      if (saved === null || saved === false) setSaveErrorKey(key);
+    }
+    catch { setSaveErrorKey(key); }
     finally { savingRef.current = false; setSavingKey(null); }
   }
   if (!visible) return null;
@@ -81,15 +129,14 @@ export function MapPlaceSearchDropdown({ visible, topInset, locationBias, onClos
         const candidate = item.kind === 'new' ? item.place : null;
         const name = saved?.place.name ?? candidate!.name;
         const address = saved?.place.formatted_address ?? candidate?.formattedAddress;
-        const source = saved ? placeSourceCards(saved)[0] : null;
         const note = saved ? savedPlaceNotePreview(saved) : null;
         const key = saved?.id ?? candidate?.googlePlaceId ?? `${name}-${address}`;
         return <Pressable onPress={() => { if (saved) { Keyboard.dismiss(); onSelectSaved?.(saved); } else { void pickCandidate(candidate!, key); } }} disabled={savingKey !== null} accessibilityRole="button" accessibilityState={{ disabled: savingKey !== null, busy: savingKey === key }} accessibilityLabel={saved ? `Show saved place ${name} on map` : savingKey === key ? `Saving ${name}` : `Save ${name}`} style={({ pressed }) => [styles.row, { borderColor: colors.border, backgroundColor: pressed ? colors.surfaceElevated : 'transparent' }]}>
-          <PlaceImage googlePlaceId={saved?.place.google_place_id ?? candidate?.googlePlaceId} sourceUri={source?.thumbnailUrl} initialPhotoUrls={candidate?.photoUrls?.length ? candidate.photoUrls : candidate?.photoUrl ? [candidate.photoUrl] : undefined} size={72} borderRadius={12} preferPlacePhoto presentationMode="candidate" presentationActive={item.kind === 'new' && index === 0} hydrationPolicy={saved ? 'saved_snapshot' : index === 0 ? 'active_manual_search' : index < 4 ? 'compact_known_only' : 'offscreen_manual_search'} presentationContext={{ trigger: 'manual_search', candidateIndex: index, candidateCount: rows.length }} accessibilityLabel={`Photo of ${name}`} />
+          {saved ? <SavedSearchPlaceImage saved={saved} /> : <PlaceImage googlePlaceId={candidate?.googlePlaceId} initialPhotoUrls={candidate?.photoUrls?.length ? candidate.photoUrls : candidate?.photoUrl ? [candidate.photoUrl] : undefined} size={72} borderRadius={12} preferPlacePhoto presentationMode="candidate" presentationActive={index === 0} hydrationPolicy={index === 0 ? 'active_manual_search' : index < 4 ? 'compact_known_only' : 'offscreen_manual_search'} presentationContext={{ trigger: 'manual_search', candidateIndex: index, candidateCount: rows.length }} accessibilityLabel={`Photo of ${name}`} />}
           <View style={styles.flex}>{saved ? <Text style={[typography.eyebrow, { marginBottom: 4 }]}>SAVED</Text> : null}<Text style={typography.bodyStrong} numberOfLines={fontScale >= 1.5 ? undefined : 3}>{name}</Text>{address ? <Text style={[typography.metadata, { marginTop: 4 }]} numberOfLines={fontScale >= 1.5 ? undefined : 2}>{address}</Text> : null}{note ? <Text style={[typography.metadata, { marginTop: 8 }]} numberOfLines={fontScale >= 1.5 ? undefined : 2}>{note.text}</Text> : null}</View>
-          {savingKey === key ? <ActivityIndicator color={colors.primary} accessibilityLabel="Saving place" /> : <Feather name={saved ? 'chevron-right' : 'plus'} size={23} color={colors.text} />}
+          {savingKey === key ? <View style={styles.savingFeedback} accessibilityLiveRegion="polite"><ActivityIndicator color={colors.primary} accessibilityLabel="Saving place" /><Text style={[typography.label, { color: colors.primary }]}>Saving…</Text></View> : saveErrorKey === key ? <View style={styles.savingFeedback}><Feather name="refresh-cw" size={18} color={colors.danger} /><Text style={[typography.caption, { color: colors.danger }]}>Try again</Text></View> : <Feather name={saved ? 'chevron-right' : 'plus'} size={23} color={colors.text} />}
         </Pressable>;
       }} />
   </KeyboardAvoidingView>;
 }
-const styles = StyleSheet.create({ overlay: { ...StyleSheet.absoluteFillObject, zIndex: 30 }, header: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 24, marginBottom: 24, gap: 8 }, headerTitle: { flex: 1, textAlign: 'center' }, icon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 999 }, inputWrap: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 24, borderWidth: 1, borderRadius: 12, paddingLeft: 16, paddingRight: 4, minHeight: 54 }, input: { flex: 1, paddingVertical: 12, minWidth: 0 }, scopes: { flexDirection: 'row', gap: 8, marginHorizontal: 24, marginTop: 16 }, scope: { flex: 1, minHeight: 48, paddingHorizontal: 8, paddingVertical: 12, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, justifyContent: 'center' }, section: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 24, marginTop: 24, marginBottom: 8 }, flex: { flex: 1, minWidth: 0 }, row: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 20, borderBottomWidth: StyleSheet.hairlineWidth }, empty: { paddingTop: 16, gap: 16 }, retry: { flexDirection: 'row', gap: 8, alignItems: 'center', alignSelf: 'flex-start', minHeight: 44, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth } });
+const styles = StyleSheet.create({ overlay: { ...StyleSheet.absoluteFillObject, zIndex: 30 }, header: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 24, marginBottom: 24, gap: 8 }, headerTitle: { flex: 1, textAlign: 'center' }, icon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 999 }, inputWrap: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 24, borderWidth: 1, borderRadius: 12, paddingLeft: 16, paddingRight: 4, minHeight: 54 }, input: { flex: 1, paddingVertical: 12, minWidth: 0 }, scopes: { flexDirection: 'row', gap: 8, marginHorizontal: 24, marginTop: 16 }, scope: { flex: 1, minHeight: 48, paddingHorizontal: 8, paddingVertical: 12, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, justifyContent: 'center' }, section: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 24, marginTop: 24, marginBottom: 8 }, flex: { flex: 1, minWidth: 0 }, row: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 20, borderBottomWidth: StyleSheet.hairlineWidth }, savingFeedback: { minWidth: 74, minHeight: 44, alignItems: 'center', justifyContent: 'center', gap: 4 }, empty: { paddingTop: 16, gap: 16 }, retry: { flexDirection: 'row', gap: 8, alignItems: 'center', alignSelf: 'flex-start', minHeight: 44, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth } });

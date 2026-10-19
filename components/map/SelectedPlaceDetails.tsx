@@ -46,6 +46,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type LayoutChangeEvent,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -127,6 +128,11 @@ import { logDebug } from '@/lib/logger';
 import { placeCapabilities } from '@/lib/placeCapabilities';
 import { offlineFixtureByPlaceId } from '@/onboarding/fixtures/offlineOnboardingFixtures';
 import { offlineOnboardingMedia } from '@/onboarding/assets/offlineOnboardingAssets';
+import {
+  REMINDER_SWITCH_SLOT_WIDTH,
+  REMINDER_SWITCH_TRAILING_CLEARANCE,
+  rectContains,
+} from '@/lib/nativeLayoutGeometry';
 
 type RadiusMode = 'default' | 'miles' | 'minutes';
 
@@ -167,7 +173,7 @@ type Props = {
   onGetDirections: () => void;
   /**
    * Hand the current nearby projection to the production map. Used by
-   * "See map" on Saved nearby / Also nearby; no route is pushed.
+   * "See map" on the local nearby section; no route is pushed.
    */
   onSeeMap?: (payload: NearbyMapExplorerPayload) => void;
   /** Called after a successful delete so the map can dismiss the sheet. */
@@ -181,6 +187,9 @@ type Props = {
   showNavigation?: boolean;
   /** Monotonic request from the fixed expanded header to open management. */
   moreMenuRequest?: number;
+  /** Exact image already visible in the compact card during this expansion. */
+  transitionImageUri?: string | null;
+  transitionImageKind?: SavedPlacePhotoKind;
 };
 
 export function SelectedPlaceDetails({
@@ -198,6 +207,8 @@ export function SelectedPlaceDetails({
   onCorrected,
   showNavigation = true,
   moreMenuRequest = 0,
+  transitionImageUri = null,
+  transitionImageKind = 'unknown',
 }: Props) {
   const { colors, typography } = useTheme();
   const router = useRouter();
@@ -208,6 +219,19 @@ export function SelectedPlaceDetails({
   const [reminderBusy, setReminderBusy] = useState(false);
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const handledMoreMenuRequestRef = useRef(moreMenuRequest);
+  const reminderSlotRectRef = useRef<{ width: number; height: number } | null>(null);
+  const verifyReminderSwitchBounds = useCallback((event: LayoutChangeEvent) => {
+    if (!__DEV__ || !reminderSlotRectRef.current) return;
+    const slot = reminderSlotRectRef.current;
+    const control = event.nativeEvent.layout;
+    console.log('[fieldnotes-layout] reminder-switch', {
+      savedPlaceId: saved.id,
+      slot: { x: 0, y: 0, ...slot },
+      control,
+      trailingClearance: slot.width - (control.x + control.width),
+      contained: rectContains({ x: 0, y: 0, ...slot }, control, 2),
+    });
+  }, [saved.id]);
 
   useEffect(() => {
     if (moreMenuRequest <= handledMoreMenuRequestRef.current) return;
@@ -313,7 +337,7 @@ export function SelectedPlaceDetails({
 
   // Provider-backed "Also nearby" previously ran a Nearby Search whenever a
   // saved detail mounted. That violates the saved-open zero-request contract;
-  // the user's own locally computed "Saved nearby" section remains available.
+  // the user's own locally computed nearby section remains available.
   const recommendationsEnabled = false;
   const videoGalleryEnabled = isPlaceVideoGalleryEnabled();
   const recommendationSourceCategory = savedPlaceCategory(saved);
@@ -578,7 +602,10 @@ export function SelectedPlaceDetails({
     ...(richDetails?.photoUrls.filter((uri) => photoKinds[uri] === 'source') ?? []),
     primarySource?.thumbnailUrl?.trim(),
   ].find((uri) => !!uri && !failedPhotoUrls[uri]) || null;
-  const heroUri = videoHero?.uri ?? sourceHeroUri;
+  const transitionHeroUri = transitionImageUri && !failedPhotoUrls[transitionImageUri]
+    ? transitionImageUri
+    : null;
+  const heroUri = videoHero?.uri ?? sourceHeroUri ?? transitionHeroUri;
   useEffect(() => {
     if (!videoHero || videoHero.kind === 'PROVIDER' || !videoHero.video) return;
     const key = `${saved.place.id}:${videoHero.video.sourceId}`;
@@ -1130,7 +1157,7 @@ export function SelectedPlaceDetails({
           </View>
         ) : null}
 
-        {!videoHero && heroUri ? <View style={styles.videoHeroPill}><Text style={styles.photoCountText}>From your post</Text></View> : null}
+        {!videoHero && heroUri ? <View style={styles.videoHeroPill}><Text style={styles.photoCountText}>{sourceHeroUri ? 'From your post' : transitionImageKind === 'destination' ? 'Destination photo' : 'Saved image'}</Text></View> : null}
       </Pressable>
 
       {photoUrls.length > 1 && !largeText ? (
@@ -1222,7 +1249,23 @@ export function SelectedPlaceDetails({
           <Text style={styles.reminderDescription}>A little nudge when you?re close.</Text>
           {notifyOn ? <Pressable onPress={() => setReminderSettingsExpanded((value) => !value)} accessibilityRole="button" accessibilityLabel={`Nearby reminder, ${reminderStatus}. Change distance`} accessibilityState={{ expanded: reminderSettingsExpanded }} style={styles.reminderControl}><Text style={styles.reminderDistanceText}>{reminderDistance} · Change distance</Text><Feather name={reminderSettingsExpanded ? 'chevron-down' : 'chevron-right'} size={16} color={colors.textSecondary} /></Pressable> : null}
         </View>
-        <View style={styles.reminderSwitchSlot}>{reminderBusy ? <ActivityIndicator accessibilityLabel="Updating reminder" color={colors.primary} /> : <Switch value={notifyOn} onValueChange={(next) => void changeReminderEnabled(next)} accessibilityLabel={`Nearby reminder for ${saved.place.name}`} trackColor={{ false: colors.controlBorder, true: colors.primary }} />}</View>
+        <View
+          style={styles.reminderSwitchSlot}
+          onLayout={(event) => {
+            reminderSlotRectRef.current = {
+              width: event.nativeEvent.layout.width,
+              height: event.nativeEvent.layout.height,
+            };
+          }}
+        >{reminderBusy ? <ActivityIndicator accessibilityLabel="Updating reminder" color={colors.primary} /> : <Switch
+          value={notifyOn}
+          onValueChange={(next) => void changeReminderEnabled(next)}
+          accessibilityLabel={`Nearby reminder for ${saved.place.name}`}
+          trackColor={{ false: colors.textMuted, true: colors.primary }}
+          ios_backgroundColor={colors.textMuted}
+          style={styles.reminderSwitch}
+          onLayout={verifyReminderSwitchBounds}
+        />}</View>
       </View> : null}
 
       {/* Reminder distance settings — unchanged behaviour, just no longer a
@@ -1285,21 +1328,18 @@ export function SelectedPlaceDetails({
             {visited.visited ? 'Nearby reminders are paused.' : visited.supportCopy}
           </Text>
         </View>
-        {/* Thumbs, NOT a rating. Up means "I went", down means "not yet" —
-            never like/dislike, so there is no green/red and no negative
-            signal recorded anywhere. The labels carry the meaning the icons
-            alone would leave ambiguous. Both call exactly the handlers the
-            Yes / Not yet buttons did. */}
+        {/* Explicit labels preserve the existing visited and local-deferral
+            handlers without implying a like/dislike rating. */}
         {visited.visited ? (
-          // Answered. The thumbs-up stays, selected, so reopening shows the
-          // answer rather than asking again — and it is not a button, because
-          // the current model has no "un-visit".
+          // Reopening shows the recorded answer. The current model has no
+          // "un-visit", so the answered state is intentionally not a button.
           <View
-            style={[styles.thumbButton, styles.thumbButtonSelected]}
+            style={[styles.visitStateButton, styles.visitStateButtonSelected]}
             accessible
             accessibilityLabel={`You went to ${saved.place.name}`}
           >
-            <Feather name="thumbs-up" size={18} color={colors.accent} />
+            <Feather name="check" size={16} color={colors.accent} />
+            <Text style={styles.visitStateButtonText}>Visited</Text>
           </View>
         ) : (
           <View style={styles.visitActions}>
@@ -1308,16 +1348,17 @@ export function SelectedPlaceDetails({
               disabled={visitBusy}
               accessibilityRole="button"
               accessibilityState={{ selected: false, busy: visitBusy }}
-              accessibilityLabel={`Yes, I went to ${saved.place.name}`}
+              accessibilityLabel={`Mark ${saved.place.name} visited`}
               accessibilityHint="Marks it visited and pauses its nearby reminders"
               hitSlop={6}
-              style={({ pressed }) => [styles.thumbButton, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.visitStateButton, pressed && styles.pressed]}
             >
               {visitBusy ? (
                 <ActivityIndicator size="small" color={colors.accent} />
               ) : (
-                <Feather name="thumbs-up" size={18} color={colors.textSecondary} />
+                <Feather name="check" size={16} color={colors.textSecondary} />
               )}
+              <Text style={styles.visitStateButtonText}>Mark visited</Text>
             </Pressable>
             {/* Deliberately inert: "not yet" is the status quo, never a
                 mutation and never destructive. */}
@@ -1328,16 +1369,12 @@ export function SelectedPlaceDetails({
               accessibilityLabel={`No, not yet — keep ${saved.place.name} as a place to go`}
               hitSlop={6}
               style={({ pressed }) => [
-                styles.thumbButton,
-                visitDeferred && styles.thumbButtonSelected,
+                styles.visitStateButton,
+                visitDeferred && styles.visitStateButtonSelected,
                 pressed && styles.pressed,
               ]}
             >
-              <Feather
-                name="thumbs-down"
-                size={18}
-                color={visitDeferred ? colors.accent : colors.textSecondary}
-              />
+              <Text style={styles.visitStateButtonText}>Not yet</Text>
             </Pressable>
           </View>
         )}
@@ -1362,7 +1399,7 @@ export function SelectedPlaceDetails({
 
       {alsoNearbyEntries.length > 0 ? (
         <PlaceCardRow
-          title="Saved nearby"
+          title="Near this place"
           entries={alsoNearbyEntries}
           actionLabel={onSeeMap && recommendationEntries.length === 0 ? 'See map' : undefined}
           onAction={onSeeMap && recommendationEntries.length === 0 ? openNearbyMapExplorer : undefined}
@@ -1468,7 +1505,7 @@ export function SelectedPlaceDetails({
         />
       ) : null}
 
-      <Modal visible={moreOpen} transparent animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={() => setMoreOpen(false)}>
+      <Modal visible={moreOpen} transparent animationType="none" statusBarTranslucent onRequestClose={() => setMoreOpen(false)}>
         <View style={styles.moreBackdrop}>
           <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Close place options" onPress={() => setMoreOpen(false)} />
           <ScrollView style={styles.moreMenu} contentContainerStyle={styles.moreMenuContent} accessibilityViewIsModal>
@@ -1699,7 +1736,16 @@ function createStyles(
     reminderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
     reminderRowLarge: { alignItems: 'flex-start' },
     reminderCopy: { flexGrow: 1, flexShrink: 1, minWidth: 0 },
-    reminderSwitchSlot: { width: 54, minHeight: 44, flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
+    reminderSwitchSlot: {
+      width: REMINDER_SWITCH_SLOT_WIDTH,
+      minHeight: 48,
+      flexShrink: 0,
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+      paddingHorizontal: REMINDER_SWITCH_TRAILING_CLEARANCE,
+      overflow: 'visible',
+    },
+    reminderSwitch: { alignSelf: 'flex-end' },
     reminderTitle: { ...typography.bodyStrong, color: colors.text },
     reminderDescription: { ...typography.caption, color: colors.textSecondary, marginTop: Spacing.xs },
     moreBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.modalBackdrop },
@@ -1793,8 +1839,8 @@ function createStyles(
 
     // ----- saved because ---------------------------------------------------
     savedBecauseCard: {
-      gap: Spacing.sm,
-      paddingVertical: Spacing.lg,
+      gap: Spacing.xs,
+      paddingVertical: Spacing.md,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: colors.border,
     },
@@ -1941,20 +1987,20 @@ function createStyles(
       lineHeight: 15,
     },
     visitActions: { flexDirection: 'row', gap: 6 },
-    // Square-ish icon targets: 36pt visible, 48pt with hitSlop. Neutral by
-    // default and accent when chosen — never red/green, because this is not a
-    // rating.
-    thumbButton: {
-      width: 36,
-      height: 36,
+    visitStateButton: {
+      minHeight: 44,
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
+      gap: 6,
+      paddingHorizontal: Spacing.md,
       borderRadius: Radius.pill,
       backgroundColor: colors.surfaceElevated,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
-    thumbButtonSelected: {
+    visitStateButtonText: { ...typography.caption, color: colors.text, fontWeight: '700' },
+    visitStateButtonSelected: {
       backgroundColor: colors.accentSoft,
       borderColor: colors.accentBorder,
     },

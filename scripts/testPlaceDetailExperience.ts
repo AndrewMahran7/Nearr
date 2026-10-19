@@ -78,7 +78,7 @@ assert.match(detail, /CATEGORY_LABELS\[categoryKey\]/);
 assert.match(detail, /\[categoryLabel, locality\].filter\(Boolean\)/, 'absent context creates no empty separator');
 assert.match(detail, /buildSavedPlaceShareContent\([\s\S]{0,160}referralId/);
 assert.match(detail, /void openSource\(\)/);
-const sequence = ['styles.hero,', 'styles.heroCaption', 'styles.destinationActions,', '<SourceRibbon', 'styles.savedBecauseCard', 'styles.reminderRow,', 'styles.visitCard', 'title="Saved nearby"', 'title="Also nearby"'];
+const sequence = ['styles.hero,', 'styles.heroCaption', 'styles.destinationActions,', '<SourceRibbon', 'styles.savedBecauseCard', 'styles.reminderRow,', 'styles.visitCard', 'title="Near this place"', 'title="Also nearby"'];
 let previous = -1;
 for (const marker of sequence) {
   const position = detail.indexOf(marker);
@@ -105,7 +105,8 @@ assert.match(detail, /styles\.emptyNoteRow/);
 // own competing with the place.
 assert.ok(!detail.includes('styles.reminderCard'), 'the standalone reminder card is gone');
 assert.match(detail, /styles\.reminderControl/);
-assert.match(detail, /reminderSwitchSlot: \{ width: 54[\s\S]*flexShrink: 0/);
+assert.match(detail, /reminderSwitchSlot: \{[\s\S]*width: REMINDER_SWITCH_SLOT_WIDTH[\s\S]*flexShrink: 0[\s\S]*paddingHorizontal: REMINDER_SWITCH_TRAILING_CLEARANCE/);
+assert.match(detail, /onLayout=\{verifyReminderSwitchBounds\}/, 'native switch reports its actual layout bounds');
 assert.match(detail, /reminderCopy: \{ flexGrow: 1, flexShrink: 1, minWidth: 0/);
 assert.match(detail, /<NoteEditorModal[\s\S]*aiNote=\{saved\.ai_note\}/);
 assert.doesNotMatch(detail, /\[saved\.place\.google_place_id, saved\]/, 'AI-note updates cannot reset photo/detail state');

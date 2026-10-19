@@ -101,6 +101,20 @@ function resolveCli(command) {
     return direct;
   }
 
+  // npm normally exposes package bins on PATH while running a script, but
+  // Windows `where.exe` can fail to report a valid shim from an isolated
+  // worktree. Resolve EAS's documented JS entry directly when it is installed
+  // locally so the runner remains shell-free and does not depend on shim
+  // discovery.
+  if (command === 'eas') {
+    const localEasEntry = path.resolve(process.cwd(), 'node_modules', 'eas-cli', 'bin', 'run');
+    if (existsSync(localEasEntry)) {
+      const local = { file: process.execPath, prefixArgs: [localEasEntry], via: 'local npm package' };
+      cache.set(command, local);
+      return local;
+    }
+  }
+
   let resolved = null;
   const candidates = whichAll(command);
 

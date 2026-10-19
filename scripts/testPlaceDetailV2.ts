@@ -484,7 +484,7 @@ import {
 // Native reminder is now independent of the Directions row; large text grows.
 {
   const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
-  assert.ok(detail.includes('<Switch value={notifyOn}'));
+  assert.match(detail, /<Switch\s+value=\{notifyOn\}/);
   assert.ok(detail.includes('accessibilityLabel={`Nearby reminder for ${saved.place.name}`}'));
   assert.ok(detail.includes('largeText && styles.reminderRowLarge'));
   assert.ok(detail.includes('largeText && styles.destinationActionsLarge'));
@@ -537,55 +537,52 @@ import {
   );
   assert.ok(!detail.includes('styles.visitHeader'), 'the stacked header block is gone');
 
-  // Thumbs, not Yes/Not yet — and not a rating.
-  assert.ok(!/>Yes</.test(detail) && !/'Not yet'/.test(detail), 'the wide text buttons are gone');
-  assert.ok(detail.includes('name="thumbs-up"'), 'thumbs-up is a real vector icon');
-  assert.ok(detail.includes('name="thumbs-down"'), 'thumbs-down is a real vector icon');
+  // Explicit visit choices are readable and do not imply a rating.
+  assert.ok(detail.includes('>Mark visited</Text>'));
+  assert.ok(detail.includes('>Not yet</Text>'));
+  assert.ok(!detail.includes('name="thumbs-up"') && !detail.includes('name="thumbs-down"'));
   assert.ok(!/[\u{1F44D}\u{1F44E}]/u.test(detail), 'no Unicode emoji');
-  assert.match(detail, /thumbButton: \{[\s\S]*width: 36,[\s\S]*height: 36/, 'compact');
-  assert.ok(detail.includes('hitSlop={6}'), 'but a 48pt effective target');
+  assert.match(detail, /visitStateButton: \{[\s\S]*minHeight: 44/, 'minimum native target');
+  assert.ok(detail.includes('hitSlop={6}'), 'with extra target inset');
 
-  // Semantics: up = went, down = not yet. Never like/dislike, never red/green,
-  // and thumbs-down must remain a purely local, non-mutating acknowledgement.
-  assert.match(detail, /accessibilityLabel=\{`Yes, I went to \$\{saved\.place\.name\}`\}/);
+  // "Not yet" remains a purely local, non-mutating acknowledgement.
+  assert.match(detail, /accessibilityLabel=\{`Mark \$\{saved\.place\.name\} visited`\}/);
   assert.match(detail, /accessibilityLabel=\{`No, not yet — keep \$\{saved\.place\.name\}/);
   {
-    // Look FORWARD from each handler to the icon it renders, so the visited
-    // state's non-interactive thumbs-up (which appears first in the file)
-    // cannot be mistaken for the button.
+    // Look forward from each handler to the label it renders.
     const up = detail.indexOf('void handleMarkVisited()');
     assert.ok(up > -1, 'the visit handler still exists');
     assert.ok(
-      detail.slice(up, up + 900).includes('name="thumbs-up"'),
-      'thumbs-up calls the SAME handler the Yes button did',
+      detail.slice(up, up + 900).includes('>Mark visited</Text>'),
+      'the explicit action calls the existing visited handler',
     );
 
     const down = detail.indexOf('setVisitDeferred(true)');
     assert.ok(down > -1);
     const downBlock = detail.slice(down, down + 900);
     assert.ok(
-      downBlock.includes('name="thumbs-down"'),
-      'thumbs-down calls the SAME handler Not yet did',
+      downBlock.includes('>Not yet</Text>'),
+      'Not yet calls the existing local deferral handler',
     );
     assert.ok(
       !/markVisited|updateSavedPlace\(|deleteSavedPlace|dislike|rating|downvote/.test(downBlock),
-      'thumbs-down records nothing — it means "not yet", never "I disliked this"',
+      'Not yet records nothing and never means dislike',
     );
   }
   // Selected state uses the Nearr accent, not rating colours.
-  assert.match(detail, /thumbButtonSelected: \{[\s\S]*backgroundColor: colors\.accentSoft/);
+  assert.match(detail, /visitStateButtonSelected: \{[\s\S]*backgroundColor: colors\.accentSoft/);
   {
-    const stylesStart = detail.indexOf('    thumbButton: {');
-    const thumbStyles = detail.slice(stylesStart, detail.indexOf('},', detail.indexOf('thumbButtonSelected')) + 2);
+    const stylesStart = detail.indexOf('    visitStateButton: {');
+    const selectedStyles = detail.slice(stylesStart, detail.indexOf('},', detail.indexOf('visitStateButtonSelected')) + 2);
     assert.ok(
-      !/colors\.danger|colors\.success|green|red/i.test(thumbStyles),
+      !/colors\.danger|colors\.success|green|red/i.test(selectedStyles),
       'no red/green like-dislike semantics',
     );
   }
   // An answered place shows its answer instead of asking again.
   assert.ok(
     detail.includes('accessibilityLabel={`You went to ${saved.place.name}`}'),
-    'the visited state renders a selected thumbs-up',
+    'the visited state renders a selected explicit state',
   );
 }
 

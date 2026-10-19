@@ -473,6 +473,20 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
     else router.replace(target.route);
   }
 
+  function returnToNormalMap() {
+    if (router.canDismiss()) {
+      try {
+        router.dismissAll();
+      } catch {
+        // A cold entry has no presented stack to remove.
+      }
+    }
+    router.replace({
+      pathname: '/(tabs)/map',
+      params: { mapResetId: `activity-${Date.now()}` },
+    });
+  }
+
   async function dismissJob(job: ShareJob) {
     if (previewActive) return;
     const lock = `dismiss:${job.id}`;
@@ -858,7 +872,7 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
             <View style={styles.emptyIcon}><Feather name="check" size={22} color={colors.primary} /></View>
             <Text style={[typography.heading, styles.emptyTitle]}>You're all caught up</Text>
             <Text style={[typography.body, styles.emptyBody]}>Share a post to find your next place.</Text>
-            <Button title="Back to your map" onPress={goBack} style={styles.emptyAction} />
+            <Button title="Back to your map" onPress={returnToNormalMap} style={styles.emptyAction} />
           </View>}
       />
     </ShareJobsSheet>

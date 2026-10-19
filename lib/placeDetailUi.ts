@@ -161,5 +161,5 @@ export function reminderDistanceLabel(args: {
     const value = Number.parseInt(args.minutesText, 10);
     return Number.isFinite(value) && value > 0 ? `${value} min` : 'Time';
   }
-  return 'Auto';
+  return 'Automatic';
 }
