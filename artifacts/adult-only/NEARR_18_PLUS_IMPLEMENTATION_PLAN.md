@@ -1,0 +1,9 @@
+# Nearr 1.5 adult-only implementation and release gate
+
+Decision: Nearr is intended only for adults 18+. Work is isolated on `feat/nearr-15-adult-only-access` at `C:\Users\andre\Desktop\Nearr\.tmp\nearr-1.5-adult-only`, based on `ca08c154347096fe5da0bf2739cf0b25c0b706b0`. The dirty `release/nearr-1.5-privacy-corrected` worktree is preserved untouched; its necessary uncommitted privacy/localization state was copied into this worktree without resetting the source.
+
+Implemented locally: additive eligibility schema/RLS/RPC/queue guards, Edge ingress and callback checks, worker checks, client gate and Share Extension denial UX, local-only legacy fallback, revised legal drafts. Applied to Nearr-Dev: only migration `20261018000001`. No Edge/Railway/client build was deployed. No Production mutation, OTA, App Store submission, or publication was performed.
+
+Remaining sequence: (1) qualify and deploy exact Development worker/Edge source without overwriting newer Dev recognition behavior; (2) run live adult/unknown/underage/legacy/extension/transfer/queue cases, provider-call absence and full app/device regression; (3) resolve third-party AI permission and provider contract interpretation; (4) obtain founder approval of exact legal text and App Privacy answers; (5) prepare a replacement native 1.5 IPA and verify metadata; (6) request separate founder authorization for Production rollout and then submission. None of these gates may be represented as passed from a migration/typecheck alone.
+
+Nearr-Dev project ref `qnfxnmvxpjzfydgudtvs` was verified immediately before the migration dry run and push. Production ref is `rlqvxdwtetxsqxhqztkw`. The Production stop condition is absolute: no Production DB, Edge, Railway, OTA, website policy, Store metadata declaration, upload, or public release until separate approval and all technical/legal gates pass.

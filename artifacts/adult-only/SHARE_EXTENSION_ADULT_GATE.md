@@ -1,0 +1,5 @@
+# Share Extension adult gate
+
+The current native extension has its own submission path and shared auth; it cannot assume the host app's screen was shown. The modified extension maps backend 403 `age_eligibility_required` to a dedicated screen saying the post was **not** added, with Open Nearr and close actions. Expired sessions remain a separate state. Host `ShareJobHandoff` also stops its success/navigation timer on the age denial. Server-side `create-share-job` verifies the JWT subject and eligibility; duplicate and deferred requests pass through the same check, while dispatch checks again before providers.
+
+This code has typechecked but has **not** been tested in a replacement native build. New extension behavior cannot be delivered by OTA. The old installed extension is protected only after the Development/Production server gates are deployed; it will not show the new tailored message. Pending physical cases: eligible, unknown, underage, expired token, account switch, background, old extension, offline retry, duplicate, and reinstall. Never interpret local handoff acknowledgement as a server-accepted job.
