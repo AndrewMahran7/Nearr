@@ -108,7 +108,7 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
   };
 
   return <View style={[styles.dock, { top: topOffset, maxHeight: Math.max(180, height - topOffset - 96) }]}><ScrollView showsVerticalScrollIndicator={false}>
-    {practiceSource ? <Image source={offlineOnboardingAsset(practiceSource.localPreviewAssetKey)} style={styles.preview} resizeMode="cover" accessibilityLabel={`${practiceSource.category} practice source preview`} /> : null}
+    {practiceSource?.localPreviewAssetKey ? <Image source={offlineOnboardingAsset(practiceSource.localPreviewAssetKey)} style={styles.preview} resizeMode="cover" accessibilityLabel={`${practiceSource.expectedPlaceName} practice source preview`} /> : practiceSource ? <View style={styles.previewFallback} accessibilityLabel="Practice post preview unavailable"><Feather name="instagram" size={24} color={colors.accent} /><Text style={styles.previewFallbackText}>Real post preview opens in Instagram</Text></View> : null}
     <View style={styles.header}>
       <View style={styles.icon}><Feather name="share-2" size={16} color={colors.textInverse} /></View>
       <View style={styles.copy}>
@@ -137,6 +137,8 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) { return StyleSheet.create({
   dock: { position: 'absolute', left: 16, right: 16, zIndex: 80, elevation: 12, padding: 12, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, shadowColor: '#000000', shadowOpacity: 0.24, shadowRadius: 10, shadowOffset: { width: 0, height: 5 } },
   preview: { width: '100%', height: 72, borderRadius: 12, marginBottom: 10 },
+  previewFallback: { width: '100%', height: 72, borderRadius: 12, marginBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.surfaceElevated, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  previewFallbackText: { color: colors.textSecondary, fontSize: 12, fontWeight: '600' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   icon: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary },
   copy: { flex: 1 },

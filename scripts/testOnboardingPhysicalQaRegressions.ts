@@ -156,6 +156,15 @@ test('active guided job blocks silent graduation', () => {
   const active = { ...guided(), stage: 'activation_challenge' as const };
   assert.equal(completeOnboardingSecondHalf(active, 'explore_map', at(8)).changed, false);
 });
+test('2nd Floor practice never reuses Mad Yolks media', () => {
+  assert.equal(ONBOARDING_PHASE2_PRACTICE.expectedPlaceName, '2nd Floor');
+  assert.equal(ONBOARDING_PHASE2_PRACTICE.localPreviewAssetKey, null);
+});
+test('missing exact practice media renders an honest fallback', () => {
+  const realPractice = fs.readFileSync(path.join(root, 'components/onboarding/v2/OnboardingV2RealPractice.tsx'), 'utf8');
+  assert.match(realPractice, /Practice post preview unavailable/);
+  assert.doesNotMatch(realPractice, /localPreviewAssetKey \?\? 'mad_yolks'/);
+});
 
 // Synthetic id/auth — tests 11–20.
 test('server UUID projection omits scripted tutorial id', () => {
@@ -238,5 +247,5 @@ test('Phase 2 end deterministically restores canonical chrome', () => {
   assert.equal(chrome.onboardingOwnsMap, false);
 });
 
-assert.equal(count, 30);
-console.log('Onboarding physical-QA regressions: 30/30 passed.');
+assert.equal(count, 32);
+console.log('Onboarding physical-QA regressions: 32/32 passed.');

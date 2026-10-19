@@ -185,12 +185,12 @@ export function OnboardingV2RealPractice({ state }: { state: OnboardingV2State }
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.body}>{body}</Text>
       <View style={styles.previewCard}>
-        <Image
+        {practiceSource.localPreviewAssetKey ? <Image
           source={offlineOnboardingAsset(practiceSource.localPreviewAssetKey)}
           style={styles.preview}
           resizeMode="cover"
-          accessibilityLabel={`${practiceSource.category} practice source preview`}
-        />
+          accessibilityLabel={`${practiceSource.expectedPlaceName} practice source preview`}
+        /> : <View style={styles.previewFallback} accessibilityLabel="Practice post preview unavailable"><Feather name="instagram" size={38} color="#FFFFFF" /><Text style={styles.previewFallbackText}>Open the real post to preview it</Text></View>}
         <View style={styles.previewShade} />
         <View style={styles.sourceBadge}><Feather name="share-2" size={14} color="#FFFFFF" /><Text style={styles.sourceBadgeText}>PRACTICE POST</Text></View>
         <View style={styles.previewCopy}>
@@ -222,6 +222,8 @@ function createStyles(Phase1Colors: ReturnType<typeof usePhase1Colors>) { return
   body: { color: Phase1Colors.textMuted, fontSize: 16, lineHeight: 23, marginTop: 12 },
   previewCard: { height: 270, marginTop: 24, borderRadius: 28, overflow: 'hidden', backgroundColor: '#2D2925', borderWidth: 4, borderColor: Phase1Colors.surface },
   preview: { width: '100%', height: '100%' },
+  previewFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#2D2925' },
+  previewFallbackText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
   previewShade: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.24)' },
   sourceBadge: { position: 'absolute', top: 14, left: 14, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: 'rgba(16,14,12,0.78)' },
   sourceBadgeText: { color: '#FFFFFF', fontSize: 9, letterSpacing: 1.1, fontWeight: '600' },

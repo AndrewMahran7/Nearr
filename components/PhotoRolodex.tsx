@@ -27,6 +27,7 @@ import Reanimated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { useReduceMotion } from '@/lib/useReduceMotion';
 
 import { Spacing } from '@/constants';
@@ -227,6 +228,7 @@ export function PhotoRolodexModal({
       onRequestClose={close}
       statusBarTranslucent
     >
+      <StatusBar style="light" />
       <GestureHandlerRootView style={styles.root}>
         <GestureDetector gesture={dismissGesture}>
           <View style={styles.root} accessibilityViewIsModal>

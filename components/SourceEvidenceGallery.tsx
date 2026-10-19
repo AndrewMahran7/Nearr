@@ -150,7 +150,7 @@ export function SourceEvidenceGallery({
           ) : null}
         </>
       ) : (
-        <View style={[styles.missing, { width: frameWidth, minHeight: paired ? frameHeight : compact ? 92 : 112 }]}>
+        <View style={[styles.missing, paired && styles.missingPaired, { width: frameWidth, minHeight: paired ? 92 : compact ? 92 : 112 }]}>
           <Feather name="film" size={22} color={COLORS.muted} />
           <Text style={styles.missingText}>Video frames are unavailable. You can still watch the original post.</Text>
         </View>
@@ -189,5 +189,6 @@ function createStyles(COLORS: { cream: string; orange: string; surface: string; 
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.border },
   dotActive: { width: 18, backgroundColor: COLORS.orange },
   missing: { borderRadius: Radius.lg, backgroundColor: COLORS.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg, gap: Spacing.sm },
+  missingPaired: { padding: Spacing.md },
   missingText: { color: COLORS.muted, fontSize: 13, lineHeight: 18, textAlign: 'center' },
 }); }

@@ -77,7 +77,7 @@ assert.match(route, /testID="mention-save-checkbox"/);
 assert.match(route, /onPress=\{\(\) => toggleBatchSelection\(row\)\}/);
 assert.match(route, /onPress=\{\(\) => toggleMentionDisclosure\(row\.logicalPlaceId\)\}/);
 assert.match(route, /selectedPendingCount === 0 \? 'Select a place to save'/);
-assert.match(route, /disabled=\{selectedPendingCount === 0 \|\| busy\}/);
+assert.match(route, /disabled=\{busy \|\| \(!pendingCompletion && selectedPendingCount === 0\)\}/);
 assert.match(route, /batch\.rows\[id\]\?\.persistence === 'pending'/);
 assert.match(route, /if \(!reduceMotion\) LayoutAnimation\.configureNext/);
 const selectedSave = route.slice(route.indexOf('async function handleSaveBatch'), route.indexOf('async function handleSaveSelected'));

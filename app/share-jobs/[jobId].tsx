@@ -193,6 +193,11 @@ import {
   type CandidateConfirmationPlace,
 } from '@/lib/vayrinCandidateConfirmation';
 import { QUICK_CHECK_LAYOUT } from '@/lib/quickCheckDensity';
+import {
+  decideQuickCheckCompletion,
+  savedPlaceMatchesQuickCheckIntent,
+  type QuickCheckCompletionIntent,
+} from '@/lib/quickCheckCompletion';
 import { planFindRightPlace } from '@/lib/findRightPlace';
 import {
   geographicFieldsFromLabel,
@@ -324,6 +329,14 @@ function toResultCandidate(candidate: PlaceCandidate): ShareJobResultCandidate {
 
 type SearchPhase = 'idle' | 'searching' | 'results' | 'empty' | 'error';
 
+type PendingQuickCheckCompletion = {
+  intent: QuickCheckCompletionIntent;
+  createdSavedPlaceIds: string[];
+  duplicateSavedPlaceIds: string[];
+  failedCount: number;
+  onboardingOwnsCompletion: boolean;
+};
+
 /**
  * Why a detail load did not produce a job. Recorded in the developer log and
  * the breadcrumb trail so a repeat of the "couldn't open this item" report is
@@ -382,6 +395,7 @@ function ShareJobDetailScreen() {
   const pendingLoadsRef = useRef(0);
   const [loadFailure, setLoadFailure] = useState<DetailLoadFailure | null>(null);
   const [busy, setBusy] = useState(false);
+  const [pendingCompletion, setPendingCompletion] = useState<PendingQuickCheckCompletion | null>(null);
   const areaMatchIncompleteTrackedRef = useRef<string | null>(null);
   const [manualQuery, setManualQuery] = useState('');
   const [manualSearchPhase, setManualSearchPhase] = useState<SearchPhase>('idle');
@@ -731,18 +745,23 @@ function ShareJobDetailScreen() {
 
   const platform = job?.source_platform ?? null;
   const sourceUrl = job?.canonical_url ?? job?.source_url ?? null;
+  // One payload-tolerant mapping owns candidates, mention slots, and retained
+  // evidence. Source presentation below consumes that normalized result.
+  const detail = useMemo(() => buildShareJobDetailState(job), [job]);
   const extractionPayload = job?.extraction_payload && typeof job.extraction_payload === 'object'
     ? job.extraction_payload as Record<string, unknown>
     : null;
-  const overallSourceFrameUrl = typeof extractionPayload?.sourceFrameUrl === 'string'
-    ? extractionPayload.sourceFrameUrl
-    : typeof extractionPayload?.source_frame_url === 'string'
-      ? extractionPayload.source_frame_url
-      : null;
-  // ONE payload-tolerant mapping from the persisted row to what this screen
-  // renders (lib/shareJobDetailState). Nothing below re-interprets
-  // candidate_payload, so a drifted/partial payload can never throw here.
-  const detail = useMemo(() => buildShareJobDetailState(job), [job]);
+  const overallSourceFrameUrl = [
+    extractionPayload?.sourceFrameUrl,
+    extractionPayload?.source_frame_url,
+    extractionPayload?.sourceThumbnailUrl,
+    extractionPayload?.source_thumbnail_url,
+    extractionPayload?.thumbnailUrl,
+    extractionPayload?.thumbnail_url,
+    detail.mentionSlots.find((slot) => !!slot.sourceFrameUrl)?.sourceFrameUrl,
+    detail.candidates.find((candidate) => !!candidate.sourceFrameUrl)?.sourceFrameUrl,
+    detail.evidenceFrames.find((frame) => !!frame.url)?.url,
+  ].find((value): value is string => typeof value === 'string' && value.trim().length > 0) ?? null;
   const areaMatchIncomplete = detail.partialResult?.resultClass === 'area_match_incomplete';
   const incompleteArea = areaMatchIncomplete ? detail.partialResult : null;
   const areaName = incompleteArea?.area?.name ?? incompleteArea?.locality ?? null;
@@ -1136,12 +1155,32 @@ function ShareJobDetailScreen() {
     });
   }
 
+  async function verifiedExistingCompletion(
+    currentJob: ShareJob,
+    googlePlaceId: string,
+  ): Promise<PendingQuickCheckCompletion | null> {
+    const savedPlaceId = savedByGoogleId[googlePlaceId];
+    if (!savedPlaceId || savedPlaceId.startsWith('fixture-saved:')) return null;
+    const intent = { jobId: currentJob.id, savedPlaceId, googlePlaceId, sourceUrl };
+    const saved = await getSavedPlace(savedPlaceId);
+    if (savedPlaceMatchesQuickCheckIntent(saved, intent) !== null) return null;
+    if (saved) upsertSavedPlaceIntoCache(saved);
+    return {
+      intent,
+      createdSavedPlaceIds: [],
+      duplicateSavedPlaceIds: [savedPlaceId],
+      failedCount: 0,
+      onboardingOwnsCompletion: !!(onboardingShare && sourceUrl),
+    };
+  }
+
   // Resolve the job to the exact canonical saved place returned by the shared
   // save boundary. Created, reused and enriched saves all carry this identity.
   async function resolveJobWith(
     jobId: string,
     savedPlaceId: string,
     duplicate: boolean,
+    googlePlaceId: string,
   ): Promise<void> {
     if (vayrinEnabled) {
       void trackEvent('vayrin_saved', {
@@ -1155,24 +1194,97 @@ function ShareJobDetailScreen() {
         duplicate,
       });
     }
-    await markShareJobResolved(jobId, savedPlaceId);
     const onboardingOwnsCompletion = !!(onboardingShare && sourceUrl);
-    if (onboardingOwnsCompletion) {
+    await finishPersistedCompletion({
+      intent: { jobId, savedPlaceId, googlePlaceId, sourceUrl },
+      createdSavedPlaceIds: duplicate ? [] : [savedPlaceId],
+      duplicateSavedPlaceIds: duplicate ? [savedPlaceId] : [],
+      failedCount: 0,
+      onboardingOwnsCompletion,
+    });
+  }
+
+  async function applyVerifiedCompletion(pending: PendingQuickCheckCompletion): Promise<void> {
+    setPendingCompletion(null);
+    if (pending.onboardingOwnsCompletion && pending.intent.sourceUrl) {
       const previousStage = onboardingV2?.stage ?? 'unknown';
-      const next = await completeOnboardingV2PracticeSave({ sourceUrl, savedPlaceId });
+      const next = await completeOnboardingV2PracticeSave({ sourceUrl: pending.intent.sourceUrl, savedPlaceId: pending.intent.savedPlaceId });
       recordOnboardingV2DevelopmentDiagnostic('practice_save_reconciled', {
-        jobId,
-        savedPlaceId,
+        jobId: pending.intent.jobId,
+        savedPlaceId: pending.intent.savedPlaceId,
         route: '/(onboarding)',
         result: `${previousStage}->${next.stage}:owner=auth_gate:replace_once`,
       });
     }
     completeManualSave(
-      duplicate ? [] : [savedPlaceId],
-      duplicate ? [savedPlaceId] : [],
-      0,
-      onboardingOwnsCompletion,
+      pending.createdSavedPlaceIds,
+      pending.duplicateSavedPlaceIds,
+      pending.failedCount,
+      pending.onboardingOwnsCompletion,
     );
+  }
+
+  async function reconcilePersistedCompletion(
+    pending: PendingQuickCheckCompletion,
+  ): Promise<void> {
+    try {
+      const [authoritativeJob, authoritativeSaved] = await Promise.all([
+        getShareJob(pending.intent.jobId),
+        getSavedPlace(pending.intent.savedPlaceId),
+      ]);
+      if (mountedRef.current) {
+        setJob(authoritativeJob);
+        if (authoritativeSaved) upsertSavedPlaceIntoCache(authoritativeSaved);
+      }
+      const decision = decideQuickCheckCompletion({
+        job: authoritativeJob,
+        saved: authoritativeSaved,
+        intent: pending.intent,
+      });
+      if (decision.kind === 'verified_completed') {
+        if (mountedRef.current) hapticSuccess();
+        await applyVerifiedCompletion(pending);
+        return;
+      }
+      if (decision.kind === 'retry_resolution') {
+        setPendingCompletion(pending);
+        Alert.alert(
+          'Place saved',
+          'Nearr saved the place and verified this post, but Activity could not finish updating. Tap Finish review to retry without saving again.',
+        );
+        return;
+      }
+      setPendingCompletion(null);
+      if (decision.kind === 'cancelled_or_unavailable') {
+        Alert.alert('Review no longer available', 'Activity changed before this review could finish. Its current state has been refreshed.');
+      } else if (decision.kind === 'different_result') {
+        Alert.alert('Review already completed', 'Activity completed with a different saved result. The current result is now shown.');
+      } else {
+        Alert.alert(
+          'Could not verify completion',
+          decision.reason === 'missing_source'
+            ? 'The saved place exists, but Nearr could not verify that this post is attached to it.'
+            : 'The saved result no longer matches the place selected in this review.',
+        );
+      }
+    } catch {
+      setPendingCompletion(pending);
+      Alert.alert(
+        'Place saved',
+        'Nearr could not refresh Activity yet. Tap Finish review to retry without saving the place or source again.',
+      );
+    }
+  }
+
+  async function finishPersistedCompletion(pending: PendingQuickCheckCompletion): Promise<void> {
+    setPendingCompletion(pending);
+    try {
+      await markShareJobResolved(pending.intent.jobId, pending.intent.savedPlaceId);
+      if (mountedRef.current) hapticSuccess();
+      await applyVerifiedCompletion(pending);
+    } catch {
+      await reconcilePersistedCompletion(pending);
+    }
   }
 
   function openNewlySavedPlaces(savedPlaceIds: string[], failedCount = 0) {
@@ -1238,6 +1350,22 @@ function ShareJobDetailScreen() {
     }
     if (mountedRef.current) setBusy(true);
     try {
+      if (pendingCompletion?.intent.jobId === job.id) {
+        await finishPersistedCompletion(pendingCompletion);
+        return;
+      }
+      const authoritativeJob = __DEV__ && (isPhase2PreviewId(job.id) || isVayrinCandidateFixtureId(job.id))
+        ? job
+        : await getShareJob(job.id);
+      if (!authoritativeJob || authoritativeJob.status !== 'needs_help') {
+        if (mountedRef.current) setJob(authoritativeJob);
+        return;
+      }
+      const verifiedExisting = await verifiedExistingCompletion(authoritativeJob, candidate.googlePlaceId);
+      if (verifiedExisting) {
+        await finishPersistedCompletion(verifiedExisting);
+        return;
+      }
       // Older persisted payloads may omit coordinates or optional presentation
       // fields. The provider identity is authoritative, so hydrate that exact
       // Place ID instead of discarding the candidate or running a fuzzy search.
@@ -1248,8 +1376,7 @@ function ShareJobDetailScreen() {
         placeCandidate,
         candidate.aiNote ?? null,
       );
-      if (mountedRef.current) hapticSuccess();
-      await resolveJobWith(job.id, savedPlaceId, duplicate);
+      await resolveJobWith(job.id, savedPlaceId, duplicate, candidate.googlePlaceId);
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {
@@ -1263,7 +1390,7 @@ function ShareJobDetailScreen() {
     source: 'async_picker' | 'raw_name_search',
     fallbackAiNote: string | null = null,
   ) {
-    if (!job || resolvingRef.current || selected.length === 0) return;
+    if (!job || resolvingRef.current || (selected.length === 0 && !pendingCompletion)) return;
     const unique = [...new Map(selected.map((candidate) => [candidate.googlePlaceId, candidate])).values()];
     resolvingRef.current = true;
     if (mountedRef.current) setBusy(true);
@@ -1274,6 +1401,24 @@ function ShareJobDetailScreen() {
       multi_select_count: unique.length,
     });
     try {
+      if (pendingCompletion?.intent.jobId === job.id) {
+        await finishPersistedCompletion(pendingCompletion);
+        return;
+      }
+      const authoritativeJob = __DEV__ && (isPhase2PreviewId(job.id) || isVayrinCandidateFixtureId(job.id))
+        ? job
+        : await getShareJob(job.id);
+      if (!authoritativeJob || authoritativeJob.status !== 'needs_help') {
+        if (mountedRef.current) setJob(authoritativeJob);
+        return;
+      }
+      if (unique.length === 1) {
+        const verifiedExisting = await verifiedExistingCompletion(authoritativeJob, unique[0]!.googlePlaceId);
+        if (verifiedExisting) {
+          await finishPersistedCompletion(verifiedExisting);
+          return;
+        }
+      }
       const settled = await Promise.allSettled(unique.map(async (candidate) => {
         const hydrated: PlaceCandidate = 'googleMapsUrl' in candidate
           ? candidate
@@ -1284,24 +1429,25 @@ function ShareJobDetailScreen() {
           hydrated,
           ('aiNote' in candidate ? candidate.aiNote ?? null : null) ?? fallbackAiNote,
         );
-        return result;
+        return { candidate, result };
       }));
       const created: string[] = [];
       const duplicates: string[] = [];
+      const googlePlaceIdBySavedPlaceId = new Map<string, string>();
       let failed = 0;
       for (const result of settled) {
         if (result.status === 'rejected') {
           failed += 1;
-        } else if (result.value.duplicate) {
-          duplicates.push(result.value.savedPlaceId);
+        } else if (result.value.result.duplicate) {
+          duplicates.push(result.value.result.savedPlaceId);
+          googlePlaceIdBySavedPlaceId.set(result.value.result.savedPlaceId, result.value.candidate.googlePlaceId);
         } else {
-          created.push(result.value.savedPlaceId);
+          created.push(result.value.result.savedPlaceId);
+          googlePlaceIdBySavedPlaceId.set(result.value.result.savedPlaceId, result.value.candidate.googlePlaceId);
         }
       }
       const resolutionId = created[0] ?? duplicates[0] ?? null;
-      if (resolutionId) await markShareJobResolved(job.id, resolutionId);
       if (resolutionId) {
-        if (mountedRef.current) hapticSuccess();
         void trackEvent('vayrin_saved', {
           job_id: job.id,
           source,
@@ -1310,7 +1456,18 @@ function ShareJobDetailScreen() {
           candidate_count_selected: unique.length,
           multi_select_count: unique.length,
         });
-        completeManualSave(created, duplicates, failed);
+        await finishPersistedCompletion({
+          intent: {
+            jobId: job.id,
+            savedPlaceId: resolutionId,
+            googlePlaceId: googlePlaceIdBySavedPlaceId.get(resolutionId)!,
+            sourceUrl,
+          },
+          createdSavedPlaceIds: created,
+          duplicateSavedPlaceIds: duplicates,
+          failedCount: failed,
+          onboardingOwnsCompletion: !!(onboardingShare && sourceUrl),
+        });
       } else {
         throw new Error('No selected places could be saved. Please retry.');
       }
@@ -1327,6 +1484,17 @@ function ShareJobDetailScreen() {
     action: 'selected' | 'all',
   ) {
     if (!job || resolvingRef.current) return;
+    if (pendingCompletion?.intent.jobId === job.id) {
+      resolvingRef.current = true;
+      if (mountedRef.current) setBusy(true);
+      try {
+        await finishPersistedCompletion(pendingCompletion);
+      } finally {
+        resolvingRef.current = false;
+        if (mountedRef.current) setBusy(false);
+      }
+      return;
+    }
     const targets = action === 'all'
       ? allEligibleBatchTargets(activeBatch)
       : selectedBatchTargets(activeBatch);
@@ -1368,10 +1536,10 @@ function ShareJobDetailScreen() {
       });
       const completion = planShareSaveCompletion(outcomes);
       const nextBatch = applyBatchSaveOutcomes(activeBatch, outcomes);
-      if (mountedRef.current && outcomes.some((outcome) => outcome.status !== 'failed')) hapticSuccess();
       if (mountedRef.current) setBatch(nextBatch);
       const remainingRecovery = recoverableBatchRowCount(nextBatch);
       if (completion.failedCandidateIds.length > 0 || remainingRecovery > 0) {
+        if (mountedRef.current && outcomes.some((outcome) => outcome.status !== 'failed')) hapticSuccess();
         const createdCount = completion.createdSavedPlaceIds.length;
         const duplicateCount = completion.duplicateSavedPlaceIds.length;
         const newAttemptCount = createdCount + completion.failedCandidateIds.length;
@@ -1398,10 +1566,7 @@ function ShareJobDetailScreen() {
         });
         return;
       }
-      const resolutionId = accumulated.createdSavedPlaceIds[0] ??
-        accumulated.duplicateSavedPlaceIds[0] ??
-        successfulOutcome.savedPlaceId;
-      await markShareJobResolved(job.id, resolutionId);
+      const resolutionId = successfulOutcome.savedPlaceId!;
       if (vayrinEnabled) {
         void trackEvent('vayrin_saved', {
           job_id: job.id,
@@ -1410,10 +1575,13 @@ function ShareJobDetailScreen() {
           duplicate_count: accumulated.duplicateSavedPlaceIds.length,
         });
       }
-      completeManualSave(
-        accumulated.createdSavedPlaceIds,
-        accumulated.duplicateSavedPlaceIds,
-      );
+      await finishPersistedCompletion({
+        intent: { jobId: job.id, savedPlaceId: resolutionId, googlePlaceId: successfulOutcome.candidateId, sourceUrl },
+        createdSavedPlaceIds: accumulated.createdSavedPlaceIds,
+        duplicateSavedPlaceIds: accumulated.duplicateSavedPlaceIds,
+        failedCount: 0,
+        onboardingOwnsCompletion: !!(onboardingShare && sourceUrl),
+      });
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {
@@ -1665,11 +1833,13 @@ function ShareJobDetailScreen() {
           }
           if (job && recoverableBatchRowCount(nextBatch) === 0) {
             const completed = batchCompletionSavedPlaceIds(nextBatch);
-            const resolutionId = completed.createdSavedPlaceIds[0] ?? completed.duplicateSavedPlaceIds[0];
-            if (resolutionId) {
-              await markShareJobResolved(job.id, resolutionId);
-              completeManualSave(completed.createdSavedPlaceIds, completed.duplicateSavedPlaceIds);
-            }
+            await finishPersistedCompletion({
+              intent: { jobId: job.id, savedPlaceId: persisted.savedPlaceId, googlePlaceId: candidate.googlePlaceId, sourceUrl },
+              createdSavedPlaceIds: completed.createdSavedPlaceIds,
+              duplicateSavedPlaceIds: completed.duplicateSavedPlaceIds,
+              failedCount: 0,
+              onboardingOwnsCompletion: !!(onboardingShare && sourceUrl),
+            });
           }
         } catch (error) {
           if (mountedRef.current) {
@@ -2425,13 +2595,13 @@ function ShareJobDetailScreen() {
                         : `Saved ${batch.feedback.saved} ${batch.feedback.saved === 1 ? 'place' : 'places'}.`}
                 </Text>
               ) : null}
-              {batch.order.some((id) => batch.rows[id]?.persistence === 'pending') ? (
+              {pendingCompletion || batch.order.some((id) => batch.rows[id]?.persistence === 'pending') ? (
                 <Button
-                  title={selectedPendingCount === 0 ? 'Select a place to save' : batchPrimaryActionLabel(batchCounts)}
+                  title={pendingCompletion ? 'Finish review' : selectedPendingCount === 0 ? 'Select a place to save' : batchPrimaryActionLabel(batchCounts)}
                   variant="save"
                   accessibilityLabel={`${batchPrimaryActionLabel(batchCounts)} from this review`}
                   onPress={() => void handleSaveSelected()}
-                  disabled={selectedPendingCount === 0 || busy}
+                  disabled={busy || (!pendingCompletion && selectedPendingCount === 0)}
                   loading={busy}
                   style={styles.batchSaveButton}
                 />
@@ -2573,13 +2743,17 @@ function ShareJobDetailScreen() {
               variant="save"
               title={busy
                 ? 'Saving…'
-                : candidateSaveLabel(
+                : pendingCompletion
+                  ? 'Finish review'
+                  : candidateSaveLabel(
                     searchExpanded ? manualSelected.length : pickerSelected.length,
                     (searchExpanded ? manualSelected[0] : pickerSelected[0])?.name,
                   )}
               accessibilityLabel={busy
                 ? 'Saving place'
-                : `${candidateSaveLabel(
+                : pendingCompletion
+                  ? 'Finish review without saving again'
+                  : `${candidateSaveLabel(
                     searchExpanded ? manualSelected.length : pickerSelected.length,
                     (searchExpanded ? manualSelected[0] : pickerSelected[0])?.name,
                   )} from selected candidates`}
@@ -2588,7 +2762,7 @@ function ShareJobDetailScreen() {
                 searchExpanded ? 'raw_name_search' : 'async_picker',
                 searchExpanded ? manualFallbackAiNote : null,
               )}
-              disabled={busy || (searchExpanded ? manualSelected.length : pickerSelected.length) === 0}
+              disabled={busy || (!pendingCompletion && (searchExpanded ? manualSelected.length : pickerSelected.length) === 0)}
               style={styles.stickySaveButton}
             />
           </View>
@@ -2811,11 +2985,11 @@ function ShareJobDetailScreen() {
 
         {renderJobFooter()}
       </ScrollView>
-      {manualSelected.length > 0 ? (
+      {manualSelected.length > 0 || pendingCompletion ? (
         <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
           <Button
             variant="save"
-            title={busy ? 'Saving…' : fallbackSaveLabel(manualSelected[0]?.name)}
+            title={busy ? 'Saving…' : pendingCompletion ? 'Finish review' : fallbackSaveLabel(manualSelected[0]?.name)}
             accessibilityLabel={busy ? 'Saving place' : fallbackSaveLabel(manualSelected[0]?.name)}
             onPress={() => void handleSaveCanonicalCandidates(
               manualSelected,
@@ -2830,8 +3004,8 @@ function ShareJobDetailScreen() {
         <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
           <Button
             variant="save"
-            title={busy ? 'Saving…' : fallbackSaveLabel(confirmationSingle.name)}
-            accessibilityLabel={`Save ${confirmationSingle.name}`}
+            title={busy ? 'Saving…' : pendingCompletion ? 'Finish review' : fallbackSaveLabel(confirmationSingle.name)}
+            accessibilityLabel={pendingCompletion ? 'Finish review without saving again' : `Save ${confirmationSingle.name}`}
             onPress={() => { if (single) void handleSaveStored(single); }}
             disabled={busy || !single}
             style={styles.stickySaveButton}

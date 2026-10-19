@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 
 import { useTheme } from '@/lib/theme';
 
@@ -11,13 +12,14 @@ type Props = {
 };
 
 export function ShareJobsSheet({ children, onDismiss, size = 'queue' }: Props) {
-  const { colors } = useTheme();
+  const { colors, resolvedTheme } = useTheme();
   const { fontScale, height } = useWindowDimensions();
   const expandedForAccess = fontScale > 1.25 || height < 700;
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={styles.backdrop}>
+      <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
       <Pressable
         style={StyleSheet.absoluteFill}
         onPress={onDismiss}

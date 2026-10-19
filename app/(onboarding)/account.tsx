@@ -762,11 +762,17 @@ export default function AccountAuthScreen() {
         {/* Entry-intent copy keeps existing-account sign-in separate from
             creating or backing up the current anonymous map. */}
         <Text style={styles.headline}>
-          {sharedPlaceIntent ? `Save ${sharedPlaceIntent.placeName || 'this place'}` : authCopy.headline}
+          {sharedPlaceIntent
+            ? signedIn
+              ? `Continue to save ${sharedPlaceIntent.placeName || 'this place'}`
+              : `Save ${sharedPlaceIntent.placeName || 'this place'}`
+            : authCopy.headline}
         </Text>
         <Text style={styles.subtext}>
           {sharedPlaceIntent
-            ? 'Sign in or create an account, then Nearr will bring you back here and save it to your map.'
+            ? signedIn
+              ? 'Your account is connected. Continue and Nearr will save it to your map.'
+              : 'Sign in or create an account, then Nearr will bring you back here and save it to your map.'
             : authCopy.subtext}
         </Text>
 

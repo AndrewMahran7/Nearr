@@ -12,7 +12,8 @@ export type OnboardingPhase2PracticeSource = {
   expectedPlaceAddress: string;
   canonicalUrl: string;
   category: OfflineOnboardingCategory;
-  localPreviewAssetKey: OfflineOnboardingAssetKey;
+  /** Exact source preview only. Null means render an honest neutral fallback. */
+  localPreviewAssetKey: OfflineOnboardingAssetKey | null;
   provenanceUrl: string;
   revision: number;
 };
@@ -33,7 +34,9 @@ export const ONBOARDING_PHASE2_PRACTICE_BY_CATEGORY: Record<
     expectedPlaceAddress: '126 Main St, Huntington Beach',
     canonicalUrl: 'https://www.instagram.com/p/DYpcd2ZBTsZ/',
     category: 'food',
-    localPreviewAssetKey: 'mad_yolks',
+    // The repository has no verified 2nd Floor frame. Mad Yolks belongs to
+    // Phase 1 and must never be presented as this real practice post.
+    localPreviewAssetKey: null,
     provenanceUrl: 'repository recognition regression corpus',
     revision: 2,
   },
