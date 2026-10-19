@@ -100,7 +100,7 @@ import { PlaceImage } from '@/components/PlaceImage';
 import { fieldnotesPhotoMarkerIds } from '@/lib/fieldnotesMapPresentation';
 import { useReduceMotion } from '@/lib/useReduceMotion';
 import { hapticSelection, hapticSuccess } from '@/lib/haptics';
-import { mapKeyboardOverlap, mapUsableViewport, planSavedPinsCamera, planSelectedMarkerOcclusion, canApplySelectedMarkerCorrection } from '@/lib/mapViewportGeometry';
+import { expandedPlaceDetailHeight, mapKeyboardOverlap, mapMarkerViewportInsets, mapUsableViewport, planSavedPinsCamera, planSelectedMarkerOcclusion, canApplySelectedMarkerCorrection } from '@/lib/mapViewportGeometry';
 import { savedPlacePhotoKind, type SavedPlacePhotoKind } from '@/lib/savedPlaceSnapshot';
 import { MapBrand, MapSavedDock, SelectedPlaceCard } from '@/components/map/FieldnotesMapChrome';
 import {
@@ -350,20 +350,15 @@ function selectedIconName(saved: SavedPlaceWithPlace): React.ComponentProps<type
 const TOP_CHROME_BASE_CLEARANCE = MAP_TOP_CHROME_BASE_CLEARANCE;
 const QUEUE_PILL_CLEARANCE = MAP_QUEUE_CLEARANCE;
 
-// The Queue pill as it sits while Place Detail is expanded: its own top margin
-// plus its minimum height.
-const RAISED_QUEUE_PILL_HEIGHT = Spacing.sm + 44;
-
-/**
- * Map left visible above the expanded Place Detail sheet.
- *
- * Keep a usable geographical strip below the raised Queue row. Its 156pt
- * includes a 60pt selected marker, breathing room and projection margins.
- * The scrollable detail uses the remaining area, including on small phones.
- */
-function expandedSheetMapPeek(safeTopInset: number): number {
-  return safeTopInset + RAISED_QUEUE_PILL_HEIGHT + 156;
-}
+// The selected labelled marker renders on a 148x90 canvas and anchors at the
+// photo disc (x=.5, y=.335). Keep the whole canvas inside the browsable map.
+const SELECTED_MARKER_VIEWPORT_INSETS = mapMarkerViewportInsets({
+  width: 148,
+  height: 90,
+  anchorX: 0.5,
+  anchorY: 0.335,
+  breathingRoom: 12,
+});
 
 /**
  * Effective radius (in meters) for a saved place, used to render a Life360-
@@ -1188,7 +1183,7 @@ export default function MapScreen() {
    * never occupy the same points — see scripts/testMapQueueEntryPoint.ts.
    */
   const expandedSheetHeight = useMemo(
-    () => Math.max(220, Math.round(availableHeight - expandedSheetMapPeek(safeTopInset))),
+    () => expandedPlaceDetailHeight({ availableHeight, safeTopInset }),
     [availableHeight, safeTopInset],
   );
   const { nearbyPlaces, locationState, requestLocationPermission } = useNearbyPlaces(data);
@@ -1199,6 +1194,7 @@ export default function MapScreen() {
   // dismissed. The pan responder reads the current value via a ref so it
   // never has to be recreated when the sheet toggles.
   const [previewExpanded, setPreviewExpanded] = useState(false);
+  const [placeMoreRequest, setPlaceMoreRequest] = useState(0);
   useEffect(() => { if (selected && fontScale >= 1.5) setPreviewExpanded(true); }, [selected?.id, fontScale]);
   const previewExpandedRef = useRef(false);
   previewExpandedRef.current = previewExpanded;
@@ -1231,11 +1227,12 @@ export default function MapScreen() {
     width: mapAreaWidth || windowWidth,
     height: availableHeight,
     top: Math.max(shouldShowMapControls ? topChromeBottom : safeTopInset, queueChromeBottom),
-    margin: 40,
+    margin: 0,
+    markerInsets: SELECTED_MARKER_VIEWPORT_INSETS,
     bottom: Math.max(keyboardOverlap, sourceGroupBrowseActive
       ? mapGroupSelectorHeight + Spacing.lg + insets.bottom
       : selected
-      ? (previewExpanded ? expandedSheetHeight : selectedCardHeight + insets.bottom + 84)
+      ? (previewExpanded ? 0 : selectedCardHeight + insets.bottom + 84)
       : insets.bottom + 76 + 58),
   }), [mapAreaWidth, windowWidth, availableHeight, shouldShowMapControls, topChromeBottom, safeTopInset,
     queueChromeBottom, keyboardOverlap, selected?.id, previewExpanded, expandedSheetHeight, selectedCardHeight, insets.bottom,
@@ -1295,7 +1292,7 @@ export default function MapScreen() {
   // pending transaction. A user gesture permanently retires this selection's
   // correction until another deliberate place/open action requests ownership.
   useEffect(() => {
-    if (!selected || !mapReady || !(sourceGroupBrowseActive ? mapGroupSelectorHeight : selectedCardHeight) || !usableMapViewport.valid || (nearbyExplorer && !explorerSavedDetailOpen)) return;
+    if (previewExpanded || !selected || !mapReady || !(sourceGroupBrowseActive ? mapGroupSelectorHeight : selectedCardHeight) || !usableMapViewport.valid || (nearbyExplorer && !explorerSavedDetailOpen)) return;
     if (selectionUserMovedRef.current || cameraTransactionCoordinatorRef.current.active()) return;
     const key = `${selected.id}:${selectionFocusRequest}:${previewExpanded}:${usableMapViewport.width}:${usableMapViewport.height}:${usableMapViewport.top}:${usableMapViewport.bottom}`;
     if (selectedCorrectionKeyRef.current === key) return;
@@ -3948,7 +3945,7 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {__DEV__ && !cleanOnboardingLanding && !phase2MapActive && !fieldnotesNativeCapture ? (
+      {__DEV__ && mapPreview && !previewExpanded && !cleanOnboardingLanding && !phase2MapActive && !fieldnotesNativeCapture ? (
         <View style={[styles.mapDiagnostics, { top: safeTopInset + topChromeClearance + 8 }]}>
           {mapDiagnosticsExpanded ? <>
             <Text style={styles.mapDiagnosticsText}>
@@ -4062,7 +4059,32 @@ export default function MapScreen() {
             {/* Drag region: handle + header. The pan responder lives here
                 (not on the whole card) so the expanded body ScrollView can
                 scroll without fighting the collapse/dismiss gesture. */}
-            <View {...previewPanResponder.panHandlers}>
+            {previewExpanded ? (
+              <View style={styles.expandedHeader} {...previewPanResponder.panHandlers}>
+                <View style={styles.previewHandle} />
+                <View style={styles.expandedHeaderRow}>
+                  <Pressable
+                    onPress={() => dismissSelectedPlace()}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close place details"
+                    style={({ pressed }) => [styles.expandedHeaderButton, pressed && styles.controlPressed]}
+                  >
+                    <Feather name="x" size={20} color={colors.text} />
+                  </Pressable>
+                  <Text style={styles.expandedHeaderTitle} numberOfLines={fontScale >= 1.5 ? 2 : 1}>
+                    {selected.place.name}
+                  </Text>
+                  <Pressable
+                    onPress={() => setPlaceMoreRequest((value) => value + 1)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`More options for ${selected.place.name}`}
+                    style={({ pressed }) => [styles.expandedHeaderButton, pressed && styles.controlPressed]}
+                  >
+                    <Feather name="more-horizontal" size={22} color={colors.text} />
+                  </Pressable>
+                </View>
+              </View>
+            ) : <View {...previewPanResponder.panHandlers}>
               <View style={styles.previewHandleWrap}>
                 <View style={styles.previewHandle} />
                 {/* Dragging down is the primary dismissal. This is the
@@ -4090,7 +4112,7 @@ export default function MapScreen() {
                 onOpen={() => { selectionUserMovedRef.current = false; setPreviewExpanded(true); hapticSelection(); }}
                 onClose={() => dismissSelectedPlace()}
               />}
-            </View>
+            </View>}
 
             {previewExpanded ? (
               // Expanded: the full editable details (reminder / radius / note /
@@ -4102,14 +4124,17 @@ export default function MapScreen() {
                 // content instead is what let the sheet grow until only a
                 // sliver of map survived.
                 style={styles.previewScroll}
-                contentContainerStyle={styles.previewScrollContent}
+                contentContainerStyle={[styles.previewScrollContent, { paddingBottom: insets.bottom + Spacing.xxl + 32 }]}
                 onScrollBeginDrag={() => handleUserInteraction('scroll')}
                 keyboardShouldPersistTaps="handled"
                 nestedScrollEnabled
                 showsVerticalScrollIndicator={false}
               >
                 <SelectedPlaceDetails
+                  key={selected.id}
                   saved={selected}
+                  showNavigation={false}
+                  moreMenuRequest={placeMoreRequest}
                   allSavedPlaces={validPlaces}
                   savedProviderPlaceIds={places
                     .map((entry) => entry.place.google_place_id?.trim())
@@ -4594,6 +4619,42 @@ function createStyles(
     // clears the tab bar at the bottom.
     paddingTop: 0,
     paddingBottom: 0,
+    overflow: 'hidden',
+  },
+  expandedHeader: {
+    zIndex: 2,
+    flexShrink: 0,
+    alignItems: 'center',
+    gap: 5,
+    paddingTop: 8,
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.sm,
+    backgroundColor: colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  expandedHeaderRow: {
+    width: '100%',
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  expandedHeaderButton: {
+    width: 44,
+    height: 44,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.pill,
+    backgroundColor: colors.surfaceElevated,
+  },
+  expandedHeaderTitle: {
+    ...typography.bodyStrong,
+    flex: 1,
+    minWidth: 0,
+    color: colors.text,
+    textAlign: 'center',
   },
   previewHandleWrap: {
     alignItems: 'center',

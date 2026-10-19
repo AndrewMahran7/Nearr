@@ -3,6 +3,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { reminderStatusLabel } from '../lib/placeDetailUi';
+import {
+  expandedPlaceDetailHeight,
+  mapMarkerViewportInsets,
+  mapUsableViewport,
+  planSelectedMarkerOcclusion,
+} from '../lib/mapViewportGeometry';
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 const map = read('app/(tabs)/map.tsx');
@@ -16,49 +22,30 @@ assert.match(
   /shouldRenderSelectedPlaceDetail \? \([\s\S]*previewExpanded[\s\S]*<SelectedPlaceDetails/,
 );
 assert.match(map, /accessibilityLabel="Close place details"/);
-// The expanded sheet takes a FIXED share of the map area rather than growing
-// with its content. Content-driven height is what let it swallow the screen
-// until only a sliver of map survived; the map has to stay a real part of the
-// composition, with the selected marker visible above the sheet.
+// Expanded detail is a measured destination page, not a content-sized card.
 assert.match(map, /const expandedSheetHeight = useMemo\(/);
-assert.match(map, /availableHeight - expandedSheetMapPeek\(safeTopInset\)/);
+assert.match(map, /expandedPlaceDetailHeight\(\{ availableHeight, safeTopInset \}\)/);
 assert.match(map, /previewExpanded && \{ height: expandedSheetHeight \}/);
 assert.match(map, /previewScroll: \{ flex: 1 \}/, 'the body fills the card, it does not define it');
-// Preserve a real 156pt map viewport below Queue, so selection remains visible
-// even while the detail body scrolls. A minimum percentage of sheet coverage
-// would recreate the founder's pin occlusion on smaller phones.
-assert.match(map, /RAISED_QUEUE_PILL_HEIGHT = Spacing\.sm \+ 44/);
-assert.match(
-  map,
-  /function expandedSheetMapPeek\(safeTopInset: number\): number \{[\s\S]{0,160}safeTopInset \+ RAISED_QUEUE_PILL_HEIGHT \+ 156/,
-);
 {
-  const peek = (safeTop: number) => safeTop + 8 + 44 + 156;
-  const expanded = (available: number, safeTop: number) =>
-    Math.max(220, Math.round(available - peek(safeTop)));
   for (const [device, mapArea, safeTop] of [
     ['iPhone SE', 584, 24],
     ['iPhone 14', 761, 47],
     ['iPhone 14 Pro Max', 849, 59],
   ] as const) {
-    assert.ok(expanded(mapArea, safeTop) >= 220, `${device}: detail retains a usable scrollable body`);
-    const visibleMap = mapArea - expanded(mapArea, safeTop);
-    assert.ok(
-      visibleMap - (safeTop + 8 + 44) >= 156,
-      `${device}: the ${visibleMap}pt strip retains marker context below Queue`,
-    );
+    const expanded = expandedPlaceDetailHeight({ availableHeight: mapArea, safeTopInset: safeTop });
+    assert.ok(expanded / mapArea >= 0.9, `${device}: expanded detail uses at least 90%`);
+    assert.ok(expanded / mapArea <= 0.95, `${device}: expanded detail uses at most 95%`);
   }
 }
 
-// Dismissal is primarily the drag handle. The explicit close is a small mark
-// on the handle line, not a control with a 44pt band to itself.
-assert.match(map, /closeBtnFloating: \{[\s\S]*width: 30,[\s\S]*height: 30/);
-assert.match(map, /hitSlop=\{12\}/, 'small visually, still a 54pt target');
+// Fixed opaque chrome retains identity and owns drag while the body scrolls.
+assert.match(map, /styles\.expandedHeader[\s\S]*previewPanResponder\.panHandlers/);
+assert.match(map, /\{selected\.place\.name\}/);
+assert.match(map, /accessibilityLabel=\{`More options for \$\{selected\.place\.name\}`\}/);
+assert.match(map, /expandedHeaderButton: \{[\s\S]*width: 44,[\s\S]*height: 44/);
+assert.match(map, /previewCardExpanded: \{[\s\S]*overflow: 'hidden'/);
 assert.match(map, /accessibilityLabel="Close place details"/);
-assert.ok(
-  !map.includes('expandedDetailHeader'),
-  'the dedicated 44pt close row is gone',
-);
 
 // Expanded, the sheet meets the bottom edge with a rounded top only, so it
 // reads as part of the map rather than a floating page.
@@ -66,6 +53,17 @@ assert.match(map, /previewWrapExpanded: \{[\s\S]*bottom: 0/);
 assert.match(map, /previewCardExpanded: \{[\s\S]*borderTopLeftRadius: 28/);
 // ...and its content clears the tab bar instead of sliding under it.
 assert.match(map, /previewScrollContent: \{[\s\S]*paddingBottom: Spacing\.xxl/);
+assert.match(map, /paddingBottom: insets\.bottom \+ Spacing\.xxl \+ 32/);
+
+// Compact-map correction uses the rendered marker canvas on both axes and is
+// explicitly idle while the detail page owns almost the whole screen.
+const markerInsets = mapMarkerViewportInsets({ width: 148, height: 90, anchorX: 0.5, anchorY: 0.335, breathingRoom: 12 });
+assert.ok(Math.abs(markerInsets.top - 42.15) < 0.001);
+assert.deepEqual({ right: markerInsets.right, bottom: markerInsets.bottom, left: markerInsets.left }, { right: 86, bottom: 71.85, left: 86 });
+const viewport = mapUsableViewport({ width: 390, height: 760, top: 120, bottom: 220, margin: 0, markerInsets });
+assert.equal(planSelectedMarkerOcclusion({ point: { x: 385, y: 160 }, viewport }).kind, 'move');
+assert.equal(planSelectedMarkerOcclusion({ point: { x: 5, y: 500 }, viewport }).kind, 'move');
+assert.match(map, /if \(previewExpanded \|\| !selected/);
 
 // Deep links and legacy callers converge on the same map-owned presentation.
 assert.match(fallback, /<Redirect/);
@@ -102,10 +100,13 @@ assert.match(detail, /accessibilityLabel="Add why you saved this place"/);
 assert.match(detail, /whySavedDisplay\(\{ notes, ai_note: saved\.ai_note \}\)/);
 assert.match(detail, /accessibilityLiveRegion="polite"/);
 assert.match(detail, /styles\.savedBecauseTitle/);
+assert.match(detail, /styles\.emptyNoteRow/);
 // The reminder is now a compact control in the action row, not a card of its
 // own competing with the place.
 assert.ok(!detail.includes('styles.reminderCard'), 'the standalone reminder card is gone');
 assert.match(detail, /styles\.reminderControl/);
+assert.match(detail, /reminderSwitchSlot: \{ width: 54[\s\S]*flexShrink: 0/);
+assert.match(detail, /reminderCopy: \{ flexGrow: 1, flexShrink: 1, minWidth: 0/);
 assert.match(detail, /<NoteEditorModal[\s\S]*aiNote=\{saved\.ai_note\}/);
 assert.doesNotMatch(detail, /\[saved\.place\.google_place_id, saved\]/, 'AI-note updates cannot reset photo/detail state');
 

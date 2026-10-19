@@ -230,11 +230,11 @@ async function main() {
   scope.previewExpanded = true;
   scope.usableMapViewport = geometry.mapUsableViewport({ width: 390, height: 844, top: 100, bottom: 500 });
   await render();
-  assert.equal(commandCalls().length, 2, 'expanded card adjusts occlusion once');
+  assert.equal(commandCalls().length, 1, 'expanded detail leaves the background map camera stationary');
   settle();
   scope.setSelected(null);
   await render();
-  assert.equal(commandCalls().length, 2, 'dismiss does not move camera');
+  assert.equal(commandCalls().length, 1, 'dismiss does not move camera');
   await unmount();
 
   reset(place('group-member'));
@@ -256,8 +256,7 @@ async function main() {
   scope.previewExpanded = true;
   scope.reduceMotion = true;
   await render();
-  assert.equal(commandCalls().length, 1, 'expanded saved details in Explorer protect the selected pin');
-  assert.equal(commandCalls()[0].args[1].duration, 0, 'Reduce Motion disables selection camera animation');
+  assert.equal(commandCalls().length, 0, 'expanded saved details in Explorer leave its camera owner stationary');
   await unmount();
 
   reset(place('selected'));

@@ -117,7 +117,7 @@ import {
   updateSavedPlacesCache,
 } from '@/hooks/useSavedPlaces';
 import { hydrateSavedPlace } from '@/lib/savedPlaceHydration';
-import { savedPlacePhotoKind, type SavedPlacePhotoKind } from '@/lib/savedPlaceSnapshot';
+import { readSavedPlaceSnapshot, savedPlacePhotoKind, type SavedPlacePhotoKind } from '@/lib/savedPlaceSnapshot';
 import { loadPlaceRecommendations } from '@/services/placeRecommendationsService';
 import type { PlaceRecommendation } from '@/lib/placeRecommendations';
 import type { NearbyMapExplorerPayload } from '@/lib/nearbyMapExplorer';
@@ -177,6 +177,10 @@ type Props = {
   /** Called after a successful save so the map can refresh its `selected`. */
   onSaved?: (updated: SavedPlaceWithPlace) => void;
   onCorrected?: (updated: SavedPlaceWithPlace) => void;
+  /** Map-owned expanded chrome replaces the inline navigation row. */
+  showNavigation?: boolean;
+  /** Monotonic request from the fixed expanded header to open management. */
+  moreMenuRequest?: number;
 };
 
 export function SelectedPlaceDetails({
@@ -192,6 +196,8 @@ export function SelectedPlaceDetails({
   onRemoved,
   onSaved,
   onCorrected,
+  showNavigation = true,
+  moreMenuRequest = 0,
 }: Props) {
   const { colors, typography } = useTheme();
   const router = useRouter();
@@ -201,6 +207,13 @@ export function SelectedPlaceDetails({
   const [moreOpen, setMoreOpen] = useState(false);
   const [reminderBusy, setReminderBusy] = useState(false);
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const handledMoreMenuRequestRef = useRef(moreMenuRequest);
+
+  useEffect(() => {
+    if (moreMenuRequest <= handledMoreMenuRequestRef.current) return;
+    handledMoreMenuRequestRef.current = moreMenuRequest;
+    setMoreOpen(true);
+  }, [moreMenuRequest]);
   const { session } = useAuth();
   const { state: onboardingState } = useOnboardingV2();
   const capabilities = useMemo(() => placeCapabilities(saved), [saved]);
@@ -248,6 +261,7 @@ export function SelectedPlaceDetails({
   const [photoKinds, setPhotoKinds] = useState<Record<string, SavedPlacePhotoKind>>({});
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [failedPhotoUrls, setFailedPhotoUrls] = useState<Record<string, true>>({});
+  const [relatedPhotoUrls, setRelatedPhotoUrls] = useState<Record<string, string>>({});
   const [sourceEvidencePreviewUrls, setSourceEvidencePreviewUrls] = useState<Record<string, string>>({});
   const [failedSourcePreviewUrls, setFailedSourcePreviewUrls] = useState<Record<string, true>>({});
   const [ownerPlaceVideos, setOwnerPlaceVideos] = useState<PlaceVideoItem[]>([]);
@@ -620,6 +634,38 @@ export function SelectedPlaceDetails({
       }),
     [allSavedPlaces, saved, sameSourceIds],
   );
+  const relatedPhotoSignature = useMemo(
+    () => [...sameSource, ...alsoNearby.map((entry) => entry.saved)]
+      .map((entry) => `${entry.id}:${entry.place.google_place_id ?? ''}`)
+      .join('|'),
+    [alsoNearby, sameSource],
+  );
+  useEffect(() => {
+    let cancelled = false;
+    const userId = session?.user?.id;
+    const related = [...sameSource, ...alsoNearby.map((entry) => entry.saved)];
+    if (!userId || related.length === 0) {
+      setRelatedPhotoUrls({});
+      return () => { cancelled = true; };
+    }
+    void Promise.all(related.map(async (entry) => {
+      const read = await readSavedPlaceSnapshot({
+        userId,
+        savedPlaceId: entry.id,
+        googlePlaceId: entry.place.google_place_id,
+      });
+      if (read.status !== 'hit') return null;
+      const uri = read.snapshot.localPhotoUris.find((candidate) =>
+        savedPlacePhotoKind(read.snapshot, candidate) === 'destination');
+      return uri ? [entry.id, uri] as const : null;
+    })).then((entries) => {
+      if (!cancelled) setRelatedPhotoUrls(Object.fromEntries(entries.filter((entry): entry is readonly [string, string] => !!entry)));
+    });
+    return () => { cancelled = true; };
+    // The signature is the exact collection identity; snapshot writes do not
+    // trigger provider calls and the row remounts when another place opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [relatedPhotoSignature, session?.user?.id]);
   // Same card shape as Also nearby, so the two rows read as one design system
   // — the heading is what distinguishes "from this post" from "near this".
   // Distance is shown when both places have coordinates, and omitted rather
@@ -633,6 +679,7 @@ export function SelectedPlaceDetails({
           key: entry.id,
           name: entry.place.name,
           googlePlaceId: entry.place.google_place_id,
+          photoUrl: relatedPhotoUrls[entry.id] ?? null,
           meta: distance,
           a11yLabel: distance
             ? `Open ${entry.place.name}, also saved from this post, ${distance} away`
@@ -640,7 +687,7 @@ export function SelectedPlaceDetails({
           onPress: () => onSelectNearby?.(entry),
         };
       }),
-    [onSelectNearby, sameSource, saved],
+    [onSelectNearby, relatedPhotoUrls, sameSource, saved],
   );
 
   // Built once per selection rather than on every render, so scrolling the
@@ -651,11 +698,12 @@ export function SelectedPlaceDetails({
         key: entry.saved.id,
         name: entry.saved.place.name,
         googlePlaceId: entry.saved.place.google_place_id,
+        photoUrl: relatedPhotoUrls[entry.saved.id] ?? null,
         meta: formatNearbyDistance(entry.distanceMeters),
         a11yLabel: `Open ${entry.saved.place.name}, ${formatNearbyDistance(entry.distanceMeters)} away`,
         onPress: () => onSelectNearby?.(entry.saved),
       })),
-    [alsoNearby, onSelectNearby],
+    [alsoNearby, onSelectNearby, relatedPhotoUrls],
   );
   const recommendationEntries = useMemo(
     () =>
@@ -1030,12 +1078,12 @@ export function SelectedPlaceDetails({
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.detailNavigation}>
+      {showNavigation ? <View style={styles.detailNavigation}>
         <Text style={styles.detailNavigationLabel}>Your saved place</Text>
         <Pressable accessibilityRole="button" accessibilityLabel={`More options for ${saved.place.name}`} onPress={() => setMoreOpen(true)} style={styles.moreButton}>
           <Feather name="more-horizontal" size={22} color={colors.text} />
         </Pressable>
-      </View>
+      </View> : null}
 
       {/* Destination imagery leads; retained source media is explicitly labeled.
           Identity stays below the image on the warm Fieldnotes canvas. */}
@@ -1158,23 +1206,23 @@ export function SelectedPlaceDetails({
         resizeMode="contain"
       />
 
-      <View style={styles.savedBecauseCard} accessibilityLiveRegion="polite">
+      {hasReason ? <View style={styles.savedBecauseCard} accessibilityLiveRegion="polite">
         <View style={styles.savedBecauseHeader}>
           <Text style={styles.savedBecauseTitle}>WHY YOU SAVED IT</Text>
-          {hasReason && capabilities.canEdit ? <Pressable onPress={() => beginNoteEdit(whySaved.seedFromSourceNote)} accessibilityRole="button" accessibilityLabel="Edit why you saved this place" style={styles.textAction}><Text style={styles.changeLink}>Edit</Text></Pressable> : null}
+          {capabilities.canEdit ? <Pressable onPress={() => beginNoteEdit(whySaved.seedFromSourceNote)} accessibilityRole="button" accessibilityLabel="Edit why you saved this place" style={styles.textAction}><Text style={styles.changeLink}>Edit</Text></Pressable> : null}
         </View>
-        {hasReason ? <>
+        <>
           <Text style={styles.reasonText}>{whySaved.text}</Text>
           <Text style={styles.attributionText}>{whySaved.origin === 'user' ? 'Your note' : 'From the post'}</Text>
-        </> : capabilities.canEdit ? <Pressable onPress={() => beginNoteEdit()} accessibilityRole="button" accessibilityLabel="Add why you saved this place" style={styles.textAction}><Text style={styles.addNoteLink}>Add a note for someday</Text></Pressable> : null}
-      </View>
+        </>
+      </View> : capabilities.canEdit ? <Pressable onPress={() => beginNoteEdit()} accessibilityRole="button" accessibilityLabel="Add why you saved this place" style={styles.emptyNoteRow}><Feather name="edit-3" size={16} color={colors.accent} /><Text style={styles.addNoteLink}>Add a note for someday</Text><Feather name="chevron-right" size={16} color={colors.textMuted} /></Pressable> : null}
       {capabilities.canSetReminder ? <View style={[styles.reminderRow, largeText && styles.reminderRowLarge]}>
         <View style={styles.reminderCopy}>
           <Text style={styles.reminderTitle}>Remind me nearby</Text>
           <Text style={styles.reminderDescription}>A little nudge when you?re close.</Text>
           {notifyOn ? <Pressable onPress={() => setReminderSettingsExpanded((value) => !value)} accessibilityRole="button" accessibilityLabel={`Nearby reminder, ${reminderStatus}. Change distance`} accessibilityState={{ expanded: reminderSettingsExpanded }} style={styles.reminderControl}><Text style={styles.reminderDistanceText}>{reminderDistance} · Change distance</Text><Feather name={reminderSettingsExpanded ? 'chevron-down' : 'chevron-right'} size={16} color={colors.textSecondary} /></Pressable> : null}
         </View>
-        {reminderBusy ? <ActivityIndicator accessibilityLabel="Updating reminder" color={colors.primary} /> : <Switch value={notifyOn} onValueChange={(next) => void changeReminderEnabled(next)} accessibilityLabel={`Nearby reminder for ${saved.place.name}`} trackColor={{ false: colors.controlBorder, true: colors.primary }} />}
+        <View style={styles.reminderSwitchSlot}>{reminderBusy ? <ActivityIndicator accessibilityLabel="Updating reminder" color={colors.primary} /> : <Switch value={notifyOn} onValueChange={(next) => void changeReminderEnabled(next)} accessibilityLabel={`Nearby reminder for ${saved.place.name}`} trackColor={{ false: colors.controlBorder, true: colors.primary }} />}</View>
       </View> : null}
 
       {/* Reminder distance settings — unchanged behaviour, just no longer a
@@ -1648,9 +1696,10 @@ function createStyles(
     photoThumbnailButton: { flex: 1, minHeight: 44, maxWidth: 72, padding: 2 },
     photoThumbnail: { width: '100%', height: 44, borderRadius: Radius.sm },
     noPhotoLabel: { ...typography.caption, color: colors.textSecondary, marginTop: Spacing.sm },
-    reminderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg, paddingVertical: Spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-    reminderRowLarge: { flexWrap: 'wrap' },
-    reminderCopy: { flex: 1, minWidth: 160 },
+    reminderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+    reminderRowLarge: { alignItems: 'flex-start' },
+    reminderCopy: { flexGrow: 1, flexShrink: 1, minWidth: 0 },
+    reminderSwitchSlot: { width: 54, minHeight: 44, flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
     reminderTitle: { ...typography.bodyStrong, color: colors.text },
     reminderDescription: { ...typography.caption, color: colors.textSecondary, marginTop: Spacing.xs },
     moreBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.modalBackdrop },
@@ -1749,6 +1798,15 @@ function createStyles(
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: colors.border,
     },
+    emptyNoteRow: {
+      minHeight: 48,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      paddingVertical: Spacing.xs,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+    },
     savedBecauseHeader: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1797,7 +1855,7 @@ function createStyles(
       fontSize: 17,
       lineHeight: 24,
     },
-    addNoteLink: { ...typography.bodyStrong, fontSize: 14, color: colors.accent },
+    addNoteLink: { ...typography.bodyStrong, flex: 1, minWidth: 0, fontSize: 14, color: colors.accent },
     attributionRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     attributionText: {
       ...typography.caption,

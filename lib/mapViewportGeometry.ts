@@ -33,6 +33,46 @@ function nonnegative(value: number | undefined): number {
   return value != null && Number.isFinite(value) ? Math.max(0, value) : 0;
 }
 
+/**
+ * The selected marker is not always centered on its geographic coordinate.
+ * In the labelled state its 148x90 canvas anchors on the photo disc, so the
+ * bottom and horizontal extents are much larger than the old uniform 32px
+ * allowance. Convert the rendered canvas + anchor into per-edge insets.
+ */
+export function mapMarkerViewportInsets(input: {
+  width: number;
+  height: number;
+  anchorX: number;
+  anchorY: number;
+  breathingRoom?: number;
+}): MapViewportPadding {
+  const width = nonnegative(input.width);
+  const height = nonnegative(input.height);
+  const anchorX = clamp(Number.isFinite(input.anchorX) ? input.anchorX : 0.5, 0, 1);
+  const anchorY = clamp(Number.isFinite(input.anchorY) ? input.anchorY : 0.5, 0, 1);
+  const breathingRoom = nonnegative(input.breathingRoom);
+  return {
+    top: height * anchorY + breathingRoom,
+    right: width * (1 - anchorX) + breathingRoom,
+    bottom: height * (1 - anchorY) + breathingRoom,
+    left: width * anchorX + breathingRoom,
+  };
+}
+
+/** A near-full-screen detail page while retaining a small sheet-origin cue. */
+export function expandedPlaceDetailHeight(input: {
+  availableHeight: number;
+  safeTopInset: number;
+}): number {
+  const availableHeight = nonnegative(input.availableHeight);
+  if (availableHeight === 0) return 0;
+  const topClearance = clamp(nonnegative(input.safeTopInset) + 8, 20, 44);
+  return Math.max(
+    Math.min(220, availableHeight),
+    Math.round(Math.min(availableHeight * 0.95, availableHeight - topClearance)),
+  );
+}
+
 /** Keyboard coverage of this map frame, after any native window resize. */
 export function mapKeyboardOverlap(input: {
   mapY: number;
@@ -63,15 +103,17 @@ export function mapUsableViewport(input: {
   bottom?: number;
   left?: number;
   margin?: number;
+  /** Rendered marker extent from its geographic anchor, per edge. */
+  markerInsets?: Partial<MapViewportPadding>;
 }): MapUsableViewport {
   const width = nonnegative(input.width);
   const height = nonnegative(input.height);
   const margin = input.margin == null ? 32 : nonnegative(input.margin);
   const edgePadding = {
-    top: nonnegative(input.top) + margin,
-    right: nonnegative(input.right) + margin,
-    bottom: nonnegative(input.bottom) + margin,
-    left: nonnegative(input.left) + margin,
+    top: nonnegative(input.top) + nonnegative(input.markerInsets?.top ?? margin),
+    right: nonnegative(input.right) + nonnegative(input.markerInsets?.right ?? margin),
+    bottom: nonnegative(input.bottom) + nonnegative(input.markerInsets?.bottom ?? margin),
+    left: nonnegative(input.left) + nonnegative(input.markerInsets?.left ?? margin),
   };
   const left = edgePadding.left;
   const right = width - edgePadding.right;
