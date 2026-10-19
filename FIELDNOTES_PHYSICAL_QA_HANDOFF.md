@@ -2,7 +2,7 @@
 
 ## Release status
 
-Implementation and repository validation are complete. Development OTA publication fields are recorded after the release in this file's final release section. Founder iPhone QA remains required because no iOS renderer or physical device was available.
+Implementation, repository validation, and the Development OTA are complete. Founder iPhone QA remains required because no iOS renderer or physical device was available.
 
 ## Ten-minute iPhone checklist
 
@@ -31,4 +31,14 @@ Capture screenshots at steps 2–4, 6, 8, and 9 plus a short video of step 5. Re
 
 ## Final Development OTA
 
-Pending publication and post-publish verification.
+- Status: published and post-publish head verified
+- Update group: `520be41a-0c53-4d4b-af56-0423e6a473b4`
+- iOS update: `01a15320-4d1d-7199-9e3c-5f8a88933117`
+- Android update: `01a15320-4d1d-74c1-a01a-5c79f2a0e4d7`
+- Runtime: `1.6.59`
+- Application source: `77d704c438e13ca7e32343e53deb3cb626ab50b6`
+- Git branch: `fix/nearr-1.6-physical-ui-qa`
+- Message: `Fix Fieldnotes physical UI ownership and continuity`
+- Dashboard: https://expo.dev/accounts/andrewmahran/projects/nearr/updates/520be41a-0c53-4d4b-af56-0423e6a473b4
+
+The post-publish list shows this group directly ahead of `3cc30077-3ff3-46d8-9d74-e923ee1592a0`, confirming one Development advancement. Production was not queried for mutation and was not changed.

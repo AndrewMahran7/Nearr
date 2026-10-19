@@ -33,3 +33,7 @@ The first safe gate lacked ignored `.env.local`; copying the existing Developmen
 ## Native and performance limits
 
 No native target was available, so physical visual acceptance is pending. Manual save latency is now instrumented but was not measured against a real request. Existing map conservation stress completed with zero missing/duplicate/invalid markers, zero silent taps/camera loops, and a 500-marker raw safety limit; these are regression results rather than before/after product performance claims.
+
+## Development release
+
+The guarded publisher validated the Development app/backend pairing, exported Android and iOS bundles, and published one group at runtime `1.6.59`. Post-publish EAS reads confirm group `520be41a-0c53-4d4b-af56-0423e6a473b4`, iOS update `01a15320-4d1d-7199-9e3c-5f8a88933117`, Android update `01a15320-4d1d-74c1-a01a-5c79f2a0e4d7`, and application source `77d704c438e13ca7e32343e53deb3cb626ab50b6`. It is directly ahead of the prior October 18 group, so shared Development advanced exactly once.
