@@ -1,0 +1,7 @@
+# Age-gate Development backend deployment report — 2026-10-18 PDT
+
+**Status: database deployed; Edge and Railway NOT deployed.** Nearr-Dev `qnfxnmvxpjzfydgudtvs` records `20261018000001_adult_age_eligibility.sql` and `20261018000002_adult_dispatch_transition_guard.sql`, with local/remote migration versions aligned. The age-decision table has zero persisted rows following rollback-contained tests; one queued task remains. The installed `share_media_tasks_age_eligibility_guard` trigger is enabled. No account was auto-marked adult and no saved-place data was removed.
+
+Current Edge versions: `create-share-job` v73, `process-share-link` v86, `process-share-jobs` v142. Current Development Railway worker: `11acd95c-90f3-407e-aefa-2f1d66fc05a9` SUCCESS, unchanged. Source and candidate hashes are in the reconciliation reports. The exact current worker source and fail-closed rollback remain unresolved, so the deployment preconditions in the prompt are not met. No Edge/Railway version or deployment ID was advanced; no OTA was published.
+
+Deployment order remains contingent on source-specific proof: reconfirm DB triggers and target freshness; establish bounded worker quiescence and in-flight accounting; deploy an age-only worker built from its actual running source; prove no ineligible provider dispatch; deploy source-preserving Edge candidates; run live old/new negative and adult positive tests; resume and monitor. Do not assume the available Railway rollback is safe without a containment gate.
