@@ -40,6 +40,7 @@ import {
   readRecognitionCachePolicy,
   recognitionCacheDiagnostics,
 } from '../_shared/recognitionCachePolicy.ts';
+import { checkAgeEligibility } from '../_shared/ageEligibility.ts';
 
 const DEVELOPMENT_PROJECT_REF = 'qnfxnmvxpjzfydgudtvs';
 
@@ -118,6 +119,8 @@ serve(async (req) => {
     return json({ error: 'invalid_auth' }, 401);
   }
   const userId = userData.user.id;
+  const age = await checkAgeEligibility(admin, userId);
+  if (!age.ok) return json({ error: age.code }, age.code === 'age_check_unavailable' ? 503 : 403);
   const activeProjectRef = projectRef(supabaseUrl);
   const qualification = authorizeQualificationMode({
     requestedMode: body.qualificationMode,

@@ -70,6 +70,34 @@ export type TaskDeps = {
   ocr: OcrProvider;
 };
 
+async function adultEligibility(client: SupabaseClient, userId: string): Promise<'adult' | 'restricted' | 'unavailable'> {
+  const { data, error } = await client.rpc('is_adult_eligible_for_ai', { p_user_id: userId });
+  if (error || typeof data !== 'boolean') return 'unavailable';
+  return data ? 'adult' : 'restricted';
+}
+
+async function requireAdultBeforeModel(client: SupabaseClient, userId: string): Promise<void> {
+  const decision = await adultEligibility(client, userId);
+  if (decision === 'unavailable') throw new MediaError('provider_unavailable', 'age_check_unavailable');
+  if (decision !== 'adult') throw new MediaError('age_eligibility_required');
+}
+
+async function stopIneligibleTask(client: SupabaseClient, task: MediaTask): Promise<void> {
+  await setTaskStatus(client, task.id, 'needs_help', {
+    failure_code: 'age_eligibility_required',
+    completed_at: new Date().toISOString(),
+  });
+  if (task.share_job_id) {
+    await client.from('share_jobs').update({
+      status: 'needs_help',
+      decision: 'manual_fallback',
+      needs_help_reason: 'age_eligibility_required',
+      failure_code: 'age_eligibility_required',
+      progress_stage: 'manual',
+    }).eq('id', task.share_job_id).eq('status', 'processing_metadata');
+  }
+}
+
 type AiNoteTarget = {
   name: string;
   googlePlaceId: string | null;
@@ -362,6 +390,12 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
   const errors: string[] = [];
 
   try {
+    const age = await adultEligibility(client, task.user_id);
+    if (age === 'restricted') {
+      await stopIneligibleTask(client, task);
+      return;
+    }
+    if (age === 'unavailable') throw new MediaError('provider_unavailable', 'age_check_unavailable');
     const aiNoteTarget = await loadAiNoteTarget(client, task);
     if (task.task_kind === 'ai_note_enrichment' && !aiNoteTarget) return;
     if (task.task_kind === 'ai_note_enrichment') {
@@ -412,8 +446,8 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       await setProgress(client, task, 'analyzing_evidence');
       analysisAttempted = true;
       const generation = await generateAiSaveNoteWithRetry(
-        () => deps.model.analyze(makeInput('initial')),
-        () => deps.model.analyze(makeInput('repair')),
+        async () => { await requireAdultBeforeModel(client, task.user_id); return deps.model.analyze(makeInput('initial')); },
+        async () => { await requireAdultBeforeModel(client, task.user_id); return deps.model.analyze(makeInput('repair')); },
         (output) => accumulateModelDiagnostics(diagnostics, output),
       );
       diagnostics.noteGenerationPasses = generation.attempts;
@@ -559,6 +593,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       transcript = await measuredRecognitionStage(task, 'audio_extraction_and_transcription', cfg.transcriptionProvider, async () => {
         const audioPath = await extractAudio(cfg, playable, probe, jobTemp.dir, controller.signal);
         await setProgress(client, task, 'transcribing_audio');
+        await requireAdultBeforeModel(client, task.user_id);
         return deps.transcription.transcribe({
           audioPath,
           hasAudio: probe.hasAudio,
@@ -584,8 +619,10 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
 
     // 5. Visible text (OCR provider; default noop → model reads frames).
     await setProgress(client, task, 'extracting_visible_text');
-    const ocr = deduplicateOcrSegments(await measuredRecognitionStage(task, 'visible_text_extraction', cfg.ocrProvider, () =>
-      deps.ocr.extract({ frames, signal: controller.signal })));
+    const ocr = deduplicateOcrSegments(await measuredRecognitionStage(task, 'visible_text_extraction', cfg.ocrProvider, async () => {
+      await requireAdultBeforeModel(client, task.user_id);
+      return deps.ocr.extract({ frames, signal: controller.signal });
+    }));
     diagnostics.ocrSegmentCount = ocr.length;
 
     // 6. Analyze → propose structured place evidence.
@@ -682,6 +719,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       if (task.task_kind === 'premium_recognition' && !deps.premiumModel) {
         throw new MediaError('provider_unavailable', 'premium_model_unconfigured');
       }
+      await requireAdultBeforeModel(client, task.user_id);
       const rawAnalysis = task.task_kind === 'premium_recognition'
         ? await deps.premiumModel!.analyze(analyzeInput)
         : await deps.model.analyze(analyzeInput);
@@ -973,6 +1011,11 @@ async function handleTaskError(
     attempts: task.attempts,
     max: task.max_attempts,
   });
+
+  if (media.code === 'age_eligibility_required') {
+    await stopIneligibleTask(client, task);
+    return;
+  }
 
   // The place save already succeeded. A transient finalizer outage must not
   // turn a valid generated cue into a terminal blank; reuse the same bounded

@@ -50,6 +50,7 @@ import {
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
 import { inspectFacebookUrl } from '../../../lib/shareAgent/facebookUrl.ts';
 import { evaluateMetadataAutoSave } from '../process-share-jobs/metadataAutoSaveGate.ts';
+import { checkAgeEligibility } from '../_shared/ageEligibility.ts';
 
 // ---------------------------------------------------------------------------
 
@@ -105,6 +106,8 @@ serve(async (req) => {
     return statusFailed(auth.reason, 401);
   }
   const { userId, userClient } = auth;
+  const age = await checkAgeEligibility(userClient, userId);
+  if (!age.ok) return statusFailed(age.code, age.code === 'age_check_unavailable' ? 503 : 403);
 
   // ---- Fetch metadata -------------------------------------------
   // Normalize first: lowercase host + strip share-sheet tracking params
