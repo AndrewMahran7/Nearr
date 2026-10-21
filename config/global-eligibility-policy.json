@@ -1,0 +1,18 @@
+{
+  "version": "nearr-global-13-v1",
+  "noticeVersion": "nearr-ai-openai-v1",
+  "termsVersion": "nearr-global-terms-v1",
+  "under13Supported": false,
+  "regions": {
+    "US": { "minimumAge": 13, "name": "United States" },
+    "GB": { "minimumAge": 13, "name": "United Kingdom" },
+    "ES": { "minimumAge": 14, "name": "Spain" },
+    "IT": { "minimumAge": 14, "name": "Italy" },
+    "KR": { "minimumAge": 14, "name": "South Korea" },
+    "FR": { "minimumAge": 15, "name": "France" },
+    "DE": { "minimumAge": 16, "name": "Germany" },
+    "BR": { "minimumAge": 18, "name": "Brazil" },
+    "JP": { "minimumAge": 18, "name": "Japan" },
+    "MX": { "minimumAge": 18, "name": "Mexico" }
+  }
+}
