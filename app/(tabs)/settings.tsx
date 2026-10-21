@@ -952,7 +952,7 @@ export default function SettingsScreen() {
             <View style={styles.helpCopy}>
               <Text style={typography.bodyStrong}>Terms of Service</Text>
               <Text style={[typography.caption, styles.muted, styles.helpBody]}>
-                Production draft for later public launch review.
+                Read the current Terms and effective date.
               </Text>
             </View>
             <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
@@ -974,7 +974,7 @@ export default function SettingsScreen() {
                 Legal acceptance required now: {LEGAL_ACCEPTANCE_REQUIRED ? 'Yes' : 'No'}
               </Text>
               <Text style={[typography.caption, styles.muted]}>
-                Current legal version: {LEGAL_VERSION}
+                Legacy acceptance record version: {LEGAL_VERSION}
               </Text>
               {legalAcceptedVersion ? (
                 <Text style={[typography.caption, styles.muted]}>

@@ -15,6 +15,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Button, Screen } from '@/components';
+import { AiSharePermissionPrompt } from '@/components/AiSharePermissionPrompt';
 import { VayrinPresentationHeader } from '@/components/VayrinPresentationHeader';
 import { Spacing } from '@/constants';
 import { isVayrinProductUiEnabled } from '@/lib/featureFlags';
@@ -41,6 +42,8 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
   const { colors, typography } = useTheme();
   const vayrinEnabled = isVayrinProductUiEnabled();
   const [ui, setUi] = useState<UiState>({ kind: 'submitting' });
+  const [aiPermissionGrantedUrl, setAiPermissionGrantedUrl] = useState<string | null>(null);
+  const aiPermissionHandledUrlRef = useRef<string | null>(null);
   const { state: onboardingV2 } = useOnboardingV2();
   const onboardingShare = isExpectedOnboardingSource(onboardingV2?.pendingShare ?? null, url);
   const handledRef = useRef(false);
@@ -110,7 +113,6 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
       submissionIdRef.current,
       'share_handoff_component_mounted',
     );
-    void submit();
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     };
@@ -118,6 +120,20 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
   }, []);
 
   const styles = createStyles(colors);
+
+  if (aiPermissionGrantedUrl !== url) {
+    return (
+      <AiSharePermissionPrompt
+        onAllow={() => {
+          if (aiPermissionHandledUrlRef.current === url) return;
+          aiPermissionHandledUrlRef.current = url;
+          setAiPermissionGrantedUrl(url);
+          void submit();
+        }}
+        onCancel={() => router.replace('/(tabs)/map')}
+      />
+    );
+  }
 
   if (ui.kind === 'accepted') {
     return (

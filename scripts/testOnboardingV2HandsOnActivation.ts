@@ -13,6 +13,7 @@ import {
   type OnboardingTutorialFixture,
   type OnboardingV2State,
 } from '../lib/onboardingV2Core';
+import { expectedOnboardingV2Route } from '../lib/onboardingV2RoutingCore';
 
 const at = (n: number) => `2026-09-10T20:00:${String(n).padStart(2, '0')}.000Z`;
 const tutorial: CompletedOnboardingSave = {
@@ -56,7 +57,9 @@ const preAuth = readFileSync(join(root, 'components/onboarding/v2/OnboardingV2Pr
 const immersive = readFileSync(join(root, 'components/onboarding/v2/ImmersiveGuidedSave.tsx'), 'utf8');
 const secondHalf = readFileSync(join(root, 'components/onboarding/v2/OnboardingV2SecondHalf.tsx'), 'utf8');
 const coach = readFileSync(join(root, 'components/onboarding/v2/OnboardingV2MapCoachmark.tsx'), 'utf8');
+const practiceLauncher = readFileSync(join(root, 'services/onboardingPracticeLauncher.ts'), 'utf8');
 const map = readFileSync(join(root, 'app/(tabs)/map.tsx'), 'utf8');
+const authGate = readFileSync(join(root, 'app/_layout.tsx'), 'utf8');
 
 const forwardProgress = [0.14, 0.22, 0.3, 0.34, 0.38, 0.44, 0.5, 0.56, 0.6, 0.68, 0.73, 0.8, 0.84, 0.87, 0.93, 1];
 assert.deepEqual([...forwardProgress].sort((a, b) => a - b), forwardProgress);
@@ -68,6 +71,7 @@ assert.match(secondHalf, /completeOnboardingV2SecondHalf\('explore_map'\)/, 'fin
 assert.doesNotMatch(secondHalf, /router\.replace\('\/\(tabs\)\/map'\)/, 'AuthGate keeps sole navigation ownership');
 assert.match(coach, /REAL SAVE .* OPTIONAL/);
 assert.match(coach, /openOnboardingPracticePost\(fixture\)/);
+
 assert.doesNotMatch(coach, /loadOnboardingPracticeFixture/);
 assert.match(coach, /useOnboardingTutorialJobs/);
 assert.match(map, /recordOnboardingV2MapEntered\(liveData\.some/);

@@ -37,6 +37,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { AiSharePermissionPrompt } from './components/AiSharePermissionPrompt';
 import {
   ActivityIndicator,
   Animated,
@@ -404,6 +405,19 @@ type UiState =
   | { kind: 'error'; message: string };
 
 export default function ShareExtension(props: ExtensionInitialProps) {
+  const [aiPermissionGrantedUrl, setAiPermissionGrantedUrl] = useState<string | null>(null);
+  const sharedUrl = pickSharedUrl(props);
+  // The native controller only extracts the shared payload. Neither backend
+  // path may mount until this share's explicit AI permission is granted.
+  if (sharedUrl && aiPermissionGrantedUrl !== sharedUrl) {
+    return (
+      <AiSharePermissionPrompt
+        compact
+        onAllow={() => setAiPermissionGrantedUrl(sharedUrl)}
+        onCancel={close}
+      />
+    );
+  }
   // Feature-flagged: async submit-and-dismiss (new) vs the legacy synchronous
   // handoff (unchanged). Default OFF keeps the proven flow until rollout.
   if (isAsyncShareJobsEnabled()) {

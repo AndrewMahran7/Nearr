@@ -67,6 +67,7 @@ assert.match(authIntent, /Sign in to Nearr/);
 assert.match(secondHalf, /Phase1PrimaryButton title="Explore my map"/);
 assert.match(secondHalf, /private practice example/);
 assert.match(secondHalf, /real share will use Nearr's live recognition/);
+
 assert.match(settings, /Back up your map/);
 assert.match(index, /stage === 'onboarding_complete'/);
 console.log('PASS final activation clearly hands off from scripted practice to the real app');
