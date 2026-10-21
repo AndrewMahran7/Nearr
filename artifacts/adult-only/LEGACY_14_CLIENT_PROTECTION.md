@@ -1,0 +1,7 @@
+# Public Nearr 1.4.55/build 55 compatibility
+
+The old client cannot render the new 18+ step. Its synchronous `process-share-link` submission is therefore gated at the same authenticated Edge boundary; an unknown/underage/revoked account would receive structured 403 `age_eligibility_required` after the new backend is deployed. Newer asynchronous extension/job calls are independently gated in `create-share-job`, the database queue triggers, and dispatch. A saved bearer token does not establish adulthood. A current 1.5 client provides the route to declare eligibility; the old client receives a denial until that account has a server decision.
+
+Existing saved places are not migrated or deleted. An adult who establishes eligibility with the updated client should be able to continue using an older client for recognition, subject to separate AI-sharing-permission requirements. This preserves the possibility of simultaneous 1.4/1.5 backend support and does not institute a minimum version.
+
+**Not qualified yet:** actual 1.4.55/b55 binary or contract replay against deployed Development Edge, old extension and cached/deferred submissions, old error presentation, and post-eligibility adult success. Production Edge is unchanged and old clients can still use the existing Production service; founder approval and a safe, tested rollout are required. If AI consent cannot be obtained compatibly on 1.4, a narrowly scoped update requirement may be necessary, but none has been approved or activated.

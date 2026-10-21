@@ -25,6 +25,7 @@ export type CreateShareJobResult =
         | 'missing_auth'
         | 'invalid_url'
         | 'unauthorized'
+        | 'age_eligibility_required'
         | 'timeout'
         | 'network'
         | 'http_error'
@@ -110,6 +111,9 @@ export async function createShareJob(args: {
     };
 
     if (res.status === 401) return { ok: false, reason: 'unauthorized', ...diagnostic };
+    if (res.status === 403 && json?.error === 'age_eligibility_required') {
+      return { ok: false, reason: 'age_eligibility_required', ...diagnostic };
+    }
     if (res.status === 400) return { ok: false, reason: 'invalid_url', ...diagnostic };
     if (!res.ok) return { ok: false, reason: 'http_error', ...diagnostic };
 

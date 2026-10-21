@@ -7,6 +7,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as ExpoLinking from 'expo-linking';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { AgeEligibilityAccessContext } from '@/lib/ageEligibilityAccess';
+import { useAgeEligibility } from '@/hooks/useAgeEligibility';
+import { AgeEligibilityGate } from '@/components/AgeEligibilityGate';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { isOnboardingPreviewActive } from '@/lib/onboarding';
 import { LegalAgreementModal, SetupReminderModal } from '@/components';
@@ -255,6 +259,15 @@ function AuthGate({
   const { session, loading, isDevSession } = useAuth();
   const isAnonymousSession = session?.user.is_anonymous === true;
   const { state: onboardingV2, loading: onboardingV2Loading } = useOnboardingV2();
+  // Offline Phase 1 stays untouched. Anonymous Phase 2 and every permanent
+  // account require a server-backed decision before live recognition.
+  const ageRequired = !!session && !isDevSession &&
+    (!isAnonymousSession || !!onboardingV2?.phase1CompletedAt);
+  const ageEligibility = useAgeEligibility(
+    ageRequired ? session?.user.id ?? null : null,
+    onboardingV2?.stage ?? null,
+  );
+  const ageAccessApproved = !ageRequired || ageEligibility.status === 'adult';
   const segments = useSegments();
   const router = useRouter();
   const currentRoute = onboardingRouteKey(segments);
@@ -357,7 +370,7 @@ function AuthGate({
   }, [session, session?.user.id, isAnonymousSession, isDevSession]);
 
   const refreshSetupReminder = useCallback(async (force = false) => {
-    if (!session || isDevSession || isAnonymousSession) {
+    if (!session || isDevSession || isAnonymousSession || !ageAccessApproved) {
       setSetupReminderVisible(false);
       setNeedsNotifications(false);
       setNeedsLocation(false);
@@ -378,7 +391,7 @@ function AuthGate({
     setNeedsNotifications(missingNotifications);
     setNeedsLocation(missingLocation);
     setSetupReminderVisible(missingNotifications || missingLocation);
-  }, [suppressSetupReminder, isAnonymousSession, isDevSession, legalAgreementVisible, session, setupReminderDismissedThisSession]);
+  }, [suppressSetupReminder, isAnonymousSession, isDevSession, ageAccessApproved, legalAgreementVisible, session, setupReminderDismissedThisSession]);
 
   async function handleAcceptLegal() {
     if (!session) return;
@@ -594,7 +607,7 @@ function AuthGate({
   // because there's no real Supabase auth — the query would just return
   // empty and we'd needlessly trigger the location prompt.
   useEffect(() => {
-    if (!session || isDevSession || isAnonymousSession) return;
+    if (!session || isDevSession || isAnonymousSession || !ageAccessApproved) return;
     void syncProximityWatch();
     // Register this device's Expo push token for server-sent share-job
     // notifications. No-op unless the async flag is on + permission granted.
@@ -620,10 +633,10 @@ function AuthGate({
       logInfo('notification-dedupe', 'listener_cleanup name=app_state_proximity_sync');
       sub.remove();
     };
-  }, [session, isAnonymousSession, isDevSession, refreshSetupReminder]);
+  }, [session, isAnonymousSession, isDevSession, ageAccessApproved, refreshSetupReminder]);
 
   useEffect(() => {
-    if (!session || isDevSession || isAnonymousSession) {
+    if (!session || isDevSession || isAnonymousSession || !ageAccessApproved) {
       setSetupReminderVisible(false);
       setNeedsNotifications(false);
       setNeedsLocation(false);
@@ -635,7 +648,7 @@ function AuthGate({
       return;
     }
     void refreshSetupReminder();
-  }, [session, isAnonymousSession, isDevSession, suppressSetupReminder, refreshSetupReminder]);
+  }, [session, isAnonymousSession, isDevSession, ageAccessApproved, suppressSetupReminder, refreshSetupReminder]);
 
   if (startupPresentation.mode !== 'ready') {
     return (
@@ -647,10 +660,31 @@ function AuthGate({
     );
   }
 
+  if (ageRequired && ageEligibility.status !== 'adult') {
+    // Expo Router's root Stack must remain mounted. Keep it invisible and
+    // non-interactive while the eligibility surface owns the full viewport.
+    return (
+      <View style={{ flex: 1 }}>
+        <AgeEligibilityAccessContext.Provider value={false}>
+          <View style={{ flex: 1, opacity: 0 }} pointerEvents="none">{children}</View>
+        </AgeEligibilityAccessContext.Provider>
+        <View style={StyleSheet.absoluteFill}>
+          <AgeEligibilityGate
+            status={ageEligibility.status}
+            submitting={ageEligibility.submitting}
+            onDeclare={ageEligibility.declare}
+            onRetry={ageEligibility.retry}
+            onSignOut={() => supabase.auth.signOut().then(() => undefined)}
+          />
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <>
+    <AgeEligibilityAccessContext.Provider value={!!session && (isDevSession || ageEligibility.status === 'adult')}>
       {children}
-      <NotificationTapController authReady={!loading && !!session && !authLinkPending} />
+      <NotificationTapController authReady={!loading && !!session && !authLinkPending && ageAccessApproved} />
       <AutoSaveUndoToast />
       <LegalAgreementModal
         visible={LEGAL_ACCEPTANCE_REQUIRED && legalAgreementVisible}
@@ -666,7 +700,7 @@ function AuthGate({
         onOpenLocationSettings={() => void handleOpenLocationSettings()}
         onDismiss={dismissSetupReminder}
       />
-    </>
+    </AgeEligibilityAccessContext.Provider>
   );
 }
 

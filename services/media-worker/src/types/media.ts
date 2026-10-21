@@ -6,6 +6,7 @@
 /** Structured error codes returned by media resolvers + the pipeline. NEVER
  *  carry secrets, cookies, or authorization headers in error detail. */
 export type MediaErrorCode =
+  | 'age_eligibility_required'
   | 'unsupported_platform'
   | 'unsupported_url'
   | 'identity_mismatch'

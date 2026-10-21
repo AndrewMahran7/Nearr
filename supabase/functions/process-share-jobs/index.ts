@@ -21,6 +21,7 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
 
 import { readEnv, validateEnv } from '../process-share-link/env.ts';
+import { checkAgeEligibility } from '../_shared/ageEligibility.ts';
 import { detectPlatform, legacySourceFor } from '../process-share-link/platform/detectPlatform.ts';
 import {
   fetchPostMetadata,
@@ -2370,6 +2371,11 @@ async function finalizeMediaTask(
     .from('share_media_tasks').select('*').eq('id', taskId).maybeSingle();
   if (!task) return json({ error: 'task_not_found' }, 404);
 
+  // Recheck delayed callbacks, including AI-note enrichment, after a status
+  // change. Model output cannot be committed into a restricted account.
+  const callbackAge = await checkAgeEligibility(admin, task.user_id);
+  if (!callbackAge.ok) return json({ error: callbackAge.code }, callbackAge.code === 'age_check_unavailable' ? 503 : 403);
+
   // Parent derived from the task's FK (never from the body).
   const { data: job } = task.share_job_id
     ? await admin.from('share_jobs').select('*').eq('id', task.share_job_id).maybeSingle()
@@ -4260,6 +4266,22 @@ async function processOne(
   job: any,
   policy: RecognitionCachePolicy,
 ): Promise<void> {
+  // Claimed work may predate the rollout or have survived a retry/lease. This
+  // check runs before metadata acquisition or any provider dispatch.
+  const age = await checkAgeEligibility(admin, job.user_id);
+  if (!age.ok) {
+    if (age.code === 'age_check_unavailable') throw new Error(age.code);
+    await finalize(admin, job, {
+      status: 'needs_help',
+      decision: 'manual_fallback',
+      needs_help_reason: age.code,
+      failure_code: age.code,
+      failure_category: 'technical_failure',
+      analysis_attempted: false,
+      progress_stage: 'manual',
+    }, null);
+    return;
+  }
   const processingStartedMs = Date.now();
   policy = recognitionCachePolicyForRun(policy, job.recognition_run_mode);
   const rawUrl = job.canonical_url || job.source_url;
