@@ -4,7 +4,8 @@ Recovered on 2026-10-26 PT without resetting, cleaning, or discarding any work.
 
 ## Recovered Git state
 
-- Primary checkout: `C:\Users\andre\Desktop\Nearr`, branch `integrate/safe-development-baseline`, HEAD `88c73e45a74b87fc121f98666b4a68755…` at initial inspection.
+- Primary checkout: `C:\Users\andre\Desktop\Nearr`, branch `integrate/safe-development-baseline`, HEAD `88c73e45a74b87fc121f98666b4a687556558123` at initial inspection, six commits ahead of its upstream.
+- The primary checkout was and remains independently dirty. Preserved tracked changes include `app.json`, app icon assets, `supabase/.temp/cli-latest`, and staged Vayrin audit artifacts. Preserved untracked content includes cost/recognition/eye-contact audits, App Store previews, marketing, posts, tools, videos, and the unusually named `{console.error('sanitized_query_failed` file. None of these primary-checkout changes were staged, edited, moved, deleted, or included in the unified release checkpoint.
 - Unified worktree: `C:\Users\andre\Desktop\Nearr\.tmp\nearr-global-integration-recovered`.
 - Branch: `integration/nearr-global-fieldnotes-monetization`.
 - Recovered HEAD and upstream: `8bcd0bdb6fa4973da66ba77672592593511e97c0`.
@@ -74,7 +75,7 @@ No disposable Development credential is stored in the worktree or current proces
 - Live Development functions remain: `create-share-job` v75, `process-share-link` v88, `process-share-jobs` v144, `plus-api` v1, and `revenuecat-plus-webhook` v1.
 - EAS is authenticated as `andrewmahran`. Build `af64b897-32a0-40f7-a690-c802c1920e39` is a finished internal Development build 1.7.0 (69) sourced from `d413814…`; it is not a Store build and does not include the later Android recovery commits.
 - No 1.7 App Store/production EAS build exists in the queried history.
-- Railway remained unauthenticated at initial recovery inspection. One fresh interactive OAuth session was started; no deployment is permitted unless that exact session completes and live Development context is read back.
+- Railway remained unauthenticated at initial recovery inspection. One fresh interactive OAuth session opened the Railway `Authorize App` page in Edge, but it was not approved during the bounded recovery window; the waiting CLI process was canceled. That browser page is now stale and a later attempt must start a new `railway login`. No Railway deployment or configuration mutation occurred.
 - App Store Connect and RevenueCat have no authenticated CLI in this workspace. Their current states remain committed evidence rather than fresh dashboard readback.
 
 ## Recognition qualification
