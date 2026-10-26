@@ -52,3 +52,30 @@ test('unknown, underage, and revoked owners cannot reach any media or model prov
   assert.equal(updates[0]!.patch.failure_code, 'age_eligibility_required');
   assert.equal(updates[1]!.patch.failure_code, 'age_eligibility_required');
 });
+
+test('revocation after claim bookkeeping blocks the later acquisition dispatch', async () => {
+  let eligibilityChecks = 0;
+  let providerCalls = 0;
+  const updates: Record<string, unknown>[] = [];
+  const chain = { eq: () => chain };
+  const blocked = async () => { providerCalls++; throw new Error('provider dispatched after revocation'); };
+  const deps = {
+    cfg: { tempDir: tmpdir(), jobTimeoutMs: 10_000, retryBaseSeconds: 1, retryMaxSeconds: 1 },
+    client: {
+      rpc: async (name: string) => {
+        if (name !== 'is_account_eligible_for_ai') return { data: null, error: null };
+        eligibilityChecks++;
+        return { data: eligibilityChecks === 1, error: null };
+      },
+      from: () => ({ update: (patch: Record<string, unknown>) => { updates.push(patch); return chain; } }),
+    },
+    resolvers: [{ name: 'revocation-fixture', supports: () => true, resolve: blocked }],
+    transcription: { transcribe: blocked },
+    model: { analyze: blocked },
+    ocr: { extract: blocked },
+  } as unknown as TaskDeps;
+  await runMediaTask(deps, { ...task, id: 'revoked-after-claim-test' });
+  assert.equal(providerCalls, 0, 'Initial authorization must not be reused after awaited bookkeeping');
+  assert.equal(eligibilityChecks, 2);
+  assert.ok(updates.some(patch => patch.status === 'needs_help' && patch.failure_code === 'age_eligibility_required'));
+});

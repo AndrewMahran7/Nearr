@@ -505,13 +505,18 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     const selectedResolver = resolver;
     diagnostics.resolverName = selectedResolver.name;
 
-    const media = await measuredRecognitionStage(task, 'media_acquisition', selectedResolver.name, () => selectedResolver.resolve({
-      jobId: task.share_job_id ?? task.id,
-      sourceUrl: task.source_url,
-      canonicalUrl: task.canonical_url ?? undefined,
-      workDir: jobTemp.dir,
-      signal: controller.signal,
-    }));
+    const media = await measuredRecognitionStage(task, 'media_acquisition', selectedResolver.name, async () => {
+      // Claim-time eligibility can change while target lookup/progress writes
+      // are awaited. Reauthorize before sending even the source URL outward.
+      await requireEligibilityBeforeProvider(client, task.user_id);
+      return selectedResolver.resolve({
+        jobId: task.share_job_id ?? task.id,
+        sourceUrl: task.source_url,
+        canonicalUrl: task.canonical_url ?? undefined,
+        workDir: jobTemp.dir,
+        signal: controller.signal,
+      });
+    });
     warnings.push(...media.warnings);
     if (media.acquisition) {
       diagnostics.mediaAcquisitionProvider = media.acquisition.provider;
