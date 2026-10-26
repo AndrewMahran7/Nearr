@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "main": "./index.js",
   "scripts": {
+    "test:birthday-onboarding": "ts-node -P scripts/tsconfig.json scripts/testBirthdayOnboarding.ts",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -382,6 +383,7 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-native-community/datetimepicker": "8.0.1",
     "@supabase/supabase-js": "^2.45.0",
     "@types/supercluster": "^7.1.3",
     "expo": "~51.0.0",

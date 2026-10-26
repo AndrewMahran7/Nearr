@@ -172,10 +172,13 @@ module.exports = ({ config }) => {
 
   return {
     ...config,
+    // The birthday picker adds native code. Never target the older 1.7 Dev runtime.
+    runtimeVersion: IS_DEVELOPMENT_APP ? '1.7-onboarding-date-v1' : config.runtimeVersion,
     name: variant.name,
     scheme: variant.scheme,
     ios: {
       ...config.ios,
+      ...(IS_DEVELOPMENT_APP ? { buildNumber: '70' } : {}),
       bundleIdentifier: variant.iosBundleIdentifier,
       config: {
         ...(config.ios && config.ios.config),

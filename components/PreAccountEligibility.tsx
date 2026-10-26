@@ -7,8 +7,9 @@ import { assessDeclaration, isDeclaration, type EligibilityDeclaration } from '.
 import { hideNativeSplashWhenReady } from '../lib/splashLifecycle';
 import type { AgeEligibilityState } from '../hooks/useAgeEligibility';
 import { supabase } from '../lib/supabase';
+import { LOCAL_ELIGIBILITY_KEY } from '../lib/localEligibility';
 
-export const LOCAL_ELIGIBILITY_KEY = 'nearr.globalEligibility.v1';
+export { LOCAL_ELIGIBILITY_KEY } from '../lib/localEligibility';
 /** Before mounting onboarding hooks. Rejected new users remain local:
  * no anonymous account, provider request, or fake parent approval. */
 export function PreAccountEligibility({ children }: { children: ReactNode }) {

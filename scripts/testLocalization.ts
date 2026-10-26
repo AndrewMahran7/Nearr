@@ -87,8 +87,16 @@ async function persistence() {
     return module.exports;
   }
   const adapter=loadAdapter();await adapter.initializeLocale();assert.equal(i18n.language,'fr');
+  assert.deepEqual(adapter.localePreferenceState(), { ready: true, confirmed: false }, 'device default is preselected, not a persisted user choice');
+  let preferenceNotifications = 0;
+  const unsubscribe = adapter.subscribeLocalePreference(() => { preferenceNotifications++; });
+  await adapter.changeLocale('fr');
+  assert.equal(preferenceNotifications, 1, 'confirming an unchanged device language still updates the screen subscription');
+  assert.equal(adapter.localePreferenceState().confirmed, true);
+  unsubscribe();
   await adapter.changeLocale('ja');assert.equal(stored.get(LOCALE_STORAGE_KEY),'ja');assert.equal(shared,'ja');
   device=['de-DE'];const relaunched=loadAdapter();await relaunched.initializeLocale();assert.equal(i18n.language,'ja','explicit preference survives relaunch and device change');
+  assert.equal(relaunched.localePreferenceState().confirmed, true, 'relaunch skips redundant language prompt');
   const previous=changes;await relaunched.initializeLocale();assert.equal(changes,previous,'notification initialization does not recursively emit language changes');
   await relaunched.changeLocale('system');assert.equal(i18n.language,'de');
   device=['es-ES'];relaunched.refreshDeviceLocale();assert.equal(i18n.language,'es-ES');
