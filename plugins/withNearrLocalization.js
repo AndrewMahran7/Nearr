@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const xcode = require('xcode');
+const plist = require('@expo/plist').default;
 const { withInfoPlist, withFinalizedMod } = require('expo/config-plugins');
 
 const LOCALES = ['en-US', 'es-MX', 'es-ES', 'pt-BR', 'fr', 'de', 'it', 'ja', 'ko', 'zh-Hans'];
@@ -41,12 +42,22 @@ function ensureTargetResourcesPhase(project, targetUuid) {
   return added.buildPhase;
 }
 
-function writeNativeLocales({ projectRoot, platformProjectRoot, project }) {
+function writeNativeLocales({ projectRoot, platformProjectRoot, project, buildNumber = '1' }) {
   const targets = Object.entries(project.pbxNativeTargetSection()).filter(([key, target]) =>
     !key.endsWith('_comment') && /com.apple.product-type.(application|app-extension)/.test(target.productType));
   for (const [uuid, target] of targets) {
     const targetName = target.name.replaceAll('"', '');
     const groupName = `NearrLocales-${targetName}`;
+    if (/com.apple.product-type.app-extension/.test(target.productType)) {
+      const infoPath = path.join(platformProjectRoot, targetName, 'Info.plist');
+      if (!fs.existsSync(infoPath)) throw new Error(`Nearr localization: missing ${targetName}/Info.plist`);
+      const info = plist.parse(fs.readFileSync(infoPath, 'utf8'));
+      // EAS remote versioning rewrites literal CFBundleVersion values after
+      // prebuild. expo-share-extension emits $(CURRENT_PROJECT_VERSION), which
+      // leaves the nested bundle at 1 while the host is incremented remotely.
+      info.CFBundleVersion = String(buildNumber);
+      fs.writeFileSync(infoPath, plist.build(info));
+    }
     // Normalize or create one target-scoped Resources phase before adding
     // variant groups. node-xcode otherwise falls back to the first target.
     const resourcesPhase = ensureTargetResourcesPhase(project, uuid);
@@ -105,7 +116,7 @@ module.exports = function withNearrLocalization(config) {
     const filename = path.join(platformProjectRoot, projectDirectory, 'project.pbxproj');
     const project = xcode.project(filename);
     project.parseSync();
-    if (writeNativeLocales({ projectRoot, platformProjectRoot, project }) < 2) throw new Error('Nearr localization: host and Share Extension targets required');
+    if (writeNativeLocales({ projectRoot, platformProjectRoot, project, buildNumber: mod.ios?.buildNumber || '1' }) < 2) throw new Error('Nearr localization: host and Share Extension targets required');
     fs.writeFileSync(filename, project.writeSync());
     return mod;
   }]);
