@@ -1,0 +1,19 @@
+
+> nearr@0.1.0 test:media-reliability
+> ts-node -P scripts/tsconfig.json scripts/testMediaFinalizeReliability.ts
+
+PASS HTTP 503 provider failure is classified
+PASS provider transport failure is classified as timeout
+PASS retry scheduling failure is classified as database unavailable
+PASS deterministic exception is not mislabeled transient
+PASS first transient failure is durably accepted, not returned as 503
+PASS durable retries use exponential backoff
+PASS Retry-After is respected and bounded
+PASS retry exhaustion becomes a successful terminal response
+PASS structured log contains correlation fields and no payload
+PASS Edge callback schedules durable retry and never explicitly returns 503
+PASS concurrent or duplicate callback conflict is an idempotent success
+PASS retry exhaustion is terminal and does not schedule another attempt
+PASS deterministic provider 4xx is not retried
+
+ALL MEDIA FINALIZE RELIABILITY TESTS PASSED

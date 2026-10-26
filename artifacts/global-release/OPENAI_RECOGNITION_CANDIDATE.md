@@ -1,0 +1,13 @@
+# Disabled OpenAI normal-recognition candidate
+
+Prepared 20 October 2026; reviewed 25 October 2026. Source implementation and offline protocol tests are complete. This is not a qualified replacement, live benchmark, or permission to activate processing. No provider request, credential lookup, paid experiment, new contract, or live configuration change was made.
+
+`services/media-worker/src/providers/openaiRecognition.ts` implements the existing `ModelProvider` interface using the direct OpenAI Responses endpoint. It reuses the place-evidence prompt, Zod validation, candidate diagnostics, evidence corroboration and deterministic moment-to-place grouping. Google Places verification and save decisions remain authoritative. Saved-place notes use the existing scoped note path; normal recognition clears generated notes on unsaved hypotheses. The adapter has no Gemini fallback, and the separately priced Automatic Deep/Sol path is bypassed.
+
+The endpoint is fixed to `https://api.openai.com/v1/responses`; redirects are rejected and `store` is false. Requests are bounded to 12 selected frames, 1 MiB per frame, 6 MiB total, 24,000 text characters, 90 seconds maximum, 8,000 output tokens maximum and 256 KiB response bodies. Dedicated `MEDIA_OPENAI_RECOGNITION_*` credentials, exact model and price inputs are mandatory. Missing usage or pricing remains unknown rather than zero. Acquisition, transcription, Places, failures, retries, notes and infrastructure remain additional costs.
+
+Configuration cannot grant account eligibility. Readiness rejects legacy Gemini configuration even when an old key exists. The HTTP process may remain healthy while readiness and processing report unavailable. The fixed API contract follows the [Responses API reference](https://developers.openai.com/api/reference/resources/responses/methods/create), while retention assumptions follow [OpenAI API data controls](https://developers.openai.com/api/docs/guides/your-data).
+
+The worker suite passed 663 tests (656 pass, 7 skipped live/integration, 0 fail), including explicit-route denial, credentials/model isolation, request bounds, malformed/incomplete response handling, grounding, saved-note scope, no provider fallback, timeout/cancellation, token accounting and unknown versus synthetic cost. All model transports were mocked.
+
+Still required: approved provider/market/guardian rules; exact available model and current pricing; dedicated authorized credentials; a matched full-path benchmark; acquisition/retention qualification; permitted adult Development success plus blocked/withdrawn cases; signed-device end-to-end proof. Keep the candidate disabled until those results exist.

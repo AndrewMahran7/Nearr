@@ -702,7 +702,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
   // The old shortcut resolved the job and navigated WITHOUT ever saving.
   assert.doesNotMatch(screen, /viewAlreadySaved\s*\(/, 'the save-skipping shortcut is gone');
   assert.match(screen, /alreadySavedActionCopy\(/, 'copy is derived from the merge plan');
-  assert.match(screen, /title="See places in this area"/, 'broad areas keep their exact-place search action');
+  assert.match(screen, /title=\{t\("See places in this area"\)\}/, 'broad areas keep their exact-place search action');
   assert.match(
     screen,
     /fallbackSaveLabel\(confirmationSingle\.name\)[\s\S]{0,500}handleSaveStored\(single\)/,

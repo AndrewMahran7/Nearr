@@ -1,0 +1,27 @@
+
+> nearr@0.1.0 test:media-adversarial
+> ts-node -P scripts/tsconfig.json scripts/testMediaAdversarialEvidence.ts
+
+PASS explicit high-confidence street address => eligible
+PASS natural place with explicit city and region => eligible without street address
+PASS exact visible natural-place identity remains eligible without redundant geography text
+PASS inferred-only place => NOT eligible
+PASS passing_mention => NOT eligible
+PASS creator handle name only => NOT eligible
+PASS dish name => NOT eligible
+PASS cuisine name => NOT eligible
+PASS city-as-context (no street) => NOT eligible
+PASS unrelated subtitle => NOT eligible
+PASS platform UI text => NOT eligible
+PASS low-confidence explicit address => NOT eligible
+PASS low-confidence speech address => NOT eligible
+PASS multiple intentional places => NOT eligible
+PASS conflicting name without explicit address => NOT eligible
+PASS model coordinates ignored (name-only + coords) => NOT eligible
+PASS insufficientEvidence flag => NOT eligible
+PASS no places => NOT eligible
+PASS selectRenderablePlaces keeps only explicit non-passing primary
+PASS name-only renders a query
+PASS name-only NOT auto-save eligible
+
+ALL MEDIA ADVERSARIAL EVIDENCE TESTS PASSED

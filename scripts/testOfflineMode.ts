@@ -464,7 +464,7 @@ async function main() {
   const sheet = read('components/map/MapBottomSheet.tsx');
   assert.match(
     sheet,
-    /offline \? 'Offline · ' : ''/,
+    /offline \? t\("Offline · "\) : ''/,
     'offline is a quiet qualifier on the saved-place count, not a takeover screen',
   );
 

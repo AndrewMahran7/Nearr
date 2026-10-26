@@ -1,0 +1,127 @@
+
+> nearr@0.1.0 test:recovery-hints
+> ts-node -P scripts/tsconfig.json scripts/testRecoveryHints.ts
+
+PASS paradisedynasty_usa → "Paradisedynasty" (usa suffix stripped, compact preserved)
+PASS paradisedynastyusa → "Paradisedynasty" (compact, usa stripped)
+PASS burritoslapalma → "Burritoslapalma"
+PASS 2nd_floor_hb → "2nd Floor" (hb suffix stripped)
+PASS dametra_fresh_official → "Dametra Fresh"
+PASS usa → null (nothing left)
+PASS empty → null
+PASS southcoastplaza is mall
+PASS westfieldcentury is NOT mall
+PASS blossom_mall is mall
+PASS americanaattheoutlets is mall (outlets)
+PASS paradisedynasty_usa is NOT mall
+PASS citadeloutlets is mall
+PASS venue candidates exclude poster and mall
+PASS mall context label = "Southcoastplaza" (compact, not word-split)
+PASS no tagged handles → no venue candidates
+PASS no mall context
+PASS poster=tagged → still excluded as venue candidate (handle-only guard)
+PASS name="3333 Bristol St" is generic
+PASS name="3333 Bristol Street" is generic (suffix variation)
+PASS name="Paradise Dynasty" is NOT generic
+PASS name="South Coast Plaza" is NOT generic (no leading digits)
+PASS null candidate → false
+PASS null captionAddress → false
+PASS address with no leading digits in candidate → false
+PASS first query is "Paradisedynasty 3333 Bristol St Costa Mesa CA" (venue+address first)
+PASS bare address comes after venue+mall variants
+PASS mall-context query is generated for primary venue hint
+PASS second venue hint (Burritoslapalma) also gets venue+address query
+PASS mall handle never appears as primary venue
+PASS poster handle never appears as primary venue
+PASS two venue handles → first hint is first tag (caption order preserved)
+PASS second venue hint still gets venue+address query
+PASS no venue hints → only bare-address queries produced
+PASS influencer + single venue handle → venue first
+PASS influencer handle does not appear as venue
+PASS mall-only tags → no venue hints, only bare address
+PASS mall is never the venue even when it is the only tagged handle
+PASS extractCityStateContext: "Santa Cruz, CA" → Santa Cruz / CA
+PASS extractCityStateContext: "in Newport Beach" prose → Newport Beach / CA
+PASS extractCityStateContext: #santacruz hashtag → Santa Cruz / CA
+PASS extractCityStateContext: #downtownsantacruz hashtag → Santa Cruz / CA
+PASS extractCityStateContext: unknown city → null
+PASS extractCityStateContext: empty → null
+PASS looksLikeRoundupPost: "top 5 burgers" → true
+PASS looksLikeRoundupPost: "#5 from @woodennickel_wv" → true
+PASS looksLikeRoundupPost: "best burger" alone → false (single venue context)
+PASS looksLikeRoundupPost: 3+ tagged handles ALONE → false (Patch 5: not enough signal)
+PASS looksLikeRoundupPost: 3+ tagged handles + list language → true
+PASS looksLikeRoundupPost: 1 tagged handle → false
+PASS looksLikeRoundupPost: "2nd Floor 126 Main St Huntington Beach" + collab tags → false
+PASS looksLikeRoundupPost: "Seabright Deli 415 Seabright Ave Santa Cruz" + tags → false
+PASS looksLikeRoundupPost: "Top 5 burger spots" → true
+PASS looksLikeRoundupPost: "list of our favorite pizza places" → true
+PASS looksLikeRoundupPost: "our picks for sushi" → true
+PASS looksLikeRoundupPost: 5 numbered list items → true
+PASS looksLikeRoundupPost: list keyword on a single-place post with full address → false
+PASS looksLikeRoundupPost: idiomatic "Round up your crew" → false
+PASS looksLikeRoundupPost: "roundup" (one word) still → true
+PASS looksLikeRoundupPost: "round-up" (hyphen) still → true
+PASS extractCaptionVenueHints: "Seabright Deli In Santa Cruz" → ["Seabright Deli"]
+PASS extractCaptionVenueHints: "POINT MARKET AND CAFE, Santa Cruz, CA" → ["POINT MARKET AND CAFE"]
+PASS extractCaptionVenueHints: "📍Seabright Deli" pin → ["Seabright Deli"]
+PASS extractCaptionVenueHints: no patterns → []
+PASS extractCaptionVenueHints: descriptor first-word "Easily ..." → []
+PASS extractCaptionVenueHints: "11AM - 3PM 📍" time fragment → []
+PASS extractCaptionVenueHints: "The Best ..." descriptor → []
+PASS normalizeCompactName: "Seabright Deli" → "seabrightdeli"
+PASS normalizeCompactName: "Point Market & Cafe" → "pointmarketcafe"
+PASS normalizeCompactName: accents stripped
+PASS scenario: Seabright Deli — produces venue hint + Santa Cruz city
+PASS scenario: Tacos El Chuy Truck — handle becomes venue hint, city detected
+PASS scenario: Taqueria Los Pericos — caption hint + explicit city
+PASS scenario: Point Market & Cafe — caption "Name, City, CA" pattern produces hint
+PASS scenario: Chocolate the Restaurant — hashtag city + poster-as-venue (when address-free path adds title hint)
+PASS scenario: Top 5 burgers — flagged as roundup, address-free branch must skip
+PASS compactNameMatches: bajasharkeeznb ↔ Baja Sharkeez (region suffix)
+PASS compactNameMatches: taquerialospericossocial ↔ Taqueria Los Pericos (social suffix)
+PASS compactNameMatches: paradisedynasty ↔ Paradise Dynasty (direct compact)
+PASS compactNameMatches: kenosrestaurant ↔ Keno's Restaurant (possessive)
+PASS compactNameMatches: famousdaves ↔ Famous Dave's Bar-B-Que
+PASS compactNameMatches: loadedcafe ↔ Loaded Cafe - Orange
+PASS compactNameMatches: phobamboorestaurant ↔ Pho Bamboo Vietnamese Restaurant (generic strip)
+PASS compactNameMatches: aptosstbbq ↔ Aptos St. BBQ (punctuation stripped)
+PASS compactNameMatches: pointmarketandcafe ↔ Point Market & Cafe (and ↔ &)
+PASS compactNameMatches: POINT MARKET AND CAFE ↔ Point Market & Cafe
+PASS compactNameMatches: house of pies ↔ houseofpies
+PASS compactNameMatches: Sandwich Spot NOT mangled by "and" stripping
+PASS compactNameMatches: Sandwich Spot ↔ unrelated → false
+PASS compactNameMatches: bajasharkeeznb ↔ Sushi Spot → false
+PASS compactNameMatches: paradisedynasty ↔ Panda Express → false
+PASS compactNameMatches: empty inputs → false
+PASS compactNameMatches: short stub inputs → false
+PASS compactNameMatches: symmetric for Baja Sharkeez
+PASS extractStateFromFormattedAddress: "...Costa Mesa, CA 92626, USA" → CA
+PASS extractStateFromFormattedAddress: "...Ferndale, MI 48220, USA" → MI
+PASS extractStateFromFormattedAddress: Toronto address → null
+PASS extractStateFromFormattedAddress: null input → null
+PASS isWrongLocationCandidate: Toronto candidate, expected CA → true
+PASS isWrongLocationCandidate: Michigan candidate, expected CA → true
+PASS isWrongLocationCandidate: CA candidate, expected CA → false
+PASS isWrongLocationCandidate: expectedState null → false (do not block)
+PASS isWrongLocationCandidate: candidate address null → false
+PASS isWrongLocationCandidate: NY candidate, expected NY → false
+PASS A. caption venue-before-pin → "Brooklyn City Pizzeria & Market"
+PASS B. IG title form → includes Brooklyn venue, excludes Foodie/Media/Instagram
+PASS B2. IG title form → Brooklyn venue ranks FIRST (used as placeNameHint)
+PASS C. IG description form → includes Brooklyn venue
+PASS D. generic IG metadata → no Media/Instagram/Foodie/Reel venue hints
+PASS isNoiseHandle: media (from @media CSS) → true
+PASS isNoiseHandle: @media → true (strips @)
+PASS isNoiseHandle: instagram → true
+PASS isNoiseHandle: foodie → true
+PASS isNoiseHandle: reel/reels → true
+PASS isNoiseHandle: media_kitchen → false (substring not matched)
+PASS isNoiseHandle: null/empty → false
+PASS E. isNoiseHandle: 2nd_floor_hb → false
+PASS E. isNoiseHandle: paradisedynasty_usa → false
+PASS E. isNoiseHandle: kenos → false
+PASS E. 2nd_floor_hb still → "2nd Floor"
+PASS E. paradisedynasty_usa still → "Paradisedynasty"
+
+All recovery-hint tests passed

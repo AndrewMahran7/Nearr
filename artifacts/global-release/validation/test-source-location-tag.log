@@ -1,0 +1,73 @@
+
+> nearr@0.1.0 test:source-location-tag
+> ts-node -P scripts/tsconfig.json scripts/testSourceLocationTag.ts
+
+PASS business tag is recovered
+PASS business tag keeps its name
+PASS business tag keeps its coordinates
+PASS business tag keeps Instagram location id
+PASS city tag is recovered
+PASS untagged post yields no tag
+PASS page with no location key at all yields no tag
+PASS provenance names the exact first-party feature
+PASS source type stays tagged_location
+PASS source platform stays instagram
+PASS raw page HTML is never carried on the signal
+PASS tiktok is untouched by this change
+PASS youtube is untouched by this change
+PASS facebook is untouched by this change
+PASS snapchat is untouched by this change
+PASS genericWeb is untouched by this change
+PASS instagram routes through the new extractor
+PASS malformed tag never throws: empty name
+PASS malformed tag yields no signal: empty name
+PASS malformed tag never throws: whitespace name
+PASS malformed tag yields no signal: whitespace name
+PASS malformed tag never throws: name of the wrong type
+PASS malformed tag yields no signal: name of the wrong type
+PASS malformed tag never throws: no name and no coordinates
+PASS malformed tag yields no signal: no name and no coordinates
+PASS malformed tag never throws: null island
+PASS malformed tag yields no signal: null island
+PASS malformed tag never throws: wrong typename
+PASS malformed tag yields no signal: wrong typename
+PASS malformed tag never throws: not an object
+PASS malformed tag yields no signal: not an object
+PASS an unbalanced payload yields no signal
+PASS a bare marker with no object yields no signal
+PASS bad coordinates keep the name: out of range latitude
+PASS bad coordinates are dropped: out of range latitude
+PASS bad coordinates keep the name: out of range longitude
+PASS bad coordinates are dropped: out of range longitude
+PASS bad coordinates keep the name: string coordinates
+PASS bad coordinates are dropped: string coordinates
+PASS bad coordinates keep the name: null coordinates
+PASS bad coordinates are dropped: null coordinates
+PASS bad coordinates keep the name: null island with a name
+PASS bad coordinates are dropped: null island with a name
+PASS NaN coordinates cannot survive parsing
+PASS a tagged business is an exact place
+PASS a tagged city is geographic context
+PASS a tagged city with the admin suffix still matches its locality
+PASS a tagged country is geographic context
+PASS rio: a city tag stays geographic context even beside a business carrying its name
+PASS rio: 7 Mares can never make the tag look like an exact place
+PASS a geographic-sounding business name is still an exact place
+PASS a natural destination is not administrative
+PASS an island destination is not administrative
+PASS a mall destination is not administrative
+PASS an unmatched tag is unknown, not silently geographic
+PASS an empty tag name is unknown
+PASS no provider results is unknown
+PASS valid coordinates become a bias
+PASS a tagless evidence field yields no bias
+PASS absent tag adds no evidence key
+PASS present tag adds exactly one evidence key
+PASS the tag never rewrites what the caption established
+PASS the caption address still wins its own extraction
+PASS a caption address is still found beside a city tag
+PASS an independently named venue at an address defers a different parent/context tag
+PASS a matching exact-place tag remains the highest-priority identity
+PASS a tenant written in caption prose overrides a different tagged parent complex
+
+ALL PASS

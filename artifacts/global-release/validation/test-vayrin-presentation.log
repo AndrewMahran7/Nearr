@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:vayrin-presentation
+> ts-node -P scripts/tsconfig.json scripts/testVayrinPresentation.ts
+
+PASS Vayrin presentation states, safety, and sync/async equivalence

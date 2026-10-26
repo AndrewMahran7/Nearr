@@ -1,0 +1,16 @@
+
+> nearr@0.1.0 test:notification-dedupe
+> ts-node -P scripts/tsconfig.json scripts/testPlaceNotificationDedupe.ts
+
+PASS first send for place A is allowed
+PASS immediate second send for place A same trigger is skipped duplicate
+PASS place A different trigger is skipped by default cross-trigger dedupe
+PASS place A different trigger can be allowed when cross-trigger dedupe is disabled
+PASS place B send is allowed
+PASS place A sends again after cooldown
+PASS missing savedPlaceId is skipped_disabled
+PASS storage read failure returns failed
+PASS storage parse failure returns failed
+PASS old dedupe entries are expired during cleanup
+
+ALL place-notification-dedupe tests passed.

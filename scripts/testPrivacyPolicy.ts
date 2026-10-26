@@ -188,7 +188,22 @@ let openFailure = false;
 let waitForOpen: Promise<void> | null = null;
 let screenThemeMode: 'light' | 'dark' = 'dark';
 let themePalettes: Record<'light' | 'dark', typeof import('../lib/theme').LightColors>;
+let authReads = 0;
+let receiptSession: { access_token: string; user: { id: string } } | null = { access_token: 'owner-a-token', user: { id: 'owner-a' } };
+let accessHandler = async (): Promise<Record<string, unknown>> => ({ legalApproved: true, privacyVersion: 'nearr-global-privacy-v1' });
+const receiptCalls: { name: string; transport: { accessToken: string }; args: unknown }[] = [];
 Module._load = function mockedLoad(request, parent, isMain) {
+  if (request === '@/lib/i18n') return require('../lib/i18nEngine');
+  if (request === '@/hooks/useLocale') return { useLocale: () => ({ locale: 'en-US', preference: 'system', setLocale: async () => undefined }) };
+  // Development review material is deliberately separate from approved policy
+  // content; this harness exercises the production viewer with that panel off.
+  if (request === '@/components/GlobalLegalDraft') return { GlobalLegalDraft: () => null };
+  if (request === 'expo-constants') return { __esModule: true, default: { expoConfig: { extra: { supabaseUrl: 'https://test.invalid', supabaseAnonKey: 'test-public-key' } } } };
+  if (request === '../../lib/supabase') return { supabase: { auth: { getSession: async () => { authReads += 1; return { data: { session: receiptSession } }; } } } };
+  if (request === '@/lib/aiSharingConsent') return { consentRpc: async (transport: { accessToken: string }, name: string, args?: unknown) => {
+    receiptCalls.push({ name, transport, args });
+    return name === 'get_my_global_access' ? accessHandler() : { recorded: true };
+  } };
   if (request === 'react-native') return {
     ScrollView: 'ScrollView', Text: 'Text', View: 'View',
     StyleSheet: { create: (styles: unknown) => styles },
@@ -283,6 +298,10 @@ async function main() {
       assert.equal(screen.root.findAllByType('ScrollView' as any).length, 1);
     });
     check('viewing privacy does not open the website automatically', () => assert.deepEqual(openedUrls, []));
+    check('absent snapshot performs no auth read or privacy receipt RPC', () => {
+      assert.equal(authReads, 0);
+      assert.deepEqual(receiptCalls, []);
+    });
     for (const mode of ['light', 'dark'] as const) {
       screenThemeMode = mode;
       await TestRenderer.act(async () => { screen.update(React.createElement(PrivacyScreen)); });
@@ -315,6 +334,8 @@ async function main() {
         for (const paragraph of section.paragraphs) assert.ok(text.includes(paragraph));
       }
       assert.deepEqual(openedUrls, []);
+      assert.equal(authReads, 0, 'a synthetic non-current snapshot never accesses account state');
+      assert.deepEqual(receiptCalls, [], 'a test-only snapshot is not a current privacy notice receipt');
       nativeTextInvariant(screen.toJSON());
     });
     for (const mode of ['light', 'dark'] as const) {
@@ -355,6 +376,55 @@ async function main() {
     check('unsafe external link is rejected before invoking platform handler', () => {
       assert.equal(unsafeResult, false);
       assert.equal(unsafeCalls, 0);
+    });
+    // Bind the actual presentation receipt to both the approved current notice
+    // and the same account before/after the server qualification read.
+    const currentFixture = cloneFixture();
+    currentFixture.snapshot!.version = 'nearr-global-privacy-v1';
+    currentFixture.approval!.contentSha256 = createHash('sha256').update(privacyPolicyApprovalPayload(currentFixture)).digest('hex');
+    assert.doesNotThrow(() => checkApprovedPolicy(currentFixture));
+    const mountCurrent = async () => {
+      await TestRenderer.act(async () => { screen.unmount(); });
+      screenPolicy = { canonicalUrl: currentFixture.canonicalUrl, snapshot: getApprovedPrivacyPolicy(currentFixture) };
+      receiptCalls.length = 0;
+      await TestRenderer.act(async () => { screen = TestRenderer.create(React.createElement(PrivacyScreen)); });
+    };
+    for (const access of [
+      { legalApproved: false, privacyVersion: 'nearr-global-privacy-v1' },
+      { legalApproved: true, privacyVersion: 'old-privacy-version' },
+    ]) {
+      accessHandler = async () => access;
+      await mountCurrent();
+      check(`no receipt when qualification or current version differs: ${JSON.stringify(access)}`, () => {
+        assert.deepEqual(receiptCalls.map(call => call.name), ['get_my_global_access']);
+      });
+    }
+    receiptSession = null;
+    await mountCurrent();
+    check('current approved notice remains readable without an authenticated account', () => {
+      assert.deepEqual(receiptCalls, []);
+      assert.match(textContent(screen.toJSON()), /Synthetic policy paragraph three/);
+    });
+    receiptSession = { access_token: 'owner-a-token', user: { id: 'owner-a' } };
+    accessHandler = async () => {
+      receiptSession = { access_token: 'owner-b-token', user: { id: 'owner-b' } };
+      return { legalApproved: true, privacyVersion: 'nearr-global-privacy-v1' };
+    };
+    await mountCurrent();
+    check('identity change during qualification cannot record the previous account notice', () => {
+      assert.deepEqual(receiptCalls.map(call => call.name), ['get_my_global_access']);
+    });
+    receiptSession = { access_token: 'owner-a-token', user: { id: 'owner-a' } };
+    accessHandler = async () => {
+      receiptSession = { access_token: 'owner-a-refreshed-token', user: { id: 'owner-a' } };
+      return { legalApproved: true, privacyVersion: 'nearr-global-privacy-v1' };
+    };
+    await mountCurrent();
+    check('presented current approved notice records only its own version using the same owner refreshed token', () => {
+      assert.deepEqual(receiptCalls.map(call => call.name), ['get_my_global_access', 'record_global_privacy_notice']);
+      assert.equal(receiptCalls[1].transport.accessToken, 'owner-a-refreshed-token');
+      assert.deepEqual(receiptCalls[1].args, { p_notice_version: 'nearr-global-privacy-v1' });
+      assert.equal(receiptCalls.some(call => ['record_global_terms', 'set_ai_sharing_permission'].includes(call.name)), false);
     });
   } finally {
     if (screen) TestRenderer.act(() => screen.unmount());

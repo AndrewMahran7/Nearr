@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:share-job-result
+> ts-node -P scripts/tsconfig.json scripts/testShareJobResult.ts
+
+PASS share-job mention result contract

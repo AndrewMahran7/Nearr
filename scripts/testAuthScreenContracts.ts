@@ -216,7 +216,7 @@ function magicLinkPreserved() {
   // says so in developer language ("New users are created automatically").
   assert.match(
     account,
-    /We&apos;ll email you a secure sign-in link\. No password needed\./,
+    /t\("We'll email you a secure sign-in link\. No password needed\."\)/,
     'magic-link copy is consumer-facing and states no password is needed',
   );
   assert.doesNotMatch(
@@ -348,9 +348,9 @@ function accessibilityAndKeyboard() {
   assert.match(account, /KeyboardAvoidingView/);
   assert.match(account, /minHeight: 44/, 'text links keep a 44pt target');
   assert.match(account, /accessibilityRole="alert"/, 'inline errors are announced');
-  assert.match(account, /accessibilityLabel="Email address"/);
-  assert.match(account, /accessibilityLabel="Password"/);
-  assert.match(account, /accessibilityLabel="Confirm password"/);
+  assert.match(account, /accessibilityLabel=\{t\("Email address"\)\}/);
+  assert.match(account, /accessibilityLabel=\{t\("Password"\)\}/);
+  assert.match(account, /accessibilityLabel=\{t\("Confirm password"\)\}/);
   assert.match(resetPassword, /KeyboardAvoidingView/);
 
   const passwordField = read('components/onboarding/OnboardingPasswordField.tsx');

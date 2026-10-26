@@ -1,0 +1,58 @@
+
+> nearr@0.1.0 test:shared-city-context
+> ts-node -P scripts/tsconfig.json scripts/testSharedCityContext.ts
+
+PASS nicaragua: no city is shared across peer destinations
+PASS nicaragua: recorded as no container claim at all
+PASS nicaragua: Granada never becomes the post city
+PASS nicaragua: shared country is still Nicaragua
+PASS nicaragua: shared country is still STRONG
+PASS nicaragua: Ometepe has no city of its own
+PASS nicaragua: Ometepe keeps Nicaragua
+PASS nicaragua: Granada keeps its own city identity
+PASS nicaragua: Granada still resolves geographically
+PASS nicaragua: San Juan del Sur keeps its own city identity
+PASS nicaragua: San Juan del Sur still resolves geographically
+PASS nicaragua: León keeps its own city identity
+PASS nicaragua: León still resolves geographically
+PASS nicaragua: all four destinations survive
+PASS two-stop: a lone peer city is not inheritable
+PASS paris: an agreed city IS shared
+PASS paris: recorded as strong
+PASS paris: source is independent agreement
+PASS rio: the container city still scopes its landmarks
+PASS rio: recorded as strong
+PASS rio: attributed to the container
+PASS rio: the city itself is suppressed as a destination
+PASS rio: Rio is not offered as a peer destination
+PASS rio: the three landmarks survive
+PASS tokyo: a single-city roundup shares its city
+PASS weak: one quiet city is not propagated
+PASS weak: it is recorded as weak, not absent
+PASS weak: country context is unaffected
+PASS multi-country: no shared city
+PASS multi-country: no shared country either
+PASS override: the mention keeps its own city
+PASS override: and its own country
+PASS override: the post has no single shared city to force
+PASS region: an agreed region IS shared
+PASS region: recorded as strong
+PASS region: two different cities still share no city
+PASS region: peer cities in one state still share the state
+PASS region: but never each other's city
+PASS region: conflicting regions share nothing
+PASS region: a lone region is weak, not propagated
+PASS general: a beach does not inherit a peer city
+PASS general: the shared country still holds
+PASS general: an agreed container still scopes a city-less landmark
+PASS general: recorded as container-sourced
+PASS degenerate: empty and blank geo never throw
+PASS degenerate: blank strings are not treated as a city
+PASS consumer: Ometepe is no longer searched inside Granada
+PASS consumer: Ometepe keeps its country scope
+PASS consumer: no coordinate bias is geocoded from a peer city
+PASS consumer: each peer city is still searched as itself
+PASS consumer: an agreed container city still scopes its siblings
+PASS consumer: and still supplies a coordinate bias
+
+ALL PASS

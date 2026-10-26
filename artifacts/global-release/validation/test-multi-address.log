@@ -1,0 +1,19 @@
+
+> nearr@0.1.0 test:multi-address
+> ts-node -P scripts/tsconfig.json scripts/testMultiAddressExtraction.ts
+
+PASS A1: single address produces exactly one entry
+PASS A2: single address raw matches
+PASS B1: two distinct addresses → length 2
+PASS B2: first address detected (Tustin St)
+PASS B3: second address detected (Main St)
+PASS B4: city for first address parsed
+PASS B5: city for second address parsed
+PASS C1: repeated identical address → exactly one entry
+PASS D1: three distinct addresses → length 3
+PASS D2: extractLikelyAddresses respects max=2
+PASS E1: numbered list with 3 addresses → length 3
+PASS F1: caption with no addresses → empty array
+PASS G1: extractLikelyAddress returns the FIRST address only
+
+All multi-address extraction assertions passed.

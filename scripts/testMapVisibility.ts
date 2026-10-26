@@ -186,7 +186,7 @@ assert.match(map, /clusterCandidates = useMemo\(/, 'clustering consumes the filt
 assert.match(map, /visiblePlaces\.filter\(\(place\) => !alwaysIndividualIds\.has\(place\.id\)\)/, 'clustering input is filterPlacesForMap output');
 assert.match(map, /shouldRenderZoneCircle\(\{/, 'zone circles go through the density policy');
 assert.match(map, /onFitAll=\{\(\) => fitVisiblePlaces\(\)\}/, 'filter menu retains explicit filtered framing');
-assert.match(map, /accessibilityLabel=\{mapCategoryFilter === MAP_FILTER_ALL \? 'Show all saved pins' : 'Show all filtered saved pins'\}/, 'Show All is directly discoverable with truthful filtered semantics');
+assert.match(map, /accessibilityLabel=\{mapCategoryFilter === MAP_FILTER_ALL \? t\("Show all saved pins"\) : t\("Show all filtered saved pins"\)\}/, 'Show All is directly discoverable with truthful filtered semantics');
 assert.match(map, /onResetAndFit=\{\(\) => fitVisiblePlaces\(true\)\}/, 'full collection can be restored and framed');
 assert.match(map, /setMapCategoryFilter\(MAP_FILTER_ALL\);\s*\n\s*if \(reminderOpen\)/, 'deep links reset the filter');
 assert.match(

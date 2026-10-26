@@ -1,0 +1,34 @@
+
+> nearr@0.1.0 test:root-layout-loop
+> ts-node -P scripts/tsconfig.json scripts/testRootLayoutRenderLoop.ts
+
+PASS reverted notification-ownership symbol absent: planNotificationNavigation
+PASS reverted notification-ownership symbol absent: takePendingNotificationNavigation
+PASS reverted notification-ownership symbol absent: setPendingNotificationNavigation
+PASS reverted notification-ownership symbol absent: clearPendingNotificationNavigation
+PASS reverted notification-ownership symbol absent: claimUiForNotification
+PASS reverted notification-ownership symbol absent: flushPendingNotificationNavigation
+PASS reverted notification-ownership symbol absent: runNotificationNavigation
+PASS reverted notification-ownership symbol absent: createNotificationOpenIntent
+PASS reverted notification-ownership symbol absent: notificationOwnsVisibleSurface
+PASS the notificationNavigation module is not imported by the root layout
+PASS lib/notificationNavigation.ts does not exist
+PASS the root layout does not dismiss the stack on a notification tap
+PASS the notification controller does not dismiss or reset the root stack
+PASS the root layout does not subscribe to expo-router rootState
+PASS useRootNavigationState is not imported by the root layout
+PASS route reads still go through the deepEqual-guarded snapshot
+PASS AuthGate still routes signed-out users to onboarding
+PASS AuthGate still pulls signed-in users into the tabs
+PASS AuthGate guards current and in-flight onboarding routes before replace
+PASS RootLayout owns no notification response listener or cold-start retrieval
+PASS RootLayout owns no notification response or pending-intent state
+PASS the renderless controller is mounted inside the existing auth shell
+PASS the root app owns a visible startup surface while dependencies hydrate
+PASS the root startup watchdog exposes explicit recovery
+PASS notification responses are still handled
+PASS cold-start notification responses are still read
+PASS notification action buttons still reach their handler
+PASS notification routing cannot block root rendering
+
+All root-layout startup-safety tests passed.

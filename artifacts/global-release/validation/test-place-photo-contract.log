@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:place-photo-contract
+> ts-node -P scripts/tsconfig.json scripts/testPlacePhotoContract.ts
+
+PASS canonical up-to-five photo inventory, stable ordering, provider-reference dedupe, and honest 1/1

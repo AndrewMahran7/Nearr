@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:place-detail-v2
+> ts-node -P scripts/tsconfig.json scripts/testPlaceDetailV2.ts
+
+PASS place detail V2: one why-surface, TikTok/Instagram peers, working swipe-down, reference composition

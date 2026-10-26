@@ -100,9 +100,9 @@ assert.match(runtime, /serverData: priorWasAnonymous \? 'onboarding_sessions_rem
 assert.doesNotMatch(runtime + adapter, /AsyncStorage\.clear\(|multiRemove\(/);
 console.log('PASS fresh-user reset rotates auth locally without deleting permanent accounts or unrelated data');
 
-assert.match(settings, /title="Reset onboarding only"/);
-assert.match(settings, /title="Fresh anonymous QA user"/);
-assert.match(settings, /title="Open standalone QA reset"/);
+assert.match(settings, /title=\{t\("Reset onboarding only"\)\}/);
+assert.match(settings, /title=\{t\("Fresh anonymous QA user"\)\}/);
+assert.match(settings, /title=\{t\("Open standalone QA reset"\)\}/);
 assert.match(fallback, /nearr:\/\/dev-qa/);
 assert.match(fallback, /if \(!isOnboardingV2DevelopmentResetAvailable\(\)\) return <Redirect href="\/"/);
 assert.match(rootLayout, /inDevelopmentQa[\s\S]*isOnboardingV2DevelopmentResetAvailable\(\)\) return/);

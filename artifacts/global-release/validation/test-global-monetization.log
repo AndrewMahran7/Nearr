@@ -1,0 +1,27 @@
+
+> nearr@0.1.0 test:global-monetization
+> ts-node -P scripts/tsconfig.json scripts/testGlobalMonetization.ts
+
+PASS valid Apple subscription verifies as active
+PASS trial and introductory periods remain distinct
+PASS cancelled renewal retains access until expiry
+PASS refund revokes immediately
+PASS verified grace extends access
+PASS expired subscription has no access
+PASS missing entitlement becomes verified free
+PASS wrong product fails closed
+PASS foreign store and family sharing fail closed
+PASS sandbox mismatch fails closed
+PASS stale and future provider timestamps fail closed
+PASS mismatched expiry and grace fail closed
+PASS freshness is required on every access check
+PASS opaque webhook identities are bounded, validated, deduplicated and sorted
+PASS transfer identities include both owners without trusting arbitrary IDs
+PASS webhook app and environment must match configuration
+PASS purchase errors separate cancellation and pending states
+PASS client uses StoreKit display price and server sync after purchase or restore
+PASS Edge endpoints authenticate server-side and re-read RevenueCat
+PASS release and allowance defaults are closed
+PASS optional funnel endpoint remains disabled without separate consent
+
+21 global monetization checks passed.

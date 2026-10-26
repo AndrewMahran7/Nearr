@@ -1,0 +1,42 @@
+
+> nearr@0.1.0 test:onboarding-authentic-phase2-auth
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingAuthenticPhase2Auth.ts
+
+PASS TEST 1: Dorset Quarry video and images share one fixture identity
+PASS TEST 2: Mad Yolks video and images share one fixture identity
+PASS TEST 3: Hydra Old Town video and images share one fixture identity
+PASS TEST 4: Old Towne Orange Shops video and images share one fixture identity
+PASS TEST 4: every platform/category mapping references a complete atomic fixture
+PASS TEST 5: no fixture mixes media and place identities
+PASS TEST 6: all required video/image assets exist locally
+PASS TEST 7: Phase 1 runtime media requires no remote URL
+PASS TEST 8: scripted save opens the map payoff centered on the saved fixture
+PASS TEST 9: the correct fixture pin is selected
+PASS TEST 10: the correct place card automatically opens
+PASS TEST 11: the card uses local fixture data and imagery
+PASS TEST 12: closing the card advances to Phase 2 intro
+PASS TEST 13: card close advances exactly once
+PASS TEST 14: reopening cannot restart Phase 1
+PASS TEST 15: Phase 2 intro appears immediately after map-card close
+PASS TEST 16: I’ll try this later acknowledges tutorial completion without a real share
+PASS TEST 17: real-practice choice transitions to actual share flow
+PASS TEST 18: Phase 2 real job uses the real backend/share URL, not the fixture
+PASS TEST 19: offline real-practice requests degrade gracefully and remain skippable
+PASS TEST 20: real practice does not mutate the scripted fixture
+PASS TEST 21: first onboarding screen contains existing-account sign-in CTA
+PASS TEST 22: known durable existing account bypasses onboarding
+PASS TEST 23: existing account receives no onboarding fixture state
+PASS TEST 24: OAuth identity without qualifying Nearr history is not treated as existing
+PASS TEST 25: non-qualifying OAuth path signs out and returns safely to onboarding
+PASS TEST 26: later signup remains available
+PASS TEST 27: existing-account check creates no duplicate auth/profile rows
+PASS TEST 28: Google structured first/last names are stored
+PASS TEST 29: Google without structured names still succeeds with nullable fields
+PASS TEST 30: Apple first-authorization names are stored immediately
+PASS TEST 31: later null Apple names preserve stored values
+PASS TEST 32: provider null never overwrites an existing first_name
+PASS TEST 33: changed non-empty structured values use provider-wins merge policy
+PASS TEST 34: name is not surfaced in onboarding UI
+PASS TEST 35: name remains nullable and is not required for signup
+
+All 35 authentic onboarding, Phase 2, account, and name-storage contracts passed.

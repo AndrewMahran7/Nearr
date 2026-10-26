@@ -1,0 +1,19 @@
+
+> nearr@0.1.0 test:dev-login-gating
+> ts-node -P scripts/tsconfig.json scripts/testDevLoginGating.ts
+
+PASS the developer-login gate exists
+PASS the gate uses the canonical environment abstraction
+PASS the gate no longer depends on __DEV__
+PASS the explicit opt-in flag is still required on top of the lane
+PASS the gate is a conjunction, not an either/or
+PASS no developer password literal is committed
+PASS the developer password is never logged
+PASS production hides developer tools
+PASS an UNDECLARED lane hides developer tools
+PASS a garbage lane hides developer tools
+PASS development shows developer tools
+PASS preview shows developer tools
+PASS the dev-login flag in a production build is a BLOCKING violation
+
+All developer-login gating tests passed.

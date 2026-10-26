@@ -1,0 +1,239 @@
+{
+  "migrated": [],
+  "moduleDataReview": [
+    {
+      "file": "app/feedback.tsx",
+      "line": 30,
+      "source": "Bug",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "app/feedback.tsx",
+      "line": 31,
+      "source": "Confusing",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "app/feedback.tsx",
+      "line": 32,
+      "source": "Save/extraction issue",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "app/feedback.tsx",
+      "line": 33,
+      "source": "Feature idea",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "app/feedback.tsx",
+      "line": 34,
+      "source": "Other",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/HowNearrWorksModal.tsx",
+      "line": 24,
+      "source": "See a place online",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/HowNearrWorksModal.tsx",
+      "line": 25,
+      "source": "See a restaurant or spot on Instagram, TikTok, or the web.",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/HowNearrWorksModal.tsx",
+      "line": 28,
+      "source": "Share it to Nearr",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/HowNearrWorksModal.tsx",
+      "line": 29,
+      "source": "Tap Share, choose Nearr, and save the place for later.",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/HowNearrWorksModal.tsx",
+      "line": 32,
+      "source": "See it on your map",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/HowNearrWorksModal.tsx",
+      "line": 33,
+      "source": "Your saved places show up on the map so you can find them again.",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/HowNearrWorksModal.tsx",
+      "line": 36,
+      "source": "Get reminded nearby",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/HowNearrWorksModal.tsx",
+      "line": 37,
+      "source": "With notifications and Always Location on, Nearr can remind you when you're close to a saved place.",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/HowNearrWorksModal.tsx",
+      "line": 40,
+      "source": "Go try it",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/HowNearrWorksModal.tsx",
+      "line": 41,
+      "source": "Open the map, get directions, and go to the place you wanted to try.",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/demo/NearrFavoritesHelp.tsx",
+      "line": 27,
+      "source": "Tap More",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/demo/NearrFavoritesHelp.tsx",
+      "line": 28,
+      "source": "Open the full list of apps in the Share Sheet.",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/demo/NearrFavoritesHelp.tsx",
+      "line": 31,
+      "source": "Add Nearr",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/demo/NearrFavoritesHelp.tsx",
+      "line": 32,
+      "source": "Find Nearr under Suggestions and tap the green +.",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/demo/NearrFavoritesHelp.tsx",
+      "line": 35,
+      "source": "Nearr is now easier to find",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/demo/NearrFavoritesHelp.tsx",
+      "line": 36,
+      "source": "Tap Done. Nearr will appear in your Favorites next time.",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/demo/ShareSheetMock.tsx",
+      "line": 39,
+      "source": "Messages",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/demo/ShareSheetMock.tsx",
+      "line": 40,
+      "source": "Mail",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 65,
+      "source": "Outdoors",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 65,
+      "source": "Food",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 66,
+      "source": "Cafes",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 66,
+      "source": "Travel",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 67,
+      "source": "Things to do",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 67,
+      "source": "Shops",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 68,
+      "source": "Anything interesting",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 71,
+      "source": "I save the post and forget about it",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 72,
+      "source": "I can't figure out where the place is",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 73,
+      "source": "My saved posts are a mess",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 74,
+      "source": "I send it to friends",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 75,
+      "source": "I screenshot it",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 78,
+      "source": "Turn videos into real places",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 79,
+      "source": "Keep all my places on one map",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 80,
+      "source": "Remind me when I'm nearby",
+      "reason": "module data: localize at rendering boundary"
+    },
+    {
+      "file": "components/onboarding/v2/OnboardingV2PreAuth.tsx",
+      "line": 81,
+      "source": "Remember places for future trips",
+      "reason": "module data: localize at rendering boundary"
+    }
+  ]
+}

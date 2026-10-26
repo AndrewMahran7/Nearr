@@ -66,16 +66,17 @@ async function main() {
     insert into auth.users values('${u1}'),('${u2}'),('${teen}'),('${blocked}');
     create table saved_places(id uuid primary key,user_id uuid not null references auth.users);
     create table share_jobs(id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users,status text not null,decision text,saved_place_id uuid references saved_places,idempotency_key text,
-      source_url text,canonical_url text,source_platform text,progress_stage text,created_at timestamptz not null default now(),unique(user_id,idempotency_key));
+      source_url text,canonical_url text,source_platform text,progress_stage text,created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now(),attempts integer not null default 0,max_attempts integer not null default 5,locked_until timestamptz,unique(user_id,idempotency_key));
     create table share_media_tasks(id uuid primary key default gen_random_uuid(),user_id uuid references auth.users,status text);
     create table onboarding_account_transfer_grants(id uuid primary key default gen_random_uuid(),source_user_id uuid references auth.users,destination_user_id uuid references auth.users,status text);
     create table share_job_place_results(id uuid primary key default gen_random_uuid(),share_job_id uuid references share_jobs on delete cascade,user_id uuid references auth.users,saved_place_id uuid references saved_places,outcome text);
     insert into saved_places values('${foreignSave}','${u2}');`);
   const migrations = ['20261018000001_adult_age_eligibility.sql','20261018000002_adult_dispatch_transition_guard.sql',
     '20261021000001_global_eligibility_and_consent.sql','20261021000002_nearr_plus_verified_entitlements.sql',
-    '20261021000003_global_share_ingress.sql','20261021000004_account_ui_locale.sql'];
+    '20261021000003_global_share_ingress.sql','20261021000004_account_ui_locale.sql','20261021000005_global_claim_eligibility.sql'];
   for (const migration of migrations) sql(readFileSync(path.resolve('supabase/migrations',migration),'utf8'));
-  test('all six migrations coexist with every live qualification disabled', () => {
+  test('all seven migrations coexist with every live qualification disabled', () => {
     fails(job(1),/global_eligibility_required/);
     assert.equal(sql(`select is_account_eligible_for_ai('${u1}'),is_account_eligible_for_purchase('${u1}');`),'f|f');
   });
@@ -216,6 +217,21 @@ async function main() {
     assert.equal(sql("select count(*) from share_jobs where status='awaiting_purchase';"),'0');
     fails('set role authenticated; '+ingress(u1),/permission denied/);
   });
+  test('queue claims skip withdrawn owners without starving eligible reservations', () => {
+    reset(); sql(job(25)+job(26,u2)); permission(u1,false);
+    assert.equal(sql('select id from claim_share_jobs(1);'),id(26));
+    assert.equal(sql(`select status,attempts from share_jobs where id='${id(25)}';`),'queued|0');
+    assert.equal(sql(`select state from nearr_plus_recognitions where job_id='${id(25)}';`),'reserved');
+    permission(u1,true);
+    assert.equal(sql('select id from claim_share_jobs(1);'),id(25));
+    assert.equal(count(),2);
+  });
+  test('private queue claim functions reject both client roles', () => {
+    for (const role of ['anon','authenticated']) {
+      fails(`set role ${role}; select * from claim_share_jobs();`,/permission denied/);
+      fails(`set role ${role}; select * from claim_media_tasks();`,/permission denied/);
+    }
+  });
   reset();
   const concurrent = await Promise.all(Array.from({length:6},(_,i) => parallelSql(job(30+i))));
   assert.equal(concurrent.filter(code=>code===0).length,3); assert.equal(count(),3);
@@ -232,7 +248,7 @@ async function main() {
   assert.equal(sql('select count(*) from share_jobs;'),'1');
   results.push('eight concurrent unified ingress retries create one job and one reservation');
   mkdirSync('artifacts/global-release',{recursive:true});
-  writeFileSync('artifacts/global-release/monetization-database-tests.json',JSON.stringify({testedAt:new Date().toISOString(),engine:sql('select version();'),scope:'disposable local PostgreSQL; fixture base schema, actual legacy age and all four global migrations; synthetic local qualification only',migrations,passed:results.length,failed:0,tests:results},null,2)+'\n');
+  writeFileSync('artifacts/global-release/monetization-database-tests.json',JSON.stringify({testedAt:new Date().toISOString(),engine:sql('select version();'),scope:'disposable local PostgreSQL; fixture base schema, actual legacy age and all five global migrations; synthetic local qualification only; full media-claim regression separately tested against restored Development schema',migrations,passed:results.length,failed:0,tests:results},null,2)+'\n');
   console.log(`PASS: ${results.length} real PostgreSQL entitlement, quota, isolation and concurrent-enqueue cases`);
 }
 main().catch(error => { console.error(error.message); process.exitCode=1; }).finally(() => {

@@ -1,0 +1,53 @@
+
+> nearr@0.1.0 test:platform-url-classification
+> ts-node -P scripts/tsconfig.json scripts/testPlatformUrlClassification.ts && npm run test:tiktok-ingestion-parity && npm run test:facebook-url && npm run test:facebook-metadata
+
+PASS Instagram reel detected
+PASS Instagram post detected
+PASS Instagram legacySource=instagram
+PASS Instagram classify=instagram
+PASS Instagram tracking stripped, path kept
+PASS TikTok full URL detected
+PASS TikTok vm short link detected
+PASS TikTok vt short link detected
+PASS TikTok suffix spoof rejected
+PASS TikTok in query text does not classify host
+PASS TikTok legacySource=tiktok
+PASS YouTube /shorts/ detected
+PASS YouTube youtu.be detected
+PASS YouTube /watch?v= detected
+PASS YouTube legacySource=youtube
+PASS YouTube classify=youtube (shorts)
+PASS YouTube classify=youtube (youtu.be)
+PASS YouTube si= tracking stripped, v kept
+PASS Facebook /reel/ detected
+PASS Facebook /.../videos/ detected
+PASS Facebook fb.watch detected
+PASS Facebook legacySource=facebook
+PASS Facebook classify=facebook
+PASS Facebook tracking stripped, path kept
+PASS Snapchat Spotlight detected
+PASS Snapchat legacySource=snapchat
+PASS Snapchat classify=snapchat
+PASS Snapchat profile URL still classified snapchat (media-support gate is separate)
+PASS Unknown host falls to genericWeb
+PASS Empty string is unknown
+PASS genericWeb legacySource=link
+PASS twitter legacySource=link (no dedicated source_type)
+
+All platform URL classification assertions passed.
+
+> nearr@0.1.0 test:tiktok-ingestion-parity
+> ts-node -P scripts/tsconfig.json scripts/testTikTokIngestionParity.ts
+
+All TikTok ingestion parity assertions passed.
+
+> nearr@0.1.0 test:facebook-url
+> ts-node -P scripts/tsconfig.json scripts/testFacebookUrl.ts
+
+29 Facebook URL assertions passed.
+
+> nearr@0.1.0 test:facebook-metadata
+> ts-node -P scripts/tsconfig.json scripts/testFacebookMetadata.ts
+
+17 Facebook metadata assertions passed.

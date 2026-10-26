@@ -1,0 +1,82 @@
+
+> nearr@0.1.0 test:media-autosave
+> ts-node -P scripts/tsconfig.json scripts/testMediaAutoSaveGate.ts
+
+PASS auto-save authorization requires exact canary user
+PASS auto-save authorization rejects another user
+PASS auto-save authorization is global without a canary restriction
+PASS auto-save authorization obeys kill switch
+PASS global auto-save authorization obeys kill switch
+PASS default gate threshold is 0.70
+PASS absent threshold uses valid default
+PASS configured production threshold accepts 0.70
+PASS configured threshold accepts inclusive zero
+PASS configured threshold accepts inclusive one
+PASS configured threshold rejects below zero
+PASS configured threshold rejects above one
+PASS configured threshold rejects non-number
+PASS one distinctive transcript mention with a strong provider match is eligible
+PASS gate emits versioned rule
+PASS gate returns deterministic score
+PASS gate explains the successful decision
+PASS model-prior recognition can never auto-save
+PASS creator-handle-only media identity can never auto-save
+PASS unresolved same-scene identity uncertainty requires review
+PASS provider-verified natural place needs no business taxonomy marker
+PASS Woods Cove production shape auto-saves without a business marker
+PASS generic establishment taxonomy cannot veto strong identity and context
+PASS Paradise Falls production shape auto-saves from one named channel
+PASS one plausible candidate auto-saves despite the old ambiguous outcome
+PASS one plausible candidate at 0.69 auto-saves
+PASS one clearly matched candidate below the old threshold auto-saves
+PASS candidate below the resolver plausibility floor stays in review
+PASS gate score 0.70 auto-saves when all requirements pass
+PASS gate score 0.71 auto-saves when all requirements pass
+PASS gate score 0.95 cannot overcome a competing candidate
+PASS two close same-name branches require confirmation
+PASS one speech name channel is sufficient
+PASS one visible_text name channel is sufficient
+PASS one caption name channel is sufficient
+PASS missing transcript, OCR, caption, and frame identity is a veto
+PASS positive provider taxonomy and distinctive markers are not vetoes
+PASS one weaker but semantically plausible candidate auto-saves
+PASS repeated exact visual identity plus provider geography is sufficient
+PASS visual evidence records distinctive support
+PASS model confidence is diagnostic only
+PASS host context does not overwrite or block the named child identity
+PASS gate score 0.95 without valid coordinates remains blocked
+PASS gate score 0.95 without a provider Place ID remains blocked
+PASS missing positive state marker is supporting, not a veto
+PASS missing positive city proximity marker is supporting, not a veto
+PASS conflicting locality remains blocked
+PASS permanently closed rejected
+PASS same canonical place across slots rejected
+PASS mixed post keeps eligible slot independent
+PASS mixed post keeps ambiguous slot for review
+PASS weak generic name with insufficient identity support stays in review
+PASS one-token broad geography expanded into a provider name stays in review
+PASS obviously unrelated provider entity stays in review
+PASS address-like provider entity is not a plausible saved place
+PASS shared generic loop/trail wording cannot make an unrelated trail plausible
+PASS zero plausible candidates stays in review
+PASS exact one-word brand remains eligible
+PASS hidden invalid alternatives do not reject one valid verified candidate
+PASS one meaningful candidate plus a rejected garbage alternative auto-saves
+PASS two logical places auto-save independently
+PASS one unresolved result with one option uses single review
+PASS one logical result with two options uses multi review
+PASS multiple unresolved logical results use multi review
+PASS one-candidate auto-save cannot generate unresolved notification
+PASS decision log includes job_id=
+PASS decision log includes logical_place_id=
+PASS decision log includes raw_candidate_count=
+PASS decision log includes plausible_candidate_count=
+PASS decision log includes selected_provider_id=
+PASS decision log includes selected_score=
+PASS decision log includes rejection_reasons=
+PASS decision log includes explicit_conflict_flags=
+PASS decision log includes final_decision=
+PASS decision log includes decision_reason=
+PASS decision log excludes transcripts and candidate names
+
+ALL MEDIA AUTO-SAVE GATE TESTS PASSED

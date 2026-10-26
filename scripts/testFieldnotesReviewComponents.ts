@@ -15,6 +15,8 @@ const Pressable = ({ children, style, ...props }: any) => React.createElement('P
 Module._load = function(request, parent, isMain) {
   if (request === 'react-native') return { Pressable, Text: 'Text', View: 'View', useWindowDimensions: () => ({ width, height: 844, fontScale }), StyleSheet: { create: (s: any) => s, hairlineWidth: 1 } };
   if (request === '@expo/vector-icons') return { Feather: 'Feather' };
+  if (request === '@/lib/i18n') return { i18n: { language: 'en-US' }, t: (key: string) => key };
+  if (request === '@/hooks/useLocale') return { useLocale: () => ({ locale: 'en-US' }) };
   if (request === '@/components/CandidatePhotoCarousel') return { CandidatePhotoCarousel: 'CandidatePhotoCarousel' };
   if (request === '@/constants') return { Radius, Spacing };
   if (request === '@/lib/theme') return { useTheme: () => ({ colors: palette, typography: { heading: { fontSize: 23 }, bodyStrong: { fontSize: 17 } } }) };
@@ -76,7 +78,7 @@ const photos = read('components/CandidatePhotoCarousel.tsx');
 assert.match(route, /testID="mention-save-checkbox"/);
 assert.match(route, /onPress=\{\(\) => toggleBatchSelection\(row\)\}/);
 assert.match(route, /onPress=\{\(\) => toggleMentionDisclosure\(row\.logicalPlaceId\)\}/);
-assert.match(route, /selectedPendingCount === 0 \? 'Select a place to save'/);
+assert.match(route, /selectedPendingCount === 0 \? t\("Select a place to save"\)/);
 assert.match(route, /disabled=\{busy \|\| \(!pendingCompletion && selectedPendingCount === 0\)\}/);
 assert.match(route, /batch\.rows\[id\]\?\.persistence === 'pending'/);
 assert.match(route, /if \(!reduceMotion\) LayoutAnimation\.configureNext/);
@@ -89,7 +91,7 @@ assert.match(photos, /Destination photo/); assert.match(photos, /From your video
 assert.match(photos, /prefetchAdjacent=\{false\}/); assert.match(photos, /visitedPhotoIndexes\.has\(index\)/);
 assert.match(activity, /<FlatList data=\{activityItems\}/);
 assert.match(activity, /initialNumToRender=\{8\} maxToRenderPerBatch=\{6\}/);
-assert.ok(activity.indexOf("title: 'Needs your check'") < activity.indexOf("title: 'Finding places'"));
-assert.ok(activity.indexOf("title: 'Finding places'") < activity.indexOf("title: 'On your map'"));
-assert.match(activity, /You're all caught up/);
+assert.ok(activity.indexOf('title: t("Needs your check")') < activity.indexOf('title: t("Finding places")'));
+assert.ok(activity.indexOf('title: t("Finding places")') < activity.indexOf('title: t("On your map")'));
+assert.match(activity, /t\("You're all caught up"\)/);
 console.log(`PASS Fieldnotes review: ${rendered} actual component renders across 2 appearances, 4 width/text configurations and 0/1/5 photos; independent controls, provenance, omission, disabled save, motion and virtualized Activity`);

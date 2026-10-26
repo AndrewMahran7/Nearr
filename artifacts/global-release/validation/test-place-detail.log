@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:place-detail
+> ts-node -P scripts/tsconfig.json scripts/testPlaceDetailExperience.ts
+
+PASS physical map detail hierarchy, safe close, compact metadata/reminder, personal notes, and fallback convergence

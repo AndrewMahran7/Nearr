@@ -9,6 +9,9 @@ const colors = { text: '#27372c', textSecondary: '#626a5e', accent: '#b64615', s
 const typography = { heading: {}, caption: {}, label: {} };
 const Pressable = ({ style, children, ...props }: any) => React.createElement('Pressable', { ...props, style: typeof style === 'function' ? style({ pressed: false }) : style }, children);
 Module._load = function(request: string, parent: unknown, isMain: boolean) {
+  if (request === '@/lib/i18n') return require('../lib/i18nEngine');
+  if (request === '@/hooks/useLocale') return { useLocale: () => ({ locale: require('../lib/i18nEngine').i18n.language }) };
+
   if (request === 'react-native') return {
     Image: 'Image', Pressable, Text: 'Text', View: 'View',
     StyleSheet: { create: (value: unknown) => value, hairlineWidth: 1 },

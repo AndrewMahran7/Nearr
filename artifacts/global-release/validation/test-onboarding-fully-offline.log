@@ -1,0 +1,13 @@
+
+> nearr@0.1.0 test:onboarding-fully-offline
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingFullyOffline.ts
+
+PASS 1–2 local platform/content fixture matrix is complete and render-ready
+PASS 3 bundled post and place media exists without remote URLs
+PASS 4–5 Share → More → Nearr enters local scripted processing without auth
+PASS 6–7 recognition, local save, and saved-place detail are deterministic
+PASS 8 process-death resume preserves the local fixture and save
+PASS 9–13 network, Supabase, Google, Railway, and social availability are irrelevant
+PASS 14–18 fixed timing; no share job, Places, worker, remote media, or real save mutation
+
+All fully offline onboarding contracts passed.

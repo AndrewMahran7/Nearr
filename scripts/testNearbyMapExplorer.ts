@@ -177,7 +177,7 @@ function projectAndAssert(
 }
 
 // 1-4: CTA, in-memory opening, origin context, and current recommendation ownership.
-assert.match(SELECTED_SOURCE, /actionLabel=\{onSeeMap[^\n]*\? 'See map'/);
+assert.match(SELECTED_SOURCE, /actionLabel=\{onSeeMap[^\n]*\? t\("See map"\)/);
 assert.match(SELECTED_SOURCE, /onSeeMap\?\.\(\{[\s\S]*anchor: saved,[\s\S]*alsoNearby: recommendations/);
 assert.match(MAP_SOURCE, /const openNearbyExplorer = useCallback/);
 assert.match(MAP_SOURCE, /setNearbyExplorer\(\{[\s\S]*anchorSavedPlaceId: payload\.anchor\.id/);
@@ -257,7 +257,7 @@ const directionsUrl = buildExternalMapsUrl({
 assert.ok(directionsUrl?.includes(`query_place_id=${target.providerPlaceId}`));
 assert.equal(JSON.stringify(opened), beforeReadOnly, 'Directions and detail selection do not save');
 assert.match(RECOMMENDED_SOURCE, /void openExternalMaps\(\{/);
-assert.match(RECOMMENDED_SOURCE, /title="Save place"/);
+assert.match(RECOMMENDED_SOURCE, /title=\{t\("Save place"\)\}/);
 
 const canonicalSaved = saved(
   'new-saved-id',

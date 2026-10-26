@@ -1,0 +1,33 @@
+
+> nearr@0.1.0 test:shared-auth-session
+> ts-node -P scripts/tsconfig.json scripts/testSharedAuthSession.ts
+
+PASS decode sub
+PASS decode exp
+PASS decode null => null
+PASS decode empty => null
+PASS decode non-jwt => null
+PASS decode 2-part => null
+PASS decode garbage payload => null
+PASS decode missing sub => sub null
+PASS decode missing exp => exp null
+PASS absent: null
+PASS absent: undefined
+PASS absent: whitespace
+PASS malformed: not a jwt
+PASS malformed: jwt without exp
+PASS valid: exp 1h ahead
+PASS expired: exp 10s ago
+PASS expired: exactly now (<= treated expired)
+PASS expired: within default 30s skew
+PASS valid: just past the skew window
+PASS action: valid + initialized => submit
+PASS action: valid + NOT initialized => submit (valid wins)
+PASS action: absent + NOT initialized => needs_setup
+PASS action: absent + initialized => signed_out
+PASS action: empty token + initialized => signed_out
+PASS action: expired => session_expired (regardless of init true)
+PASS action: expired => session_expired (regardless of init false)
+PASS action: malformed => session_expired
+
+All shared-auth-session tests passed.

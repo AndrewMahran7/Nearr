@@ -1,0 +1,22 @@
+{
+  "verifiedAt": "2026-10-26T01:50:37.394Z",
+  "targets": 2,
+  "locales": [
+    "en-US",
+    "es-MX",
+    "es-ES",
+    "pt-BR",
+    "fr",
+    "de",
+    "it",
+    "ja",
+    "ko",
+    "zh-Hans"
+  ],
+  "nativeKeys": 11,
+  "variantGroups": 4,
+  "generatedStringFiles": 40,
+  "idempotent": true,
+  "roundTripParsed": true,
+  "scope": "Native project generation only; no Swift compile, IPA, simulator, or physical device claim."
+}

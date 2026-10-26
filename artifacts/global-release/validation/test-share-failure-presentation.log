@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:share-failure-presentation
+> ts-node -P scripts/tsconfig.json scripts/testShareFailurePresentation.ts
+
+PASS shared notification/detail failure presentation, structured routing, actions, and duration drift guard

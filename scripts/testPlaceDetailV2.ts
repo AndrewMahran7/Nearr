@@ -70,7 +70,7 @@ import {
 
   // Fieldnotes keeps one reason with explicit provenance, independent of the source ribbon.
   assert.equal(detail.split('WHY YOU SAVED IT').length - 1, 1);
-  assert.ok(detail.includes("whySaved.origin === 'user' ? 'Your note' : 'From the post'"));
+  assert.ok(detail.includes('whySaved.origin === \'user\' ? t("Your note") : t("From the post")'));
   assert.equal(
     detail.split('const hasReason = !!whySaved.text').length - 1,
     1,
@@ -382,7 +382,7 @@ import {
   // The copy stays because it is now true.
   assert.ok(rolodex.includes('Swipe down to close'), 'the instruction remains, and is honest');
   // The X button must keep working.
-  assert.ok(rolodex.includes('accessibilityLabel="Close photo gallery"'), 'explicit close preserved');
+  assert.ok(rolodex.includes('accessibilityLabel={t("Close photo gallery")}'), 'explicit close preserved');
   // Horizontal paging untouched.
   assert.ok(rolodex.includes('horizontal'), 'the carousel is still horizontal');
   assert.ok(rolodex.includes('snapToInterval={snapInterval}'), 'paging preserved');
@@ -418,7 +418,7 @@ import {
   const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
   assert.ok(detail.includes('styles.visitCard'));
   assert.ok(detail.includes('visited.prompt') && detail.includes('visited.supportCopy'));
-  assert.ok(detail.includes("visited.visited ? 'You went here'"), 'an answered place says so');
+  assert.ok(detail.includes('visited.visited ? t("You went here")'), 'an answered place says so');
   assert.ok(
     detail.includes('{visited.visited ? ('),
     'and does not re-offer the question it already has an answer to',
@@ -436,7 +436,7 @@ import {
   const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
   const row = readFileSync(join(process.cwd(), 'components/map/place/PlaceCardRow.tsx'), 'utf8');
 
-  assert.ok(detail.includes('title="Also nearby"'), 'presented by the shared row');
+  assert.ok(detail.includes('title={t("Also nearby")}'), 'presented by the shared row');
   assert.ok(detail.includes('<PlaceCardRow'), 'via the reusable component');
   const alsoNearbySelection = detail.slice(
     detail.indexOf('const alsoNearby = useMemo('),
@@ -514,7 +514,7 @@ import {
   assert.ok(cardWidth <= 120, 'and not the oversized tile that only fit two');
 
   const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
-  assert.ok(detail.includes("actionLabel={onSeeMap ? 'See map' : undefined}"), 'See map is offered');
+  assert.ok(detail.includes('actionLabel={onSeeMap ? t("See map") : undefined}'), 'See map is offered');
   assert.ok(row.includes('actionLabel') && row.includes('onAction'), 'the row supports a header action');
   const map = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
   assert.ok(
@@ -538,8 +538,8 @@ import {
   assert.ok(!detail.includes('styles.visitHeader'), 'the stacked header block is gone');
 
   // Explicit visit choices are readable and do not imply a rating.
-  assert.ok(detail.includes('>Mark visited</Text>'));
-  assert.ok(detail.includes('>Not yet</Text>'));
+  assert.ok(detail.includes('{t("Mark visited")}</Text>'));
+  assert.ok(detail.includes('{t("Not yet")}</Text>'));
   assert.ok(!detail.includes('name="thumbs-up"') && !detail.includes('name="thumbs-down"'));
   assert.ok(!/[\u{1F44D}\u{1F44E}]/u.test(detail), 'no Unicode emoji');
   assert.match(detail, /visitStateButton: \{[\s\S]*minHeight: 44/, 'minimum native target');
@@ -553,7 +553,7 @@ import {
     const up = detail.indexOf('void handleMarkVisited()');
     assert.ok(up > -1, 'the visit handler still exists');
     assert.ok(
-      detail.slice(up, up + 900).includes('>Mark visited</Text>'),
+      detail.slice(up, up + 900).includes('{t("Mark visited")}</Text>'),
       'the explicit action calls the existing visited handler',
     );
 
@@ -561,7 +561,7 @@ import {
     assert.ok(down > -1);
     const downBlock = detail.slice(down, down + 900);
     assert.ok(
-      downBlock.includes('>Not yet</Text>'),
+      downBlock.includes('{t("Not yet")}</Text>'),
       'Not yet calls the existing local deferral handler',
     );
     assert.ok(

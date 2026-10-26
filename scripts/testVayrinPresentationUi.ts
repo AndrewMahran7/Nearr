@@ -28,10 +28,10 @@ assert.match(asyncDetail, /onWrongPlace=/, 'durable saved results wire the corre
 assert.doesNotMatch(asyncDetail, /title="Not it"/, 'the completed result no longer renders the legacy detached action');
 assert.match(
   read('components/SavedPlaceResult.tsx'),
-  />Wrong place\?<\/Text>/,
+  />\{t\("Wrong place\?"\)\}<\/Text>/,
   'the completed result uses the approved correction label',
 );
-assert.match(sync, /title="Not it"/, 'sync saved-place correction uses canonical action');
+assert.match(sync, /title=\{t\("Not it"\)\}/, 'sync saved-place correction uses canonical action');
 
 assert.match(header, /accessibilityRole="summary"/);
 assert.match(header, /accessibilityLiveRegion=/);

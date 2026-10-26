@@ -1,0 +1,28 @@
+
+> nearr@0.1.0 test:video-ai-note-guarantee
+> ts-node -P scripts/tsconfig.json scripts/testVideoAiNoteGuarantee.ts && npm run test:video-ai-note-product-claim
+
+PASS video-derived AI-note provenance, retry, re-arm, correction, and data-integrity contracts
+
+> nearr@0.1.0 test:video-ai-note-product-claim
+> cd services/media-worker && node --import tsx --test tests/targetedNoteContext.test.ts
+
+✔ multi-place handoff isolates the final saved place scene (2.2095ms)
+✔ unsaved candidates have observations but no note-generation obligation (0.1725ms)
+✔ weak unscoped context can widen from focused to representative frames (0.1448ms)
+✔ extracted target text is durable before a provider outage (0.2985ms)
+✔ unscoped source metadata is retained as bounded caption evidence (0.1534ms)
+✔ one bounded frame snapshot survives temp cleanup and rejects oversized blobs (14.8207ms)
+✔ visual-heavy food fixture yields a grounded cue with empty text (29.2818ms)
+✔ visual-heavy outdoor fixture yields a grounded cue with empty text (5.4266ms)
+✔ visual-heavy hotel fixture yields a grounded cue with empty text (4.1868ms)
+✔ visual-heavy visible activity fixture yields a grounded cue with empty text (4.2878ms)
+✔ provider outage recovers from durable evidence after frames are gone (1.4464ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 351.9433

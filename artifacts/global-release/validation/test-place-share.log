@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:place-share
+> ts-node -P scripts/tsconfig.json scripts/testPlaceShare.ts
+
+PASS clean single-link iOS and Android place-share payload, referral, privacy, and one-action contracts

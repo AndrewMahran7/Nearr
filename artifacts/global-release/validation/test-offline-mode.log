@@ -1,0 +1,32 @@
+
+> nearr@0.1.0 test:offline-mode
+> ts-node -P scripts/tsconfig.json scripts/testOfflineMode.ts
+
+[offline] saved_places_cache_write count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_write count=0
+[offline] saved_places_cache_read count=0
+[offline] saved_places_cache_write count=3
+[offline] saved_places_cache_write count=1
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=1
+[offline] saved_places_cache_read count=1
+[offline] saved_places_cache_miss
+[offline] saved_places_cache_miss
+[offline] saved_places_cache_miss
+[offline] saved_places_cache_read_failed SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)
+    at JSON.parse (<anonymous>)
+    at readSavedPlacesCache (C:\Users\andre\Desktop\Nearr\.tmp\nearr-global-integration-recovered\lib\savedPlacesCache.ts:167:25)
+    at async main (C:\Users\andre\Desktop\Nearr\.tmp\nearr-global-integration-recovered\scripts\testOfflineMode.ts:223:5)
+[offline] saved_places_cache_miss
+[offline] saved_places_cache_write count=1
+[offline] saved_places_cache_read count=1
+PASS testOfflineMode

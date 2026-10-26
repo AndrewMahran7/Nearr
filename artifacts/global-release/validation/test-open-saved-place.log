@@ -1,0 +1,45 @@
+
+> nearr@0.1.0 test:open-saved-place
+> ts-node -P scripts/tsconfig.json scripts/testOpenSavedPlace.ts
+
+PASS validId accepts a normal id
+PASS validId trims
+PASS validId rejects empty
+PASS validId rejects whitespace
+PASS validId rejects undefined
+PASS validId rejects an array (route param quirk)
+PASS validId rejects a number
+PASS route targets the map tab
+PASS View place uses saved_places.id
+PASS route stamps the source
+PASS route carries the google_place_id fallback
+PASS route works with only a google_place_id
+PASS route with no ids falls back to the bare map (no crash)
+PASS route drops malformed/empty ids
+PASS resolves by saved_places.id
+PASS falls back to google_place_id when id absent
+PASS id wins over google_place_id when both resolve
+PASS returns null when neither matches (→ local recovery)
+PASS null list is safe
+PASS empty list is safe
+PASS missing ids resolve to null
+PASS share_job_already_saved is an open-existing source
+PASS notification is an open-existing source
+PASS reminder-ish source is NOT
+PASS undefined source is NOT
+PASS already-saved source gets completion feedback
+PASS new share save gets completion feedback
+PASS notification does not show duplicate feedback
+PASS manual save opens full details
+PASS already-saved confirmation opens full details
+PASS notification leaves details collapsed
+PASS onboarding continuation carries the exact saved_places.id
+PASS onboarding landing keeps Place Detail compact
+PASS onboarding continuation is an open-existing source
+PASS already-saved notification opens the saved-result detail
+PASS stale saved id still opens the place via google_place_id fallback
+PASS old payload (no googlePlaceId) still opens by saved_places.id
+PASS deleted place resolves to null (map + friendly recovery, no crash)
+PASS malformed already-saved payload falls back to the map
+
+All open-saved-place tests passed

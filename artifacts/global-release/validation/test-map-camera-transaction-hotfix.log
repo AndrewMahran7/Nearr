@@ -1,0 +1,33 @@
+
+> nearr@0.1.0 test:map-camera-transaction-hotfix
+> ts-node -P scripts/tsconfig.json scripts/testMapCameraTransactionHotfix.ts
+
+PASS map camera transaction hotfix: 31/31 required cases
+{
+  "operations": 1000,
+  "deadTaps": 0,
+  "clusterTaps": 101,
+  "cameraCommands": 101,
+  "stackedCommands": 0,
+  "automaticChildSelections": 0,
+  "missingIds": 0,
+  "duplicateIds": 0,
+  "cameraLoops": 0,
+  "founderSequence": [
+    "continental",
+    "Southern California",
+    "cluster tap",
+    "regional",
+    "continental",
+    "foreground",
+    "cluster tap"
+  ],
+  "transactionStates": [
+    "commanding",
+    "settling",
+    "settled",
+    "cancelled",
+    "failed"
+  ],
+  "tests": 31
+}

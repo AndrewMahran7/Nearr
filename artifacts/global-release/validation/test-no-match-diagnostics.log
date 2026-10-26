@@ -1,0 +1,85 @@
+
+> nearr@0.1.0 test:no-match-diagnostics
+> ts-node -P scripts/tsconfig.json scripts/testNoMatchDiagnostics.ts
+
+PASS provider empty: outcome is no_match
+PASS provider empty: reason is provider_empty
+PASS provider empty: search status is empty
+PASS provider empty: zero results recorded
+PASS provider empty: no rejection counts fabricated
+PASS provider empty: no best candidate invented
+PASS provider error: outcome is provider_error, not no_match
+PASS provider error: search status is error
+PASS provider error: error kind preserved
+PASS provider error: status code preserved
+PASS provider error: never labelled provider_empty
+PASS name mismatch: outcome is no_match
+PASS name mismatch: reason is name_match_failed
+PASS name mismatch: provider results counted
+PASS name mismatch: candidates survived the guards
+PASS name mismatch: none carried name evidence
+PASS name mismatch: best candidate recorded as failing name
+PASS name mismatch: best score is a bounded number
+PASS venue mode: locality-only results produce no_match
+PASS venue mode: reason is geographic_context_rejected
+PASS venue mode: mode recorded as venue
+PASS venue mode: rejection counted under the real guard name
+PASS venue mode: nothing survived
+PASS geographic mode: a same-named business is rejected
+PASS geographic mode: reason is geographic_destination_type_rejected
+PASS geographic mode: mode recorded as geographic
+PASS geographic mode: 7 Mares never survives
+PASS geographic mode: rejection attributed to the geographic-entity guard
+PASS wrong country: rejected
+PASS wrong country: reason is distance_or_geo_rejected
+PASS wrong country: country guard named
+PASS wrong country: shared country was applied to the query
+PASS wrong country: query carried a country
+PASS mixed: falls back to all_candidates_rejected
+PASS mixed: both distinct guards preserved in counts
+PASS mixed: counts sum to the candidates considered
+PASS types: primaryType presence counted
+PASS types: types-array presence counted
+PASS types: fully untyped candidates counted
+PASS types: counts never exceed candidates considered
+PASS insufficient evidence: outcome preserved
+PASS insufficient evidence: provider never blamed
+PASS insufficient evidence: no no-match reason
+PASS insufficient evidence: no provider request made
+PASS scoping: shared Nicaragua context recorded as applied
+PASS scoping: country did not come from the mention
+PASS scoping: no city context
+PASS scoping: no location bias without a city
+PASS scoping: a mention country is recorded as its own
+PASS scoping: mention country is not credited to shared context
+PASS aggregate: attempts counted
+PASS aggregate: no-match counted
+PASS aggregate: reason counts grouped
+PASS aggregate: one trace per failed mention
+PASS aggregate: traces are per-slot ids, not source text
+PASS success: mention resolved
+PASS success: no failure trace emitted
+PASS success: no no-match reasons recorded
+PASS bounds: traces capped at 10
+PASS privacy: no candidate names in persisted diagnostics
+PASS privacy: no query text in persisted diagnostics
+PASS privacy: no address text
+PASS privacy: no googlePlaceId leakage
+PASS bounds: provider result count capped at 25
+PASS fault isolation: absent provider fields never throw
+PASS fault isolation: resolution still completed
+PASS fault isolation: a trace was still produced
+PASS fault isolation: absent types counted as untyped
+PASS fault isolation: trace builder tolerates wrong-typed provider fields
+PASS fault isolation: non-array types counted as untyped
+PASS fault isolation: non-string primaryType counted as untyped
+PASS fault isolation: an unnamed rejection still tallies
+PASS unchanged: verified_single still verified
+PASS unchanged: two close candidates still ambiguous
+PASS unchanged: business-only still no_match
+PASS unchanged: empty still no_match
+PASS unchanged: a resolved mention carries no reason
+PASS unchanged: name-evidence failure and floor failure are both no_match
+PASS split: low-scoring name match is score_below_acceptance, not name_match_failed
+
+ALL PASS

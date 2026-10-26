@@ -1,0 +1,41 @@
+
+> nearr@0.1.0 test:share-jobs-ui
+> ts-node -P scripts/tsconfig.json scripts/testShareJobsUi.ts
+
+PASS actionable = needs_help + failed
+PASS needs_help leads before failed
+PASS processing = queued + processing_metadata
+PASS count matches visible actionable jobs (needs_help + failed)
+PASS count excludes processing jobs
+PASS Needs-your-help empty when only processing
+PASS Processing non-empty when processing present
+PASS not empty when processing present
+PASS Processing empty when only actionable
+PASS Needs-your-help non-empty when actionable present
+PASS completed is not actionable
+PASS cancelled is not actionable
+PASS completed is not processing
+PASS terminal excluded from count
+PASS empty when no jobs
+PASS empty when only terminal jobs slip through
+PASS back when a previous route exists
+PASS replace to fallback when trapped
+PASS confirmation falls back to the queue
+PASS null candidate input => []
+PASS non-array candidate input => []
+PASS object (not array) => []
+PASS rows missing id/name are dropped
+PASS malformed field types are coerced safely
+PASS finds saved id by google place id
+PASS returns null when not saved
+PASS returns null for missing place id
+PASS returns null for missing saved list
+PASS ordinary review keeps likely-match copy
+PASS location conflict never claims an unqualified likely match
+PASS permanent closure is explained explicitly
+PASS singular heading for 1
+PASS singular heading for 0 (defensive)
+PASS plural heading for 3
+PASS plural heading avoids system vocabulary
+
+All share-jobs-ui tests passed.

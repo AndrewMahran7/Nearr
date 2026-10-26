@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:queue-inbox
+> ts-node -P scripts/tsconfig.json scripts/testQueueInbox.ts
+
+PASS queue inbox sections, clear completed, swipe policy, accessibility, empty state

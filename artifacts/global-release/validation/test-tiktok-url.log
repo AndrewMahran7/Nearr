@@ -1,0 +1,46 @@
+
+> nearr@0.1.0 test:tiktok-url
+> ts-node -P scripts/tsconfig.json scripts/testTiktokUrl.ts
+
+PASS A7.1 canonical-equivalent direct form
+PASS A7.2 canonical-equivalent direct form
+PASS A7.3 canonical-equivalent direct form
+PASS A8 post id recovered
+PASS A9 creator identity recovered
+PASS A10 exact TikTok post supported
+PASS A11 different post ids remain distinct
+PASS A1 canonical platform=tiktok
+PASS A2 canonical url tracking stripped
+PASS A3 canonical not a short link
+PASS A4 canonical wasModified
+PASS A5 clean canonical idempotent
+PASS A6 clean canonical wasModified=false
+PASS B1 vm platform=tiktok
+PASS B2 vm isShortLink=true
+PASS B3 isTikTokShortLink helper
+PASS C1 vt platform=tiktok
+PASS C2 vt isShortLink=true
+PASS C3 vt tracking stripped but path kept
+PASS C4 /t/ path isShortLink=true
+PASS C5 recognized short link supported
+PASS C6 unsupported non-post: /
+PASS C6 unsupported non-post: /@creator
+PASS C6 unsupported non-post: /discover/best-pizza
+PASS C6 unsupported non-post: /search
+PASS H1 exact post host canonicalized
+PASS H2 isTikTokUrl helper
+PASS H3 oembed url built + encoded
+PASS H4 suffix-spoof host is not TikTok
+PASS H5 suffix-spoof URL has no TikTok identity
+PASS I1 instagram platform
+PASS I2 instagram tracking stripped, path kept
+PASS I3 instagram not short link
+PASS M1 malformed platform=unknown
+PASS M2 malformed url passthrough
+PASS M3 malformed host=null
+PASS M4 empty input safe
+PASS M5 non-http scheme rejected as unknown
+PASS G1 generic utm stripped, keep preserved
+PASS G2 generic platform=other
+
+All TikTok URL normalization assertions passed.

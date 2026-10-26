@@ -1,0 +1,15 @@
+
+> nearr@0.1.0 test:reminder-distance-cleanup
+> ts-node -P scripts/tsconfig.json scripts/testReminderDistanceCleanup.ts
+
+PASS Settings no longer renders the obsolete distance control
+PASS Settings keeps the nearby reminder preference
+PASS Current profile reads exclude legacy radius columns
+PASS Current profile writes cannot include legacy radius columns
+PASS Offline reminder profile excludes legacy radius fields
+PASS Notification radius resolver has no profile/default input
+PASS Geofence registration uses the same V2 radius resolver
+PASS Map radius display uses the shared V2 policy without fetching a profile default
+PASS Per-place automatic mode no longer implies a profile default
+PASS Legacy database columns remain for old-client compatibility
+PASS reminder-distance cleanup contracts (10 checks)

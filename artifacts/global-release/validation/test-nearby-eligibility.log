@@ -1,0 +1,74 @@
+
+> nearr@0.1.0 test:nearby-eligibility
+> ts-node -P scripts/tsconfig.json scripts/testNearbyEligibility.ts
+
+PASS every NearrCategory has exactly one radius bucket
+PASS restaurant -> 3 mi
+PASS cafe -> 3 mi
+PASS bakery -> 3 mi
+PASS bar -> 3 mi
+PASS brewery -> 3 mi
+PASS dessert -> 3 mi
+PASS shopping -> 4 mi
+PASS fitness -> 4 mi
+PASS wellness -> 4 mi
+PASS hotel -> 4 mi
+PASS resort -> 4 mi
+PASS transportation -> 4 mi
+PASS education -> 4 mi
+PASS service -> 4 mi
+PASS beach -> 6 mi
+PASS park -> 6 mi
+PASS waterfall -> 6 mi
+PASS lake -> 6 mi
+PASS marina -> 6 mi
+PASS island -> 6 mi
+PASS scenic_spot -> 6 mi
+PASS hiking_trail -> 10 mi
+PASS attraction -> 10 mi
+PASS winery -> 10 mi
+PASS museum -> 10 mi
+PASS entertainment -> 10 mi
+PASS nightlife -> 10 mi
+PASS sports -> 10 mi
+PASS other -> default (4 mi)
+PASS unknown string -> default (4 mi)
+PASS null -> default (4 mi)
+PASS undefined -> default (4 mi)
+PASS default bucket matches the suggested V1 default
+PASS restaurant stays category-driven with legacy profile absent
+PASS restaurant stays category-driven with legacy profile 1
+PASS restaurant stays category-driven with legacy profile 99
+PASS explicit per-place override remains active V2 behavior
+PASS resolveReminderPlaceCategory reads a valid stored category
+PASS resolveReminderPlaceCategory falls back to other for null
+PASS resolveReminderPlaceCategory falls back to other for an invalid legacy string
+PASS resolveReminderPlaceCategory falls back to other when absent
+PASS restaurant radius converts to meters correctly
+PASS restaurant meters convert back to 3 mi
+PASS shopping radius converts to meters correctly
+PASS shopping meters convert back to 4 mi
+PASS beach radius converts to meters correctly
+PASS beach meters convert back to 6 mi
+PASS hiking_trail radius converts to meters correctly
+PASS hiking_trail meters convert back to 10 mi
+PASS just inside radius -> eligible
+PASS exactly at radius -> eligible
+PASS just outside radius -> not eligible
+PASS visited -> suppressed
+PASS recently notified -> suppressed
+PASS closed -> suppressed
+PASS none of the above -> eligible
+PASS CLOSED_PERMANENTLY -> reliably closed
+PASS CLOSED_TEMPORARILY -> reliably closed
+PASS OPERATIONAL -> not closed
+PASS unknown hours (null business_status) -> not automatically closed
+PASS unknown hours (undefined business_status) -> not automatically closed
+PASS unrecognized status string -> not automatically closed
+PASS one eligible candidate -> selected
+PASS multiple eligible -> nearest wins
+PASS losers are everyone else, nearest-first
+PASS no eligible candidates -> no winner
+PASS a suppressed candidate cannot win (never enters the winner pool)
+
+ALL nearby-eligibility tests passed.

@@ -1,0 +1,6 @@
+
+> nearr@0.1.0 test:saved-place-images
+> ts-node -P scripts/tsconfig.json scripts/testSavedPlaceImageStore.ts
+
+[saved-place-image] persistence failed { savedPlaceId: 'saved-c', message: 'image_acquisition_failed' }
+PASS saved-place image persistence, coalescing, validation, deletion, account cleanup, and failure safety

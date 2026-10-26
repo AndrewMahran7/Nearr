@@ -1,0 +1,38 @@
+
+> nearr@0.1.0 test:open-original-post
+> ts-node -P scripts/tsconfig.json scripts/testOpenOriginalPost.ts
+
+PASS instagram post is allowed
+PASS instagram reel is allowed
+PASS tiktok video is allowed
+PASS tiktok short link is allowed
+PASS youtube watch is allowed
+PASS youtube short link is allowed
+PASS youtube shorts is allowed
+PASS facebook reel is allowed
+PASS facebook videos is allowed
+PASS fb.watch is allowed
+PASS snapchat spotlight is allowed
+PASS x.com is allowed
+PASS null is missing
+PASS undefined is missing
+PASS empty string is missing
+PASS missing reason is "missing"
+PASS canOpenOriginal false when missing
+PASS garbage is malformed
+PASS bare host without scheme is malformed
+PASS http is rejected
+PASS javascript: is rejected
+PASS data: is rejected
+PASS file: is rejected
+PASS a javascript URL reports insecure_scheme
+PASS random https host rejected
+PASS lookalike host rejected (not a real subdomain)
+PASS unsupported host reports unsupported_host
+PASS valid plan is an "open"
+PASS open plan fires share_job_original_post_opened
+PASS plan has NO resolve/remove/save outcome (open or unavailable only)
+PASS invalid plan is "unavailable"
+PASS planOpenOriginal is idempotent
+
+All open-original-post tests passed.

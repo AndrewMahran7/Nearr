@@ -1,0 +1,48 @@
+
+> nearr@0.1.0 test:app-environment
+> ts-node -P scripts/tsconfig.json scripts/testAppEnvironment.ts
+
+PASS production/production is clean
+PASS development/development is clean
+PASS preview/development is clean
+PASS prod app + dev backend is flagged
+PASS prod app + dev backend BLOCKS the build
+PASS dev app + prod backend is flagged
+PASS dev app + prod backend BLOCKS the build
+PASS preview app + prod backend is flagged too
+PASS ALLOW_PRODUCTION_BACKEND cannot clear the dev->prod rule
+PASS ALLOW_PRODUCTION_BACKEND is itself a blocking retired override
+PASS ALLOW_PRODUCTION_BACKEND does NOT excuse a prod app on a dev backend
+PASS a falsey acknowledgement does not clear the rule
+PASS undeclared APP_ENV defaults to development
+PASS undeclared BACKEND_ENV defaults to production
+PASS undeclared reports APP_ENV_MISSING
+PASS undeclared reports BACKEND_ENV_MISSING
+PASS a completely undeclared build BLOCKS (dev app reaching prod backend)
+PASS a garbage APP_ENV is treated as undeclared, not as production
+PASS missing APP_ENV on a dev backend is advisory, not blocking
+PASS mismatched backend hosts are flagged
+PASS mismatched backend hosts BLOCK
+PASS partially configured hosts (some unset) do not false-positive
+PASS any declared lane without a Supabase URL is blocked
+PASS development label with production project is blocked even when labels agree
+PASS production label with development project is blocked even when labels agree
+PASS a custom/unrecognised hosted project cannot masquerade as Nearr-Dev
+PASS demo mode in production is flagged
+PASS dev password login in production is flagged
+PASS debug logs in production is flagged
+PASS dev mock monetization in production is blocked
+PASS the same dev switches are fine in development
+PASS hostOf strips path
+PASS hostOf strips port
+PASS hostOf lowercases
+PASS hostOf strips userinfo
+PASS hostOf of empty is null
+PASS hostOf of garbage is null
+PASS hostOf of non-string is null
+PASS supabaseProjectRefOfHost extracts a standard project ref
+PASS supabaseProjectRefOfHost rejects a custom host
+PASS summary identifies Nearr-Dev without exposing configuration values
+PASS validateEnvironment does not mutate its input
+
+All app-environment tests passed.

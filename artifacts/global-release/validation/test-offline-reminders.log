@@ -1,0 +1,19 @@
+
+> nearr@0.1.0 test:offline-reminders
+> ts-node -P scripts/tsconfig.json scripts/testOfflineReminders.ts
+
+[offline] reminder_snapshot_write count=2
+[offline] reminder_snapshot_write count=1
+[offline] reminder_snapshot_write count=2
+[offline] reminder_snapshot_write count=2
+[offline] reminder_snapshot_read_failed SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)
+    at JSON.parse (<anonymous>)
+    at readEnvelope (C:\Users\andre\Desktop\Nearr\.tmp\nearr-global-integration-recovered\lib\reminderSnapshot.ts:350:25)
+    at async readReminderSnapshot (C:\Users\andre\Desktop\Nearr\.tmp\nearr-global-integration-recovered\lib\reminderSnapshot.ts:393:20)
+    at async main (C:\Users\andre\Desktop\Nearr\.tmp\nearr-global-integration-recovered\scripts\testOfflineReminders.ts:492:5)
+[offline] reminder_snapshot_write count=2
+[offline] reminder_snapshot_write_failed Error: disk full
+    at MemoryStore.setItem (C:\Users\andre\Desktop\Nearr\.tmp\nearr-global-integration-recovered\scripts\testOfflineReminders.ts:61:32)
+    at writeReminderSnapshot (C:\Users\andre\Desktop\Nearr\.tmp\nearr-global-integration-recovered\lib\reminderSnapshot.ts:338:19)
+    at async main (C:\Users\andre\Desktop\Nearr\.tmp\nearr-global-integration-recovered\scripts\testOfflineReminders.ts:559:3)
+PASS testOfflineReminders

@@ -81,9 +81,9 @@ function autoSaveSequence() {
   assert.match(card, /onSavedRef\.current\?\.\(\)/, 'the saved stage reports completion');
 
   // Exact user-facing copy for each state.
-  assert.match(card, /'Finding the place\.\.\.'/, "copy: 'Finding the place...'");
-  assert.match(card, /'Found it'/, "copy: 'Found it'");
-  assert.match(card, />Saved to your map</, "copy: 'Saved to your map'");
+  assert.match(card, /t\("Finding the place\.\.\."\)/, "copy: 'Finding the place...'");
+  assert.match(card, /t\("Found it"\)/, "copy: 'Found it'");
+  assert.match(card, />\{t\("Saved to your map"\)\}</, "copy: 'Saved to your map'");
 
   // The demo place stays the example it always was.
   assert.match(card, /Allpress Espresso/);
@@ -94,7 +94,7 @@ function autoSaveSequence() {
   const cardImports = card.match(/from '[^']+'/g) ?? [];
   for (const spec of cardImports) {
     assert.ok(
-      /'(react|react-native|@expo\/vector-icons|\.\.\/theme)'/.test(spec),
+      /'(react|react-native|@expo\/vector-icons|@\/lib\/i18n|@\/hooks\/useLocale|\.\.\/theme)'/.test(spec),
       `the demo card must not pull in a new dependency: ${spec}`,
     );
   }
@@ -128,11 +128,11 @@ function demoTimingIsFast() {
 
 function statesAreReadableWithoutColour() {
   // Each stage is spelled out as text, not conveyed by a coloured check alone.
-  assert.match(card, /\{found \? 'Found it' : 'Finding the place\.\.\.'\}/);
+  assert.match(card, /\{found \? t\("Found it"\) : t\("Finding the place\.\.\."\)\}/);
   assert.match(card, /accessibilityRole="progressbar"/, 'the progress bar has a role');
   assert.match(
     card,
-    /accessibilityLabel=\{found \? 'Found it' : 'Finding the place'\}/,
+    /accessibilityLabel=\{found \? t\("Found it"\) : t\("Finding the place"\)\}/,
     'the progress bar announces its state',
   );
   assert.match(
@@ -204,7 +204,7 @@ function valuePropAndTutorialPreserved() {
   assert.match(tapShare, /Share to…/, 'the Share to… step is still taught');
   assert.match(chooseNearr, /headline="Choose Nearr from the Share Sheet"/);
   assert.match(chooseNearr, /onNearrPress=\{handleNearr\}/, 'the Nearr tile is still the target');
-  assert.match(chooseNearr, /Don&apos;t see Nearr\?/, 'the share-sheet help affordance is kept');
+  assert.match(chooseNearr, /t\("Don't see Nearr\?"\)/, 'the share-sheet help affordance is kept');
   assert.match(chooseNearr, /NearrFavoritesHelp/, 'the help sheet is still wired up');
 
   // The nearby-reminder concept survives without a fake distance.
@@ -228,7 +228,7 @@ function valuePropAndTutorialPreserved() {
 function finalCtaCreatesTheMap() {
   assert.match(
     flow,
-    /<OnboardingPrimaryButton title="Create your map" onPress=\{handleCreateYourMap\} \/>/,
+    /<OnboardingPrimaryButton title=\{t\("Create your map"\)\} onPress=\{handleCreateYourMap\} \/>/,
     'the final CTA is "Create your map"',
   );
   assert.doesNotMatch(flow, /Save your first place/, 'the contradictory final CTA is gone');
@@ -238,7 +238,7 @@ function finalCtaCreatesTheMap() {
   // Screen 4 has a way forward that is not a save.
   assert.match(
     flow,
-    /<OnboardingPrimaryButton title="Continue" onPress=\{handleDemoContinue\} \/>/,
+    /<OnboardingPrimaryButton title=\{t\("Continue"\)\} onPress=\{handleDemoContinue\} \/>/,
     'screen 4 advances with a neutral Continue CTA',
   );
 
@@ -261,7 +261,7 @@ function authContinuity() {
   assert.doesNotMatch(account, /Continue to Nearr/, 'no conflicting auth headline remains');
   assert.match(
     account,
-    /We&apos;ll email you a secure sign-in link\. No password needed\./,
+    /t\("We'll email you a secure sign-in link\. No password needed\."\)/,
     'magic-link copy is consumer-facing',
   );
   assert.doesNotMatch(account, /New users are created/, 'no developer wording in the auth copy');

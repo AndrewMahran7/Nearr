@@ -1,0 +1,19 @@
+
+> nearr@0.1.0 test:safety-description-only
+> ts-node -P scripts/tsconfig.json scripts/testSafetyDescriptionOnly.ts
+
+PASS caption venue+address + strong Places + profile_blocked → auto_save
+PASS reasons include both profile_fetch_blocked (warning) and supersede marker
+PASS address-only + strong Places + profile_blocked → auto_save
+PASS venue+city + weak Places → candidate_confirmation (not auto)
+PASS reasons include weak_places_match
+PASS handle-only + profile_blocked → manual_fallback (no auto, no candidate)
+PASS handle-only reasons include handle_context_unverified
+PASS generic_content → manual_fallback (no auto)
+PASS generic_content reasons include weak_generic_text
+PASS strong caption + WEAK Places + profile_blocked → NOT auto_save
+PASS supersede marker NOT emitted when Places is weak
+PASS ambiguous_candidates → candidate_confirmation even with override
+PASS reasons include ambiguous_candidates
+
+All description-only safety tests passed

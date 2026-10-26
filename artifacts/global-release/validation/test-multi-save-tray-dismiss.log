@@ -1,0 +1,21 @@
+
+> nearr@0.1.0 test:multi-save-tray-dismiss
+> ts-node -P scripts/tsconfig.json scripts/testMultiSaveTrayDismiss.ts
+
+PASS one newly saved place presentation dismisses
+PASS three newly saved places presentation dismisses
+PASS close callback is wired and fires once
+PASS dismissal clears presentation state before navigation
+PASS saved places remain after presentation dismissal
+PASS source attachments remain after presentation dismissal
+PASS dismissed event cannot resurrect on pan or detail navigation
+PASS a genuinely new save event can present a new tray
+PASS Details opens the unified selected-place detail
+PASS individual saved cards remain wired to selection
+PASS close control has a real 44pt target and accessible semantics
+PASS tray touch layer is explicitly above the native map
+PASS 375pt layout retains close and header room
+PASS 390pt layout retains close and header room
+PASS 430pt layout retains close and header room
+PASS map filter and camera state remain unchanged by dismissal
+PASS multi-save tray dismissal, persistence, touch ownership, layout, and map-state contracts

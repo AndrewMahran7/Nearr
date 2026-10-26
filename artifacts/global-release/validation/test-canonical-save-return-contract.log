@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:canonical-save-return-contract
+> ts-node -P scripts/tsconfig.json scripts/testCanonicalSaveReturnContract.ts
+
+PASS canonical save return contract (12 cases + screenshot regression)

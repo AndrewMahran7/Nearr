@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:phase2-ui-render
+> ts-node -P scripts/tsconfig.json scripts/testPhase2UiRenderContracts.ts
+
+PASS Phase 2 grouped UI render contracts

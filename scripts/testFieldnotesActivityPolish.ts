@@ -20,7 +20,7 @@ const activity = readFileSync('app/share-jobs/index.tsx', 'utf8');
 assert.match(activity, /ListHeaderComponent=\{hasContent \?/, 'empty Activity does not repeat an irrelevant finding introduction');
 assert.match(activity, /sourceUri=\{sourceFrameUri\}/);
 assert.match(activity, /fallbackSourceUri=\{sourceFrameUri\}/);
-assert.match(activity, /accessibilityLabel="From the original post"/, 'receipt evidence is labeled as source, never as independent destination imagery');
+assert.match(activity, /accessibilityLabel=\{t\("From the original post"\)\}/, 'receipt evidence is labeled as source, never as independent destination imagery');
 assert.match(activity, /allowGoogleLookup=\{false\}/, 'source continuity does not add provider photo fetching');
 assert.match(activity, /numberOfLines=\{fontScale >= 1\.5 \? undefined : 2\}/, 'accessible text size reveals full Activity identity');
 assert.match(activity, /typography\.metadata, styles\.rowSubtitle/);

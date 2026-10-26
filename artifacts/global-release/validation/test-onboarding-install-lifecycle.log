@@ -1,0 +1,23 @@
+
+> nearr@0.1.0 test:onboarding-install-lifecycle
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingInstallLifecycle.ts
+
+PASS TEST 1 — normal force close resumes the same-install checkpoint
+PASS TEST 2 — new installation rejects install A checkpoint on install B
+PASS TEST 3 — fresh install with stale anonymous auth starts Welcome
+PASS TEST 4 — fresh install clears scripted fixture state
+PASS TEST 5 — fresh install from Phase 2 intro returns to Welcome
+PASS TEST 6 — fresh install discards an old practice job route
+PASS TEST 7 — fresh install discards an old onboarding map selection
+PASS TEST 8 — fresh install keeps the established-account sign-in CTA
+PASS TEST 9 — an established user who signs in routes to the normal map
+PASS TEST 10 — a new OAuth identity still requires activation/onboarding
+PASS TEST 11 — account creation remains wired after fresh install
+PASS TEST 12 — deterministic recognition resumes on the same install
+PASS TEST 13 — map payoff resumes on the same install
+PASS TEST 14 — a real Phase 2 job resumes on the same install
+PASS TEST 15 — stale checkpoints resolve to Welcome, never ERROR_RECOVERY
+PASS TEST 16 — startup promise chains terminate with rejection handlers
+PASS TEST 17 — checkpoint schema mismatch resets safely
+PASS TEST 18 — Development reset controls remain available only in Nearr-Dev
+PASS onboarding install lifecycle: 18/18

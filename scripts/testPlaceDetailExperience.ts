@@ -21,7 +21,7 @@ assert.match(
   map,
   /shouldRenderSelectedPlaceDetail \? \([\s\S]*previewExpanded[\s\S]*<SelectedPlaceDetails/,
 );
-assert.match(map, /accessibilityLabel="Close place details"/);
+assert.match(map, /accessibilityLabel=\{t\("Close place details"\)\}/);
 // Expanded detail is a measured destination page, not a content-sized card.
 assert.match(map, /const expandedSheetHeight = useMemo\(/);
 assert.match(map, /expandedPlaceDetailHeight\(\{ availableHeight, safeTopInset \}\)/);
@@ -45,7 +45,7 @@ assert.match(map, /\{selected\.place\.name\}/);
 assert.match(map, /accessibilityLabel=\{`More options for \$\{selected\.place\.name\}`\}/);
 assert.match(map, /expandedHeaderButton: \{[\s\S]*width: 44,[\s\S]*height: 44/);
 assert.match(map, /previewCardExpanded: \{[\s\S]*overflow: 'hidden'/);
-assert.match(map, /accessibilityLabel="Close place details"/);
+assert.match(map, /accessibilityLabel=\{t\("Close place details"\)\}/);
 
 // Expanded, the sheet meets the bottom edge with a rounded top only, so it
 // reads as part of the map rather than a floating page.
@@ -78,25 +78,25 @@ assert.match(detail, /CATEGORY_LABELS\[categoryKey\]/);
 assert.match(detail, /\[categoryLabel, locality\].filter\(Boolean\)/, 'absent context creates no empty separator');
 assert.match(detail, /buildSavedPlaceShareContent\([\s\S]{0,160}referralId/);
 assert.match(detail, /void openSource\(\)/);
-const sequence = ['styles.hero,', 'styles.heroCaption', 'styles.destinationActions,', '<SourceRibbon', 'styles.savedBecauseCard', 'styles.reminderRow,', 'styles.visitCard', 'title="Near this place"', 'title="Also nearby"'];
+const sequence = ['styles.hero,', 'styles.heroCaption', 'styles.destinationActions,', '<SourceRibbon', 'styles.savedBecauseCard', 'styles.reminderRow,', 'styles.visitCard', 'title={t("Near this place")}', 'title={t("Also nearby")}'];
 let previous = -1;
 for (const marker of sequence) {
   const position = detail.indexOf(marker);
   assert.ok(position > previous, `${marker} follows the preceding Fieldnotes section`);
   previous = position;
 }
-assert.match(detail, /title="Directions"[\s\S]*onPress=\{onGetDirections\}/);
+assert.match(detail, /title=\{t\("Directions"\)\}[\s\S]*onPress=\{onGetDirections\}/);
 assert.match(detail, /photoUrls.length > 0[\s\S]*1 \/ \{photoUrls.length\}/, 'truthful count includes one image');
 assert.match(detail, /prefetchAdjacent=\{false\}[\s\S]*loadOnlyVisited/, 'gallery retains bounded loading');
 assert.match(detail, /<Modal visible=\{moreOpen\}/, 'More owns management');
-assert.match(detail, /title="Edit note"/);
-assert.match(detail, /title="Share place"/);
-assert.match(detail, /title="Wrong place\?"/);
-assert.match(detail, /title="Remove saved place"[\s\S]*confirmDelete\(\)/);
+assert.match(detail, /title=\{t\("Edit note"\)\}/);
+assert.match(detail, /title=\{t\("Share place"\)\}/);
+assert.match(detail, /title=\{t\("Wrong place\?"\)\}/);
+assert.match(detail, /title=\{t\("Remove saved place"\)\}[\s\S]*confirmDelete\(\)/);
 
 // Personal context stays ONE surface (notes ?? ai_note) rather than a cue block
 // stacked on a user block, and it is still live from the saved row.
-assert.match(detail, /accessibilityLabel="Add why you saved this place"/);
+assert.match(detail, /accessibilityLabel=\{t\("Add why you saved this place"\)\}/);
 assert.match(detail, /whySavedDisplay\(\{ notes, ai_note: saved\.ai_note \}\)/);
 assert.match(detail, /accessibilityLiveRegion="polite"/);
 assert.match(detail, /styles\.savedBecauseTitle/);
@@ -123,7 +123,7 @@ assert.equal(reminderStatusLabel({ enabled: true, mode: 'miles', milesText: '2.5
 
 // Correction/removal stay reachable but visually secondary — they must never
 // compete with Directions or the content itself.
-assert.match(detail, /accessibilityLabel="Wrong place\? Correct this saved place"/);
+assert.match(detail, /accessibilityLabel=\{t\("Wrong place\? Correct this saved place"\)\}/);
 assert.match(detail, /Remove \${saved\.place\.name} from saved places/);
 assert.match(detail, /manageText: \{[\s\S]*color: colors\.textMuted/, 'management actions are low-emphasis');
 assert.match(detail, /manageAction: \{[\s\S]*minHeight: 44/, 'low emphasis never means small targets');

@@ -1,0 +1,7 @@
+
+> nearr@0.1.0 test:ai-note-integration
+> ts-node -P scripts/tsconfig.json scripts/testAiNoteIntegrationContracts.ts
+
+[offline] saved_places_cache_write count=1
+[offline] saved_places_cache_read count=1
+PASS auto/manual AI-note persistence and non-fatal finalization contracts

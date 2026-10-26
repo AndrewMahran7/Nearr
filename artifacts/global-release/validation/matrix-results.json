@@ -1,0 +1,867 @@
+{
+  "startedAt": "2026-10-26T02:04:49.126Z",
+  "total": 143,
+  "completed": 143,
+  "passed": 143,
+  "failed": 0,
+  "results": [
+    {
+      "name": "test:release-gate",
+      "exit": 0,
+      "durationMs": 1206,
+      "logfile": "artifacts\\global-release\\validation\\test-release-gate.log"
+    },
+    {
+      "name": "test:startup-smoke",
+      "exit": 0,
+      "durationMs": 1624,
+      "logfile": "artifacts\\global-release\\validation\\test-startup-smoke.log"
+    },
+    {
+      "name": "test:result-notifications",
+      "exit": 0,
+      "durationMs": 925,
+      "logfile": "artifacts\\global-release\\validation\\test-result-notifications.log"
+    },
+    {
+      "name": "test:failure-messaging",
+      "exit": 0,
+      "durationMs": 648,
+      "logfile": "artifacts\\global-release\\validation\\test-failure-messaging.log"
+    },
+    {
+      "name": "test:no-user-facing-vayrin",
+      "exit": 0,
+      "durationMs": 2384,
+      "logfile": "artifacts\\global-release\\validation\\test-no-user-facing-vayrin.log"
+    },
+    {
+      "name": "test:share-failure-presentation",
+      "exit": 0,
+      "durationMs": 857,
+      "logfile": "artifacts\\global-release\\validation\\test-share-failure-presentation.log"
+    },
+    {
+      "name": "test:map-atomic-representation-stability",
+      "exit": 0,
+      "durationMs": 1112,
+      "logfile": "artifacts\\global-release\\validation\\test-map-atomic-representation-stability.log"
+    },
+    {
+      "name": "test:map-cluster-expansion",
+      "exit": 0,
+      "durationMs": 805,
+      "logfile": "artifacts\\global-release\\validation\\test-map-cluster-expansion.log"
+    },
+    {
+      "name": "test:map-conservation",
+      "exit": 0,
+      "durationMs": 1864,
+      "logfile": "artifacts\\global-release\\validation\\test-map-conservation.log"
+    },
+    {
+      "name": "test:multi-save-tray-dismiss",
+      "exit": 0,
+      "durationMs": 725,
+      "logfile": "artifacts\\global-release\\validation\\test-multi-save-tray-dismiss.log"
+    },
+    {
+      "name": "test:nearby-map-explorer",
+      "exit": 0,
+      "durationMs": 1148,
+      "logfile": "artifacts\\global-release\\validation\\test-nearby-map-explorer.log"
+    },
+    {
+      "name": "test:vayrin-candidate-confirmation-v2",
+      "exit": 0,
+      "durationMs": 1178,
+      "logfile": "artifacts\\global-release\\validation\\test-vayrin-candidate-confirmation-v2.log"
+    },
+    {
+      "name": "test:map-camera-transaction-hotfix",
+      "exit": 0,
+      "durationMs": 4125,
+      "logfile": "artifacts\\global-release\\validation\\test-map-camera-transaction-hotfix.log"
+    },
+    {
+      "name": "test:canonical-save-return-contract",
+      "exit": 0,
+      "durationMs": 720,
+      "logfile": "artifacts\\global-release\\validation\\test-canonical-save-return-contract.log"
+    },
+    {
+      "name": "test:vayrin-multi-place-review-redesign",
+      "exit": 0,
+      "durationMs": 1076,
+      "logfile": "artifacts\\global-release\\validation\\test-vayrin-multi-place-review-redesign.log"
+    },
+    {
+      "name": "test:multi-place-review-interactions",
+      "exit": 0,
+      "durationMs": 1102,
+      "logfile": "artifacts\\global-release\\validation\\test-multi-place-review-interactions.log"
+    },
+    {
+      "name": "test:quick-check-density",
+      "exit": 0,
+      "durationMs": 1144,
+      "logfile": "artifacts\\global-release\\validation\\test-quick-check-density.log"
+    },
+    {
+      "name": "test:quick-check-rolodex-ux",
+      "exit": 0,
+      "durationMs": 1114,
+      "logfile": "artifacts\\global-release\\validation\\test-quick-check-rolodex-ux.log"
+    },
+    {
+      "name": "test:e2e:harness",
+      "exit": 0,
+      "durationMs": 1193,
+      "logfile": "artifacts\\global-release\\validation\\test-e2e-harness.log"
+    },
+    {
+      "name": "test:vayrin-quick-check-evidence-ui",
+      "exit": 0,
+      "durationMs": 2026,
+      "logfile": "artifacts\\global-release\\validation\\test-vayrin-quick-check-evidence-ui.log"
+    },
+    {
+      "name": "test:app-environment",
+      "exit": 0,
+      "durationMs": 753,
+      "logfile": "artifacts\\global-release\\validation\\test-app-environment.log"
+    },
+    {
+      "name": "test:google-places-config",
+      "exit": 0,
+      "durationMs": 689,
+      "logfile": "artifacts\\global-release\\validation\\test-google-places-config.log"
+    },
+    {
+      "name": "test:root-layout-loop",
+      "exit": 0,
+      "durationMs": 727,
+      "logfile": "artifacts\\global-release\\validation\\test-root-layout-loop.log"
+    },
+    {
+      "name": "test:dev-db-guard",
+      "exit": 0,
+      "durationMs": 1549,
+      "logfile": "artifacts\\global-release\\validation\\test-dev-db-guard.log"
+    },
+    {
+      "name": "test:notification-tap-routing",
+      "exit": 0,
+      "durationMs": 806,
+      "logfile": "artifacts\\global-release\\validation\\test-notification-tap-routing.log"
+    },
+    {
+      "name": "test:update-args",
+      "exit": 0,
+      "durationMs": 741,
+      "logfile": "artifacts\\global-release\\validation\\test-update-args.log"
+    },
+    {
+      "name": "test:share-extension-env",
+      "exit": 0,
+      "durationMs": 716,
+      "logfile": "artifacts\\global-release\\validation\\test-share-extension-env.log"
+    },
+    {
+      "name": "test:saved-place-edits",
+      "exit": 0,
+      "durationMs": 602,
+      "logfile": "artifacts\\global-release\\validation\\test-saved-place-edits.log"
+    },
+    {
+      "name": "test:dev-login-gating",
+      "exit": 0,
+      "durationMs": 688,
+      "logfile": "artifacts\\global-release\\validation\\test-dev-login-gating.log"
+    },
+    {
+      "name": "test:place-note",
+      "exit": 0,
+      "durationMs": 694,
+      "logfile": "artifacts\\global-release\\validation\\test-place-note.log"
+    },
+    {
+      "name": "test:place-category",
+      "exit": 0,
+      "durationMs": 910,
+      "logfile": "artifacts\\global-release\\validation\\test-place-category.log"
+    },
+    {
+      "name": "test:category-pipeline",
+      "exit": 0,
+      "durationMs": 747,
+      "logfile": "artifacts\\global-release\\validation\\test-category-pipeline.log"
+    },
+    {
+      "name": "test:place-category-migration",
+      "exit": 0,
+      "durationMs": 529,
+      "logfile": "artifacts\\global-release\\validation\\test-place-category-migration.log"
+    },
+    {
+      "name": "test:auto-save-undo",
+      "exit": 0,
+      "durationMs": 580,
+      "logfile": "artifacts\\global-release\\validation\\test-auto-save-undo.log"
+    },
+    {
+      "name": "test:google-places-fields",
+      "exit": 0,
+      "durationMs": 915,
+      "logfile": "artifacts\\global-release\\validation\\test-google-places-fields.log"
+    },
+    {
+      "name": "test:share-extension-compact",
+      "exit": 0,
+      "durationMs": 847,
+      "logfile": "artifacts\\global-release\\validation\\test-share-extension-compact.log"
+    },
+    {
+      "name": "test:share-completion",
+      "exit": 0,
+      "durationMs": 614,
+      "logfile": "artifacts\\global-release\\validation\\test-share-completion.log"
+    },
+    {
+      "name": "test:queue-inbox",
+      "exit": 0,
+      "durationMs": 737,
+      "logfile": "artifacts\\global-release\\validation\\test-queue-inbox.log"
+    },
+    {
+      "name": "test:source-enrichment",
+      "exit": 0,
+      "durationMs": 936,
+      "logfile": "artifacts\\global-release\\validation\\test-source-enrichment.log"
+    },
+    {
+      "name": "test:source-thumbnails",
+      "exit": 0,
+      "durationMs": 862,
+      "logfile": "artifacts\\global-release\\validation\\test-source-thumbnails.log"
+    },
+    {
+      "name": "test:share-worker-boot",
+      "exit": 0,
+      "durationMs": 1087,
+      "logfile": "artifacts\\global-release\\validation\\test-share-worker-boot.log"
+    },
+    {
+      "name": "test:share-job-result",
+      "exit": 0,
+      "durationMs": 782,
+      "logfile": "artifacts\\global-release\\validation\\test-share-job-result.log"
+    },
+    {
+      "name": "test:map-group-focus",
+      "exit": 0,
+      "durationMs": 823,
+      "logfile": "artifacts\\global-release\\validation\\test-map-group-focus.log"
+    },
+    {
+      "name": "test:save-navigation",
+      "exit": 0,
+      "durationMs": 612,
+      "logfile": "artifacts\\global-release\\validation\\test-save-navigation.log"
+    },
+    {
+      "name": "test:phase2-ui-render",
+      "exit": 0,
+      "durationMs": 526,
+      "logfile": "artifacts\\global-release\\validation\\test-phase2-ui-render.log"
+    },
+    {
+      "name": "test:address-first",
+      "exit": 0,
+      "durationMs": 1204,
+      "logfile": "artifacts\\global-release\\validation\\test-address-first.log"
+    },
+    {
+      "name": "test:address-match",
+      "exit": 0,
+      "durationMs": 1383,
+      "logfile": "artifacts\\global-release\\validation\\test-address-match.log"
+    },
+    {
+      "name": "test:multi-address",
+      "exit": 0,
+      "durationMs": 791,
+      "logfile": "artifacts\\global-release\\validation\\test-multi-address.log"
+    },
+    {
+      "name": "test:multi-place-batch",
+      "exit": 0,
+      "durationMs": 703,
+      "logfile": "artifacts\\global-release\\validation\\test-multi-place-batch.log"
+    },
+    {
+      "name": "test:multi-select-places",
+      "exit": 0,
+      "durationMs": 1073,
+      "logfile": "artifacts\\global-release\\validation\\test-multi-select-places.log"
+    },
+    {
+      "name": "test:place-recommendations",
+      "exit": 0,
+      "durationMs": 925,
+      "logfile": "artifacts\\global-release\\validation\\test-place-recommendations.log"
+    },
+    {
+      "name": "test:recovery-hints",
+      "exit": 0,
+      "durationMs": 809,
+      "logfile": "artifacts\\global-release\\validation\\test-recovery-hints.log"
+    },
+    {
+      "name": "test:safety-description-only",
+      "exit": 0,
+      "durationMs": 721,
+      "logfile": "artifacts\\global-release\\validation\\test-safety-description-only.log"
+    },
+    {
+      "name": "test:generic-caption-guard",
+      "exit": 0,
+      "durationMs": 660,
+      "logfile": "artifacts\\global-release\\validation\\test-generic-caption-guard.log"
+    },
+    {
+      "name": "test:platform-noise",
+      "exit": 0,
+      "durationMs": 644,
+      "logfile": "artifacts\\global-release\\validation\\test-platform-noise.log"
+    },
+    {
+      "name": "test:manual-fallback",
+      "exit": 0,
+      "durationMs": 635,
+      "logfile": "artifacts\\global-release\\validation\\test-manual-fallback.log"
+    },
+    {
+      "name": "test:tiktok-url",
+      "exit": 0,
+      "durationMs": 710,
+      "logfile": "artifacts\\global-release\\validation\\test-tiktok-url.log"
+    },
+    {
+      "name": "test:evidence-provenance",
+      "exit": 0,
+      "durationMs": 1056,
+      "logfile": "artifacts\\global-release\\validation\\test-evidence-provenance.log"
+    },
+    {
+      "name": "test:notification-dedupe",
+      "exit": 0,
+      "durationMs": 717,
+      "logfile": "artifacts\\global-release\\validation\\test-notification-dedupe.log"
+    },
+    {
+      "name": "test:platform-url-classification",
+      "exit": 0,
+      "durationMs": 3057,
+      "logfile": "artifacts\\global-release\\validation\\test-platform-url-classification.log"
+    },
+    {
+      "name": "test:share-job-mapping",
+      "exit": 0,
+      "durationMs": 633,
+      "logfile": "artifacts\\global-release\\validation\\test-share-job-mapping.log"
+    },
+    {
+      "name": "test:share-job-routing",
+      "exit": 0,
+      "durationMs": 965,
+      "logfile": "artifacts\\global-release\\validation\\test-share-job-routing.log"
+    },
+    {
+      "name": "test:account",
+      "exit": 0,
+      "durationMs": 3076,
+      "logfile": "artifacts\\global-release\\validation\\test-account.log"
+    },
+    {
+      "name": "test:share-url-validation",
+      "exit": 0,
+      "durationMs": 778,
+      "logfile": "artifacts\\global-release\\validation\\test-share-url-validation.log"
+    },
+    {
+      "name": "test:feature-flags",
+      "exit": 0,
+      "durationMs": 614,
+      "logfile": "artifacts\\global-release\\validation\\test-feature-flags.log"
+    },
+    {
+      "name": "test:vayrin-ui",
+      "exit": 0,
+      "durationMs": 562,
+      "logfile": "artifacts\\global-release\\validation\\test-vayrin-ui.log"
+    },
+    {
+      "name": "test:vayrin-presentation",
+      "exit": 0,
+      "durationMs": 932,
+      "logfile": "artifacts\\global-release\\validation\\test-vayrin-presentation.log"
+    },
+    {
+      "name": "typecheck",
+      "exit": 0,
+      "durationMs": 22578,
+      "logfile": "artifacts\\global-release\\validation\\typecheck.log"
+    },
+    {
+      "name": "test:share-routes",
+      "exit": 0,
+      "durationMs": 554,
+      "logfile": "artifacts\\global-release\\validation\\test-share-routes.log"
+    },
+    {
+      "name": "test:shared-auth-session",
+      "exit": 0,
+      "durationMs": 601,
+      "logfile": "artifacts\\global-release\\validation\\test-shared-auth-session.log"
+    },
+    {
+      "name": "test:sanitize-error",
+      "exit": 0,
+      "durationMs": 585,
+      "logfile": "artifacts\\global-release\\validation\\test-sanitize-error.log"
+    },
+    {
+      "name": "test:breadcrumbs",
+      "exit": 0,
+      "durationMs": 586,
+      "logfile": "artifacts\\global-release\\validation\\test-breadcrumbs.log"
+    },
+    {
+      "name": "test:once-latch",
+      "exit": 0,
+      "durationMs": 560,
+      "logfile": "artifacts\\global-release\\validation\\test-once-latch.log"
+    },
+    {
+      "name": "test:open-saved-place",
+      "exit": 0,
+      "durationMs": 679,
+      "logfile": "artifacts\\global-release\\validation\\test-open-saved-place.log"
+    },
+    {
+      "name": "test:shared-auth-sync",
+      "exit": 0,
+      "durationMs": 580,
+      "logfile": "artifacts\\global-release\\validation\\test-shared-auth-sync.log"
+    },
+    {
+      "name": "test:share-submission",
+      "exit": 0,
+      "durationMs": 651,
+      "logfile": "artifacts\\global-release\\validation\\test-share-submission.log"
+    },
+    {
+      "name": "test:share-job-client",
+      "exit": 0,
+      "durationMs": 759,
+      "logfile": "artifacts\\global-release\\validation\\test-share-job-client.log"
+    },
+    {
+      "name": "test:share-jobs-dedupe",
+      "exit": 0,
+      "durationMs": 571,
+      "logfile": "artifacts\\global-release\\validation\\test-share-jobs-dedupe.log"
+    },
+    {
+      "name": "test:share-jobs-realtime",
+      "exit": 0,
+      "durationMs": 753,
+      "logfile": "artifacts\\global-release\\validation\\test-share-jobs-realtime.log"
+    },
+    {
+      "name": "test:live-location",
+      "exit": 0,
+      "durationMs": 606,
+      "logfile": "artifacts\\global-release\\validation\\test-live-location.log"
+    },
+    {
+      "name": "test:place-share",
+      "exit": 0,
+      "durationMs": 646,
+      "logfile": "artifacts\\global-release\\validation\\test-place-share.log"
+    },
+    {
+      "name": "test:place-share-source",
+      "exit": 0,
+      "durationMs": 700,
+      "logfile": "artifacts\\global-release\\validation\\test-place-share-source.log"
+    },
+    {
+      "name": "test:wrong-place",
+      "exit": 0,
+      "durationMs": 601,
+      "logfile": "artifacts\\global-release\\validation\\test-wrong-place.log"
+    },
+    {
+      "name": "test:ai-place-note",
+      "exit": 0,
+      "durationMs": 670,
+      "logfile": "artifacts\\global-release\\validation\\test-ai-place-note.log"
+    },
+    {
+      "name": "test:note-editor",
+      "exit": 0,
+      "durationMs": 614,
+      "logfile": "artifacts\\global-release\\validation\\test-note-editor.log"
+    },
+    {
+      "name": "test:ai-note-integration",
+      "exit": 0,
+      "durationMs": 870,
+      "logfile": "artifacts\\global-release\\validation\\test-ai-note-integration.log"
+    },
+    {
+      "name": "test:saved-browse",
+      "exit": 0,
+      "durationMs": 836,
+      "logfile": "artifacts\\global-release\\validation\\test-saved-browse.log"
+    },
+    {
+      "name": "test:place-image",
+      "exit": 0,
+      "durationMs": 565,
+      "logfile": "artifacts\\global-release\\validation\\test-place-image.log"
+    },
+    {
+      "name": "test:video-ai-note-guarantee",
+      "exit": 0,
+      "durationMs": 1591,
+      "logfile": "artifacts\\global-release\\validation\\test-video-ai-note-guarantee.log"
+    },
+    {
+      "name": "test:open-original-post",
+      "exit": 0,
+      "durationMs": 569,
+      "logfile": "artifacts\\global-release\\validation\\test-open-original-post.log"
+    },
+    {
+      "name": "test:share-jobs-ui",
+      "exit": 0,
+      "durationMs": 580,
+      "logfile": "artifacts\\global-release\\validation\\test-share-jobs-ui.log"
+    },
+    {
+      "name": "test:quick-check",
+      "exit": 0,
+      "durationMs": 580,
+      "logfile": "artifacts\\global-release\\validation\\test-quick-check.log"
+    },
+    {
+      "name": "test:share-phase1-ui",
+      "exit": 0,
+      "durationMs": 589,
+      "logfile": "artifacts\\global-release\\validation\\test-share-phase1-ui.log"
+    },
+    {
+      "name": "test:share-phase1-render",
+      "exit": 0,
+      "durationMs": 1028,
+      "logfile": "artifacts\\global-release\\validation\\test-share-phase1-render.log"
+    },
+    {
+      "name": "test:media-fallback",
+      "exit": 0,
+      "durationMs": 593,
+      "logfile": "artifacts\\global-release\\validation\\test-media-fallback.log"
+    },
+    {
+      "name": "test:media-evidence",
+      "exit": 0,
+      "durationMs": 713,
+      "logfile": "artifacts\\global-release\\validation\\test-media-evidence.log"
+    },
+    {
+      "name": "test:post-save-enrichment",
+      "exit": 0,
+      "durationMs": 505,
+      "logfile": "artifacts\\global-release\\validation\\test-post-save-enrichment.log"
+    },
+    {
+      "name": "test:media-finalize",
+      "exit": 0,
+      "durationMs": 562,
+      "logfile": "artifacts\\global-release\\validation\\test-media-finalize.log"
+    },
+    {
+      "name": "test:media-reliability",
+      "exit": 0,
+      "durationMs": 581,
+      "logfile": "artifacts\\global-release\\validation\\test-media-reliability.log"
+    },
+    {
+      "name": "test:media-adversarial",
+      "exit": 0,
+      "durationMs": 695,
+      "logfile": "artifacts\\global-release\\validation\\test-media-adversarial.log"
+    },
+    {
+      "name": "test:media-mentions",
+      "exit": 0,
+      "durationMs": 1009,
+      "logfile": "artifacts\\global-release\\validation\\test-media-mentions.log"
+    },
+    {
+      "name": "test:media-autosave",
+      "exit": 0,
+      "durationMs": 1280,
+      "logfile": "artifacts\\global-release\\validation\\test-media-autosave.log"
+    },
+    {
+      "name": "test:geographic-context",
+      "exit": 0,
+      "durationMs": 991,
+      "logfile": "artifacts\\global-release\\validation\\test-geographic-context.log"
+    },
+    {
+      "name": "test:media-run-diagnostics",
+      "exit": 0,
+      "durationMs": 890,
+      "logfile": "artifacts\\global-release\\validation\\test-media-run-diagnostics.log"
+    },
+    {
+      "name": "test:geographic-context-source",
+      "exit": 0,
+      "durationMs": 1448,
+      "logfile": "artifacts\\global-release\\validation\\test-geographic-context-source.log"
+    },
+    {
+      "name": "test:shared-geo-context",
+      "exit": 0,
+      "durationMs": 1328,
+      "logfile": "artifacts\\global-release\\validation\\test-shared-geo-context.log"
+    },
+    {
+      "name": "test:shared-city-context",
+      "exit": 0,
+      "durationMs": 1309,
+      "logfile": "artifacts\\global-release\\validation\\test-shared-city-context.log"
+    },
+    {
+      "name": "test:geographic-destinations",
+      "exit": 0,
+      "durationMs": 1464,
+      "logfile": "artifacts\\global-release\\validation\\test-geographic-destinations.log"
+    },
+    {
+      "name": "test:source-location-tag",
+      "exit": 0,
+      "durationMs": 1480,
+      "logfile": "artifacts\\global-release\\validation\\test-source-location-tag.log"
+    },
+    {
+      "name": "test:no-match-diagnostics",
+      "exit": 0,
+      "durationMs": 1236,
+      "logfile": "artifacts\\global-release\\validation\\test-no-match-diagnostics.log"
+    },
+    {
+      "name": "test:provider-api-path",
+      "exit": 0,
+      "durationMs": 1150,
+      "logfile": "artifacts\\global-release\\validation\\test-provider-api-path.log"
+    },
+    {
+      "name": "test:onboarding-routing",
+      "exit": 0,
+      "durationMs": 590,
+      "logfile": "artifacts\\global-release\\validation\\test-onboarding-routing.log"
+    },
+    {
+      "name": "test:onboarding-demo",
+      "exit": 0,
+      "durationMs": 593,
+      "logfile": "artifacts\\global-release\\validation\\test-onboarding-demo.log"
+    },
+    {
+      "name": "test:name-driven",
+      "exit": 0,
+      "durationMs": 1227,
+      "logfile": "artifacts\\global-release\\validation\\test-name-driven.log"
+    },
+    {
+      "name": "test:onboarding-anonymous",
+      "exit": 0,
+      "durationMs": 610,
+      "logfile": "artifacts\\global-release\\validation\\test-onboarding-anonymous.log"
+    },
+    {
+      "name": "test:auth-deeplink",
+      "exit": 0,
+      "durationMs": 659,
+      "logfile": "artifacts\\global-release\\validation\\test-auth-deeplink.log"
+    },
+    {
+      "name": "test:auth-errors",
+      "exit": 0,
+      "durationMs": 609,
+      "logfile": "artifacts\\global-release\\validation\\test-auth-errors.log"
+    },
+    {
+      "name": "test:auth-account-state",
+      "exit": 0,
+      "durationMs": 676,
+      "logfile": "artifacts\\global-release\\validation\\test-auth-account-state.log"
+    },
+    {
+      "name": "test:auth-recovery",
+      "exit": 0,
+      "durationMs": 612,
+      "logfile": "artifacts\\global-release\\validation\\test-auth-recovery.log"
+    },
+    {
+      "name": "test:auth-screen-contracts",
+      "exit": 0,
+      "durationMs": 613,
+      "logfile": "artifacts\\global-release\\validation\\test-auth-screen-contracts.log"
+    },
+    {
+      "name": "test:nearby-arbitration",
+      "exit": 0,
+      "durationMs": 642,
+      "logfile": "artifacts\\global-release\\validation\\test-nearby-arbitration.log"
+    },
+    {
+      "name": "test:nearby-eligibility",
+      "exit": 0,
+      "durationMs": 707,
+      "logfile": "artifacts\\global-release\\validation\\test-nearby-eligibility.log"
+    },
+    {
+      "name": "test:reminder-distance-cleanup",
+      "exit": 0,
+      "durationMs": 563,
+      "logfile": "artifacts\\global-release\\validation\\test-reminder-distance-cleanup.log"
+    },
+    {
+      "name": "test:offline-mode",
+      "exit": 0,
+      "durationMs": 676,
+      "logfile": "artifacts\\global-release\\validation\\test-offline-mode.log"
+    },
+    {
+      "name": "test:offline-reminders",
+      "exit": 0,
+      "durationMs": 761,
+      "logfile": "artifacts\\global-release\\validation\\test-offline-reminders.log"
+    },
+    {
+      "name": "test:saved-place-snapshots",
+      "exit": 0,
+      "durationMs": 766,
+      "logfile": "artifacts\\global-release\\validation\\test-saved-place-snapshots.log"
+    },
+    {
+      "name": "test:onboarding-google-integration",
+      "exit": 0,
+      "durationMs": 786,
+      "logfile": "artifacts\\global-release\\validation\\test-onboarding-google-integration.log"
+    },
+    {
+      "name": "test:onboarding-fully-offline",
+      "exit": 0,
+      "durationMs": 783,
+      "logfile": "artifacts\\global-release\\validation\\test-onboarding-fully-offline.log"
+    },
+    {
+      "name": "test:onboarding-v2",
+      "exit": 0,
+      "durationMs": 5184,
+      "logfile": "artifacts\\global-release\\validation\\test-onboarding-v2.log"
+    },
+    {
+      "name": "test:onboarding-no-live-services",
+      "exit": 0,
+      "durationMs": 560,
+      "logfile": "artifacts\\global-release\\validation\\test-onboarding-no-live-services.log"
+    },
+    {
+      "name": "test:onboarding-authentic-phase2-auth",
+      "exit": 0,
+      "durationMs": 882,
+      "logfile": "artifacts\\global-release\\validation\\test-onboarding-authentic-phase2-auth.log"
+    },
+    {
+      "name": "test:map-camera",
+      "exit": 0,
+      "durationMs": 676,
+      "logfile": "artifacts\\global-release\\validation\\test-map-camera.log"
+    },
+    {
+      "name": "test:onboarding-install-lifecycle",
+      "exit": 0,
+      "durationMs": 870,
+      "logfile": "artifacts\\global-release\\validation\\test-onboarding-install-lifecycle.log"
+    },
+    {
+      "name": "test:map-visibility",
+      "exit": 0,
+      "durationMs": 623,
+      "logfile": "artifacts\\global-release\\validation\\test-map-visibility.log"
+    },
+    {
+      "name": "test:place-detail",
+      "exit": 0,
+      "durationMs": 599,
+      "logfile": "artifacts\\global-release\\validation\\test-place-detail.log"
+    },
+    {
+      "name": "test:place-detail-v2",
+      "exit": 0,
+      "durationMs": 658,
+      "logfile": "artifacts\\global-release\\validation\\test-place-detail-v2.log"
+    },
+    {
+      "name": "test:photo-carousel",
+      "exit": 0,
+      "durationMs": 601,
+      "logfile": "artifacts\\global-release\\validation\\test-photo-carousel.log"
+    },
+    {
+      "name": "test:place-detail-convergence",
+      "exit": 0,
+      "durationMs": 773,
+      "logfile": "artifacts\\global-release\\validation\\test-place-detail-convergence.log"
+    },
+    {
+      "name": "test:saved-place-images",
+      "exit": 0,
+      "durationMs": 607,
+      "logfile": "artifacts\\global-release\\validation\\test-saved-place-images.log"
+    },
+    {
+      "name": "test:place-photo-contract",
+      "exit": 0,
+      "durationMs": 521,
+      "logfile": "artifacts\\global-release\\validation\\test-place-photo-contract.log"
+    },
+    {
+      "name": "test:global-monetization",
+      "exit": 0,
+      "durationMs": 585,
+      "logfile": "artifacts\\global-release\\validation\\test-global-monetization.log"
+    },
+    {
+      "name": "test:global-eligibility-db",
+      "exit": 0,
+      "durationMs": 76000,
+      "logfile": "artifacts\\global-release\\validation\\test-global-eligibility-db.log"
+    },
+    {
+      "name": "test:global-monetization-db",
+      "exit": 0,
+      "durationMs": 77814,
+      "logfile": "artifacts\\global-release\\validation\\test-global-monetization-db.log"
+    }
+  ]
+}

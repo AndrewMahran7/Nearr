@@ -14,6 +14,9 @@ let systemAppearance: 'light' | 'dark' | null = 'dark';
 const reads: Array<{ resolve: (value: string | null) => void; reject: (error: Error) => void }> = [];
 const writes: Array<{ key: string; value: string }> = [];
 Module._load = function(request: string, parent: unknown, isMain: boolean) {
+  if (request === '@/lib/i18n') return require('../lib/i18nEngine');
+  if (request === '@/hooks/useLocale') return { useLocale: () => ({ locale: require('../lib/i18nEngine').i18n.language }) };
+
   if (request === 'react-native') return { useColorScheme: () => systemAppearance };
   if (request === '@react-native-async-storage/async-storage') return { getItem: () => new Promise((resolve, reject) => reads.push({ resolve, reject })), setItem: async (key: string, value: string) => { writes.push({ key, value }); } };
   if (request.startsWith('@/')) return originalLoad(path.join(sourceRoot, request.slice(2)), parent, isMain);

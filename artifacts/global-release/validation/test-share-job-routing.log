@@ -1,0 +1,73 @@
+
+> nearr@0.1.0 test:share-job-routing
+> ts-node -P scripts/tsconfig.json scripts/testShareJobRouting.ts
+
+PASS queued visible
+PASS processing_metadata visible
+PASS needs_help visible
+PASS failed visible (actionable recovery)
+PASS completed hidden
+PASS cancelled hidden
+PASS unknown status hidden
+PASS null status hidden
+PASS completed is terminal-hidden
+PASS cancelled is terminal-hidden
+PASS queued not processing-hidden but is processing
+PASS needs_help not processing
+PASS completed job is hidden
+PASS accepted job is hidden (completed)
+PASS denied job is hidden (cancelled)
+PASS cancelled job is hidden
+PASS queued job remains visible
+PASS processing job remains visible
+PASS needs-help job remains visible
+PASS failed job remains visible (actionable)
+PASS only 4 of 6 visible
+PASS terminal realtime event removes an existing queue card
+PASS delayed insert cannot re-add a terminal card
+PASS badge counts needs_help
+PASS badge does NOT count completed
+PASS badge does NOT count accepted (completed)
+PASS badge does NOT count cancelled
+PASS badge counts processing as current queue work
+PASS badge counts recoverable failed jobs
+PASS queue badge equals all visible current jobs
+PASS classify queued => processing
+PASS classify processing_metadata => processing
+PASS classify needs_help => actionable
+PASS classify failed => actionable
+PASS classify completed => completed
+PASS classify cancelled => dismissed
+PASS classify unknown terminal => dismissed
+PASS classify null => missing
+PASS classify undefined => missing
+PASS completed notification opens saved result
+PASS already-saved notification opens existing saved place
+PASS already-saved notification carries the google_place_id fallback when present
+PASS old already-saved payload without googlePlaceId routes byte-identically
+PASS completed with job id opens authoritative result even if notification omitted saved id
+PASS needs-help notification opens the queue item
+PASS resolved stale notification (needs_help w/o jobId) does not crash -> queue root
+PASS missing job notification does not crash -> queue root
+PASS malformed completed payload (non-string savedPlaceId) -> map, no throw
+PASS malformed needs_help payload (non-string jobId) -> queue root, no throw
+PASS non-share-job (nearby reminder) payload => null (falls through)
+PASS empty payload => null
+PASS completed multi-save notification => saved group
+PASS mixed notification => unresolved job, not saved group
+PASS null payload => null
+PASS undefined payload => null
+PASS queue root pushes a detail so Back returns to queue
+PASS map pushes the first detail
+PASS detail A is replaced when detail B opens
+PASS detail path with trailing slash is replaced
+PASS nested/non-detail routes are not replaced
+PASS duplicate notification handling is idempotent (pure: same input => same route)
+PASS completed card opens saved result detail
+PASS completed card without saved place still opens safe result detail
+PASS needs_help card -> queue item
+PASS failed card -> queue item (actionable)
+PASS denied (cancelled) card -> queue root, no throw
+PASS null card -> queue root, no throw
+
+ALL SHARE JOB ROUTING TESTS PASSED

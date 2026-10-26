@@ -1,0 +1,28 @@
+
+> nearr@0.1.0 test:manual-fallback
+> ts-node -P scripts/tsconfig.json scripts/testManualFallback.ts
+
+PASS valid candidate (id + name) is renderable
+PASS missing googlePlaceId is NOT renderable
+PASS empty googlePlaceId is NOT renderable
+PASS missing name is NOT renderable
+PASS empty name is NOT renderable
+PASS null is NOT renderable
+PASS undefined is NOT renderable
+PASS non-object is NOT renderable
+PASS numeric googlePlaceId is NOT renderable
+PASS #7 malformed array → only the single valid row survives
+PASS #7 malformed array → invalidCount counts the 5 skipped rows
+PASS #8 all-invalid array → zero valid candidates remain
+PASS #10 one invalid + one valid → exactly the valid candidate is kept
+PASS null/undefined/non-array input never throws and yields empty
+PASS prefers "<place> <city> <state>" over a raw address
+PASS address-only (no place) falls back to the address
+PASS place + city only (no state) → "<place> <city>"
+PASS no explicit signal → empty prefill (box stays empty, never auto-submits)
+PASS falls back to the raw query only when nothing structured exists
+PASS does not duplicate a state already present in the joined parts
+PASS manual fallback copy is the friendly inline message
+PASS manual fallback copy is NOT the old blocking-alert language
+
+ALL manual-fallback tests passed.

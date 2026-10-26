@@ -14,6 +14,9 @@ const FlatList = (props: any) => React.createElement('FlatList', props, props.da
 const colors = new Proxy({}, { get: () => '#263A32' });
 const typography = { bodyStrong: {}, body: {}, caption: {}, metadata: {}, label: {}, heading: {}, eyebrow: {} };
 Module._load = function(request: string, parent: unknown, isMain: boolean) {
+  if (request === '@/lib/i18n') return require('../lib/i18nEngine');
+  if (request === '@/hooks/useLocale') return { useLocale: () => ({ locale: require('../lib/i18nEngine').i18n.language }) };
+
   if (request === 'react-native') return { ActivityIndicator: 'ActivityIndicator', FlatList, Keyboard: { dismiss: () => keyboardDismisses++ }, KeyboardAvoidingView: 'KeyboardAvoidingView', Platform: { OS: 'ios' }, Pressable, Text: 'Text', TextInput: React.forwardRef((props: any, _ref: unknown) => React.createElement('TextInput', props)), View: 'View', StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1, absoluteFillObject: {} }, useWindowDimensions: () => ({ width: 375, height: 812, fontScale }) };
   if (request === '@expo/vector-icons') return { Feather: 'Feather' };
   if (request === 'react-native-safe-area-context') return { useSafeAreaInsets: () => ({ top: 44, bottom: 34, left: 0, right: 0 }) };

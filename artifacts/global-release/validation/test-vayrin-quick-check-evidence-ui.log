@@ -1,0 +1,10 @@
+
+> nearr@0.1.0 test:vayrin-quick-check-evidence-ui
+> ts-node -P scripts/tsconfig.json scripts/testVayrinQuickCheckEvidenceUi.ts && npm run test:share-evidence-lifecycle
+
+PASS Vayrin Quick Check evidence-first frames, galleries, truthful confidence, evidence, selection, fixtures, persistence, lifecycle, and safe-area CTA
+
+> nearr@0.1.0 test:share-evidence-lifecycle
+> ts-node -P scripts/tsconfig.json scripts/testShareEvidenceLifecycle.ts
+
+[test] share evidence lifecycle: 20 checks passed

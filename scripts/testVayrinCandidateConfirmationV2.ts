@@ -118,7 +118,7 @@ assert.match(asyncDetail, /candidate_count_selected/);
 assert.match(asyncDetail, /vayrin_raw_name_resolution_attempt/);
 assert.match(asyncDetail, /vayrin_raw_name_resolution_success/);
 assert.match(asyncDetail, /vayrin_raw_name_resolution_failure/);
-assert.match(asyncDetail, /Couldn&apos;t find an exact place\./);
+assert.match(asyncDetail, /t\("Couldn't find an exact place\."\)/);
 assert.match(asyncDetail, /stickySaveBar/);
 assert.match(syncShare, /candidateSaveLabel/);
 assert.match(syncShare, /visibleCandidateShortlist/);

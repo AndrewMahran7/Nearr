@@ -1,0 +1,6 @@
+
+> nearr@0.1.0 test:saved-place-snapshots
+> ts-node -P scripts/tsconfig.json scripts/testSavedPlaceSnapshots.ts
+
+[saved-place-snapshot] write failed { savedPlaceId: 'saved-1', message: 'disk_full' }
+PASS saved-place snapshot serialization, isolation, local-first hydration, fallback, photos, restart, and failure safety

@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:onboarding-demo
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingDemoCopy.ts
+
+testOnboardingDemoCopy: all assertions passed

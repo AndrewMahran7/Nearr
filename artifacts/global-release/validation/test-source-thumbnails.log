@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:source-thumbnails
+> ts-node -P scripts/tsconfig.json scripts/testPlaceSourceThumbnails.ts
+
+PASS source-specific evidence preview selection, thumbnail fallback, and source-card behavior

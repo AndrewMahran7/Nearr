@@ -54,7 +54,7 @@ assert.match(component, /styles\.header[\s\S]*Cancel[\s\S]*Save/, 'header action
 assert.match(component, /headerActionButton: \{ flex: 1, minHeight: 44/, 'Cancel and Save have 44pt targets');
 assert.match(component, /keyboardDismissMode=\{NOTE_EDITOR_BEHAVIOR\.keyboardDismissMode\}/);
 assert.match(component, /onPress=\{\(\) => setDraft\(aiNote\.trim\(\)\)\}/, 'Use this explicitly copies the post note');
-assert.match(component, />Use this</);
+assert.match(component, />\{t\("Use this"\)\}</);
 assert.match(details, /setNotes\(nextNotes \?\? ''\)/, 'details refresh immediately');
 assert.match(details, /updateSavedPlacesCache/, 'the shared saved-place cache refreshes immediately');
 // Place Detail V2 deliberately presents ONE "Why you saved it" surface, so the

@@ -24,7 +24,7 @@ check('Settings no longer renders the obsolete distance control', () => {
   assert.doesNotMatch(settings, /radiusText|setRadiusText|radiusUnit|setRadiusUnit/);
 });
 check('Settings keeps the nearby reminder preference', () => {
-  assert.match(settings, /label="Nearby alerts"/);
+  assert.match(settings, /label=\{t\("Nearby alerts"\)\}/);
   assert.match(settings, /nearby_notifications_enabled/);
 });
 
@@ -69,8 +69,8 @@ check('Map radius display uses the shared V2 policy without fetching a profile d
   assert.doesNotMatch(map, /getProfile|default_radius_/);
 });
 check('Per-place automatic mode no longer implies a profile default', () => {
-  assert.match(addPlace, /label="Auto"/);
-  assert.match(placeDetails, /<RadiusOption label="Auto"/);
+  assert.match(addPlace, /label=\{t\("Auto"\)\}/);
+  assert.match(placeDetails, /<RadiusOption label=\{t\("Auto"\)\}/);
   assert.doesNotMatch(addPlace, /Default \(auto\)/);
   assert.doesNotMatch(placeDetails, /<RadiusOption label="Default"/);
 });

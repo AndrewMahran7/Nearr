@@ -1,0 +1,34 @@
+
+> nearr@0.1.0 test:live-location
+> ts-node -P scripts/tsconfig.json scripts/testLiveLocation.ts
+
+PASS valid coordinate accepted
+PASS equator/prime-meridian accepted
+PASS boundary lat/lng accepted
+PASS NaN latitude rejected
+PASS Infinity longitude rejected
+PASS out-of-range latitude rejected
+PASS out-of-range longitude rejected
+PASS non-number rejected
+PASS first reading (no previous) accepted
+PASS newer reading replaces older reading
+PASS older timestamp is ignored
+PASS equal timestamp is ignored
+PASS invalid coordinates rejected even when newer
+PASS non-finite timestamp rejected
+PASS watch runs when focused + active + permitted
+PASS app-background transition stops tracking
+PASS foreground transition restarts tracking
+PASS blurred screen stops tracking
+PASS denied permission never tracks
+PASS can start when no active subscription
+PASS duplicate subscription is prevented
+PASS user gesture disables follow (from on)
+PASS user gesture keeps follow off
+PASS recenter enables follow (from off)
+PASS recenter keeps follow on
+PASS camera follows when follow on + accepted
+PASS camera does NOT move when follow disabled
+PASS camera does NOT move on rejected sample even if following
+
+All live-location tests passed.

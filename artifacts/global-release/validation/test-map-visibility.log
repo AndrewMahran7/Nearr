@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:map-visibility
+> ts-node -P scripts/tsconfig.json scripts/testMapVisibility.ts
+
+PASS map category visibility, zone-circle density, and map wiring contracts

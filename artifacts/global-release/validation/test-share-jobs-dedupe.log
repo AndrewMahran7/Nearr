@@ -1,0 +1,21 @@
+
+> nearr@0.1.0 test:share-jobs-dedupe
+> ts-node -P scripts/tsconfig.json scripts/testShareJobsDedupe.ts
+
+PASS dedupe collapses duplicate id
+PASS dedupe preserves first-seen order
+PASS dedupe keeps freshest copy of a
+PASS older dup does not overwrite newer
+PASS drops malformed rows, keeps valid
+PASS duplicate realtime events dedupe to one
+PASS empty array => empty
+PASS null => empty
+PASS non-array => empty
+PASS missing updated_at: latest-seen wins
+PASS upsert replaces in place
+PASS upsert keeps position
+PASS upsert appends new id
+PASS upsert ignores id-less incoming (no dup)
+PASS upsert does not mutate input
+
+ALL SHARE JOBS DEDUPE TESTS PASSED

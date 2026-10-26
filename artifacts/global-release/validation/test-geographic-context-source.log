@@ -1,0 +1,103 @@
+
+> nearr@0.1.0 test:geographic-context-source
+> ts-node -P scripts/tsconfig.json scripts/testGeographicContextSource.ts
+
+PASS production Rio place is source geographic context
+PASS its scenic_spot category does not rescue it
+PASS confidence 1.0 does not rescue it
+PASS still classified geographic: Rio de Janeiro [city]
+PASS laundering blocked: Rio de Janeiro [city] never becomes an ordinary venue mention
+PASS laundering blocked: Rio de Janeiro [city] is counted as a peer, never a business
+PASS still classified geographic: Los Angeles [city]
+PASS laundering blocked: Los Angeles [city] never becomes an ordinary venue mention
+PASS laundering blocked: Los Angeles [city] is counted as a peer, never a business
+PASS still classified geographic: New York [city]
+PASS laundering blocked: New York [city] never becomes an ordinary venue mention
+PASS laundering blocked: New York [city] is counted as a peer, never a business
+PASS still classified geographic: Paris [city]
+PASS laundering blocked: Paris [city] never becomes an ordinary venue mention
+PASS laundering blocked: Paris [city] is counted as a peer, never a business
+PASS still classified geographic: Orange County [admin region]
+PASS laundering blocked: Orange County [admin region] never becomes an ordinary venue mention
+PASS laundering blocked: Orange County [admin region] is counted as a peer, never a business
+PASS still classified geographic: Brazil [country]
+PASS laundering blocked: Brazil [country] never becomes an ordinary venue mention
+PASS laundering blocked: Brazil [country] is counted as a peer, never a business
+PASS still classified geographic: compound "Los Angeles, California"
+PASS laundering blocked: compound "Los Angeles, California" never becomes an ordinary venue mention
+PASS laundering blocked: compound "Los Angeles, California" is counted as a peer, never a business
+PASS still classified geographic: accent/case insensitive
+PASS laundering blocked: accent/case insensitive never becomes an ordinary venue mention
+PASS laundering blocked: accent/case insensitive is counted as a peer, never a business
+PASS geographic brand survives: California Pizza Kitchen
+PASS geographic brand survives: California Pizza Kitchen is still a searchable mention
+PASS geographic brand survives: California Pizza Kitchen still renders
+PASS geographic brand survives: Brooklyn City Pizzeria & Market
+PASS geographic brand survives: Brooklyn City Pizzeria & Market is still a searchable mention
+PASS geographic brand survives: Brooklyn City Pizzeria & Market still renders
+PASS geographic brand survives: New York Pizza
+PASS geographic brand survives: New York Pizza is still a searchable mention
+PASS geographic brand survives: New York Pizza still renders
+PASS geographic brand survives: Paris Baguette
+PASS geographic brand survives: Paris Baguette is still a searchable mention
+PASS geographic brand survives: Paris Baguette still renders
+PASS geographic brand survives: Rio Hotel
+PASS geographic brand survives: Rio Hotel is still a searchable mention
+PASS geographic brand survives: Rio Hotel still renders
+PASS geographic brand survives: Los Angeles Cafe [restaurant]
+PASS geographic brand survives: Los Angeles Cafe [restaurant] is still a searchable mention
+PASS geographic brand survives: Los Angeles Cafe [restaurant] still renders
+PASS geographic brand survives: Orange County Mining Co [restaurant]
+PASS geographic brand survives: Orange County Mining Co [restaurant] is still a searchable mention
+PASS geographic brand survives: Orange County Mining Co [restaurant] still renders
+PASS geographic brand survives: Santa Fe Importers
+PASS geographic brand survives: Santa Fe Importers is still a searchable mention
+PASS geographic brand survives: Santa Fe Importers still renders
+PASS destination survives: Copacabana Beach
+PASS destination survives: Copacabana Beach is still a searchable mention
+PASS destination survives: Christ the Redeemer
+PASS destination survives: Christ the Redeemer is still a searchable mention
+PASS destination survives: Sugarloaf Mountain Cable Car
+PASS destination survives: Sugarloaf Mountain Cable Car is still a searchable mention
+PASS destination survives: Ipanema Beach
+PASS destination survives: Ipanema Beach is still a searchable mention
+PASS destination survives: Maya Bay
+PASS destination survives: Maya Bay is still a searchable mention
+PASS destination survives: Chapada das Mesas National Park
+PASS destination survives: Chapada das Mesas National Park is still a searchable mention
+PASS destination survives: Bradley Mountain
+PASS destination survives: Bradley Mountain is still a searchable mention
+PASS street address in the address field overrides self-reference
+PASS street address spoken/shown in explicit evidence overrides self-reference
+PASS a non-street "address" does NOT override (city text is not an address)
+PASS hasStreetAddressText: positive
+PASS hasStreetAddressText: negative
+PASS hasStreetAddressText: null-safe
+PASS a city name with no admin fields of its own is NOT suppressed (unchanged behavior)
+PASS a city name whose fields name a DIFFERENT place is not self-referential
+PASS an empty name is not classified
+PASS Rio reel: the city produces no searchable mention
+PASS Rio reel: all four real destinations survive
+PASS Rio reel: the city is counted as dropped context
+PASS Rio reel: the city still scopes its siblings (geo context preserved)
+PASS Rio reel: the city is not counted as an ineligible NAME (it is context, not junk)
+PASS Rio reel: the rendered caption does not lead with the city
+PASS Rio reel: four places render
+PASS Rio reel: the city never appears as its own rendered line
+PASS Rio reel: multi-place content is never silently auto-saved
+PASS city-only post: becomes exactly one peer geographic destination
+PASS city-only post: it is a geographic mention, never a venue one
+PASS city-only post: it renders as a destination
+PASS city-only post: the city is still available on the mention itself
+PASS city-only post: a lone peer city is not published as shared context
+PASS mixed: only the real venue is searchable
+PASS mixed: the locality is dropped as context
+PASS mixed: the real venue still renders as primary
+PASS mixed: the real venue remains auto-save eligible
+PASS orchestrator: no query is ever issued for the city
+PASS orchestrator: no mention result carries the city as its display name
+PASS orchestrator: 7 Mares never becomes a candidate of a city mention
+PASS orchestrator: the four real destinations are still searched
+PASS candidate-side geographic guard is unchanged and still rejects the locality
+
+ALL PASS

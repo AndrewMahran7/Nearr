@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:share-phase1-ui
+> ts-node -P scripts/tsconfig.json scripts/testSharePhase1Ui.ts
+
+PASS Phase 1 presentation contracts

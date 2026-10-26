@@ -24,17 +24,17 @@ assert.match(extension, /completionActionsRef\.current\?\.openNearr\(SHARE_JOBS_
 assert.match(extension, /createCompletionActions/, 'Done and Open Nearr are once-latched');
 assert.match(extension, /<AsyncSurface onClose=\{finish\} showClose=\{false\}>/);
 
-assert.match(queue, /title="Activity"/);
-assert.equal((queue.match(/>Finding your places<\/Text>/g) ?? []).length, 1, 'the editorial heading appears once');
+assert.match(queue, /title=\{t\("Activity"\)\}/);
+assert.equal((queue.match(/>\{t\("Finding your places"\)\}<\/Text>/g) ?? []).length, 1, 'the editorial heading appears once');
 assert.match(queue, /splitPlaceAddress/);
-assert.match(queue, /title: 'Needs your check'/);
-assert.match(queue, /title: 'Finding places'/);
-assert.match(queue, /You're all caught up/);
+assert.match(queue, /title: t\("Needs your check"\)/);
+assert.match(queue, /title: t\("Finding places"\)/);
+assert.match(queue, /t\("You're all caught up"\)/);
 assert.match(queue, /numberOfLines=\{2\}[\s\S]*?jobTitle/);
 assert.match(queue, /<PlaceImage/);
 assert.match(queue, /size=\{hasContent \? 'queue' : 'compact'\}/);
-assert.match(queue, /title: 'On your map'/);
-assert.match(queue, /Clear completed/);
+assert.match(queue, /title: t\("On your map"\)/);
+assert.match(queue, /t\("Clear completed"\)/);
 assert.match(queue, /icon="close"/);
 
 // The quick-check heading/body now come from the pure payload mapping
@@ -42,14 +42,14 @@ assert.match(queue, /icon="close"/);
 assert.match(detail, /detail\.copy\.title/);
 assert.match(detail, /PHASE_1_COPY\.alreadySavedHeading/);
 assert.match(detail, /<SavedPlaceResult/, 'completed jobs use the dedicated saved-result screen');
-assert.match(savedPlaceResult, /title="View on map"/, 'saved-result screen keeps the map CTA');
+assert.match(savedPlaceResult, /title=\{t\("View on map"\)\}/, 'saved-result screen keeps the map CTA');
 assert.match(detail, /useState\(false\)/, 'alternative search starts collapsed');
-assert.match(detail, /title=\{broadSingle \? 'Not this area' : 'Not this place'\}/);
+assert.match(detail, /title=\{broadSingle \? t\("Not this area"\) : t\("Not this place"\)\}/);
 assert.match(detail, /accessibilityLabel=\{`None of these for \$\{row\.extractedName\}`\}/);
 assert.match(detail, /LayoutAnimation\.Presets\.easeInEaseOut/);
 assert.match(detail, /automaticallyAdjustKeyboardInsets/);
-assert.match(detail, /View original post/);
-assert.match(detail, /This post will leave Activity\./);
+assert.match(detail, /t\("View original post"\)/);
+assert.match(detail, /t\("This post will leave Activity\."\)/);
 assert.match(candidateConfirmationCard, /typography\.bodyStrong : typography\.heading, styles\.name\]\}>\{candidate\.name\}/, 'critical candidate names remain content-sized in compact and full views');
 assert.match(savedPlaceResult, /<PlaceImage/, 'saved-result hero and alternatives use the shared place image resolver');
 assert.match(detail, /<ShareJobsSheet onDismiss=\{backToQueue\} size="detail">/);

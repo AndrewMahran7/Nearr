@@ -1,0 +1,14 @@
+
+> nearr@0.1.0 test:once-latch
+> ts-node -P scripts/tsconfig.json scripts/testOnceLatch.ts
+
+PASS not acquired before first use
+PASS first acquire wins
+PASS acquired() true after first
+PASS second acquire is rejected
+PASS third acquire is rejected
+PASS separate latch stays independent
+PASS pre-fix model navigates more than once (reproduces the bug)
+PASS post-fix model navigates exactly once
+
+All once-latch tests passed

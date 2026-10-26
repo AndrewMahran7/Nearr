@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:geographic-context
+> ts-node -P scripts/tsconfig.json scripts/testGeographicContextCandidates.ts
+
+PASS geographic context never becomes the saved destination

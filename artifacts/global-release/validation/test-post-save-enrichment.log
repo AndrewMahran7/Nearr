@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:post-save-enrichment
+> ts-node -P scripts/tsconfig.json scripts/testPostSaveEnrichmentContracts.ts
+
+PASS Santa Fe-shaped save-first enrichment, exact linkage, dedupe, isolation, and async UI contracts

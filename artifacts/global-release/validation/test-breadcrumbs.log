@@ -1,0 +1,16 @@
+
+> nearr@0.1.0 test:breadcrumbs
+> ts-node -P scripts/tsconfig.json scripts/testBreadcrumbs.ts
+
+PASS buffer never exceeds MAX_BREADCRUMBS
+PASS oldest entries are dropped (newest kept)
+PASS chronological order preserved (newest last)
+PASS appendBreadcrumb does not mutate input
+PASS sanitizes JWT out of field values
+PASS keeps safe route field
+PASS drops null/undefined fields
+PASS formatBreadcrumb includes event + fields
+PASS formatBreadcrumbs handles empty buffer
+PASS formatBreadcrumbs joins multiple lines
+
+All breadcrumb tests passed

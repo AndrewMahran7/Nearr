@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:note-editor
+> ts-node -P scripts/tsconfig.json scripts/testNoteEditor.ts
+
+PASS dedicated note editor state, persistence, cancellation, long-text, and keyboard contracts

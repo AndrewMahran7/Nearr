@@ -1,0 +1,6 @@
+
+> nearr@0.1.0 test:google-places-fields
+> ts-node -P scripts/tsconfig.json scripts/testGooglePlacesFields.ts
+
+[places] api_new_service_blocked falling_back=places_legacy effect=primary_type_unavailable action=allow_places_api_new_on_server_key
+PASS Google Places v1 restricted-key fallback and field contracts

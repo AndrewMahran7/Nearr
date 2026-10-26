@@ -1,0 +1,17 @@
+
+> nearr@0.1.0 test:sanitize-error
+> ts-node -P scripts/tsconfig.json scripts/testSanitizeError.ts
+
+PASS redacts a JWT
+PASS jwt replaced with placeholder
+PASS redacts Bearer token
+PASS redacts URL credentials
+PASS redacts access_token value
+PASS redacts refresh_token value
+PASS redacts long opaque blob
+PASS preserves normal message
+PASS Error instance => name: message
+PASS stack capped
+PASS stack redacts bearer
+
+All sanitize-error tests passed.

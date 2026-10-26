@@ -1,0 +1,48 @@
+
+> nearr@0.1.0 test:evidence-provenance
+> ts-node -P scripts/tsconfig.json scripts/testEvidenceProvenanceRegressions.ts
+
+PASS Snapchat: poster handle is the actual poster, not the platform
+PASS Snapchat: @Snapchat never enters venueHandles
+PASS Snapchat: no venue name hint derived from platform self-reference
+PASS Snapchat: "Snapchat" is never issued as a Places query
+PASS Snapchat: no explicit place evidence for a video with no venue content
+PASS YouTube: no poster handle derived from JS config noise
+PASS YouTube: ".null" never enters venueHandles
+PASS YouTube: roundup post correctly detected
+PASS YouTube: no venue name hint of "Null"
+PASS YouTube: no placeholder-only query ever issued
+PASS YouTube: zero queries => safe manual fallback (no caption venue evidence)
+PASS TikTok: App Store redirect host is recognized as non-content
+PASS isPlaceholderValue rejects "null"
+PASS isPlaceholderValue rejects "Null"
+PASS isPlaceholderValue rejects "<Null>"
+PASS isPlaceholderValue rejects "undefined"
+PASS isPlaceholderValue rejects "<undefined>"
+PASS isPlaceholderValue rejects "none"
+PASS isPlaceholderValue rejects "n/a"
+PASS isPlaceholderValue rejects "N/A"
+PASS isPlaceholderValue rejects "unknown"
+PASS isPlaceholderValue rejects "NaN"
+PASS isPlaceholderValue rejects ""
+PASS isPlaceholderValue rejects "   "
+PASS isPlaceholderValue keeps real name "Mammen & Null Lawyers LLC"
+PASS isPlaceholderValue keeps real name "None the Wiser Pub"
+PASS isPlaceholderValue keeps real name "Tony's Pizza"
+PASS isPlaceholderValue keeps real name "Unknown Brewing Co"
+PASS isPlaceholderValue treats JS null/undefined as placeholders
+PASS buildCleanPlacesQueries never returns a bare "Null" query
+PASS mapPlacesV1Candidate preserves the raw (still-unsanitized) name for the caller to filter
+PASS isPlaceholderValue flags that raw candidate name
+PASS A real candidate is never flagged as a placeholder
+PASS isNoiseHandle rejects @Snapchat
+PASS isNoiseHandle rejects Facebook
+PASS isNoiseHandle rejects a leading-dot JSON-LD/config artifact (.null)
+PASS isNoiseHandle rejects JSON-LD "@type"
+PASS isNoiseHandle keeps a real venue handle
+PASS isPlatformSelfReference recognizes every wired platform brand
+PASS isPlatformSelfReference does not flag a real handle that merely contains a platform word
+PASS extractCityStateContext recognizes "Orange County" as CA
+PASS extractCityStateContext does NOT fire on the bare "OC" abbreviation (too ambiguous)
+
+All evidence-provenance regression assertions passed.

@@ -1,0 +1,50 @@
+
+> nearr@0.1.0 test:shared-geo-context
+> ts-node -P scripts/tsconfig.json scripts/testSharedGeoContext.ts
+
+PASS strong: two places independently naming the same country
+PASS strong: source is multiple_places_agree
+PASS strong: a destination plus a context-only place naming the same country
+PASS strong: a context-only place ALONE corroborates (the post named the country as a place)
+PASS strong: the country stated verbatim in explicit evidence corroborates
+PASS weak: exactly one place quietly carrying a country field
+PASS none: no country anywhere
+PASS unicode: accents fold for COMPARISON but the original is carried forward
+PASS conflict: a Spain+Portugal post is conflicted
+PASS conflict: no shared country is offered
+PASS conflict: both countries recorded
+PASS conflict: no query is coerced into a single country
+PASS conflict: each mention still carries only its OWN country
+PASS weak: verdict is weak, not strong
+PASS weak: a sibling with no country of its own is NOT scoped
+PASS weak: the place that DID assert the country still uses its own
+PASS contradiction: the post is conflicted, not Nicaragua
+PASS contradiction: the Spanish mention keeps Spain
+PASS contradiction: the Spanish mention is never given Nicaragua
+PASS cross-border: the Costa Rican hotel keeps Costa Rica
+PASS reel: Nicaragua is established as STRONG
+PASS reel: exactly one country candidate
+PASS reel: the country survives even though the cities are suppressed
+PASS reel: THE BIAS GEOCODE NO LONGER ASKS FOR A BARE "Granada"
+PASS reel: the bias geocode now names the country
+PASS reel: Ometepe is searched inside Nicaragua
+PASS reel: Ometepe resolves to the Nicaraguan island
+PASS reel: task B admits the three cities as PEER geographic destinations
+PASS reel: no Spanish candidate is reachable at all
+PASS ambiguity: the query is scoped to Nicaragua despite Spain ranking first
+PASS ambiguity: the geocode bias is Nicaraguan, not Spanish
+PASS regression: Brooklyn City Pizzeria still resolves
+PASS regression: a US venue keeps its own country in the query
+PASS regression: Rio city is still context, never a mention
+PASS regression: both Rio landmarks still resolve
+PASS regression: Rio landmarks are scoped to Brazil
+PASS regression: "Nicaragua Restaurant" is still a searchable business
+PASS regression: "Granada Hotel" is still a searchable business
+PASS regression: "León Cafe" is still a searchable business
+PASS unicode: accented names and countries reach the provider unfolded
+PASS wrong-save: the Nicaragua reel is not auto-save eligible, before or after
+PASS wrong-save: a country-only place can never satisfy the auto-save gate
+PASS wrong-save: multi-country travel content is never silently saved
+PASS wrong-save: a genuine street-address venue is still eligible (gate not tightened)
+
+ALL PASS

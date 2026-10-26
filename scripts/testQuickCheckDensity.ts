@@ -23,7 +23,7 @@ assert.match(picker, /setPickerSelectedIds\(\[confirmationCandidates\[next\]!.go
 assert.match(picker, /testID="quick-check-sticky-save-bar"/);
 assert.match(picker, /Math\.max\(safeAreaInsets\.bottom, Spacing\.sm\)/);
 assert.match(picker, /automaticallyAdjustKeyboardInsets/);
-assert.match(picker, /pendingCompletion[\s\S]*'Finish review'/);
+assert.match(picker, /pendingCompletion[\s\S]*t\("Finish review"\)/);
 assert.match(picker, /disabled=\{busy \|\| \(!pendingCompletion && \(searchExpanded \? manualSelected\.length : pickerSelected\.length\) === 0\)\}/);
 assert.match(card, /minHeight: 44/);
 assert.match(card, /const stacked = width < 360 \|\| fontScale > 1\.25/);

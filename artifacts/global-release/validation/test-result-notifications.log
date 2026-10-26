@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:result-notifications
+> ts-node -P scripts/tsconfig.json scripts/testResultNotifications.ts
+
+PASS result-aware share completion notification matrix, evidence safety, privacy, branding, and routing

@@ -174,7 +174,7 @@ assert.deepEqual(recommendationQueryForCategory('attraction'), {
   assert.ok(detail.includes('setSelectedRecommendation(entry)'));
   assert.ok(detail.includes("trackEvent('recommendation_opened'"));
   assert.ok(!recommended.includes('Not saved until you choose Save place.'));
-  assert.ok(recommended.includes('title="Save place"'));
+  assert.ok(recommended.includes('title={t("Save place")}'));
   assert.ok(recommended.includes('pagingEnabled'));
   assert.ok(recommended.includes('initialNumToRender={1}'));
   assert.ok(recommended.includes('maxToRenderPerBatch={2}'));

@@ -61,13 +61,13 @@ assert.match(screen, /handleSaveCanonicalCandidates\(\s*manualSelected,\s*'raw_n
 // 10-13: empty/error states have no fake save, searches save nothing, selection
 // survives save errors, and both provider/save retries remain available.
 assert.equal(preselectedFallbackCandidate([]), null);
-assert.match(screen, /title="Search another place"/);
-assert.match(screen, /manualSelected\.length > 0 \? \(/);
+assert.match(screen, /title=\{t\("Search another place"\)\}/);
+assert.match(screen, /manualSelected\.length > 0 \|\| pendingCompletion \? \(/, 'only selected candidates or a durable pending completion expose the save action');
 assert.doesNotMatch(manualSearch, /markShareJobResolved|completeManualSave/);
 const saveFlow = screen.slice(screen.indexOf('async function handleSaveCanonicalCandidates'), screen.indexOf('async function handleSaveBatch'));
 assert.match(saveFlow, /catch \(err\)[\s\S]*Could not save/);
 assert.doesNotMatch(saveFlow, /setManualSelectedIds\(\[\]\)/);
-assert.match(screen, /manualSearchPhase === 'error' \? 'Retry' : 'Search'/);
+assert.match(screen, /manualSearchPhase === 'error' \? t\("Retry"\) : t\("Search"\)/);
 
 // 14-19: the existing canonical save boundary still owns dedupe, one source
 // attachment, user-note preservation, AI-note delivery, source groups, and the

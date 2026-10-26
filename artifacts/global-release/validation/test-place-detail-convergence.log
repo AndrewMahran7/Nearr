@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:place-detail-convergence
+> ts-node -P scripts/tsconfig.json scripts/testPlaceDetailConvergence.ts
+
+PASS place detail convergence: also nearby, non-destructive visits, one detail owner

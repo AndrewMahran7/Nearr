@@ -1,0 +1,63 @@
+
+> nearr@0.1.0 test:geographic-destinations
+> ts-node -P scripts/tsconfig.json scripts/testGeographicDestinations.ts
+
+PASS rio: the city is classified a redundant container
+PASS rio: the landmarks are not geographic context at all
+PASS rio: no mention is created for the city
+PASS rio: the three landmarks all become destinations
+PASS rio: ZERO destination queries for the city
+PASS rio: 7 Mares never enters any candidate set
+PASS rio: container counted, no peers admitted
+PASS attack: 7 Mares is REJECTED by the geographic path
+PASS attack: the Rio locality is ACCEPTED by the geographic path
+PASS attack: in ordinary venue mode the locality is still rejected (guard intact)
+PASS nicaragua: shared country is STRONG
+PASS nicaragua: Granada is a peer geographic destination
+PASS nicaragua: San Juan del Sur is a peer geographic destination
+PASS nicaragua: León is a peer geographic destination
+PASS nicaragua: Ometepe is not geographic context at all
+PASS nicaragua: all four intended destinations become mentions
+PASS nicaragua: the three cities resolve GEOGRAPHICALLY
+PASS nicaragua: Ometepe stays on the ordinary destination path
+PASS nicaragua: peer count recorded, no container suppressed
+PASS nicaragua: every city query is scoped to Nicaragua
+PASS nicaragua: Granada resolves to the Nicaraguan geographic entity
+PASS nicaragua: Granada never accepts es-granada
+PASS nicaragua: Granada never accepts granada-hotel
+PASS nicaragua: León resolves to the Nicaraguan geographic entity
+PASS nicaragua: León never accepts es-leon
+PASS nicaragua: León never accepts leon-cafe
+PASS nicaragua: San Juan del Sur resolves to the Nicaraguan geographic entity
+PASS nicaragua: Ometepe still resolves to the island
+PASS nicaragua: no wrong silent save is possible for this reel
+PASS safety-net: a city destination is NEVER auto-save eligible
+PASS safety-net: the gate names the reason
+PASS city-hop: all three cities are peers
+PASS city-hop: all resolve geographically
+PASS city-hop: a multi-country post applies no shared country
+PASS paris+landmarks: Paris is a redundant container (Rio pattern generalizes)
+PASS paris+landmarks: only the three landmarks become destinations
+PASS mixed: both cities are containers of their own landmark
+PASS mixed: the two landmarks survive as destinations
+PASS single-city: a city-only post yields one geographic destination
+PASS single-city: it resolves to the locality, not the hotel
+PASS single-city: the hotel is excluded
+PASS contradiction: the post is conflicted, so no shared country is forced
+PASS contradiction: "Granada, Spain" is queried with Spain
+PASS contradiction: it resolves to Granada, Spain — not Nicaragua
+PASS business: "Paris Baguette" stays an ordinary venue mention
+PASS business: "Los Angeles Cafe" stays an ordinary venue mention
+PASS business: "Brooklyn City Pizzeria & Market" stays an ordinary venue mention
+PASS business: "Orange County Mining Co" stays an ordinary venue mention
+PASS business: "Rio Hotel" stays an ordinary venue mention
+PASS natural: beaches/islands/parks are untouched by the city path
+PASS unicode: accented city and country reach the provider unfolded
+PASS diagnostics: Rio reports one container and no peers
+PASS diagnostics: the Rio label names the role
+PASS diagnostics: Nicaragua reports three peers and no container
+PASS diagnostics: every Nicaragua label names the peer role
+PASS diagnostics: labels carry no place names or countries
+PASS diagnostics: renderable destinations exclude the container but keep peers
+
+ALL PASS

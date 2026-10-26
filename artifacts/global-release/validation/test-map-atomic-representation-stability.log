@@ -1,0 +1,56 @@
+
+> nearr@0.1.0 test:map-atomic-representation-stability
+> ts-node -P scripts/tsconfig.json scripts/testMapAtomicRepresentationStability.ts
+
+PASS 1. transient invalid viewport cannot clear a valid visible representation
+PASS 2. stale candidate cannot commit
+PASS 3. superseded candidate cannot commit
+PASS 4. candidate missing IDs cannot commit
+PASS 5. candidate duplicates cannot commit
+PASS 6. final valid candidate commits atomically
+PASS 7. one settled viewport produces at most one final visible commit
+PASS 8. 50ms founder sequence has no visible thrash
+PASS 9. zoom boundary jitter does not alternate cluster zoom
+PASS 10. stable viewport has a stable cluster tree
+PASS 11. visual zoom is separated from integer cluster query zoom
+PASS 12. cluster tap transaction remains one command
+PASS 13. automatic child selection remains zero
+PASS 14. continental to regional to continental final conservation remains
+PASS 15. filter changes are atomic
+PASS 16. dataset save is atomic
+PASS 17. dataset delete is atomic
+PASS 18. foreground resync is atomic
+PASS 19. no temporary empty arrays appear after first valid render
+PASS 20. individual marker keys remain stable
+PASS 21. cluster keys remain stable
+PASS 22. equivalent representation causes no redundant commit
+PASS 23. 20-point conservation
+PASS 24. 100-point conservation
+PASS 25. 500-point conservation
+PASS 26. 1,000-point conservation
+PASS 27. 5,000-point conservation
+PASS 28. 10,000-point conservation
+PASS 29. 1,000-operation mixed transition stress stays valid
+PASS 30. zero stale visible commits
+PASS 31. zero invalid visible commits
+
+Founder 50ms atomic visibility timeline
+┌─────────┬──────┬────────────┬───────────┬──────────────────────────┬─────────────────────────┬────────┬────────────────────────────┐
+│ (index) │ time │ visualZoom │ queryZoom │ candidate                │ visible                 │ commit │ reason                     │
+├─────────┼──────┼────────────┼───────────┼──────────────────────────┼─────────────────────────┼────────┼────────────────────────────┤
+│ 0       │ 0    │ 4.01       │ 4         │ 'representation-nbmw6a'  │ 'representation-nbmw6a' │ true   │ 'commit_initial'           │
+│ 1       │ 10   │ 4.01       │ 4         │ 'representation-10wtn45' │ 'representation-nbmw6a' │ false  │ 'active_camera_transition' │
+│ 2       │ 30   │ 4.01       │ 4         │ 'representation-ergczp'  │ 'representation-nbmw6a' │ false  │ 'active_camera_transition' │
+│ 3       │ 50   │ 4.01       │ 4         │ 'representation-dfdpu8'  │ 'representation-dfdpu8' │ true   │ 'commit_authoritative'     │
+└─────────┴──────┴────────────┴───────────┴──────────────────────────┴─────────────────────────┴────────┴────────────────────────────┘
+
+Stress metrics {
+  candidateCount: 2001,
+  visibleCommitCount: 1001,
+  emptyVisibleCommitCount: 0,
+  nonConservedVisibleCommitCount: 0,
+  staleVisibleCommitCount: 0,
+  invalidVisibleCommitCount: 0,
+  representationReversions: 0
+}
+PASS map atomic representation stability: 31/31 cases

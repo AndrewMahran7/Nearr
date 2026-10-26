@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:auth-account-state
+> ts-node -P scripts/tsconfig.json scripts/testAuthAccountState.ts
+
+testAuthAccountState: all assertions passed

@@ -13,6 +13,9 @@ class Value {
   stopAnimation(callback?: (value: number) => void) { callback?.(this.value); }
 }
 Module._load = function(request: string, parent: unknown, isMain: boolean) {
+  if (request === '@/lib/i18n') return require('../lib/i18nEngine');
+  if (request === '@/hooks/useLocale') return { useLocale: () => ({ locale: require('../lib/i18nEngine').i18n.language }) };
+
   if (request === 'react-native') return {
     Pressable: 'Pressable', Text: 'Text', View: 'View',
     Animated: { Value, View: 'AnimatedView', spring: (value: Value, config: { toValue: number }) => ({ start: () => { springCalls++; value.setValue(config.toValue); } }) },

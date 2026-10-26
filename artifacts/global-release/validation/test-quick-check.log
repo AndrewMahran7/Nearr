@@ -1,0 +1,18 @@
+
+> nearr@0.1.0 test:quick-check
+> ts-node -P scripts/tsconfig.json scripts/testQuickCheckResolution.ts
+
+PASS query is normalized in request key
+PASS prefilled query claims initial search on mount
+PASS rerender does not search again
+PASS screen refocus does not search again
+PASS changed query allows another search
+PASS logical places have independent request keys
+PASS normalizer collapses case and whitespace
+PASS one strong result becomes selected
+PASS multiple results remain unselected
+PASS missing coordinates cannot auto-select
+PASS incompatible single result remains unselected
+PASS no result preserves manual recovery
+
+All Quick check resolution tests passed.

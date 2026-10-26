@@ -53,6 +53,7 @@ function reset(selected: Saved | null = null) {
   projected = { x: 195, y: 720 };
   const coordinator = new MapCameraTransactionCoordinator();
   scope = {
+    i18n: require('../lib/i18nEngine').i18n,
     selected,
     selectedRef: { current: selected },
     mapReady: true,

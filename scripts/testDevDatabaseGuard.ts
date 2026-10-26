@@ -18,6 +18,8 @@
  */
 
 import { spawnSync } from 'node:child_process';
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -98,11 +100,24 @@ check(
 // it read only process.env, so it never saw NEARR_DEV_SUPABASE_REF from
 // .env.local. Both are covered here so the two scripts cannot drift apart.
 
-const FUNCTIONS_SCRIPT = path.join(REPO_ROOT, 'scripts', 'deployFunctions.mjs');
+// Exercise .env discovery with a non-secret disposable fixture, independent of
+// the developer's ignored .env files. The deploy still stops before any CLI call.
+const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'nearr-dev-target-test-'));
+mkdirSync(path.join(fixtureRoot, 'scripts', 'lib'), { recursive: true });
+for (const name of ['create-share-job', 'process-share-jobs', 'delete-account']) mkdirSync(path.join(fixtureRoot, 'supabase', 'functions', name), { recursive: true });
+for (const file of ['deployFunctions.mjs', 'devTarget.mjs', 'lib/cliRunner.js', 'lib/productionSource.mjs']) {
+  copyFileSync(path.join(REPO_ROOT, 'scripts', file), path.join(fixtureRoot, 'scripts', file));
+}
+writeFileSync(path.join(fixtureRoot, 'package.json'), '{}');
+writeFileSync(path.join(fixtureRoot, '.env.local'), `NEARR_DEV_SUPABASE_REF=${DEV_REF}\n`);
+process.on('exit', () => {
+  if (path.dirname(path.resolve(fixtureRoot)) !== path.resolve(tmpdir()) || !path.basename(fixtureRoot).startsWith('nearr-dev-target-test-')) throw new Error('Unsafe test cleanup path');
+  rmSync(fixtureRoot, { recursive: true, force: true });
+});
 
 function runFunctions(args: string[]): Run {
-  const result = spawnSync(process.execPath, [FUNCTIONS_SCRIPT, ...args], {
-    cwd: REPO_ROOT,
+  const result = spawnSync(process.execPath, [path.join(fixtureRoot, 'scripts', 'deployFunctions.mjs'), ...args], {
+    cwd: fixtureRoot,
     encoding: 'utf8',
     // Strip the ref from the inherited environment so the .env.local lookup is
     // what is actually being exercised, not a value npm happened to pass down.

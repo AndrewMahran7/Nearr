@@ -1,0 +1,8 @@
+
+> nearr@0.1.0 test:onboarding-no-live-services
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingNoLiveServices.ts
+
+PASS onboarding sandbox import guard (4 files)
+PASS retired network/retry copy guard
+PASS pre-auth state persistence does not read or write Supabase
+PASS reminder/geofence networking begins only after auth_success

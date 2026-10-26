@@ -1,0 +1,87 @@
+
+> nearr@0.1.0 test:name-driven
+> ts-node -P scripts/tsconfig.json scripts/testNameDrivenResolver.ts
+
+PASS normalizeStateToAbbr maps full name
+PASS normalizeStateToAbbr passes abbr through
+PASS normalizeStateToAbbr null on unknown
+PASS strong+distinctive+business => high score
+PASS reasons include distinctive_token_match
+PASS reasons include state_match
+PASS apostrophe brand keeps distinctive token match
+PASS ampersand variant keeps distinctive token match
+PASS generic-only name match is demoted
+PASS wrong state => rejected
+PASS permanently closed penalized
+PASS platform noise rejected
+PASS hotel category is a soft positive signal
+PASS park category is a soft positive signal
+PASS trail category is a soft positive signal
+PASS beach category is a soft positive signal
+PASS museum category is a soft positive signal
+PASS attraction category is a soft positive signal
+PASS store category is a soft positive signal
+PASS fitness category is a soft positive signal
+PASS wellness category is a soft positive signal
+PASS transit category is a soft positive signal
+PASS education category is a soft positive signal
+PASS category-biased merge preserves neutral candidate
+PASS same-name hotel branches remain ambiguous
+PASS classify verified_single (clear winner)
+PASS classify ambiguous (two close)
+PASS classify no_match (business only, no name evidence)
+PASS classify no_match (empty)
+PASS single verified => candidate_confirmation
+PASS single verified never auto-saves
+PASS single ambiguous >=2 => multi_candidate_confirmation
+PASS single ambiguous 1 cand => candidate_confirmation (low)
+PASS single no candidates => manual_fallback
+PASS multi verified => multi_candidate_confirmation
+PASS multi no candidates => manual_fallback
+PASS decision mapping never auto-saves (any case)
+PASS same-scene identities reconverge to one mention id
+PASS same-scene identities route two canonical candidates to picker
+PASS identity hypotheses remain ranked in the logical slot
+PASS host-only candidate is detected
+PASS primary candidate is not host-only
+PASS all Places provider errors are retryable
+PASS partial Places success is not retried
+PASS real no-match is not a provider retry
+PASS request-limit exhaustion is not retried
+PASS single clear candidate => verified_single
+PASS verified aggregate has 1
+PASS two same-name candidates => ambiguous
+PASS ambiguous preserves both
+PASS same-scene resolver returns one logical result
+PASS same-scene resolver searches both identities
+PASS same-scene resolver preserves two ranked picker candidates
+PASS no results => no_match
+PASS no_match aggregate empty
+PASS one provider_error preserved
+PASS provider status preserved for reliability classification
+PASS other mention still verified
+PASS failed mention does NOT discard verified
+PASS search throw => provider_error
+PASS dedup by Place ID => aggregate 1
+PASS distinct places stay distinct => aggregate 2
+PASS request limit caps searches
+PASS over-limit mentions => provider_error
+PASS identical query searched once (cache)
+PASS no safeToAutoSave leaks from resolver
+PASS single name + city context => verified_single
+PASS single verified aggregate has 1 canonical
+PASS city-only context uses geocoded state
+PASS city-only context keeps nearby verification
+PASS apostrophe name => resolves
+PASS apostrophe name aggregate populated
+PASS conflicting geo (TX vs CA) => no_match
+PASS conflicting geo preserves name, no canonical
+PASS single-name dedup by Place ID
+PASS single-name timeout => provider_error (not no_match)
+PASS provider_error is not a permanent lost place
+PASS merged query includes primary + host (not the "at" label)
+PASS merged mention resolves (not manual)
+PASS merged mentionResult keeps relationship context
+PASS merged mention is a single aggregate slot
+
+ALL NAME-DRIVEN RESOLVER TESTS PASSED
