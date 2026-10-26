@@ -1,20 +1,20 @@
 # App Store submission handoff
 
-Status: candidate assets and code are prepared; App Store Connect configuration, signed-binary qualification and submission are blocked. Public release must remain manual.
+Status: unified code and a signed internal Development candidate are prepared. App Store Connect configuration and public submission remain blocked; release must stay manual.
 
-| Item | Prepared | Still required |
+| Item | Prepared evidence | Still required |
 |---|---|---|
-| Version/build | App version 1.7.0, app-version runtime, EAS Development profile | Reinspect remote build numbers, create signed candidate, verify IPA/runtime/extensions and record EAS ID. Build 61 is historical only. |
-| Product | Unified Fieldnotes, age gate, AI permission, Plus, ten locales, Share Extension | Physical upgrade, layout, VoiceOver, large text, dark mode and extension QA. |
-| Age rating/regions | Conservative policy matrix | Accurate ASC questionnaire and availability only for qualified markets. No Kids Category claim. |
-| Privacy/Terms | Exact Development drafts and disclosure inventory | Counsel/founder approval, effective dates, publish canonical HTTPS pages, bundle approved hash-matched snapshot and enter ASC answers. |
-| Third-party AI | Explicit permission/revocation and server gates | Name exact approved provider/data handling in policy and review notes; provider qualification evidence. |
-| IAP | One monthly Plus implementation | Create subscription group/product, RevenueCat mapping/webhook, localized price, sandbox matrix and review screenshot. |
-| Localization | Ten runtime/native catalogs and metadata drafts | Native-language review and real per-locale signed screenshots; upload/readback in ASC. |
-| Release control | EAS lanes and production guards | Select manual release, attach correct build to the current draft, provide working review account/instructions. |
+| Version/build | 1.7.0 (69), runtime 1.7.0, EAS `af64b897-32a0-40f7-a690-c802c1920e39`; host/extension parity and 40 native locale files verified in IPA | Create the later distribution/App Store build only after all gates pass; attach and read back the exact build in ASC. |
+| Product | Unified Fieldnotes, eligibility, AI permission, Plus, ten locales and Share Extension | Physical upgrade, Share Extension, layout, VoiceOver, large text and dark-mode QA. |
+| Age rating/regions | Conservative jurisdiction matrix and fail-closed server policy | Counsel-approved markets; accurate ASC questionnaire and availability. No Kids Category claim. |
+| Privacy/Terms | Exact Development drafts and disclosure inventory | Founder/counsel approval, effective dates, canonical HTTPS publication, approved hash-matched snapshot and ASC answers. |
+| Third-party AI | Explicit permission/revocation and server gates | Exact qualified provider, data handling, review notes and real benchmark evidence. |
+| IAP | One monthly Plus implementation | Create `nearr_plus_monthly_v1`, RevenueCat mapping/webhook, localized price, sandbox matrix and review screenshot. |
+| Localization | Ten runtime/native catalogs and ten metadata drafts | Native-speaker review and real per-locale screenshots from the current build; upload/readback in ASC. |
+| Release control | Development build and production guards | Review account/instructions, monitoring/rollback check, manual release selection. |
 
-Suggested review flow after qualification: sign in with the supplied permanent review account; select a supported age/country; view approved Terms/privacy and grant AI sharing; submit the provided permitted test post; review/save a result; open saved place on the map; then open Plus, view localized monthly price, purchase in sandbox, restore, and confirm historical places remain after entitlement changes. Every step must be true in the submitted binary and live review backend.
+Build installation page: `https://expo.dev/accounts/andrewmahran/projects/nearr/builds/af64b897-32a0-40f7-a690-c802c1920e39`.
 
-Apple requires complete functional IAPs, accurate screenshots and metadata, an in-app and metadata privacy-policy link, and explicit permission before sharing personal data with third-party AI. References: [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/), [App Privacy Details](https://developer.apple.com/app-store/app-privacy-details/), and [subscription setup](https://developer.apple.com/app-store/subscriptions/).
+Suggested review flow after qualification: sign in with a permanent review account; select a supported age/country; view approved Terms/privacy and grant AI sharing; submit a permitted test post; review/save a result; open the saved place; then open Plus, view Store-localized price, purchase in sandbox, restore and confirm prior places remain after entitlement changes.
 
-Do not submit while the current legal/provider/payment gates are false. Do not attach a new build to an old incompatible draft, publish a production OTA for native changes, invent review credentials, or automatically release after approval.
+Do not submit while provider, legal, catalog, sales or allowance gates are false. Do not publish a production OTA for these native changes, invent review credentials, reuse old screenshots or enable automatic public release.

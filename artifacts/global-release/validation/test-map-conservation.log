@@ -7,14 +7,14 @@ FILTER / ALL: PASS
 SELECTION / MUTATION / STALE FETCH / FOREGROUND: PASS
 CLUSTERING BYPASS: PASS
 STRESS operations=1000 missing=0 duplicates=0 invalid_members=0 silent_taps=0 camera_loops=0 unbounded_renders=0
-BENCH 20: cluster index p95=0.05ms query p95=0.04ms raw-prep p95=0.09ms raw-models=20
-BENCH 100: cluster index p95=0.23ms query p95=0.07ms raw-prep p95=0.04ms raw-models=100
-BENCH 250: cluster index p95=0.64ms query p95=0.16ms raw-prep p95=0.01ms raw-models=250
-BENCH 500: cluster index p95=1.42ms query p95=1.02ms raw-prep p95=0.01ms raw-models=500
-BENCH 1000: cluster index p95=3.40ms query p95=1.00ms raw-prep p95=0.03ms raw-models=1000
-BENCH 2000: cluster index p95=8.76ms query p95=2.94ms raw-prep p95=0.10ms raw-models=2000
-BENCH 5000: cluster index p95=20.63ms query p95=10.39ms raw-prep p95=0.18ms raw-models=5000
-BENCH 10000: cluster index p95=35.56ms query p95=27.95ms raw-prep p95=0.49ms raw-models=10000
+BENCH 20: cluster index p95=0.06ms query p95=0.04ms raw-prep p95=0.08ms raw-models=20
+BENCH 100: cluster index p95=0.44ms query p95=0.08ms raw-prep p95=0.03ms raw-models=100
+BENCH 250: cluster index p95=0.66ms query p95=0.18ms raw-prep p95=0.00ms raw-models=250
+BENCH 500: cluster index p95=1.93ms query p95=0.36ms raw-prep p95=0.01ms raw-models=500
+BENCH 1000: cluster index p95=4.36ms query p95=1.43ms raw-prep p95=0.04ms raw-models=1000
+BENCH 2000: cluster index p95=9.75ms query p95=2.72ms raw-prep p95=0.08ms raw-models=2000
+BENCH 5000: cluster index p95=23.27ms query p95=7.78ms raw-prep p95=0.34ms raw-models=5000
+BENCH 10000: cluster index p95=42.86ms query p95=23.75ms raw-prep p95=0.47ms raw-models=10000
 TUNING radius=56px representations(z:nodes) 11:2 13:17 15:76 16:54
 TUNING radius=40px representations(z:nodes) 11:3 13:28 15:120 16:69
 TUNING radius=32px representations(z:nodes) 11:3 13:47 15:165 16:78

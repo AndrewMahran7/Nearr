@@ -1,0 +1,108 @@
+{
+  "eas_build_id": "af64b897-32a0-40f7-a690-c802c1920e39",
+  "source_sha": "d4138146459f880950dc794d4d983ee70107f769",
+  "ipa": "C:\\Users\\andre\\Desktop\\Nearr\\.tmp\\nearr-global-integration-recovered\\.tmp\\nearr-build69.ipa",
+  "sha256": "eeb6d6ea8e716578961bb7f2154bd0d8b595f15853713e8bde44ef3f887b2fce",
+  "size": 51495750,
+  "host": {
+    "bundle_id": "com.nearr.ios",
+    "short_version": "1.7.0",
+    "build": "69",
+    "code_resources": true,
+    "provisioning": true,
+    "locales": {
+      "en-US": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "es-MX": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "es-ES": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "pt-BR": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "fr": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "de": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "it": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "ja": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "ko": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "zh-Hans": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      }
+    }
+  },
+  "extension": {
+    "bundle_id": "com.nearr.ios.ShareExtension",
+    "short_version": "1.7.0",
+    "build": "69",
+    "code_resources": true,
+    "provisioning": true,
+    "locales": {
+      "en-US": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "es-MX": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "es-ES": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "pt-BR": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "fr": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "de": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "it": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "ja": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "ko": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      },
+      "zh-Hans": {
+        "InfoPlist.strings": true,
+        "Localizable.strings": true
+      }
+    }
+  },
+  "artifact_url": "https://expo.dev/artifacts/eas/NVM2ucTBjrF9TxEYzHYskY6D0HecI8W0DERy8eIq7t0.ipa",
+  "install_url": "https://expo.dev/accounts/andrewmahran/projects/nearr/builds/af64b897-32a0-40f7-a690-c802c1920e39",
+  "archive_log": "ARCHIVE SUCCEEDED; no nested CFBundleVersion mismatch"
+}

@@ -1,0 +1,96 @@
+{
+  "recorded_at": "2026-10-26T04:30:00Z",
+  "environment": "development",
+  "production_changed": false,
+  "ota_published": false,
+  "source": {
+    "branch": "integration/nearr-global-fieldnotes-monetization",
+    "signed_candidate_sha": "d4138146459f880950dc794d4d983ee70107f769",
+    "fieldnotes_sha": "99db449b26131a0c02d8642332832a74bd1440ec",
+    "age_baseline_sha": "3eea578d30ce1cd4a913320cc33301de03d96194"
+  },
+  "database": {
+    "project_ref": "qnfxnmvxpjzfydgudtvs",
+    "migrations": [
+      "20261021000001_global_eligibility_and_consent.sql",
+      "20261021000002_nearr_plus_verified_entitlements.sql",
+      "20261021000003_global_share_ingress.sql",
+      "20261021000004_account_ui_locale.sql",
+      "20261021000005_global_claim_eligibility.sql"
+    ],
+    "preserved": {
+      "auth_users": 42,
+      "saved_places": 20,
+      "jobs": 66,
+      "ownership_hash_unchanged": true
+    },
+    "all_release_gates_false": true
+  },
+  "edge_functions": [
+    {
+      "name": "create-share-job",
+      "version": 75,
+      "verify_jwt": true,
+      "sha256": "cd51fc94fc40088e99fe556a10ca4ba050b5c26fe9509babe0ec145c5c0a875a"
+    },
+    {
+      "name": "process-share-link",
+      "version": 88,
+      "verify_jwt": false,
+      "sha256": "db08d45faf513a4ec7397a411c9193d7f99d1d15b827930b2cf58b254bd392a5"
+    },
+    {
+      "name": "process-share-jobs",
+      "version": 144,
+      "verify_jwt": false,
+      "sha256": "85d2039de5782b288295734f4fab1d1a231d73cfe77d89c554f866098fcb4d59"
+    },
+    {
+      "name": "plus-api",
+      "version": 1,
+      "verify_jwt": true,
+      "sha256": "c5c8d36430dc3cf5ebebc5d2349046f1b5a89a828a3794cc3b2c2b631bcdd50d"
+    },
+    {
+      "name": "revenuecat-plus-webhook",
+      "version": 1,
+      "verify_jwt": false,
+      "sha256": "200ee56f926f9eee8667dacc98a5be0ef9770272130065dbbcd554e0fc10a5b7"
+    }
+  ],
+  "railway": {
+    "project_id": "4037a3b5-d66f-409e-b734-56c22c244e3e",
+    "environment_id": "57d055b7-5326-4f96-a7a9-70523ee0d3f0",
+    "service_id": "3c8cd190-b118-4ee4-9338-407843ef4e1f",
+    "historical_deployment_id": "69831ef2-7da5-495d-95b4-f1618b2f0b6e",
+    "unified_worker_deployed": false,
+    "blocker": "Railway CLI unauthorized; interactive OAuth timed out"
+  },
+  "ios": {
+    "eas_build_id": "af64b897-32a0-40f7-a690-c802c1920e39",
+    "status": "FINISHED",
+    "profile": "development",
+    "distribution": "internal",
+    "version": "1.7.0",
+    "build": "69",
+    "runtime": "1.7.0",
+    "source_sha": "d4138146459f880950dc794d4d983ee70107f769",
+    "ipa_sha256": "eeb6d6ea8e716578961bb7f2154bd0d8b595f15853713e8bde44ef3f887b2fce",
+    "ipa_size": 51495750,
+    "host_bundle_id": "com.nearr.ios",
+    "extension_bundle_id": "com.nearr.ios.ShareExtension",
+    "host_extension_version_parity": true,
+    "signing_resources_present": true,
+    "embedded_profiles_present": true,
+    "required_native_locale_files": 40,
+    "archive_succeeded": true,
+    "nested_bundle_warning": false,
+    "physical_device_qa": false,
+    "install_url": "https://expo.dev/accounts/andrewmahran/projects/nearr/builds/af64b897-32a0-40f7-a690-c802c1920e39"
+  },
+  "validation": {
+    "global_matrix": "143/143",
+    "worker": "656 pass, 7 skip, 0 fail (663 total)",
+    "git_diff_check": "pass"
+  }
+}

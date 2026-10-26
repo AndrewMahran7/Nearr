@@ -1,6 +1,6 @@
 # RevenueCat and Apple IAP QA
 
-Status: server/client contracts pass offline and disposable-database tests; Store catalog and sandbox/device proof are absent. All sales switches are false.
+Status: server/client contracts pass offline and disposable-database tests; Development Plus API/webhook code is deployed fail closed; Store catalog and sandbox/device proof are absent. All sales switches are false.
 
 ## Implemented controls
 
@@ -12,6 +12,8 @@ Status: server/client contracts pass offline and disposable-database tests; Stor
 - Advisory locks and one ledger per job/period prevent concurrent overspend, retry duplication and allowance multiplication on transfer. Only an owned actual saved result consumes a find.
 
 Local evidence: `test:global-monetization` passed 21 policy/source cases. `test:global-monetization-db` passed 28 PostgreSQL cases against the actual five global migrations. Deno checks pass for `plus-api` and `revenuecat-plus-webhook`. These tests use synthetic Store responses and do not prove Apple or RevenueCat configuration.
+
+Development deployment evidence: `plus-api` v1 (`c5c8d36430dc3cf5ebebc5d2349046f1b5a89a828a3794cc3b2c2b631bcdd50d`) and `revenuecat-plus-webhook` v1 (`200ee56f926f9eee8667dacc98a5be0ef9770272130065dbbcd554e0fc10a5b7`) are live on Nearr-Dev. Unauthenticated probes returned 401. Signed internal iOS build 69 contains the client SDK, but no product fetch or transaction was attempted because the catalog and qualification gates remain false.
 
 ## Required sandbox matrix
 

@@ -1,33 +1,28 @@
-# Unified release integration contract — 2026-10-20
+# Unified release integration contract ? 2026-10-25
 
-Worktree: `C:/Users/andre/Desktop/Nearr/.tmp/nearr-global-integration-recovered`.
-Branch: `integration/nearr-global-fieldnotes-monetization`.
+Worktree: `C:/Users/andre/Desktop/Nearr/.tmp/nearr-global-integration-recovered`
 
-## Source boundaries
+Branch: `integration/nearr-global-fieldnotes-monetization`
 
-- Fieldnotes baseline: `99db449b26131a0c02d8642332832a74bd1440ec` (verified local HEAD).
-- Age-aware Development source: `3eea578d30ce1cd4a913320cc33301de03d96194`, merged without conflicts in `08b2961`.
-- Corrected release baseline: `ca08c154347096fe5da0bf2739cf0b25c0b706b0`; dirty privacy/Terms changes copied through a three-way patch and resolved in `78502d1`. Original worktree preserved. A null privacy approval remains null.
-- Root owns integration, eligibility/consent, backend dispatch, native config, dependency manifest, release engineering and commits.
-- Legal/provider agent owns five legal/provider dossier files; no runtime mutations.
-- Payments agent owns Plus client/Edge/SQL/QA files; old monetization flags stay suspended.
-- Localization agent owns catalogs, locale hook, UI translation, native language bridge/plugin and localization/ASO dossier; root layout, age, consent, legal and Plus components coordinated separately.
+Signed Development candidate: `d4138146459f880950dc794d4d983ee70107f769`
 
-## Safety contracts
+## Source and safety boundaries
 
-- Account eligibility, AI sharing permission, Terms acceptance, provider permission and purchase entitlement are distinct server decisions.
-- New eligibility: `account_eligibility_v2` with country of residence and minimized age band; no date of birth. Countries and floors are policy decisions with citations in the legal matrix, not assertions that a threshold alone establishes compliance.
-- No under-13 path or simulated parental approval. Minor provider permission remains unavailable without an actual qualified mechanism. No legacy adult status silently becomes a new 13+ declaration.
-- `is_account_eligible_for_ai(uuid)` is service-only and fail-closed. Old `is_adult_eligible_for_ai(uuid)` cannot reopen Gemini dispatch for this application.
-- `is_account_eligible_for_purchase(uuid)` initially requires adult band and qualified market; payment products stay unavailable until server/store evidence is configured.
-- Saved data and account rights remain available independently of recognition/payment eligibility.
-- Provider calls: research budget $0 until a permitted candidate, existing authorized credentials, an explicit bounded cost and a viable benchmark can be established. No new vendor commitment.
-- Runtime localization uses maintained i18next, explicit UI keys, device fallback, persisted selection and shared extension language. User content/proper nouns are never silently translated.
-- Current native runtime `1.6.59` is source evidence, not authorization to publish changed native modules as an OTA. New native runtime/build numbers require live EAS/ASC inspection.
-- Public release remains manual. Missing physical screenshots, payment sandbox evidence, contractual qualification or legal approval cannot be replaced by source tests.
+- Fieldnotes baseline: `99db449b26131a0c02d8642332832a74bd1440ec`.
+- Age-aware Development source: `3eea578d30ce1cd4a913320cc33301de03d96194`, merged in `08b2961`.
+- Corrected privacy baseline: `ca08c154347096fe5da0bf2739cf0b25c0b706b0`; preserved corrections reconciled in `78502d1`. A null policy approval remains null.
+- Account eligibility, AI-sharing permission, Terms acceptance, provider qualification and purchase entitlement are distinct server decisions.
+- Eligibility stores country of residence and minimized age band, not birth date. Under-13 remains unsupported; no simulated guardian approval exists.
+- Service-only eligibility functions, queue ingress/transition/claim guards and worker checks fail closed. The legacy adult alias cannot reopen Gemini dispatch.
+- Saved data, account controls and deletion rights remain independent of recognition and payment eligibility.
+- Runtime localization uses i18next, explicit keys, device fallback and persisted choice. User content and proper nouns are not silently translated.
+- Plus access requires a fresh server-verified RevenueCat snapshot; client state cannot grant entitlement.
+- Local EAS versioning supplies one explicit iOS build number to the host and Share Extension before Xcode starts. Build 69 proves nested-bundle parity.
 
-## Live state inspected
+## Development state
 
-Railway project `4037a3b5-d66f-409e-b734-56c22c244e3e`, Development environment `57d055b7-5326-4f96-a7a9-70523ee0d3f0`, media-worker service `3c8cd190-b118-4ee4-9338-407843ef4e1f`: `69831ef2-7da5-495d-95b4-f1618b2f0b6e` remains SUCCESS. Its historical source-equivalence proof is recorded in the inherited October 19 provenance report. The same service ID has no deployments in the Railway production environment; the separate `Nearr` service must be inspected rather than assuming it is empty.
+The five additive global migrations are applied to `qnfxnmvxpjzfydgudtvs`; preserved counts are 42 users, 20 saved places and 66 jobs. Edge deployments are recorded in `DEVELOPMENT_DEPLOYMENT_RECORD.md`. The unified Railway worker was not deployed because the CLI session was unauthorized and interactive OAuth timed out. The historical worker remains active, while all recognition/provider gates remain false.
 
-No live mutation or release gate is claimed by this document.
+Signed EAS build `af64b897-32a0-40f7-a690-c802c1920e39` is an internal Development build, version 1.7.0 (69), runtime 1.7.0. It is structurally qualified by direct IPA inspection but has not been installed and exercised on a physical iPhone.
+
+Production database, Edge, Railway, OTA, App Store listing and public binary remain unchanged. Public release stays manual and blocked by the external gates in the final report.

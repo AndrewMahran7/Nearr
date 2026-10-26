@@ -29,3 +29,8 @@ This validation directly covers both issues exposed by EAS build 64:
 Scope limit: --no-install does not run CocoaPods, Xcode compilation, code signing,
 IPA export, simulator execution, Share Extension embedding checks, or physical-device QA.
 The EAS Development archive is the qualification step for those cloud-native stages.
+
+Follow-up: EAS Development build 69 (`af64b897-32a0-40f7-a690-c802c1920e39`)
+completed archive/sign/export. Direct IPA inspection verified 1.7.0 (69) for both
+the host and Share Extension, both signing-resource manifests and provisioning
+profiles, and the same 40 localized resources. See DEVELOPMENT_DEPLOYMENT_RECORD.md.
