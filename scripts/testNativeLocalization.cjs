@@ -27,6 +27,7 @@ ensureExtensionVersionPreAction({platformProjectRoot:nativeRoot,projectName:'Nea
 ensureExtensionVersionPreAction({platformProjectRoot:nativeRoot,projectName:'Nearr',hostTargetUuid:'T1',hostTargetName:'Nearr',extensionTargetName:'NearrShareExtension'});
 const scheme=fs.readFileSync(schemePath,'utf8');
 assert.equal((scheme.match(/Sync Share Extension build number/g)||[]).length,1,'version pre-action is idempotent');
+assert.match(scheme,/EAS_BUILD_IOS_BUILD_NUMBER/);
 assert.match(scheme,/Print :CFBundleVersion/);
 assert.match(scheme,/NearrShareExtension\/Info.plist/);
 function verify(p, root) {
