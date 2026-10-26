@@ -8,7 +8,7 @@ function equal(actual: unknown, expected: unknown) {
   }
 }
 
-Deno.test('only the server adult decision allows AI dispatch', async () => {
+Deno.test('only the server qualified account decision allows AI dispatch', async () => {
   const decisions = [
     { data: true, error: null, expected: { ok: true } },
     { data: false, error: null, expected: { ok: false, code: 'age_eligibility_required' } },
@@ -19,7 +19,7 @@ Deno.test('only the server adult decision allows AI dispatch', async () => {
     let calledWith: Record<string, unknown> | null = null;
     const result = await checkAgeEligibility({
       rpc: async (name, args) => {
-        equal(name, 'is_adult_eligible_for_ai');
+        equal(name, 'is_account_eligible_for_ai');
         calledWith = args;
         return { data: sample.data, error: sample.error };
       },

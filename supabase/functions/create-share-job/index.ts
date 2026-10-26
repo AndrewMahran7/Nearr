@@ -119,6 +119,7 @@ serve(async (req) => {
     return json({ error: 'invalid_auth' }, 401);
   }
   const userId = userData.user.id;
+  if (req.headers.get('x-nearr-contract') !== 'global-v1') return json({ error: 'update_required', minimumContract: 'global-v1' }, 426);
   const age = await checkAgeEligibility(admin, userId);
   if (!age.ok) return json({ error: age.code }, age.code === 'age_check_unavailable' ? 503 : 403);
   const activeProjectRef = projectRef(supabaseUrl);
@@ -160,10 +161,7 @@ serve(async (req) => {
   logRecognitionCachePolicy('create-share-job', recognitionCachePolicy);
   const rpcName = qualification.requested
     ? 'create_dev_qualification_share_job_for_user'
-    : 'create_onboarding_qa_share_job_for_user';
-  if (!qualification.requested && activeProjectRef !== DEVELOPMENT_PROJECT_REF) {
-    return json({ error: 'onboarding_qa_dev_only' }, 404);
-  }
+    : 'create_global_share_job_for_user';
   const rpcArgs = qualification.requested
     ? {
       p_user_id: userId,
@@ -179,9 +177,14 @@ serve(async (req) => {
       p_source_platform: platform,
       p_idempotency_key: idempotencyKey,
       p_dedupe_window_seconds: dedupeWindowSeconds,
+      p_submission_path: ['share_extension', 'background_import', 'host_app'].includes(body.submissionPath ?? '') ? body.submissionPath : null,
     };
   const { data: created, error: createErr } = await admin.rpc(rpcName, rpcArgs);
 
+  if (createErr) {
+    const code = ['plus_allowance_exhausted', 'plus_verification_required', 'plus_recognition_ineligible', 'global_eligibility_required'].find(value => createErr.message?.includes(value));
+    if (code) return json({ error: code }, code === 'plus_allowance_exhausted' ? 429 : code === 'plus_verification_required' ? 409 : 403);
+  }
   if (createErr || !Array.isArray(created) || created.length === 0) {
     console.log(`[share-job] create_failed host=${hostOf(canonicalUrl)} code=${(createErr as { code?: string })?.code ?? 'unknown'}`);
     return json({ error: 'create_failed' }, 500);
@@ -191,21 +194,6 @@ serve(async (req) => {
   if (!qualification.requested && (row.status === 'awaiting_purchase' || row.requires_purchase === true)) {
     console.warn(`[share-job] onboarding_qa_contract_violation job_id=${row.job_id}`);
     return json({ error: 'onboarding_qa_contract_violation' }, 503);
-  }
-  if (!qualification.requested) {
-    const submissionPath = ['share_extension', 'background_import', 'host_app'].includes(body.submissionPath ?? '')
-      ? body.submissionPath
-      : null;
-    if (submissionPath) {
-      const { error: provenanceError } = await admin.rpc('record_onboarding_qa_submission_path', {
-        p_user_id: userId,
-        p_job_id: row.job_id,
-        p_path: submissionPath,
-      });
-      if (provenanceError) {
-        console.warn(`[share-job] qa_provenance_write_failed job_id=${row.job_id} code=${provenanceError.code ?? 'unknown'}`);
-      }
-    }
   }
   if (row.duplicate) {
     console.log(`[share-job] duplicate_returned job_id=${row.job_id}`);

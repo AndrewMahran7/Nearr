@@ -193,7 +193,7 @@ test('Gemini 429 retains usable transcript evidence', async () => {
       analysisProvider: 'gemini',
       geminiApiKey: 'test-key',
       maxSelectedFrames: 0,
-    });
+    }, { offlineFixtureTransport: (...args) => globalThis.fetch(...args) });
     const output = await provider.analyze(analyzeInput({
       transcript: [{ startSeconds: 0, endSeconds: 2, text: "We're at Capones Cucina" }],
     }));
@@ -214,7 +214,7 @@ test('Gemini 429 without partial evidence is retryable and honors Retry-After', 
       analysisProvider: 'gemini',
       geminiApiKey: 'test-key',
       maxSelectedFrames: 0,
-    });
+    }, { offlineFixtureTransport: (...args) => globalThis.fetch(...args) });
     await assert.rejects(
       () => provider.analyze(analyzeInput()),
       (error: unknown) => isMediaError(error) && error.code === 'provider_rate_limited' && error.retryAfterSeconds === 45,
@@ -233,7 +233,7 @@ test('targeted AI-note generation never accepts heuristic fallback on Gemini 429
       analysisProvider: 'gemini',
       geminiApiKey: 'test-key',
       maxSelectedFrames: 0,
-    });
+    }, { offlineFixtureTransport: (...args) => globalThis.fetch(...args) });
     await assert.rejects(
       () => provider.analyze(analyzeInput({
         transcript: [{ startSeconds: 0, endSeconds: 2, text: "We're at Pasta Sisters for the vodka rigatoni" }],

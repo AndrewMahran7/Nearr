@@ -70,14 +70,14 @@ export type TaskDeps = {
   ocr: OcrProvider;
 };
 
-async function adultEligibility(client: SupabaseClient, userId: string): Promise<'adult' | 'restricted' | 'unavailable'> {
-  const { data, error } = await client.rpc('is_adult_eligible_for_ai', { p_user_id: userId });
+async function accountEligibility(client: SupabaseClient, userId: string): Promise<'adult' | 'restricted' | 'unavailable'> {
+  const { data, error } = await client.rpc('is_account_eligible_for_ai', { p_user_id: userId });
   if (error || typeof data !== 'boolean') return 'unavailable';
   return data ? 'adult' : 'restricted';
 }
 
-async function requireAdultBeforeModel(client: SupabaseClient, userId: string): Promise<void> {
-  const decision = await adultEligibility(client, userId);
+async function requireEligibilityBeforeProvider(client: SupabaseClient, userId: string): Promise<void> {
+  const decision = await accountEligibility(client, userId);
   if (decision === 'unavailable') throw new MediaError('provider_unavailable', 'age_check_unavailable');
   if (decision !== 'adult') throw new MediaError('age_eligibility_required');
 }
@@ -390,7 +390,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
   const errors: string[] = [];
 
   try {
-    const age = await adultEligibility(client, task.user_id);
+    const age = await accountEligibility(client, task.user_id);
     if (age === 'restricted') {
       await stopIneligibleTask(client, task);
       return;
@@ -446,8 +446,8 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       await setProgress(client, task, 'analyzing_evidence');
       analysisAttempted = true;
       const generation = await generateAiSaveNoteWithRetry(
-        async () => { await requireAdultBeforeModel(client, task.user_id); return deps.model.analyze(makeInput('initial')); },
-        async () => { await requireAdultBeforeModel(client, task.user_id); return deps.model.analyze(makeInput('repair')); },
+        async () => { await requireEligibilityBeforeProvider(client, task.user_id); return deps.model.analyze(makeInput('initial')); },
+        async () => { await requireEligibilityBeforeProvider(client, task.user_id); return deps.model.analyze(makeInput('repair')); },
         (output) => accumulateModelDiagnostics(diagnostics, output),
       );
       diagnostics.noteGenerationPasses = generation.attempts;
@@ -593,7 +593,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       transcript = await measuredRecognitionStage(task, 'audio_extraction_and_transcription', cfg.transcriptionProvider, async () => {
         const audioPath = await extractAudio(cfg, playable, probe, jobTemp.dir, controller.signal);
         await setProgress(client, task, 'transcribing_audio');
-        await requireAdultBeforeModel(client, task.user_id);
+        await requireEligibilityBeforeProvider(client, task.user_id);
         return deps.transcription.transcribe({
           audioPath,
           hasAudio: probe.hasAudio,
@@ -620,7 +620,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     // 5. Visible text (OCR provider; default noop → model reads frames).
     await setProgress(client, task, 'extracting_visible_text');
     const ocr = deduplicateOcrSegments(await measuredRecognitionStage(task, 'visible_text_extraction', cfg.ocrProvider, async () => {
-      await requireAdultBeforeModel(client, task.user_id);
+      await requireEligibilityBeforeProvider(client, task.user_id);
       return deps.ocr.extract({ frames, signal: controller.signal });
     }));
     diagnostics.ocrSegmentCount = ocr.length;
@@ -719,7 +719,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       if (task.task_kind === 'premium_recognition' && !deps.premiumModel) {
         throw new MediaError('provider_unavailable', 'premium_model_unconfigured');
       }
-      await requireAdultBeforeModel(client, task.user_id);
+      await requireEligibilityBeforeProvider(client, task.user_id);
       const rawAnalysis = task.task_kind === 'premium_recognition'
         ? await deps.premiumModel!.analyze(analyzeInput)
         : await deps.model.analyze(analyzeInput);
@@ -865,12 +865,13 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     }
     const cheapUsage = analysis.cheapPass?.usage ?? analysis.usage;
     const cheapModel = analysis.cheapPass?.model ?? analysis.modelName ?? null;
-    const cheapModelCostUsd = estimateGeminiCostUsd({
+    const cheapModelCostUsd = analysis.providerCost ? analysis.providerCost.estimatedUsd : estimateGeminiCostUsd({
       model: cheapModel,
       inputTokens: cheapUsage?.inputTokens ?? 0,
       outputTokens: cheapUsage?.outputTokens ?? 0,
       thinkingTokens: cheapUsage?.thinkingTokens ?? 0,
     });
+    if (analysis.providerCost) diagnostics.providerCost = analysis.providerCost;
     const solCostUsd = analysis.automaticDeepRecognition?.telemetry.knownModelCostUsd ?? null;
     diagnostics.cheapModel = cheapModel;
     diagnostics.cheapModelCostUsd = cheapModelCostUsd;

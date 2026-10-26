@@ -106,6 +106,9 @@ serve(async (req) => {
     return statusFailed(auth.reason, 401);
   }
   const { userId, userClient } = auth;
+  // auth.ts deliberately constructs this historical userClient with the
+  // service role, then verifies the supplied JWT to derive this owner.
+  if (req.headers.get('x-nearr-contract') !== 'global-v1') return statusFailed('update_required', 426);
   const age = await checkAgeEligibility(userClient, userId);
   if (!age.ok) return statusFailed(age.code, age.code === 'age_check_unavailable' ? 503 : 403);
 

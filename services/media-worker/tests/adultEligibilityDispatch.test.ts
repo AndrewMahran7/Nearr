@@ -31,7 +31,7 @@ test('unknown, underage, and revoked owners cannot reach any media or model prov
     cfg: { tempDir: tmpdir(), jobTimeoutMs: 10_000 },
     client: {
       rpc: async (name: string, args: Record<string, unknown>) => {
-        assert.equal(name, 'is_adult_eligible_for_ai');
+        assert.equal(name, 'is_account_eligible_for_ai');
         assert.deepEqual(args, { p_user_id: task.user_id });
         return { data: false, error: null };
       },
@@ -49,6 +49,6 @@ test('unknown, underage, and revoked owners cannot reach any media or model prov
     ['share_media_tasks', 'needs_help'],
     ['share_jobs', 'needs_help'],
   ]);
-  assert.equal(updates[0].patch.failure_code, 'age_eligibility_required');
-  assert.equal(updates[1].patch.failure_code, 'age_eligibility_required');
+  assert.equal(updates[0]!.patch.failure_code, 'age_eligibility_required');
+  assert.equal(updates[1]!.patch.failure_code, 'age_eligibility_required');
 });

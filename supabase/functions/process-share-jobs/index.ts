@@ -88,6 +88,7 @@ import {
 } from './decisionMapping.ts';
 import {
   composeShareCompletionNotification,
+  localizeShareCompletionNotification,
   type NotificationLocality,
   type ShareCompletionNotification,
 } from './shareCompletionNotification.ts';
@@ -882,6 +883,15 @@ async function finalize(
     updatePatch.recognition_content_id = identity.contentId;
   }
   if (note) {
+    // Read only this authenticated job owner's language. Keep recognition facts
+    // out of persistence and the lock screen; the pure composer bounds labels.
+    try {
+      const { data: preferences } = await admin.from('account_ui_preferences')
+        .select('locale').eq('user_id', job.user_id).maybeSingle();
+      note = localizeShareCompletionNotification(note, preferences?.locale ?? null);
+    } catch {
+      // A preference lookup must never lose a saved result or its notification.
+    }
     updatePatch.notification_status = 'pending';
     updatePatch.notification_attempts = 0;
     updatePatch.notification_last_attempt_at = null;

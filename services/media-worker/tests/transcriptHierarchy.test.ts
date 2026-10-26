@@ -38,7 +38,7 @@ function fakeSupabaseClient(): any {
     catch: resolved.catch.bind(resolved),
     finally: resolved.finally.bind(resolved),
   };
-  return { from: () => ({ update: () => chain, select: () => chain }) };
+  return { rpc: async (name: string) => { assert.equal(name, 'is_account_eligible_for_ai'); return { data: true, error: null }; }, from: () => ({ update: () => chain, select: () => chain }) };
 }
 
 class CapturingTranscription implements TranscriptionProvider {

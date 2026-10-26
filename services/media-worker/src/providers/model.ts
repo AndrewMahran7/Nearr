@@ -38,6 +38,7 @@ import {
   type MomentGroupingTelemetry,
 } from '../pipeline/consolidatePlaceMoments.js';
 import { geminiGenerationConfig } from './geminiPricing.js';
+import { OpenAiRecognitionModel } from './openaiRecognition.js';
 
 export type AnalyzeInput = {
   platform: string;
@@ -114,6 +115,8 @@ export type AnalyzeOutput = {
   };
   /** Wall-clock provider request latency, excluding local media extraction. */
   latencyMs?: number;
+  /** Model-only estimate; null until exact model pricing is independently qualified. */
+  providerCost?: { estimatedUsd: number | null; cachedInputTokens: number; pricingReference: string | null };
   /** Baseline Gemini-only counters retained when Automatic Deep replaces the
    * user-facing evidence with a Sol result. This keeps cost accounting split
    * by lane without persisting model prose. */
@@ -329,7 +332,7 @@ class HeuristicModel implements ModelProvider {
   }
 }
 
-function parseTargetedAiNoteResponse(
+export function parseTargetedAiNoteResponse(
   raw: unknown,
   input: AnalyzeInput & { targetPlace: NonNullable<AnalyzeInput['targetPlace']> },
 ): { evidence: MediaPlaceEvidence; diagnostics: EvidenceParseDiagnostics } {
@@ -442,9 +445,13 @@ function parseTargetedAiNoteResponse(
 
 class GeminiModel implements ModelProvider {
   readonly name = 'gemini';
-  constructor(private cfg: WorkerConfig) {}
+  constructor(private cfg: WorkerConfig, private offlineFixtureTransport?: typeof fetch) {}
 
   async analyze(input: AnalyzeInput): Promise<AnalyzeOutput> {
+    // Gemini's app-audience restriction applies to this entire 13+ product.
+    // No environment flag or adult declaration can override provider terms.
+    const transport = this.offlineFixtureTransport;
+    if (!transport) throw new MediaError('provider_unavailable', 'provider_audience_restricted');
     const promptVersion = input.targetPlace ? AI_NOTE_PROMPT_VERSION : PROMPT_VERSION;
     if (!this.cfg.geminiApiKey) {
       if (input.targetPlace) throw new MediaError('provider_unavailable', 'gemini_missing_key');
@@ -520,7 +527,7 @@ class GeminiModel implements ModelProvider {
         this.cfg.geminiModel,
       )}:generateContent?key=${encodeURIComponent(this.cfg.geminiApiKey)}`;
       const requestStartedAt = Date.now();
-      const res = await fetch(endpoint, {
+      const res = await transport(endpoint, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -656,8 +663,13 @@ class GeminiModel implements ModelProvider {
 
 export function selectModelProvider(
   cfg: WorkerConfig,
+  // Dependency injection is exclusively for frozen, offline protocol replays.
+  // Production callers supply no transport and Gemini always fails closed.
+  replay?: { offlineFixtureTransport: typeof fetch },
 ): ModelProvider {
-  const base = cfg.analysisProvider === 'gemini' ? new GeminiModel(cfg) : new HeuristicModel();
+  const base = cfg.analysisProvider === 'openai'
+    ? new OpenAiRecognitionModel(cfg, replay?.offlineFixtureTransport)
+    : cfg.analysisProvider === 'gemini' ? new GeminiModel(cfg, replay?.offlineFixtureTransport) : new HeuristicModel();
   return new MomentConsolidationModel(base);
 }
 

@@ -243,7 +243,7 @@ for (const fixture of visualCases) {
         analysisProvider: 'gemini',
         geminiApiKey: 'test-key',
         maxSelectedFrames: 8,
-      });
+      }, { offlineFixtureTransport: (...args) => globalThis.fetch(...args) });
       const output = await provider.analyze({
         platform: 'instagram',
         canonicalUrl: 'https://www.instagram.com/reel/visual/',
@@ -299,7 +299,7 @@ test('provider outage recovers from durable evidence after frames are gone', asy
     analysisProvider: 'gemini',
     geminiApiKey: 'test-key',
     maxSelectedFrames: 8,
-  });
+  }, { offlineFixtureTransport: (...args) => globalThis.fetch(...args) });
   const originalFetch = globalThis.fetch;
   let attempts = 0;
   globalThis.fetch = (async () => {

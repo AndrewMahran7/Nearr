@@ -38,6 +38,12 @@ function nonNegativeNumber(name: string, fallback: number): number {
   return Number.isFinite(value) && value >= 0 ? value : fallback;
 }
 
+function optionalPrice(name: string): number | null {
+  const raw=str(name);
+  const value=Number(raw);
+  return raw && Number.isFinite(value) && value>=0 ? value : null;
+}
+
 /** Narrow an env string to the frame-strategy union, falling back to the
  *  default rather than trusting an unrecognized value. */
 function frameStrategy(value: string): WorkerConfig['vayrinFrameStrategy'] {
@@ -133,7 +139,19 @@ export type WorkerConfig = {
   selfHostedTranscriptionUrl: string;
   /** API key for the self-hosted endpoint (root TRANSCRIPTION_SERVICE_API_KEY). */
   selfHostedTranscriptionApiKey: string;
-  analysisProvider: string; // 'heuristic' | 'gemini' (default heuristic)
+  analysisProvider: string; // 'heuristic' | 'openai' | blocked legacy 'gemini'
+  openaiRecognition?: {
+    enabled: boolean;
+    allowedRoute: string;
+    apiKey: string;
+    model: string;
+    timeoutMs: number;
+    maxOutputTokens: number;
+    inputPricePerMillion: number | null;
+    cachedInputPricePerMillion: number | null;
+    outputPricePerMillion: number | null;
+    pricingReference: string;
+  };
   geminiApiKey: string;
   geminiModel: string;
   ocrProvider: string; // 'noop' | 'model' (default model when a model is configured, else noop)
@@ -295,6 +313,18 @@ export function loadConfig(): WorkerConfig {
     selfHostedTranscriptionUrl: str('SELF_HOSTED_TRANSCRIPTION_URL'),
     selfHostedTranscriptionApiKey: str('TRANSCRIPTION_SERVICE_API_KEY'),
     analysisProvider: analysisProvider.toLowerCase(),
+    openaiRecognition: {
+      enabled: bool('MEDIA_OPENAI_RECOGNITION_ENABLED', false),
+      allowedRoute: str('NEARR_ALLOWED_PROVIDER_ROUTE'),
+      apiKey: str('MEDIA_OPENAI_RECOGNITION_API_KEY'),
+      model: str('MEDIA_OPENAI_RECOGNITION_MODEL'),
+      timeoutMs: Math.min(90_000, int('MEDIA_OPENAI_RECOGNITION_TIMEOUT_MS', 60_000, 1_000)),
+      maxOutputTokens: Math.min(8_000, int('MEDIA_OPENAI_RECOGNITION_MAX_OUTPUT_TOKENS', 4_000, 256)),
+      inputPricePerMillion: optionalPrice('MEDIA_OPENAI_RECOGNITION_INPUT_PRICE_PER_MILLION'),
+      cachedInputPricePerMillion: optionalPrice('MEDIA_OPENAI_RECOGNITION_CACHED_INPUT_PRICE_PER_MILLION'),
+      outputPricePerMillion: optionalPrice('MEDIA_OPENAI_RECOGNITION_OUTPUT_PRICE_PER_MILLION'),
+      pricingReference: str('MEDIA_OPENAI_RECOGNITION_PRICING_REFERENCE'),
+    },
     geminiApiKey,
     // `-latest` alias so a retired pinned model (e.g. the old gemini-1.5-flash)
     // never 404s the analysis. Override with GEMINI_MODEL for a pinned version.
@@ -344,8 +374,11 @@ export function validateConfig(cfg: WorkerConfig): ConfigValidation {
   if (!cfg.mediaFinalizeSecret) missing.push('MEDIA_FINALIZE_SECRET');
   if (cfg.transcriptionProvider !== 'openai') missing.push('MEDIA_TRANSCRIPTION_PROVIDER=openai');
   if (!cfg.transcriptionApiKey) missing.push('MEDIA_TRANSCRIPTION_API_KEY');
-  if (cfg.analysisProvider !== 'gemini') missing.push('MEDIA_ANALYSIS_PROVIDER=gemini');
-  if (!cfg.geminiApiKey) missing.push('GEMINI_API_KEY');
+  if (cfg.analysisProvider !== 'openai') missing.push('MEDIA_ANALYSIS_PROVIDER=openai');
+  if (cfg.openaiRecognition?.enabled !== true) missing.push('MEDIA_OPENAI_RECOGNITION_ENABLED=true');
+  if (cfg.openaiRecognition?.allowedRoute !== 'openai_only') missing.push('NEARR_ALLOWED_PROVIDER_ROUTE=openai_only');
+  if (!cfg.openaiRecognition?.apiKey) missing.push('MEDIA_OPENAI_RECOGNITION_API_KEY');
+  if (!cfg.openaiRecognition?.model) missing.push('MEDIA_OPENAI_RECOGNITION_MODEL');
   if (
     (
       cfg.scrapeCreatorsTikTokFallbackEnabled ||

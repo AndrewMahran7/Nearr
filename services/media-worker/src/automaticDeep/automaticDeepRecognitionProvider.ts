@@ -257,6 +257,10 @@ export function withAutomaticDeepRecognition(
   cfg: WorkerConfig,
   runDeep: AutomaticDeepRecognitionRunner = runSimpleSolRecognition,
 ): ModelProvider {
+  // The disabled OpenAI candidate qualifies one bounded model pass at a time.
+  // Legacy automatic Sol recovery has separate credentials/model/cost policy
+  // and must be independently qualified before joining this new route.
+  if (cfg.analysisProvider === 'openai') return inner;
   return cfg.automaticDeepRecognitionEnabled
     ? new AutomaticDeepRecognitionModel(inner, cfg, runDeep)
     : inner;

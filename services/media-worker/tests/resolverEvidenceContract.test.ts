@@ -28,7 +28,7 @@ import { generateSyntheticMedia, ffmpegAvailable } from './support/generateSynth
 function fakeSupabaseClient(): any {
   const resolved = Promise.resolve({ data: null, error: null });
   const chain: any = { eq: () => chain, then: resolved.then.bind(resolved), catch: resolved.catch.bind(resolved) };
-  return { from: () => ({ update: () => chain, select: () => chain }) };
+  return { rpc: async (name: string) => { assert.equal(name, 'is_account_eligible_for_ai'); return { data: true, error: null }; }, from: () => ({ update: () => chain, select: () => chain }) };
 }
 
 class NoopTranscription implements TranscriptionProvider {

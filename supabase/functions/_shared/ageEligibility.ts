@@ -9,7 +9,7 @@ export async function checkAgeEligibility(
   userId: string,
 ): Promise<AgeEligibilityDecision> {
   if (!userId) return { ok: false, code: 'age_eligibility_required' };
-  const { data, error } = await admin.rpc('is_adult_eligible_for_ai', { p_user_id: userId });
+  const { data, error } = await admin.rpc('is_account_eligible_for_ai', { p_user_id: userId });
   if (error || typeof data !== 'boolean') return { ok: false, code: 'age_check_unavailable' };
   return data ? { ok: true } : { ok: false, code: 'age_eligibility_required' };
 }

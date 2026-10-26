@@ -41,6 +41,8 @@ const FUNCTIONS_DIR = path.join(REPO_ROOT, 'supabase', 'functions');
  * Anything absent here keeps Supabase's default JWT verification.
  */
 const NO_VERIFY_JWT = new Set([
+  // RevenueCat webhook uses constant-time dedicated-secret validation plus server receipt verification.
+  'revenuecat-plus-webhook',
   'e2e-place-fixture',
   'process-share-jobs',
   'process-share-link',
@@ -53,9 +55,6 @@ const NO_VERIFY_JWT = new Set([
 ]);
 const DEVELOPMENT_ONLY_FUNCTIONS = new Set([
   'e2e-place-fixture',
-  // This branch intentionally replaces the ordinary share contract with a
-  // Nearr-Dev-only onboarding QA RPC. Never publish that replacement to Prod.
-  'create-share-job',
   'get-onboarding-tutorial',
   'reset-onboarding-qa',
 ]);

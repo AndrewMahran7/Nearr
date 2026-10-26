@@ -10,6 +10,7 @@ import {
   presentShareFailure,
   type ShareFailureCategory,
 } from '../../../lib/shareFailurePresentation.ts';
+import { translateNotification } from '../../../lib/notificationLocalization.ts';
 
 export type NotificationLocalityBasis =
   | 'provider_verified'
@@ -335,5 +336,36 @@ export function composeShareCompletionNotification(
   return {
     ...copy,
     data: notificationData(context, copy.resultClass),
+  };
+}
+
+function localizedCopy(locale: string | null | undefined, value: string): string {
+  const templates: Array<[RegExp, string, (match: RegExpMatchArray) => Record<string, unknown>]> = [
+    [/^All (\d+) places are already on your map\.$/, 'All {{p0}} places are already on your map.', match => ({ p0: Number(match[1]) })],
+    [/^Open Nearr to check (.+)\.$/, 'Open Nearr to check {{p0}}.', match => ({ p0: match[1] })],
+    [/^Saved (.+) to your map$/, 'Saved {{p0}} to your map', match => ({ p0: match[1] })],
+    [/^We also found (\d+) similar results? you can keep or remove\.$/, 'We also found {{p0}} similar {{p1}} you can keep or remove.', match => ({ p0: Number(match[1]), p1: Number(match[1]) === 1 ? 'result' : 'results' })],
+    [/^We found (\d+) of (\d+) places$/, 'We found {{p0}} of {{p1}} places', match => ({ p0: Number(match[1]), p1: Number(match[2]) })],
+    [/^We found (\d+) possible spots$/, 'We found {{p0}} possible spots', match => ({ p0: Number(match[1]) })],
+    [/^We found all (\d+) places$/, 'We found all {{p0}} places', match => ({ p0: Number(match[1]) })],
+    [/^We think this is near (.+), but couldn’t pin down the exact spot\.$/, 'We think this is near {{p0}}, but couldn’t pin down the exact spot.', match => ({ p0: match[1] })],
+  ];
+  for (const [pattern, key, values] of templates) {
+    const match = value.match(pattern);
+    if (match) return translateNotification(locale, key, values(match));
+  }
+  return translateNotification(locale, value);
+}
+
+/** Localize only presentation copy. Navigation and result classification stay
+ * byte-for-byte stable and user/source place names are substituted verbatim. */
+export function localizeShareCompletionNotification(
+  notification: ShareCompletionNotification,
+  locale: string | null | undefined,
+): ShareCompletionNotification {
+  return {
+    ...notification,
+    title: localizedCopy(locale, notification.title),
+    body: localizedCopy(locale, notification.body),
   };
 }
