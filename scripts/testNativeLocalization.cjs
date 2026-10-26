@@ -3,15 +3,11 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const xcode = require('xcode');
-const { writeNativeLocales, ensureExtensionVersionPreAction, LOCALES, NATIVE_KEYS } = require('../plugins/withNearrLocalization');
+const { writeNativeLocales, LOCALES, NATIVE_KEYS } = require('../plugins/withNearrLocalization');
 const projectRoot = path.resolve(__dirname, '..');
 const nativeRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'nearr-native-locales-'));
 fs.mkdirSync(path.join(nativeRoot,'NearrShareExtension'),{recursive:true});
 fs.writeFileSync(path.join(nativeRoot,'NearrShareExtension','Info.plist'),'<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string></dict></plist>');
-const schemeDir=path.join(nativeRoot,'Nearr.xcodeproj','xcshareddata','xcschemes');
-fs.mkdirSync(schemeDir,{recursive:true});
-const schemePath=path.join(schemeDir,'Nearr.xcscheme');
-fs.writeFileSync(schemePath,'<Scheme>\n   <BuildAction>\n      <BuildActionEntries>\n      </BuildActionEntries>\n   </BuildAction>\n</Scheme>\n');
 // Real xcode library and minimal valid host/extension graph. Deliberately no
 // legacy Resources group: modern Expo projects do not create one.
 const project = xcode.project(path.join(nativeRoot, 'test.pbxproj'));
@@ -23,13 +19,6 @@ project.hash = { project: { archiveVersion: 1, classes: {}, objectVersion: 54, r
   PBXBuildFile:{}, PBXFileReference:{}, PBXVariantGroup:{}
 } } };
 assert.equal(writeNativeLocales({projectRoot,platformProjectRoot:nativeRoot,project,buildNumber:'66'}),2);
-ensureExtensionVersionPreAction({platformProjectRoot:nativeRoot,projectName:'Nearr',hostTargetUuid:'T1',hostTargetName:'Nearr',extensionTargetName:'NearrShareExtension'});
-ensureExtensionVersionPreAction({platformProjectRoot:nativeRoot,projectName:'Nearr',hostTargetUuid:'T1',hostTargetName:'Nearr',extensionTargetName:'NearrShareExtension'});
-const scheme=fs.readFileSync(schemePath,'utf8');
-assert.equal((scheme.match(/Sync Share Extension build number/g)||[]).length,1,'version pre-action is idempotent');
-assert.match(scheme,/EAS_BUILD_IOS_BUILD_NUMBER/);
-assert.match(scheme,/Print :CFBundleVersion/);
-assert.match(scheme,/NearrShareExtension\/Info.plist/);
 function verify(p, root) {
   const variants=Object.entries(p.hash.project.objects.PBXVariantGroup).filter(([k])=>!k.endsWith('_comment'));
   assert.equal(variants.length,4,'two resource variant groups per target');
@@ -56,7 +45,7 @@ function verify(p, root) {
   const hostRefs=hostResources.files.map(file=>p.pbxBuildFileSection()[file.value].fileRef);
   const extensionRefs=extensionResources.files.map(file=>p.pbxBuildFileSection()[file.value].fileRef);
   assert.equal(new Set([...hostRefs,...extensionRefs]).size,4,'no variant group is copied into both targets');
-  assert.match(fs.readFileSync(path.join(root,'NearrShareExtension','Info.plist'),'utf8'),/<string>66<\/string>/,'extension build number is materialized for EAS remote-version rewriting');
+  assert.match(fs.readFileSync(path.join(root,'NearrShareExtension','Info.plist'),'utf8'),/<string>66<\/string>/,'extension build number is materialized from the local EAS version');
 }
 verify(project,nativeRoot);
 const before=project.writeSync();

@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": ">= 18.8.1",
-    "appVersionSource": "remote"
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -9,7 +9,7 @@
       "distribution": "internal",
       "channel": "development",
       "environment": "development",
-      "autoIncrement": true,
+      "autoIncrement": false,
       "ios": {
         "image": "macos-sonoma-14.5-xcode-15.4"
       }
