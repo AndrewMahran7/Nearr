@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * app/share-jobs/[jobId].tsx — resolve a single needs_help / failed job.
  *
@@ -229,7 +231,7 @@ function platformName(platform: string | null | undefined): string {
     case 'youtube':
       return 'YouTube';
     default:
-      return 'Shared link';
+      return t('Shared link');
   }
 }
 
@@ -370,6 +372,7 @@ function formatLeadTimestamp(seconds: number): string {
 }
 
 function ShareJobDetailScreen() {
+  useLocale();
   const router = useRouter();
   const safeAreaInsets = useSafeAreaInsets();
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
@@ -698,7 +701,7 @@ function ShareJobDetailScreen() {
         }
       }
     } catch (error) {
-      Alert.alert('Could not update this result', sanitizeErrorText(error));
+      Alert.alert(t("Could not update this result"), sanitizeErrorText(error));
     } finally {
       softAlternativeLocksRef.current.delete(alternative.resultId);
       if (mountedRef.current) {
@@ -1249,19 +1252,19 @@ function ShareJobDetailScreen() {
       if (decision.kind === 'retry_resolution') {
         setPendingCompletion(pending);
         Alert.alert(
-          'Place saved',
-          'Nearr saved the place and verified this post, but Activity could not finish updating. Tap Finish review to retry without saving again.',
+          t("Place saved"),
+          t("Nearr saved the place and verified this post, but Activity could not finish updating. Tap Finish review to retry without saving again."),
         );
         return;
       }
       setPendingCompletion(null);
       if (decision.kind === 'cancelled_or_unavailable') {
-        Alert.alert('Review no longer available', 'Activity changed before this review could finish. Its current state has been refreshed.');
+        Alert.alert(t("Review no longer available"), t("Activity changed before this review could finish. Its current state has been refreshed."));
       } else if (decision.kind === 'different_result') {
-        Alert.alert('Review already completed', 'Activity completed with a different saved result. The current result is now shown.');
+        Alert.alert(t("Review already completed"), t("Activity completed with a different saved result. The current result is now shown."));
       } else {
         Alert.alert(
-          'Could not verify completion',
+          t("Could not verify completion"),
           decision.reason === 'missing_source'
             ? 'The saved place exists, but Nearr could not verify that this post is attached to it.'
             : 'The saved result no longer matches the place selected in this review.',
@@ -1270,8 +1273,8 @@ function ShareJobDetailScreen() {
     } catch {
       setPendingCompletion(pending);
       Alert.alert(
-        'Place saved',
-        'Nearr could not refresh Activity yet. Tap Finish review to retry without saving the place or source again.',
+        t("Place saved"),
+        t("Nearr could not refresh Activity yet. Tap Finish review to retry without saving the place or source again."),
       );
     }
   }
@@ -1337,7 +1340,7 @@ function ShareJobDetailScreen() {
   async function handleSaveStored(candidate: ShareJobCandidate) {
     if (!job || resolvingRef.current) return;
     if (!candidate.googlePlaceId) {
-      Alert.alert('Find the right place', 'Nearr will look up the exact place.');
+      Alert.alert(t("Find the right place"), t("Nearr will look up the exact place."));
       return;
     }
     resolvingRef.current = true;
@@ -1378,7 +1381,7 @@ function ShareJobDetailScreen() {
       );
       await resolveJobWith(job.id, savedPlaceId, duplicate, candidate.googlePlaceId);
     } catch (err) {
-      Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
+      Alert.alert(t("Could not save"), err instanceof Error ? err.message : 'Please try again.');
     } finally {
       resolvingRef.current = false;
       if (mountedRef.current) setBusy(false);
@@ -1472,7 +1475,7 @@ function ShareJobDetailScreen() {
         throw new Error('No selected places could be saved. Please retry.');
       }
     } catch (err) {
-      Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
+      Alert.alert(t("Could not save"), err instanceof Error ? err.message : 'Please try again.');
     } finally {
       resolvingRef.current = false;
       if (mountedRef.current) setBusy(false);
@@ -1583,7 +1586,7 @@ function ShareJobDetailScreen() {
         onboardingOwnsCompletion: !!(onboardingShare && sourceUrl),
       });
     } catch (err) {
-      Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
+      Alert.alert(t("Could not save"), err instanceof Error ? err.message : 'Please try again.');
     } finally {
       resolvingRef.current = false;
       if (mountedRef.current) setBusy(false);
@@ -1608,7 +1611,7 @@ function ShareJobDetailScreen() {
       await archiveShareJob(job.id);
       router.back();
     } catch {
-      Alert.alert('Could not remove', 'Please try again in a moment.');
+      Alert.alert(t("Could not remove"), t("Please try again in a moment."));
     }
   }
 
@@ -1618,7 +1621,7 @@ function ShareJobDetailScreen() {
       await retryShareJob(job.id);
       await load();
     } catch {
-      Alert.alert('Could not retry', 'Please try again in a moment.');
+      Alert.alert(t("Could not retry"), t("Please try again in a moment."));
     }
   }
 
@@ -1647,9 +1650,9 @@ function ShareJobDetailScreen() {
 
   // Lightweight confirmation before a destructive remove.
   function confirmRemove() {
-    Alert.alert('Remove from Activity?', 'This post will leave Activity.', [
-      { text: 'Keep it', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => void handleRemove() },
+    Alert.alert(t("Remove from Activity?"), t("This post will leave Activity."), [
+      { text: t("Keep it"), style: 'cancel' },
+      { text: t("Remove"), style: 'destructive', onPress: () => void handleRemove() },
     ]);
   }
 
@@ -1844,7 +1847,7 @@ function ShareJobDetailScreen() {
         } catch (error) {
           if (mountedRef.current) {
             setBatch(failBatchSearch(nextBatch, logicalPlaceId));
-            Alert.alert('Could not save', error instanceof Error ? error.message : 'Please try again.');
+            Alert.alert(t("Could not save"), error instanceof Error ? error.message : 'Please try again.');
           }
         } finally {
           resolvingRef.current = false;
@@ -1951,7 +1954,7 @@ function ShareJobDetailScreen() {
           <Text style={[typography.label, styles.searchLabel]}>{PHASE_1_COPY.searchLabel}</Text>
           {opts?.onCancel ? (
             <Pressable onPress={opts.onCancel} hitSlop={8} accessibilityRole="button">
-              <Text style={styles.cancelLink}>Cancel</Text>
+              <Text style={styles.cancelLink}>{t("Cancel")}</Text>
             </Pressable>
           ) : null}
         </View>
@@ -1961,7 +1964,7 @@ function ShareJobDetailScreen() {
         <View style={styles.searchRow}>
           <View style={styles.flex}>
             <Input
-              placeholder="Name or address"
+              placeholder={t("Name or address")}
               value={manualQuery}
               onChangeText={changeManualQuery}
               onSubmitEditing={() => void runManualSearch(manualQuery)}
@@ -1971,7 +1974,7 @@ function ShareJobDetailScreen() {
           </View>
           {showSearchAction ? (
             <Button
-              title={manualSearchPhase === 'error' ? 'Retry' : 'Search'}
+              title={manualSearchPhase === 'error' ? t("Retry") : t("Search")}
               onPress={() => void runManualSearch(manualQuery)}
               disabled={!manualQuery.trim()}
               style={styles.searchBtn}
@@ -1982,8 +1985,7 @@ function ShareJobDetailScreen() {
           <View style={styles.processingRow}>
             <ActivityIndicator color={colors.primary} />
             <Text style={[typography.caption, styles.helpCompact]} accessibilityLiveRegion="polite">
-              Finding the right place…
-            </Text>
+              {t("Finding the right place…")}</Text>
           </View>
         ) : null}
         {manualSearchPhase === 'error' ? (
@@ -1992,8 +1994,7 @@ function ShareJobDetailScreen() {
             accessibilityRole="alert"
             accessibilityLiveRegion="assertive"
           >
-            Couldn&apos;t check right now. Your search is ready to retry.
-          </Text>
+            {t("Couldn't check right now. Your search is ready to retry.")}</Text>
         ) : null}
         {manualSearchPhase === 'empty' ? (
           emptyContext.noNearbyMatch && emptyContext.contextLabel ? (
@@ -2001,7 +2002,7 @@ function ShareJobDetailScreen() {
               {`No matching location found near ${emptyContext.contextLabel}. Find the right place or edit the area to widen it.`}
             </Text>
           ) : (
-            <Text style={[typography.caption, styles.help]}>Couldn&apos;t find an exact place.</Text>
+            <Text style={[typography.caption, styles.help]}>{t("Couldn't find an exact place.")}</Text>
           )
         ) : null}
         {visibleResults.map((c, index) => {
@@ -2035,7 +2036,7 @@ function ShareJobDetailScreen() {
         })}
         {manualSearchPhase === 'results' || manualSearchPhase === 'empty' || manualSearchPhase === 'error' ? (
           <Button
-            title="Search another place"
+            title={t("Search another place")}
             variant="secondary"
             onPress={searchAnotherPlace}
             style={styles.secondaryBtn}
@@ -2059,7 +2060,7 @@ function ShareJobDetailScreen() {
             accessibilityLabel={`Open ${platformNoun(platform)}`}
           >
             <Feather name="external-link" size={16} color={colors.textSecondary} />
-            <Text style={styles.openText}>View original post</Text>
+            <Text style={styles.openText}>{t("View original post")}</Text>
           </Pressable>
         ) : null}
         {openMsg ? <Text style={styles.openMsg}>{openMsg}</Text> : null}
@@ -2067,10 +2068,10 @@ function ShareJobDetailScreen() {
           onPress={confirmRemove}
           style={styles.removeBtn}
           accessibilityRole="button"
-          accessibilityLabel="Remove this save"
+          accessibilityLabel={t("Remove this save")}
         >
           <Feather name="more-horizontal" size={16} color={colors.textMuted} />
-          <Text style={[typography.caption, styles.removeText]}>Remove this save</Text>
+          <Text style={[typography.caption, styles.removeText]}>{t("Remove this save")}</Text>
         </Pressable>
       </View>
     );
@@ -2107,13 +2108,13 @@ function ShareJobDetailScreen() {
           <Feather name="search" size={18} color={colors.primary} />
         </View>
         <View style={styles.flex}>
-          <Text style={styles.leadLabel}>SEARCH SUGGESTION</Text>
+          <Text style={styles.leadLabel}>{t("SEARCH SUGGESTION")}</Text>
           <Text style={[typography.bodyStrong, styles.candidateName]} numberOfLines={2}>{lead.displayName}</Text>
           {lead.contextLabel ? (
             <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={2}>{lead.contextLabel}</Text>
           ) : null}
           {timeLabel ? <Text style={[typography.caption, styles.leadTime]}>{timeLabel}</Text> : null}
-          <Text style={[typography.caption, styles.leadCaveat]}>Find the right place</Text>
+          <Text style={[typography.caption, styles.leadCaveat]}>{t("Find the right place")}</Text>
         </View>
         <Feather name="chevron-right" size={18} color={colors.textMuted} />
       </Pressable>
@@ -2170,14 +2171,14 @@ function ShareJobDetailScreen() {
     return (
       <View style={styles.batchSearch}>
         <View style={styles.searchHeaderRow}>
-          <Text style={[typography.label, styles.searchLabel]}>Find the right place</Text>
+          <Text style={[typography.label, styles.searchLabel]}>{t("Find the right place")}</Text>
           <Pressable
             onPress={() => setBatch((value) => value ? closeBatchSearch(value, row.logicalPlaceId) : value)}
             hitSlop={10}
             accessibilityRole="button"
             accessibilityLabel={`Close search for ${row.extractedName}`}
           >
-            <Text style={styles.cancelLink}>Close</Text>
+            <Text style={styles.cancelLink}>{t("Close")}</Text>
           </Pressable>
         </View>
         <View style={styles.searchRow}>
@@ -2186,7 +2187,7 @@ function ShareJobDetailScreen() {
               value={row.search.query}
               onChangeText={(query) => changeBatchSearchQuery(row.logicalPlaceId, query)}
               onSubmitEditing={() => void runBatchSearch(row.logicalPlaceId)}
-              placeholder="Name or address"
+              placeholder={t("Name or address")}
               returnKeyType="search"
               autoCorrect={false}
               autoFocus
@@ -2195,7 +2196,7 @@ function ShareJobDetailScreen() {
           </View>
           {row.search.phase !== 'searching' ? (
             <Button
-              title={row.search.phase === 'error' ? 'Retry' : 'Search'}
+              title={row.search.phase === 'error' ? t("Retry") : t("Search")}
               onPress={() => void runBatchSearch(row.logicalPlaceId)}
               disabled={!row.search.query.trim()}
               style={styles.searchBtn}
@@ -2205,14 +2206,14 @@ function ShareJobDetailScreen() {
         {row.search.phase === 'searching' ? (
           <View style={styles.processingRow}>
             <ActivityIndicator color={colors.primary} />
-            <Text style={[typography.caption, styles.helpCompact]}>Finding the right place…</Text>
+            <Text style={[typography.caption, styles.helpCompact]}>{t("Finding the right place…")}</Text>
           </View>
         ) : null}
         {row.search.phase === 'empty' ? (
           <Text style={[typography.caption, styles.helpCompact]}>
             {row.noNearbyMatch && row.contextLabel
               ? `No matching location found near ${row.contextLabel}. Edit the area to search wider.`
-              : 'No matches yet. Edit the query and try again.'}
+              : t("No matches yet. Edit the query and try again.")}
           </Text>
         ) : null}
         {row.search.phase === 'error' ? (
@@ -2247,7 +2248,7 @@ function ShareJobDetailScreen() {
           onPress={() => toggleMentionDisclosure(row.logicalPlaceId)}
           accessibilityRole="button"
           accessibilityLabel={`Place ${index + 1} of ${total}: ${mentionName}. ${status}.`}
-          accessibilityHint={expanded ? 'Collapses place details' : 'Expands place details'}
+          accessibilityHint={expanded ? t("Collapses place details") : t("Expands place details")}
           accessibilityState={{ expanded }}
           style={({ pressed }) => [styles.mentionSummary, pressed && styles.mentionSummaryPressed]}
           testID="mention-summary"
@@ -2256,11 +2257,11 @@ function ShareJobDetailScreen() {
             initialPhotoUrls={previewCandidate?.photoUrls?.length ? previewCandidate.photoUrls : previewCandidate?.photoUrl ? [previewCandidate.photoUrl] : undefined}
             fallbackSourceUri={row.sourceFrameUrl} size={64} borderRadius={8}
             presentationMode="candidate" presentationActive={false} allowGoogleLookup={false}
-            accessibilityLabel={previewCandidate?.photoUrl || previewCandidate?.photoUrls?.length ? 'Destination photo' : 'From your video'} />
+            accessibilityLabel={previewCandidate?.photoUrl || previewCandidate?.photoUrls?.length ? t("Destination photo") : t("From your video")} />
           <View style={styles.flex}>
             <Text style={styles.mentionSummaryName}>{mentionName}</Text>
             <Text style={styles.mentionSummaryStatus} numberOfLines={1}>{status}</Text>
-            {timestamp ? <Text style={styles.mentionSummaryTimestamp}>Seen around {timestamp.replace(/^At /, '')}</Text> : null}
+            {timestamp ? <Text style={styles.mentionSummaryTimestamp}>{t("Seen around ")}{timestamp.replace(/^At /, '')}</Text> : null}
           </View>
           <View style={styles.mentionSummaryIcons} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
             {persisted ? <Feather name="check-circle" size={18} color={colors.accent} /> : null}
@@ -2269,7 +2270,7 @@ function ShareJobDetailScreen() {
         </Pressable>
         <Pressable onPress={() => toggleBatchSelection(row)} disabled={!canSelect || busy}
           accessibilityRole="checkbox" accessibilityLabel={'Save ' + mentionName}
-          accessibilityHint="Changes selection only; does not reject this place"
+          accessibilityHint={t("Changes selection only; does not reject this place")}
           accessibilityState={{ checked: row.selectedForSave || persisted, disabled: !canSelect || busy }}
           style={[styles.mentionCheckbox, (row.selectedForSave || persisted) && styles.mentionCheckboxSelected]}
           testID="mention-save-checkbox">
@@ -2279,7 +2280,7 @@ function ShareJobDetailScreen() {
 
         {expanded ? (
           <View style={styles.mentionDetails} testID="expanded-mention-details">
-            {row.hostVenueName ? <Text style={[typography.caption, styles.relationshipText]}>at {row.hostVenueName}</Text> : null}
+            {row.hostVenueName ? <Text style={[typography.caption, styles.relationshipText]}>{t("at ")}{row.hostVenueName}</Text> : null}
             {row.contextLabel ? <Text style={[typography.caption, styles.sourceTimestamp]} numberOfLines={2}>{row.contextLabel}</Text> : null}
             {evidenceFrames.length > 0 ? (
               <SourceEvidenceGallery frames={evidenceFrames} compact preview />
@@ -2287,19 +2288,19 @@ function ShareJobDetailScreen() {
             {row.saveError ? <Text style={[typography.caption, styles.batchError]}>{row.saveError}</Text> : null}
             {visibleCandidates.length > 0 ? (
               <View style={styles.possiblePlaces}>
-                <Text style={styles.possiblePlacesTitle}>Possible places</Text>
+                <Text style={styles.possiblePlacesTitle}>{t("Possible places")}</Text>
                 {visibleCandidates.map((choice) => renderBatchCandidateChoice(row, choice))}
                 {row.candidates.length > visibleCandidates.length ? (
-                  <Text style={[typography.caption, styles.candidateCapCopy]}>Showing the 3 strongest matches.</Text>
+                  <Text style={[typography.caption, styles.candidateCapCopy]}>{t("Showing the 3 strongest matches.")}</Text>
                 ) : null}
               </View>
             ) : null}
-            {row.userDismissed ? <Text style={[typography.caption, styles.unresolvedCopy]}>No place selected. Other selections are unchanged.</Text> : null}
+            {row.userDismissed ? <Text style={[typography.caption, styles.unresolvedCopy]}>{t("No place selected. Other selections are unchanged.")}</Text> : null}
             {!persisted && row.search.phase === 'closed' ? (
               <View style={styles.mentionActions}>
                 <Pressable onPress={() => openSearchForBatchRow(row)} accessibilityRole="button" accessibilityLabel={`Find the right place for ${row.extractedName}`} style={styles.inlineAction}>
                   <Feather name="search" size={16} color={colors.accent} />
-                  <Text style={styles.inlineActionText}>Find the right place</Text>
+                  <Text style={styles.inlineActionText}>{t("Find the right place")}</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => dismissMention(row)}
@@ -2307,7 +2308,7 @@ function ShareJobDetailScreen() {
                   accessibilityLabel={`None of these for ${row.extractedName}`}
                   style={styles.noneAction}
                 >
-                  <Text style={styles.noneActionText}>None of these</Text>
+                  <Text style={styles.noneActionText}>{t("None of these")}</Text>
                 </Pressable>
               </View>
             ) : null}
@@ -2321,7 +2322,7 @@ function ShareJobDetailScreen() {
   if (loading && !job) {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
+        <ShareJobsHeader title={t("Quick Check")} onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
         <ShareJobLoadingState />
       </ShareJobsSheet>
     );
@@ -2333,16 +2334,16 @@ function ShareJobDetailScreen() {
     const retryable = isRetryableLoadFailure(loadFailure);
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
+        <ShareJobsHeader title={t("Quick Check")} onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
         <View style={styles.centered}>
           <Text style={[typography.body, styles.help]}>
             {retryable
-              ? "Couldn't open this one just now."
-              : 'This save is no longer available.'}
+              ? t("Couldn't open this one just now.")
+              : t("This save is no longer available.")}
           </Text>
           {retryable ? (
             <Button
-              title="Try again"
+              title={t("Try again")}
               onPress={() => {
                 setLoading(true);
                 void load();
@@ -2351,7 +2352,7 @@ function ShareJobDetailScreen() {
             />
           ) : null}
           <Button
-            title="Back to Activity"
+            title={t("Back to Activity")}
             variant={retryable ? 'secondary' : 'primary'}
             onPress={backToQueue}
             style={{ marginTop: Spacing.md }}
@@ -2380,11 +2381,11 @@ function ShareJobDetailScreen() {
     if (!resultModel) {
       return (
         <ShareJobsSheet onDismiss={backToQueue} size="detail">
-          <ShareJobsHeader title="Saved place" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
+          <ShareJobsHeader title={t("Saved place")} onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
           <View style={styles.centered} testID="saved-place-unavailable">
-            <Text style={[typography.heading, styles.centeredTitle]}>This save is no longer available</Text>
-            <Text style={[typography.body, styles.help, { textAlign: 'center' }]}>It may have been removed from your map.</Text>
-            <Button title="Back" variant="secondary" onPress={backToQueue} style={styles.secondaryBtn} />
+            <Text style={[typography.heading, styles.centeredTitle]}>{t("This save is no longer available")}</Text>
+            <Text style={[typography.body, styles.help, { textAlign: 'center' }]}>{t("It may have been removed from your map.")}</Text>
+            <Button title={t("Back")} variant="secondary" onPress={backToQueue} style={styles.secondaryBtn} />
           </View>
         </ShareJobsSheet>
       );
@@ -2393,7 +2394,7 @@ function ShareJobDetailScreen() {
     const originalPlan = planOpenOriginal(sourceUrl);
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Saved place" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
+        <ShareJobsHeader title={t("Saved place")} onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
         <SavedPlaceResult
           primary={resultModel}
           sourceAvailable={originalPlan.kind === 'open'}
@@ -2413,7 +2414,7 @@ function ShareJobDetailScreen() {
               const saved = correctionTarget
                 ?? await getSavedPlace(resultModel.savedPlaceId).catch(() => null);
               if (!saved || !mountedRef.current) {
-                Alert.alert('Place unavailable', 'This saved place could not be loaded. Please try again.');
+                Alert.alert(t("Place unavailable"), t("This saved place could not be loaded. Please try again."));
                 return;
               }
               setCorrectionSaved(saved);
@@ -2445,12 +2446,11 @@ function ShareJobDetailScreen() {
   if (detail.kind === 'dismissed') {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
+        <ShareJobsHeader title={t("Quick Check")} onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
         <View style={styles.centered}>
           <Text style={[typography.body, styles.help]}>
-            This item is no longer in Activity.
-          </Text>
-          <Button title="Back to Activity" onPress={backToQueue} style={{ marginTop: Spacing.lg }} />
+            {t("This item is no longer in Activity.")}</Text>
+          <Button title={t("Back to Activity")} onPress={backToQueue} style={{ marginTop: Spacing.lg }} />
         </View>
       </ShareJobsSheet>
     );
@@ -2528,7 +2528,7 @@ function ShareJobDetailScreen() {
     const recoveryCount = batch ? recoverableBatchRowCount(batch) : 0;
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Review places" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
+        <ShareJobsHeader title={t("Review places")} onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
         {!batch ? (
           <ShareJobLoadingState />
         ) : (
@@ -2552,28 +2552,28 @@ function ShareJobDetailScreen() {
               removeClippedSubviews
               ListHeaderComponent={(
                 <View style={styles.batchIntro}>
-                  <SourceRibbon title="Original post" platform={platformName(platform)} thumbnail={overallSourceFrameUrl}
+                  <SourceRibbon title={t("Original post")} platform={platformName(platform)} thumbnail={overallSourceFrameUrl}
                     onPress={validateSourceUrl(sourceUrl).ok ? () => void openOriginalPost() : undefined} compact />
-                  <Text style={[typography.title, styles.batchTitle]}>{batch.order.length} {batch.order.every((id) => batch.rows[id]?.resolution === 'resolved') ? 'places found' : 'places to review'}</Text>
-                  <Text style={[typography.body, styles.batchHelp]}>Keep the ones you want.</Text>
+                  <Text style={[typography.title, styles.batchTitle]}>{batch.order.length} {batch.order.every((id) => batch.rows[id]?.resolution === 'resolved') ? t("places found") : t("places to review")}</Text>
+                  <Text style={[typography.body, styles.batchHelp]}>{t("Keep the ones you want.")}</Text>
                   <View style={styles.batchSelectionActions}>
                     <Text accessibilityLiveRegion="polite" style={styles.batchProgress}>
-                      {selectedPendingCount} selected{savedBatchIds.length > 0 ? ' · ' + savedBatchIds.length + ' saved' : ''}
+                      {selectedPendingCount} {t(" selected")}{savedBatchIds.length > 0 ? ' · ' + savedBatchIds.length + ' saved' : ''}
                     </Text>
                     <Pressable onPress={allEligibleBatchRowsSelected(batch) ? clearEveryEligibleBatchRow : selectEveryEligibleBatchRow}
                       disabled={busy} accessibilityRole="button" style={styles.inlineAction}
-                      accessibilityLabel={allEligibleBatchRowsSelected(batch) ? 'Clear selection' : 'Select all places'}>
-                      <Text style={styles.inlineActionText}>{allEligibleBatchRowsSelected(batch) ? 'Clear selection' : 'Select all'}</Text>
+                      accessibilityLabel={allEligibleBatchRowsSelected(batch) ? t("Clear selection") : t("Select all places")}>
+                      <Text style={styles.inlineActionText}>{allEligibleBatchRowsSelected(batch) ? t("Clear selection") : t("Select all")}</Text>
                     </Pressable>
                   </View>
 
                 </View>
               )}
-              ListEmptyComponent={<View style={styles.emptyBatch}><Text style={[typography.body, styles.help]}>No places were available to review.</Text></View>}
+              ListEmptyComponent={<View style={styles.emptyBatch}><Text style={[typography.body, styles.help]}>{t("No places were available to review.")}</Text></View>}
               ListFooterComponent={(
                 <View>
                   {automaticallySavedPlaceIds.length > 0 && savedBatchIds.length === 0 ? (
-                    <Text style={[typography.caption, styles.helpCompact]}>{automaticallySavedPlaceIds.length} place{automaticallySavedPlaceIds.length === 1 ? ' was' : 's were'} already saved from this post.</Text>
+                    <Text style={[typography.caption, styles.helpCompact]}>{automaticallySavedPlaceIds.length} {t(" place")}{automaticallySavedPlaceIds.length === 1 ? t(" was") : t("s were")} {t(" already saved from this post.")}</Text>
                   ) : null}
                   {renderJobFooter()}
                 </View>
@@ -2597,7 +2597,7 @@ function ShareJobDetailScreen() {
               ) : null}
               {pendingCompletion || batch.order.some((id) => batch.rows[id]?.persistence === 'pending') ? (
                 <Button
-                  title={pendingCompletion ? 'Finish review' : selectedPendingCount === 0 ? 'Select a place to save' : batchPrimaryActionLabel(batchCounts)}
+                  title={pendingCompletion ? t("Finish review") : selectedPendingCount === 0 ? t("Select a place to save") : batchPrimaryActionLabel(batchCounts)}
                   variant="save"
                   accessibilityLabel={`${batchPrimaryActionLabel(batchCounts)} from this review`}
                   onPress={() => void handleSaveSelected()}
@@ -2625,7 +2625,7 @@ function ShareJobDetailScreen() {
   if (isCandidatePicker) {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} compact />
+        <ShareJobsHeader title={t("Quick Check")} onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} compact />
         <ScrollView
           contentContainerStyle={[styles.content, styles.quickCheckContent]}
           contentInsetAdjustmentBehavior="automatic"
@@ -2634,20 +2634,20 @@ function ShareJobDetailScreen() {
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={[typography.title, styles.reviewTitle]}>Is this the place?</Text>
-          <SourceRibbon title="Original post" platform={platformName(platform)} thumbnail={overallSourceFrameUrl}
+          <Text style={[typography.title, styles.reviewTitle]}>{t("Is this the place?")}</Text>
+          <SourceRibbon title={t("Original post")} platform={platformName(platform)} thumbnail={overallSourceFrameUrl}
             onPress={validateSourceUrl(sourceUrl).ok ? () => void openOriginalPost() : undefined} compact />
           {pickerSelectionMode !== 'exclusive' ? <SourceEvidenceGallery frames={detail.evidenceFrames}
             analysisAttempted={job.analysis_attempted} compact dense /> : null}
           {pickerSelectionMode === 'exclusive' && confirmationCandidates.length > 1 ? (
             <View style={styles.reviewNavigation}>
-              <Pressable accessibilityRole="button" accessibilityLabel="Previous possible place"
+              <Pressable accessibilityRole="button" accessibilityLabel={t("Previous possible place")}
                 disabled={reviewIndex <= 0} accessibilityState={{ disabled: reviewIndex <= 0 }} style={styles.reviewArrow}
                 onPress={() => { const next = Math.max(0, reviewIndex - 1); setReviewIndex(next); setPickerSelectedIds([confirmationCandidates[next]!.googlePlaceId]); }}>
                 <Feather name="chevron-left" size={22} color={reviewIndex <= 0 ? colors.textMuted : colors.text} />
               </Pressable>
-              <Text style={styles.reviewCount}>Possible place {Math.min(reviewIndex + 1, confirmationCandidates.length)} of {confirmationCandidates.length}</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel="Next possible place"
+              <Text style={styles.reviewCount}>{t("Possible place ")}{Math.min(reviewIndex + 1, confirmationCandidates.length)} {t(" of ")}{confirmationCandidates.length}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={t("Next possible place")}
                 disabled={reviewIndex >= confirmationCandidates.length - 1} accessibilityState={{ disabled: reviewIndex >= confirmationCandidates.length - 1 }} style={styles.reviewArrow}
                 onPress={() => { const next = Math.min(confirmationCandidates.length - 1, reviewIndex + 1); setReviewIndex(next); setPickerSelectedIds([confirmationCandidates[next]!.googlePlaceId]); }}>
                 <Feather name="chevron-right" size={22} color={reviewIndex >= confirmationCandidates.length - 1 ? colors.textMuted : colors.text} />
@@ -2710,7 +2710,7 @@ function ShareJobDetailScreen() {
           ) : (
             <>
               <Button
-                title="Not this place"
+                title={t("Not this place")}
                 variant="text"
                 onPress={() => {
                   if (vayrinEnabled) {
@@ -2724,11 +2724,11 @@ function ShareJobDetailScreen() {
               <Pressable
                 onPress={revealSearch}
                 accessibilityRole="button"
-                accessibilityLabel="Find the right place"
+                accessibilityLabel={t("Find the right place")}
                 style={styles.searchForPlaceAction}
               >
                 <Feather name="search" size={17} color={colors.accent} />
-                <Text style={styles.searchForPlaceText}>Find the right place</Text>
+                <Text style={styles.searchForPlaceText}>{t("Find the right place")}</Text>
               </Pressable>
             </>
           )}
@@ -2742,17 +2742,17 @@ function ShareJobDetailScreen() {
             <Button
               variant="save"
               title={busy
-                ? 'Saving…'
+                ? t("Saving…")
                 : pendingCompletion
-                  ? 'Finish review'
+                  ? t("Finish review")
                   : candidateSaveLabel(
                     searchExpanded ? manualSelected.length : pickerSelected.length,
                     (searchExpanded ? manualSelected[0] : pickerSelected[0])?.name,
                   )}
               accessibilityLabel={busy
-                ? 'Saving place'
+                ? t("Saving place")
                 : pendingCompletion
-                  ? 'Finish review without saving again'
+                  ? t("Finish review without saving again")
                   : `${candidateSaveLabel(
                     searchExpanded ? manualSelected.length : pickerSelected.length,
                     (searchExpanded ? manualSelected[0] : pickerSelected[0])?.name,
@@ -2773,7 +2773,7 @@ function ShareJobDetailScreen() {
 
   return (
     <ShareJobsSheet onDismiss={backToQueue} size="detail">
-      <ShareJobsHeader title="Quick Check" onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
+      <ShareJobsHeader title={t("Quick Check")} onBack={backToQueue} backLabel="Back to Activity" refreshing={refreshing && !!job} reduceMotion={reduceMotion} />
       <ScrollView
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
@@ -2785,8 +2785,7 @@ function ShareJobDetailScreen() {
         <View style={styles.sourceRow}>
           <Feather name={sourceIcon} size={14} color={colors.textSecondary} />
           <Text style={[typography.caption, styles.sourceText]} numberOfLines={1}>
-            {platformName(platform)} · From the original post
-          </Text>
+            {platformName(platform)} {t(" · From the original post")}</Text>
         </View>
 
         {automaticallySavedPlaceIds.length > 0 ? (
@@ -2806,8 +2805,7 @@ function ShareJobDetailScreen() {
               <View style={styles.processingRow}>
                 <ActivityIndicator color={colors.primary} />
                 <Text style={[typography.body, styles.help, { marginBottom: 0 }]}>
-                  I’m still checking this post.
-                </Text>
+                  {t("I’m still checking this post.")}</Text>
               </View>
             )}
           </View>
@@ -2825,23 +2823,23 @@ function ShareJobDetailScreen() {
               <>
                 <Text style={[typography.title, styles.title]}>
                   {manualSearchPhase === 'searching' || (manualSearchPhase === 'idle' && manualQuery.trim())
-                    ? 'Checking this place'
+                    ? t("Checking this place")
                     : results.length === 1 && manualSelected.length > 0
-                      ? 'Is this the place?'
+                      ? t("Is this the place?")
                       : results.length > 1
-                        ? 'Which place is it?'
+                        ? t("Which place is it?")
                         : detail.copy.title}
                 </Text>
                 <Text style={[typography.caption, styles.help]}>
                   {manualSearchPhase === 'searching' || (manualSearchPhase === 'idle' && manualQuery.trim())
-                    ? 'A possible name was found. Looking for the right place.'
+                    ? t("A possible name was found. Looking for the right place.")
                     : detail.copy.body}
                 </Text>
               </>
             )}
             {detail.canRetry ? (
               <Button
-                title={vayrinEnabled ? 'Try again' : 'Try automatically again'}
+                title={vayrinEnabled ? t("Try again") : t("Try automatically again")}
                 variant="secondary"
                 onPress={() => void handleRetry()}
                 style={styles.secondaryBtn}
@@ -2855,7 +2853,7 @@ function ShareJobDetailScreen() {
             ) : null}
             {areaMatchIncomplete && areaName ? (
               <View style={styles.areaSummary} testID="area-match-incomplete">
-                <Text style={styles.areaResultLabel}>AREA FOUND</Text>
+                <Text style={styles.areaResultLabel}>{t("AREA FOUND")}</Text>
                 <Text style={[typography.heading, styles.areaName]}>{areaName}</Text>
                 {areaLocation ? <Text style={[typography.caption, styles.areaLocation]}>{areaLocation}</Text> : null}
               </View>
@@ -2863,7 +2861,7 @@ function ShareJobDetailScreen() {
             {areaMatchIncomplete ? (
               !searchExpanded ? <>
                 <Button
-                  title="See places in this area"
+                  title={t("See places in this area")}
                   variant="secondary"
                   onPress={() => {
                     const query = incompleteArea?.searchQuery ?? areaName ?? '';
@@ -2888,11 +2886,11 @@ function ShareJobDetailScreen() {
                     revealSearch();
                   }}
                   accessibilityRole="button"
-                  accessibilityLabel="Find the right place"
+                  accessibilityLabel={t("Find the right place")}
                   style={styles.searchForPlaceAction}
                 >
                   <Feather name="search" size={17} color={colors.accent} />
-                  <Text style={styles.searchForPlaceText}>Find the right place</Text>
+                  <Text style={styles.searchForPlaceText}>{t("Find the right place")}</Text>
                 </Pressable>
               </> : detail.canSearchManually
                 ? renderManualSearch({ note: 'Search for the exact place and save it instead.', onCancel: hideSearch })
@@ -2902,7 +2900,7 @@ function ShareJobDetailScreen() {
         ) : (
           <View style={styles.section}>
             {vayrinEnabled ? (
-              <Text style={[typography.title, styles.reviewTitle]}>Is this the place?</Text>
+              <Text style={[typography.title, styles.reviewTitle]}>{t("Is this the place?")}</Text>
             ) : (
               <>
                 <Text style={[typography.title, styles.title]}>
@@ -2931,14 +2929,14 @@ function ShareJobDetailScreen() {
             ) : null}
 
             {alreadySavedCopy?.note ? (
-              <Text style={[typography.caption, styles.help]}>{alreadySavedCopy.note}</Text>
+              <Text style={[typography.caption, styles.help]}>{t(alreadySavedCopy.note)}</Text>
             ) : null}
 
             {/* One action either way: the save path enriches an existing row
                 instead of creating a second one, so it is safe to always run. */}
             {broadSingle ? (
               <Button
-                title="See places in this area"
+                title={t("See places in this area")}
                 onPress={() => {
                   if (!confirmationSingle) return;
                   changeManualQuery(confirmationSingle.name);
@@ -2958,7 +2956,7 @@ function ShareJobDetailScreen() {
             ) : (
               <>
                 <Button
-                  title={broadSingle ? 'Not this area' : 'Not this place'}
+                  title={broadSingle ? t("Not this area") : t("Not this place")}
                   variant="text"
                   onPress={() => {
                     if (vayrinEnabled) {
@@ -2972,11 +2970,11 @@ function ShareJobDetailScreen() {
                 <Pressable
                   onPress={revealSearch}
                   accessibilityRole="button"
-                  accessibilityLabel="Find the right place"
+                  accessibilityLabel={t("Find the right place")}
                   style={styles.searchForPlaceAction}
                 >
                   <Feather name="search" size={17} color={colors.accent} />
-                  <Text style={styles.searchForPlaceText}>Find the right place</Text>
+                  <Text style={styles.searchForPlaceText}>{t("Find the right place")}</Text>
                 </Pressable>
               </>
             )}
@@ -2989,8 +2987,8 @@ function ShareJobDetailScreen() {
         <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
           <Button
             variant="save"
-            title={busy ? 'Saving…' : pendingCompletion ? 'Finish review' : fallbackSaveLabel(manualSelected[0]?.name)}
-            accessibilityLabel={busy ? 'Saving place' : fallbackSaveLabel(manualSelected[0]?.name)}
+            title={busy ? t("Saving…") : pendingCompletion ? t("Finish review") : fallbackSaveLabel(manualSelected[0]?.name)}
+            accessibilityLabel={busy ? t("Saving place") : fallbackSaveLabel(manualSelected[0]?.name)}
             onPress={() => void handleSaveCanonicalCandidates(
               manualSelected,
               'raw_name_search',
@@ -3004,8 +3002,8 @@ function ShareJobDetailScreen() {
         <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
           <Button
             variant="save"
-            title={busy ? 'Saving…' : pendingCompletion ? 'Finish review' : fallbackSaveLabel(confirmationSingle.name)}
-            accessibilityLabel={pendingCompletion ? 'Finish review without saving again' : `Save ${confirmationSingle.name}`}
+            title={busy ? t("Saving…") : pendingCompletion ? t("Finish review") : fallbackSaveLabel(confirmationSingle.name)}
+            accessibilityLabel={pendingCompletion ? t("Finish review without saving again") : `Save ${confirmationSingle.name}`}
             onPress={() => { if (single) void handleSaveStored(single); }}
             disabled={busy || !single}
             style={styles.stickySaveButton}
@@ -3381,6 +3379,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
 // drop the whole app to the global "Something went wrong" boundary — it shows a
 // contained retry + a sanitized diagnostic instead (matches the queue screen).
 export default function ShareJobDetailRoute() {
+  useLocale();
   return (
     <ErrorBoundary
       name="share-job-detail"

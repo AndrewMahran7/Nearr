@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * Send feedback — in-app, founder-led feedback form.
  *
@@ -33,11 +35,12 @@ const CATEGORIES: { key: FeedbackCategory; label: string }[] = [
 ];
 
 export default function FeedbackScreen() {
+  useLocale();
   const router = useRouter();
   const { user } = useAuth();
   const { from } = useLocalSearchParams<{ from?: string }>();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
 
   const [category, setCategory] = useState<FeedbackCategory>('bug');
   const [message, setMessage] = useState('');
@@ -50,7 +53,7 @@ export default function FeedbackScreen() {
 
   async function handleSubmit() {
     if (!message.trim()) {
-      setError('Please enter a message.');
+      setError(t("Please enter a message."));
       return;
     }
     setSending(true);
@@ -74,14 +77,11 @@ export default function FeedbackScreen() {
       <Screen>
         <View style={styles.successWrap}>
           <Text style={[typography.heading, styles.successTitle]}>
-            Thanks &mdash; I&apos;ll take a look.
-          </Text>
+            {t("Thanks â€” I'll take a look.")}</Text>
           <Text style={[typography.body, styles.successBody]}>
-            Every message comes straight to me. Thanks for helping make Nearr
-            better.
-          </Text>
+            {t("Every message comes straight to me. Thanks for helping make Nearr better.")}</Text>
           <View style={{ height: Spacing.lg }} />
-          <Button title="Done" onPress={() => router.back()} />
+          <Button title={t("Done")} onPress={() => router.back()} />
         </View>
       </Screen>
     );
@@ -99,13 +99,10 @@ export default function FeedbackScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Text style={[typography.body, styles.subtitle]}>
-            Something broken, confusing, or missing? Send it here. I read every
-            message.
-          </Text>
+            {t("Something broken, confusing, or missing? Send it here. I read every message.")}</Text>
 
           <Text style={[typography.label, styles.fieldLabel]}>
-            What&apos;s this about?
-          </Text>
+            {t("What's this about?")}</Text>
           <View style={styles.chips}>
             {CATEGORIES.map((c) => {
               const active = c.key === category;
@@ -130,9 +127,9 @@ export default function FeedbackScreen() {
             })}
           </View>
 
-          <Text style={[typography.label, styles.fieldLabel]}>Message</Text>
+          <Text style={[typography.label, styles.fieldLabel]}>{t("Message")}</Text>
           <Input
-            placeholder="Tell me what happened, or what you would love to see..."
+            placeholder={t("Tell me what happened, or what you would love to see...")}
             value={message}
             onChangeText={setMessage}
             multiline
@@ -142,8 +139,7 @@ export default function FeedbackScreen() {
           />
 
           <Text style={[typography.label, styles.fieldLabel]}>
-            Contact email (optional)
-          </Text>
+            {t("Contact email (optional)")}</Text>
           <Input
             placeholder="you@example.com"
             value={email}
@@ -153,8 +149,7 @@ export default function FeedbackScreen() {
             keyboardType="email-address"
           />
           <Text style={[typography.caption, styles.hint]}>
-            Only used if I need to follow up.
-          </Text>
+            {t("Only used if I need to follow up.")}</Text>
 
           {error ? (
             <Text style={[typography.body, styles.error]}>{error}</Text>
@@ -162,7 +157,7 @@ export default function FeedbackScreen() {
 
           <View style={{ height: Spacing.lg }} />
           <Button
-            title="Send feedback"
+            title={t("Send feedback")}
             onPress={handleSubmit}
             loading={sending}
             disabled={!canSubmit}

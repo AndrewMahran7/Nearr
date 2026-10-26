@@ -339,12 +339,16 @@ export async function extractShareOnServer(
       headers: {
         'content-type': 'application/json',
         authorization: `Bearer ${accessToken}`,
+        'x-nearr-contract': 'global-v1',
         'x-nearr-request-id': requestId,
       },
       body: JSON.stringify({ url, accessToken, mode: 'extract' }),
       signal: controller.signal,
     });
     if (!response.ok) {
+      const rejected = await response.json().catch(() => null) as { error?: unknown; reason?: unknown } | null;
+      const rawCode = rejected?.error ?? rejected?.reason;
+      const restrictionCode = typeof rawCode === 'string' && ['update_required', 'age_eligibility_required', 'ai_permission_required', 'recognition_not_available', 'plus_allowance_exhausted', 'plus_verification_required', 'plus_recognition_ineligible'].includes(rawCode) ? rawCode : null;
       const failureReason: ExtractShareFailureReason =
         response.status === 401 || response.status === 403 ? 'unauthorized' : 'non_200';
       emitShareDebug(options?.onDebugEvent, '[share-debug] BACKEND_RESPONSE_SUMMARY', {
@@ -362,7 +366,7 @@ export async function extractShareOnServer(
         didCallEdgeFunction: true,
         httpStatus: response.status,
         failureReason,
-        failureDetail: `http_${response.status}`,
+        failureDetail: restrictionCode ?? `http_${response.status}`,
       });
       return null;
     }

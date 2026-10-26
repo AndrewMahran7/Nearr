@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useEffect, useRef } from 'react';
 import {
@@ -39,8 +41,9 @@ export function DemoMapCard({
   onPinShown,
   style,
 }: Props) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   const drop = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
@@ -126,7 +129,7 @@ export function DemoMapCard({
 
         <View style={styles.reminderRow}>
           <Feather name="bell" size={16} color={OnboardingColors.orange} />
-          <Text style={styles.reminderText}>Remind me when nearby</Text>
+          <Text style={styles.reminderText}>{t("Remind me when nearby")}</Text>
           <Feather name="chevron-right" size={18} color={OnboardingColors.textMuted} />
         </View>
       </View>

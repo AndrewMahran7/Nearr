@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * SavePlace screen — manual flow.
  *
@@ -85,9 +87,10 @@ async function getPostSaveCount(): Promise<number | null> {
 }
 
 export default function SavePlace() {
+  useLocale();
   const router = useRouter();
   const { colors: Colors, typography: Typography } = useTheme();
-  const styles = useMemo(() => createStyles(Colors), [Colors]);
+  const styles = useMemo(() => createStyles(Colors), [Colors, i18n.language]);
   const params = useLocalSearchParams<{
     q?: string;
     source_url?: string;
@@ -188,7 +191,7 @@ export default function SavePlace() {
     if (radiusMode === 'miles') {
       const n = Number.parseFloat(milesText);
       if (!Number.isFinite(n) || n <= 0) {
-        Alert.alert('Invalid radius', 'Enter a positive number of miles.');
+        Alert.alert(t("Invalid radius"), t("Enter a positive number of miles."));
         return;
       }
       radiusValue = n;
@@ -196,7 +199,7 @@ export default function SavePlace() {
     } else if (radiusMode === 'minutes') {
       const n = Number.parseInt(minutesText, 10);
       if (!Number.isFinite(n) || n <= 0) {
-        Alert.alert('Invalid radius', 'Enter a positive number of minutes.');
+        Alert.alert(t("Invalid radius"), t("Enter a positive number of minutes."));
         return;
       }
       radiusValue = n;
@@ -222,11 +225,11 @@ export default function SavePlace() {
 
       if (result.status === 'saved') hapticSuccess();
       if (result.status === 'duplicate') {
-        Alert.alert('Already saved', `${selected.name} is already in your places.`);
+        Alert.alert(t("Already saved"), `${selected.name} is already in your places.`);
       } else {
         const postSaveCount = await getPostSaveCount();
         if (postSaveCount == null) {
-          Alert.alert('Saved to your map', selected.name);
+          Alert.alert(t("Saved to your map"), selected.name);
         } else {
           const feedback = getActivationSaveFeedback(postSaveCount);
           Alert.alert(feedback.title, feedback.message);
@@ -272,7 +275,7 @@ export default function SavePlace() {
         google_place_id: selected.googlePlaceId ?? null,
         error_code: 'save_threw',
       });
-      Alert.alert('Could not save', 'Your place wasn?t saved. Check your connection and try again.');
+      Alert.alert(t("Could not save"), t("Your place wasn?t saved. Check your connection and try again."));
     } finally {
       setSaving(false);
     }
@@ -285,7 +288,7 @@ export default function SavePlace() {
     return (
       <Screen>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 48 }}>
-        <Text style={[Typography.title, styles.headerTitle]}>Make it a memory</Text>
+        <Text style={[Typography.title, styles.headerTitle]}>{t("Make it a memory")}</Text>
 
         <Card style={styles.confirmCard}>
           <PlaceImage googlePlaceId={selected.googlePlaceId} initialPhotoUrls={selected.photoUrls?.length ? selected.photoUrls : selected.photoUrl ? [selected.photoUrl] : undefined} preferPlacePhoto hydrationPolicy="active_manual_search" width="100%" height={210} borderRadius={Radius.md} accessibilityLabel={`Photo of ${selected.name}`} style={{ marginBottom: 16 }} />
@@ -300,21 +303,21 @@ export default function SavePlace() {
           ) : null}
         </Card>
 
-        <Text style={[Typography.label, styles.sectionLabel]}>Notify me when within</Text>
+        <Text style={[Typography.label, styles.sectionLabel]}>{t("Notify me when within")}</Text>
 
         <View style={styles.radiusGroup}>
           <RadiusOption
-            label="Auto"
+            label={t("Auto")}
             active={radiusMode === 'default'}
             onPress={() => setRadiusMode('default')}
           />
           <RadiusOption
-            label="Miles"
+            label={t("Miles")}
             active={radiusMode === 'miles'}
             onPress={() => setRadiusMode('miles')}
           />
           <RadiusOption
-            label="Minutes"
+            label={t("Minutes")}
             active={radiusMode === 'minutes'}
             onPress={() => setRadiusMode('minutes')}
           />
@@ -340,9 +343,9 @@ export default function SavePlace() {
         ) : null}
 
         <View style={styles.actions}>
-          <Button title="Back" variant="secondary" onPress={clearSelection} disabled={saving} />
+          <Button title={t("Back")} variant="secondary" onPress={clearSelection} disabled={saving} />
           <View style={{ width: Spacing.md }} />
-          <Button title="Save this place" variant="save" onPress={handleSave} loading={saving} style={{ flex: 1 }} />
+          <Button title={t("Save this place")} variant="save" onPress={handleSave} loading={saving} style={{ flex: 1 }} />
         </View>
         </ScrollView>
       </Screen>
@@ -354,20 +357,20 @@ export default function SavePlace() {
   // -----------------------------------------------------------------------
   return (
     <Screen>
-      <Text style={[Typography.title, styles.headerTitle]}>Find somewhere new</Text>
+      <Text style={[Typography.title, styles.headerTitle]}>{t("Find somewhere new")}</Text>
 
       <View style={styles.searchRow}>
         <Input
           value={query}
           onChangeText={setQuery}
-          placeholder="Search for a place"
+          placeholder={t("Search for a place")}
           onSubmitEditing={runSearch}
           returnKeyType="search"
           autoFocus
           style={{ flex: 1 }}
         />
         <View style={{ width: Spacing.sm }} />
-        <Button title="Search" onPress={runSearch} loading={loading} />
+        <Button title={t("Search")} onPress={runSearch} loading={loading} />
       </View>
 
       <FlatList
@@ -420,8 +423,9 @@ function RadiusOption({
   active: boolean;
   onPress: () => void;
 }) {
+  useLocale();
   const { colors: Colors, typography: Typography } = useTheme();
-  const styles = useMemo(() => createStyles(Colors), [Colors]);
+  const styles = useMemo(() => createStyles(Colors), [Colors, i18n.language]);
   return (
     <Pressable
       onPress={onPress}
@@ -452,8 +456,9 @@ function SearchEmptyState({
   lastQuery: string | null;
   onClear: () => void;
 }) {
+  useLocale();
   const { colors: Colors } = useTheme();
-  const styles = useMemo(() => createStyles(Colors), [Colors]);
+  const styles = useMemo(() => createStyles(Colors), [Colors, i18n.language]);
   if (loading) {
     return (
       <View style={styles.emptyBox}>
@@ -467,7 +472,7 @@ function SearchEmptyState({
         <EmptyState
           framed={false}
           variant="error"
-          title="Search failed"
+          title={t("Search failed")}
           body={placesErrorMessage(error)}
           actionTitle="Try again"
           onAction={onClear}
@@ -480,7 +485,7 @@ function SearchEmptyState({
       <View style={styles.emptyBox}>
         <EmptyState
           framed={false}
-          title="No results"
+          title={t("No results")}
           body={`We couldn\u2019t find anything for \u201C${lastQuery}\u201D. Try a more specific name, or include the city.`}
         />
       </View>
@@ -490,7 +495,7 @@ function SearchEmptyState({
     <View style={styles.emptyBox}>
       <EmptyState
         framed={false}
-        title="Search for a place"
+        title={t("Search for a place")}
         body={'Try \u201CJoe\u2019s Pizza Brooklyn\u201D or paste the venue name from a TikTok or Instagram post.'}
       />
     </View>

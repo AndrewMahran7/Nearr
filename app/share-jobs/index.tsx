@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * app/share-jobs/index.tsx — the in-app share-job queue (source of truth).
  *
@@ -112,6 +114,7 @@ import {
 const STALE_PROCESSING_MS = RECOGNITION_LONG_RUNNING_MS;
 
 function RecentAutoSaveImage({ item, readOnly = false }: { item: RecentAutoSave; readOnly?: boolean }) {
+  useLocale();
   const knownPhotos = useMemo(() => item.candidate?.photoUrls?.length
     ? item.candidate.photoUrls
     : item.candidate?.photoUrl ? [item.candidate.photoUrl] : [], [item.candidate]);
@@ -271,6 +274,7 @@ function shouldShowHost(job: ShareJob): boolean {
 export type ActivityPreviewData = { jobs: ShareJob[]; recentAutoSaves: RecentAutoSave[] };
 
 function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewData }) {
+  useLocale();
   const previewActive = __DEV__ && isMapPreviewMode() && !!previewData;
   useEffect(() => {
     recordOnboardingV2RouteDiagnostic('screen_mounted', {
@@ -349,7 +353,7 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
     } catch {
       setClearedIds(previous);
       await refresh();
-      Alert.alert('Could not clear completed items', 'Please try again in a moment.');
+      Alert.alert(t("Could not clear completed items"), t("Please try again in a moment."));
     } finally {
       actionLocksRef.current.delete(lock);
       setActingId(null);
@@ -364,7 +368,7 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
 
     if (isOfflineSession) {
       void trackEvent('queue_empty_failed', { reason: 'offline' });
-      Alert.alert("You're offline", 'Connect to empty Activity.');
+      Alert.alert(t("You're offline"), t("Connect to empty Activity."));
       return;
     }
 
@@ -391,7 +395,7 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
         count: result.archivedCount,
       });
       hapticSuccess();
-      Alert.alert('Activity cleared');
+      Alert.alert(t("Activity cleared"));
     } catch (error) {
       setDismissedIds(previousDismissed);
       setClearedIds(previousCleared);
@@ -411,11 +415,11 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
   function confirmEmptyQueue() {
     if (previewActive) return;
     Alert.alert(
-      'Empty Activity?',
-      "This removes all items from Activity. Your saved places won't be affected.",
+      t("Empty Activity?"),
+      t("This removes all items from Activity. Your saved places won't be affected."),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Empty Activity', style: 'destructive', onPress: () => void emptyQueue() },
+        { text: t("Cancel"), style: 'cancel' },
+        { text: t("Empty Activity"), style: 'destructive', onPress: () => void emptyQueue() },
       ],
     );
   }
@@ -502,7 +506,7 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
     } catch {
       setDismissedIds(previous);
       await refresh();
-      Alert.alert('Could not remove', 'Please try again in a moment.');
+      Alert.alert(t("Could not remove"), t("Please try again in a moment."));
     } finally {
       actionLocksRef.current.delete(lock);
       setActingId(null);
@@ -534,7 +538,7 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
         shouldNavigate,
       );
     } catch (error) {
-      Alert.alert('Could not save', error instanceof Error ? error.message : 'Please try again.');
+      Alert.alert(t("Could not save"), error instanceof Error ? error.message : 'Please try again.');
     } finally {
       actionLocksRef.current.delete(lock);
       setActingId(null);
@@ -556,7 +560,7 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
     } catch {
       setClearedIds(previous);
       await refresh();
-      Alert.alert('Could not remove', 'Please try again in a moment.');
+      Alert.alert(t("Could not remove"), t("Please try again in a moment."));
     } finally {
       actionLocksRef.current.delete(lock);
       setActingId(null);
@@ -598,7 +602,7 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
       });
     } catch (error) {
       restoreSavedPlacesCache(snapshot);
-      Alert.alert('Could not undo', error instanceof Error ? error.message : 'Please try again.');
+      Alert.alert(t("Could not undo"), error instanceof Error ? error.message : 'Please try again.');
     } finally {
       actionLocksRef.current.delete(lock);
       setActingId(null);
@@ -668,23 +672,23 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
     const buttons: Parameters<typeof Alert.alert>[2] = [];
     if (original) {
       buttons.push({
-        text: 'Open original post',
+        text: t("Open original post"),
         onPress: () => {
           Linking.openURL(original).catch(() => {
-            Alert.alert('Could not open link');
+            Alert.alert(t("Could not open link"));
           });
         },
       });
     }
     buttons.push({
-      text: 'Remove from Activity',
+      text: t("Remove from Activity"),
       style: 'destructive',
       onPress: () => void dismissJob(job),
     });
-    buttons.push({ text: 'Keep waiting', style: 'cancel' });
+    buttons.push({ text: t("Keep waiting"), style: 'cancel' });
     Alert.alert(
-      'Still working in the background',
-      "Nearr will let you know when this is ready. You can keep waiting or open the original post.",
+      t("Still working in the background"),
+      t("Nearr will let you know when this is ready. You can keep waiting or open the original post."),
       buttons,
     );
   }
@@ -758,7 +762,7 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
               ? job.candidate_payload.candidates.length
               : 0,
           }}
-          accessibilityLabel="From the original post"
+          accessibilityLabel={t("From the original post")}
         />
         <View style={styles.rowMain}>
           <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={fontScale >= 1.5 ? undefined : 2}>
@@ -797,20 +801,20 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
     | { kind: 'job'; key: string; job: ShareJob }
     | { kind: 'saved'; key: string; item: RecentAutoSave };
   const activityItems: ActivityItem[] = [];
-  if (actionable.length) activityItems.push({ kind: 'section', key: 'check', title: 'Needs your check' }, ...actionable.map(job => ({ kind: 'job' as const, key: job.id, job })));
-  if (processing.length) activityItems.push({ kind: 'section', key: 'finding', title: 'Finding places' }, ...processing.map(job => ({ kind: 'job' as const, key: job.id, job })));
-  if (completedRows.length) activityItems.push({ kind: 'section', key: 'saved', title: 'On your map', completed: true }, ...completedRows.map(item => ({ kind: 'saved' as const, key: item.resultId, item })));
+  if (actionable.length) activityItems.push({ kind: 'section', key: 'check', title: t("Needs your check") }, ...actionable.map(job => ({ kind: 'job' as const, key: job.id, job })));
+  if (processing.length) activityItems.push({ kind: 'section', key: 'finding', title: t("Finding places") }, ...processing.map(job => ({ kind: 'job' as const, key: job.id, job })));
+  if (completedRows.length) activityItems.push({ kind: 'section', key: 'saved', title: t("On your map"), completed: true }, ...completedRows.map(item => ({ kind: 'saved' as const, key: item.resultId, item })));
   function renderActivityItem({ item }: { item: ActivityItem }) {
     if (item.kind === 'section') return <View style={styles.sectionHeader}>
       <Text style={[typography.label, styles.sectionTitle]}>{item.title}</Text>
       {item.completed ? <Pressable onPress={() => void clearCompleted()} disabled={previewActive || !!actingId}
         style={styles.clearCompletedButton} accessibilityRole="button" accessibilityLabel={clearCompletedLabel(clearableCount)}>
-        <Text style={styles.undoAllText}>Clear completed</Text>
+        <Text style={styles.undoAllText}>{t("Clear completed")}</Text>
       </Pressable> : null}
     </View>;
     if (item.kind === 'saved') { const saved = item.item; return <SwipeableRow rowId={'completed:' + saved.resultId}
       availability={{ save: false, dismiss: true, saveBlockedReason: 'already_saved' }}
-      actions={[{ name: 'dismiss', label: 'Remove from Activity' }]} onAction={() => void dismissCompleted(saved)}
+      actions={[{ name: 'dismiss', label: t("Remove from Activity") }]} onAction={() => void dismissCompleted(saved)}
       coordinator={swipeCoordinator} disabled={previewActive || actingId === saved.savedPlaceId || actingId === 'completed:' + saved.resultId || actingId === 'clear-completed'}
       accessibilityLabel={saved.savedPlace.place.name + '. Saved automatically'}>
       {renderRecentAutoSave(saved)}</SwipeableRow>; }
@@ -824,7 +828,7 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
   // available — even while auth restores, when the flag is off, or when empty.
   const header = (
     <ShareJobsHeader
-      title="Activity"
+      title={t("Activity")}
       onBack={goBack}
       backLabel="Close Activity"
       icon="close"
@@ -846,8 +850,8 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
           </View>
         ) : (
           <View style={styles.stateWrap}>
-            <Text style={[typography.heading, styles.emptyTitle]}>Sharing is unavailable</Text>
-            <Text style={[typography.body, styles.emptyBody]}>Shared links open directly for now.</Text>
+            <Text style={[typography.heading, styles.emptyTitle]}>{t("Sharing is unavailable")}</Text>
+            <Text style={[typography.body, styles.emptyBody]}>{t("Shared links open directly for now.")}</Text>
           </View>
         )}
       </ShareJobsSheet>
@@ -863,16 +867,16 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
         showsVerticalScrollIndicator={false} onScrollBeginDrag={() => swipeCoordinator.closeActive()}
         ListHeaderComponent={hasContent ? <View style={styles.pageIntro}>
-          <Text style={[typography.title, styles.pageTitle]}>Finding your places</Text>
-          <Text style={[typography.body, styles.intro]}>From your posts. Into your world.</Text>
-          {previewActive ? <Text style={[typography.caption, { color: colors.accent }]}>Development preview - Read-only fixtures</Text> : null}
+          <Text style={[typography.title, styles.pageTitle]}>{t("Finding your places")}</Text>
+          <Text style={[typography.body, styles.intro]}>{t("From your posts. Into your world.")}</Text>
+          {previewActive ? <Text style={[typography.caption, { color: colors.accent }]}>{t("Development preview - Read-only fixtures")}</Text> : null}
         </View> : null}
-        ListEmptyComponent={loading ? <View style={styles.loadingWrap}><ActivityIndicator color={colors.primary} /><Text style={styles.emptyBody}>Loading your activity…</Text></View> :
+        ListEmptyComponent={loading ? <View style={styles.loadingWrap}><ActivityIndicator color={colors.primary} /><Text style={styles.emptyBody}>{t("Loading your activity…")}</Text></View> :
           <View style={styles.emptyState}>
             <View style={styles.emptyIcon}><Feather name="check" size={22} color={colors.primary} /></View>
-            <Text style={[typography.heading, styles.emptyTitle]}>You're all caught up</Text>
-            <Text style={[typography.body, styles.emptyBody]}>Share a post to find your next place.</Text>
-            <Button title="Back to your map" onPress={returnToNormalMap} style={styles.emptyAction} />
+            <Text style={[typography.heading, styles.emptyTitle]}>{t("You're all caught up")}</Text>
+            <Text style={[typography.body, styles.emptyBody]}>{t("Share a post to find your next place.")}</Text>
+            <Button title={t("Back to your map")} onPress={returnToNormalMap} style={styles.emptyAction} />
           </View>}
       />
     </ShareJobsSheet>
@@ -977,6 +981,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
 // render error) shows a friendly retry + a SANITIZED log line, instead of
 // dropping the whole app to the generic global boundary.
 export default function ShareJobsQueueRoute({ previewData }: { previewData?: ActivityPreviewData } = {}) {
+  useLocale();
   return (
     <ErrorBoundary
       name="share-jobs"

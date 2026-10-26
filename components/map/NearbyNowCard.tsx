@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * NearbyNowCard — the prominent "first recommended place" card shown at the
  * top of the map bottom sheet.
@@ -44,8 +46,9 @@ function iconName(
 }
 
 export function NearbyNowCard({ place, metaLabel, onPress, onGetDirections }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography, i18n.language]);
 
   return (
     <Pressable
@@ -70,7 +73,7 @@ export function NearbyNowCard({ place, metaLabel, onPress, onGetDirections }: Pr
           <View style={styles.statusRow}>
             <View style={styles.greenDot} />
             <Text style={[typography.caption, styles.statusText]}>
-              {metaLabel ?? 'Nearby now'}
+              {metaLabel ?? t("Nearby now")}
             </Text>
             {place.place.category ? (
               <View style={styles.categoryChip}>
@@ -83,7 +86,7 @@ export function NearbyNowCard({ place, metaLabel, onPress, onGetDirections }: Pr
         </View>
       </View>
       <Button
-        title="Get directions"
+        title={t("Get directions")}
         onPress={onGetDirections}
         style={styles.action}
       />

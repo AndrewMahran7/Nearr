@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from './Button';
@@ -41,8 +43,9 @@ export function SetupReminderModal({
   onOpenLocationSettings,
   onDismiss,
 }: Props) {
+  useLocale();
   const { colors, typography, resolvedTheme } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   return (
     <Modal
       visible={visible}
@@ -65,32 +68,30 @@ export function SetupReminderModal({
           <View style={styles.rows}>
             {needs.notifications ? (
               <View style={styles.row}>
-                <Text style={typography.bodyStrong}>Notifications</Text>
+                <Text style={typography.bodyStrong}>{t("Notifications")}</Text>
                 <Text style={[typography.caption, styles.rowBody]}>
-                  Lets Nearr send nearby reminders.
-                </Text>
+                  {t("Lets Nearr send nearby reminders.")}</Text>
               </View>
             ) : null}
 
             {needs.location ? (
               <View style={styles.row}>
-                <Text style={typography.bodyStrong}>Always Location</Text>
+                <Text style={typography.bodyStrong}>{t("Always Location")}</Text>
                 <Text style={[typography.caption, styles.rowBody]}>
-                  Helps Nearr notice when you&apos;re near a place you saved.
-                </Text>
+                  {t("Helps Nearr notice when you're near a place you saved.")}</Text>
               </View>
             ) : null}
           </View>
 
           <View style={styles.actions}>
             {needs.notifications ? (
-              <Button title="Enable Notifications" onPress={onEnableNotifications} />
+              <Button title={t("Enable Notifications")} onPress={onEnableNotifications} />
             ) : null}
 
             {needs.location ? (
               <View style={needs.notifications ? styles.spacedAction : undefined}>
                 <Button
-                  title="Open Location Settings"
+                  title={t("Open Location Settings")}
                   variant={needs.notifications ? 'secondary' : 'primary'}
                   onPress={onOpenLocationSettings}
                 />
@@ -98,7 +99,7 @@ export function SetupReminderModal({
             ) : null}
 
             <View style={styles.spacedAction}>
-              <Button title="Not now" variant="ghost" onPress={onDismiss} />
+              <Button title={t("Not now")} variant="ghost" onPress={onDismiss} />
             </View>
           </View>
         </Card>

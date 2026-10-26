@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -34,6 +36,7 @@ export function NearbyMapExplorerCarousel({
   onClose,
   onHeightChange,
 }: Props) {
+  useLocale();
   const insets = useSafeAreaInsets();
   const wheelItems = useMemo<PlaceBrowseWheelItem[]>(() => items.map((item) => {
     const distance = item.distanceMeters == null || item.sourceType === 'anchor'
@@ -52,16 +55,16 @@ export function NearbyMapExplorerCarousel({
       contextLabel: item.sourceType === 'anchor' ? 'Starting place' : null,
       contextIcon: 'navigation',
     };
-  }), [items]);
-  const byId = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
+  }), [items, i18n.language]);
+  const byId = useMemo(() => new Map(items.map((item) => [item.id, item])), [items, i18n.language]);
   const resolve = (item: PlaceBrowseWheelItem) => byId.get(item.id);
 
   return (
     <PlaceBrowseWheel
       items={wheelItems}
       selectedId={selectedId}
-      title="Explore nearby"
-      accessibilityLabel="Nearby map place cards"
+      title={t("Explore nearby")}
+      accessibilityLabel={t("Nearby map place cards")}
       closeAccessibilityLabel="Back to place details"
       savingItemId={savingItemId}
       positioned

@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo, type ReactNode } from 'react';
 import {
   Pressable,
@@ -45,7 +47,7 @@ export function usePhase1Colors() {
     successSurface: colors.successSurface, danger: colors.danger, action: colors.primary, onAction: colors.textInverse,
     mapLand: resolvedTheme === 'dark' ? '#303A31' : '#EEEBDF',
     mapWater: resolvedTheme === 'dark' ? '#203B42' : '#B8D5D9',
-  }), [colors, resolvedTheme]);
+  }), [colors, resolvedTheme, i18n.language]);
 }
 
 type FrameProps = {
@@ -69,8 +71,9 @@ export function Phase1Frame({
   scroll = true,
   contentStyle,
 }: FrameProps) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   const insets = useSafeAreaInsets();
   const { resolvedTheme } = useTheme();
@@ -89,7 +92,7 @@ export function Phase1Frame({
           <Pressable
             onPress={onBack}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+            accessibilityLabel={t("Go back")}
             hitSlop={8}
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
           >
@@ -102,7 +105,7 @@ export function Phase1Frame({
           </View>
         )}
         {typeof progress === 'number' ? (
-          <Phase1Progress value={progress} label={progressLabel ?? 'Learn progress'} />
+          <Phase1Progress value={progress} label={progressLabel ?? t("Learn progress")} />
         ) : <View />}
         <View style={styles.topBarBalance} />
       </View>
@@ -126,8 +129,9 @@ export function Phase1Frame({
 }
 
 export function Phase1Progress({ value, label }: { value: number; label: string }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   const clamped = Math.max(0, Math.min(1, value));
   return (
@@ -152,8 +156,9 @@ export function Phase1Prompt({
   children: ReactNode;
   light?: boolean;
 }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   return (
     <View style={[styles.prompt, light && styles.promptLight]} accessibilityRole="text">
@@ -164,8 +169,9 @@ export function Phase1Prompt({
 }
 
 export function Phase1PrimaryButton(props: React.ComponentProps<typeof OnboardingPrimaryButton>) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   return <OnboardingPrimaryButton {...props} style={StyleSheet.flatten([styles.primaryButton, props.style])} />;
 }

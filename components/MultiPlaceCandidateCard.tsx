@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
@@ -19,18 +21,19 @@ type Props = {
 
 /** Compact evidence-first candidate card with an independent native gallery gesture surface. */
 export function MultiPlaceCandidateCard({ candidate, meta, selected, alreadySaved, persisted, duplicate, onPress }: Props) {
+  useLocale();
   const { colors } = useTheme();
   const BRAND = { cream: colors.text, orange: colors.accent, muted: colors.textSecondary, border: colors.border, surface: colors.surface, selected: colors.surfaceElevated };
   const styles = createStyles(BRAND);
-  const match = 'Possible match';
+  const match = t('Possible match');
   return (
     <View style={[styles.card, selected && styles.cardSelected, persisted && styles.cardPersisted]}>
       <Pressable
         onPress={onPress}
         disabled={persisted}
         accessibilityRole="radio"
-        accessibilityLabel={[candidate.name, meta, match, alreadySaved ? 'Already saved; this video will be attached' : null].filter(Boolean).join(', ')}
-        accessibilityHint="Selects this candidate for this moment"
+        accessibilityLabel={[candidate.name, meta, match, alreadySaved ? t('Already saved; saving will attach this post') : null].filter(Boolean).join(', ')}
+        accessibilityHint={t("Selects this candidate for this moment")}
         accessibilityState={{ checked: selected, disabled: persisted }}
         style={({ pressed }) => [styles.header, pressed && styles.pressed]}
         testID="candidate-selection-control"
@@ -58,13 +61,13 @@ export function MultiPlaceCandidateCard({ candidate, meta, selected, alreadySave
       {alreadySaved ? (
         <Pressable onPress={onPress} disabled={persisted} accessible={false} style={({ pressed }) => [styles.statusRow, pressed && styles.pressed]}>
           <Feather name="check-circle" size={15} color={BRAND.orange} />
-          <Text style={styles.saved}>{persisted ? 'Already saved · source attached' : 'Already saved · this video will be attached'}</Text>
+          <Text style={styles.saved}>{persisted ? t("Already saved · source attached") : t("Already saved · this video will be attached")}</Text>
         </Pressable>
       ) : persisted ? (
-        <View style={styles.statusRow}><Feather name="check-circle" size={15} color={BRAND.orange} /><Text style={styles.saved}>Saved</Text></View>
+        <View style={styles.statusRow}><Feather name="check-circle" size={15} color={BRAND.orange} /><Text style={styles.saved}>{t("Saved")}</Text></View>
       ) : duplicate ? (
         <Pressable onPress={onPress} accessible={false} style={({ pressed }) => pressed && styles.pressed}>
-          <Text style={styles.duplicate}>Same place selected for another moment · saved once</Text>
+          <Text style={styles.duplicate}>{t("Same place selected for another moment · saved once")}</Text>
         </Pressable>
       ) : null}
     </View>

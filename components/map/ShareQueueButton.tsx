@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * components/map/ShareQueueButton.tsx
  *
@@ -27,9 +29,10 @@ import { useActiveQueueCount } from '@/hooks/useShareJobs';
 import { recordOnboardingV2RouteDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 
 export function ShareQueueButton() {
+  useLocale();
   const router = useRouter();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   const { session, isDevSession } = useAuth();
   const queueCount = useActiveQueueCount();
 
@@ -52,7 +55,7 @@ export function ShareQueueButton() {
       style={({ pressed }) => [styles.pill, pressed ? styles.pressed : null]}
       accessibilityRole="button"
       accessibilityLabel={
-        queueCount > 0 ? `Activity, ${queueCount} current items` : 'Activity'
+        queueCount > 0 ? `Activity, ${queueCount} current items` : t("Activity")
       }
       hitSlop={6}
     >

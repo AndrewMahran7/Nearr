@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -33,8 +35,9 @@ const RECIPIENTS = ['Mia', 'Leo', 'Noor'] as const;
  * Everything is drawn natively — no network or Instagram dependency.
  */
 export function TapShareScreen({ onShareTap, onShareToTap }: Props) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   const { width } = useWindowDimensions();
   const reelWidth = Math.min(300, width - Spacing.xl * 2);
@@ -132,18 +135,18 @@ export function TapShareScreen({ onShareTap, onShareToTap }: Props) {
           <Animated.View
             style={[styles.sharePanel, { transform: [{ translateY: panelTranslateY }] }]}
             accessibilityViewIsModal
-            accessibilityLabel="Simulated Instagram sharing panel"
+            accessibilityLabel={t("Simulated Instagram sharing panel")}
           >
             <View style={styles.grabber} />
             <View style={styles.searchRow}>
               <Feather name="search" size={17} color={stylesTokens.panelMuted} />
-              <Text style={styles.searchText}>Search</Text>
+              <Text style={styles.searchText}>{t("Search")}</Text>
               <View style={styles.peopleButton}>
                 <Feather name="user-plus" size={16} color={stylesTokens.panelText} />
               </View>
             </View>
 
-            <View style={styles.recipients} accessibilityLabel="Example recipients">
+            <View style={styles.recipients} accessibilityLabel={t("Example recipients")}>
               {RECIPIENTS.map((name, index) => (
                 <View key={name} style={styles.recipient}>
                   <View style={[styles.avatar, index === 1 && styles.avatarAlt]}>
@@ -156,7 +159,7 @@ export function TapShareScreen({ onShareTap, onShareToTap }: Props) {
 
             <View style={styles.panelDivider} />
             <View style={styles.actionsRow}>
-              <ActionItem icon="plus-circle" label="Add to story" />
+              <ActionItem icon="plus-circle" label={t("Add to story")} />
               <Animated.View
                 style={{ opacity: actionGlow, transform: [{ scale: actionScale }] }}
               >
@@ -164,16 +167,16 @@ export function TapShareScreen({ onShareTap, onShareToTap }: Props) {
                   onPress={handleShareTo}
                   style={({ pressed }) => [styles.shareToTarget, pressed && styles.shareToPressed]}
                   accessibilityRole="button"
-                  accessibilityLabel="Share to…"
-                  accessibilityHint="Opens the simulated iOS Share Sheet and advances the tutorial"
+                  accessibilityLabel={t("Share to…")}
+                  accessibilityHint={t("Opens the simulated iOS Share Sheet and advances the tutorial")}
                 >
                   <View style={[styles.actionIcon, styles.shareToIcon]}>
                     <Feather name="share" size={21} color={stylesTokens.panelText} />
                   </View>
-                  <Text style={styles.shareToText} numberOfLines={1}>Share to…</Text>
+                  <Text style={styles.shareToText} numberOfLines={1}>{t("Share to…")}</Text>
                 </Pressable>
               </Animated.View>
-              <ActionItem icon="link" label="Copy link" />
+              <ActionItem icon="link" label={t("Copy link")} />
             </View>
           </Animated.View>
         ) : null}
@@ -189,8 +192,9 @@ function ActionItem({
   icon: keyof typeof Feather.glyphMap;
   label: string;
 }) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   return (
     <View style={styles.actionItem} accessibilityElementsHidden>

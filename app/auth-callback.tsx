@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useTheme } from '@/lib/theme';
 import { useEffect, useRef } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
@@ -24,6 +26,7 @@ import { persistNamesFromAuthUser } from '@/services/profileService';
 const AUTH_CALLBACK_SAFETY_MS = 10000;
 
 export default function AuthCallbackScreen() {
+  useLocale();
   const { colors: Colors, typography: Typography } = useTheme();
   const styles = createStyles(Colors);
   const router = useRouter();
@@ -133,10 +136,9 @@ export default function AuthCallbackScreen() {
     <Screen>
       <View style={styles.container}>
         <ActivityIndicator size="small" color={Colors.primary} />
-        <Text style={[Typography.heading, styles.title]}>Signing you in...</Text>
+        <Text style={[Typography.heading, styles.title]}>{t("Signing you in...")}</Text>
         <Text style={[Typography.body, styles.subtitle]}>
-          Please wait while Nearr finishes login.
-        </Text>
+          {t("Please wait while Nearr finishes login.")}</Text>
       </View>
     </Screen>
   );

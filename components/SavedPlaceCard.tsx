@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * SavedPlaceCard — one row in the saved-places list.
  *
@@ -68,8 +70,9 @@ export function SavedPlaceCard({
   onRestore,
   metaPrefix,
 }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography, i18n.language]);
   const place = saved.place;
   const source = sourceLabel(saved);
   const locality = splitPlaceAddress(place.formatted_address).locality;
@@ -81,11 +84,11 @@ export function SavedPlaceCard({
 
   function confirmDelete() {
     Alert.alert(
-      'Remove place?',
+      t("Remove place?"),
       `${place.name} will be removed from your saved places.`,
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: onDelete },
+        { text: t("Cancel"), style: 'cancel' },
+        { text: t("Remove"), style: 'destructive', onPress: onDelete },
       ],
     );
   }
@@ -108,11 +111,11 @@ export function SavedPlaceCard({
             </Text>
             {isVisited ? (
               <View style={[styles.badge, styles.badgeVisited]}>
-                <Text style={styles.badgeText}>Visited</Text>
+                <Text style={styles.badgeText}>{t("Visited")}</Text>
               </View>
             ) : isArchived ? (
               <View style={[styles.badge, styles.badgeArchived]}>
-                <Text style={styles.badgeText}>Archived</Text>
+                <Text style={styles.badgeText}>{t("Archived")}</Text>
               </View>
             ) : null}
           </View>
@@ -136,13 +139,13 @@ export function SavedPlaceCard({
 
       <View style={styles.actionRow}>
         {onRestore ? (
-          <Button title="Restore" onPress={onRestore} style={styles.primaryAction} />
+          <Button title={t("Restore")} onPress={onRestore} style={styles.primaryAction} />
         ) : (
-          <Button title="Show on map" onPress={onShowOnMap ?? onPress} style={styles.primaryAction} />
+          <Button title={t("Show on map")} onPress={onShowOnMap ?? onPress} style={styles.primaryAction} />
         )}
         {onShowOnMap ? (
           <Button
-            title="Details"
+            title={t("Details")}
             variant="secondary"
             onPress={onPress}
             style={styles.secondaryAction}
@@ -161,7 +164,7 @@ export function SavedPlaceCard({
         ) : <View />}
 
         <Pressable onPress={confirmDelete} hitSlop={12} style={styles.deleteBtn}>
-          <Text style={styles.removeText}>Remove</Text>
+          <Text style={styles.removeText}>{t("Remove")}</Text>
         </Pressable>
       </View>
     </Card>

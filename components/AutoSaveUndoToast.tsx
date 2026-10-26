@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
@@ -23,6 +25,7 @@ import {
 } from '@/services/shareJobsService';
 
 export function AutoSaveUndoToast() {
+  useLocale();
   const { session, isDevSession } = useAuth();
   const { state: onboardingState } = useOnboardingV2();
   const userId = session?.user.id ?? null;
@@ -83,7 +86,7 @@ export function AutoSaveUndoToast() {
       });
     } catch (error) {
       restoreSavedPlacesCache(snapshot);
-      Alert.alert('Could not undo', error instanceof Error ? error.message : 'Please try again.');
+      Alert.alert(t("Could not undo"), error instanceof Error ? error.message : 'Please try again.');
     }
   }
 
@@ -94,7 +97,7 @@ export function AutoSaveUndoToast() {
       visible={!!item}
       message={item ? `Saved ${item.savedPlace.place.name} to your map` : ''}
       bottomOffset={92}
-      actionLabel="Undo"
+      actionLabel={t("Undo")}
       onAction={() => void handleUndo()}
       onDismiss={() => setItem(null)}
       durationMs={8000}

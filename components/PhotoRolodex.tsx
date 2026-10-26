@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -86,6 +88,7 @@ export function PhotoRolodexModal({
   onPhotoLoadStart,
   onPhotoError,
 }: Props) {
+  useLocale();
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
@@ -113,7 +116,7 @@ export function PhotoRolodexModal({
   const sideSpacing = Math.max(0, Math.round((viewportWidth - cardWidth) / 2));
   const snapInterval = cardWidth + CARD_GAP;
   const listKey = `photo-rolodex-${openSeed}-${items.length}`;
-  const listItems = useMemo(() => [...items], [items]);
+  const listItems = useMemo(() => [...items], [items, i18n.language]);
 
   useEffect(() => {
     if (!visible) {
@@ -177,10 +180,10 @@ export function PhotoRolodexModal({
         },
       },
     ),
-    [items.length, scrollX, snapInterval],
+    [items.length, scrollX, snapInterval, i18n.language],
   );
 
-  const scrollGesture = useMemo(() => Gesture.Native(), []);
+  const scrollGesture = useMemo(() => Gesture.Native(), [i18n.language]);
   const dismissGesture = useMemo(
     () => Gesture.Pan()
       .activeOffsetY(GALLERY_DISMISS_ACTIVATE_DY)
@@ -204,7 +207,7 @@ export function PhotoRolodexModal({
       .onFinalize((_event, success) => {
         if (!success) dragY.value = reduceMotion ? 0 : withSpring(0, DISMISS_SPRING);
       }),
-    [close, dragY, scrollGesture, viewportHeight, reduceMotion],
+    [close, dragY, scrollGesture, viewportHeight, reduceMotion, i18n.language],
   );
   const contentStyle = useAnimatedStyle(() => ({ transform: [{ translateY: dragY.value }] }));
   const backdropStyle = useAnimatedStyle(() => ({
@@ -248,7 +251,7 @@ export function PhotoRolodexModal({
                 style={[styles.closeButton, { top: insets.top + Spacing.sm }]}
                 onPress={close}
                 accessibilityRole="button"
-                accessibilityLabel="Close photo gallery"
+                accessibilityLabel={t("Close photo gallery")}
                 hitSlop={4}
                 testID="photo-rolodex-close"
               >
@@ -311,7 +314,7 @@ export function PhotoRolodexModal({
                           },
                         ]}>
                           <View style={[styles.photoShell, { width: cardWidth, height: cardHeight }]}>
-                            {failedUris.has(item.uri) ? <View style={styles.unvisitedPhoto}><Feather name="image" size={28} color="#FFFFFF" /><Text style={styles.counterText}>Photo unavailable</Text></View> : !loadOnlyVisited || visitedIndexes.has(index) ? (
+                            {failedUris.has(item.uri) ? <View style={styles.unvisitedPhoto}><Feather name="image" size={28} color="#FFFFFF" /><Text style={styles.counterText}>{t("Photo unavailable")}</Text></View> : !loadOnlyVisited || visitedIndexes.has(index) ? (
                               <Image
                                 source={{ uri: item.uri }}
                                 style={styles.image}
@@ -325,7 +328,7 @@ export function PhotoRolodexModal({
                                 accessibilityLabel={item.accessibilityLabel}
                               />
                             ) : (
-                              <View style={styles.unvisitedPhoto} accessibilityLabel="Photo loads when viewed">
+                              <View style={styles.unvisitedPhoto} accessibilityLabel={t("Photo loads when viewed")}>
                                 <Feather name="image" size={28} color="rgba(255,255,255,0.55)" />
                               </View>
                             )}
@@ -337,13 +340,13 @@ export function PhotoRolodexModal({
                 </GestureDetector>
               </View>
               <View style={[styles.dots, { bottom: insets.bottom + 64 }]}>
-                <Pressable accessibilityRole="button" accessibilityLabel="Previous photo" accessibilityState={{ disabled: safeActiveIndex === 0 }} disabled={safeActiveIndex === 0} onPress={() => goToPhoto(safeActiveIndex - 1)} style={styles.pagingButton}><Feather name="chevron-left" size={22} color={safeActiveIndex === 0 ? '#777777' : '#FFFFFF'} /></Pressable>
+                <Pressable accessibilityRole="button" accessibilityLabel={t("Previous photo")} accessibilityState={{ disabled: safeActiveIndex === 0 }} disabled={safeActiveIndex === 0} onPress={() => goToPhoto(safeActiveIndex - 1)} style={styles.pagingButton}><Feather name="chevron-left" size={22} color={safeActiveIndex === 0 ? '#777777' : '#FFFFFF'} /></Pressable>
                 {items.map((item, index) => (
                   <View key={`dot-${item.key}`} style={[styles.dot, index === safeActiveIndex && styles.dotActive]} />
                 ))}
-                <Pressable accessibilityRole="button" accessibilityLabel="Next photo" accessibilityState={{ disabled: safeActiveIndex === items.length - 1 }} disabled={safeActiveIndex === items.length - 1} onPress={() => goToPhoto(safeActiveIndex + 1)} style={styles.pagingButton}><Feather name="chevron-right" size={22} color={safeActiveIndex === items.length - 1 ? '#777777' : '#FFFFFF'} /></Pressable>
+                <Pressable accessibilityRole="button" accessibilityLabel={t("Next photo")} accessibilityState={{ disabled: safeActiveIndex === items.length - 1 }} disabled={safeActiveIndex === items.length - 1} onPress={() => goToPhoto(safeActiveIndex + 1)} style={styles.pagingButton}><Feather name="chevron-right" size={22} color={safeActiveIndex === items.length - 1 ? '#777777' : '#FFFFFF'} /></Pressable>
               </View>
-              <Text style={[styles.hint, { bottom: insets.bottom + 16 }]}>{activeItem?.footerLabel || 'Swipe down to close'}</Text>
+              <Text style={[styles.hint, { bottom: insets.bottom + 16 }]}>{activeItem?.footerLabel || t("Swipe down to close")}</Text>
             </Reanimated.View>
           </View>
         </GestureDetector>

@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * Grouped nearby-opportunity screen.
  *
@@ -49,13 +51,14 @@ import { getSavedPlace } from '@/services/savedPlacesService';
 import type { SavedPlaceWithPlace } from '@/types';
 
 export default function GroupedOpportunityScreen() {
+  useLocale();
   const { ids } = useLocalSearchParams<{ ids: string }>();
   const router = useRouter();
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography, i18n.language]);
 
-  const savedPlaceIds = useMemo(() => decodeGroupedSavedPlaceIds(ids), [ids]);
+  const savedPlaceIds = useMemo(() => decodeGroupedSavedPlaceIds(ids), [ids, i18n.language]);
   const [places, setPlaces] = useState<SavedPlaceWithPlace[] | null>(null);
 
   const load = useCallback(async () => {
@@ -129,7 +132,7 @@ export default function GroupedOpportunityScreen() {
             {groupedOpportunityTitle(places.length)}
           </Text>
           {places.length > 0 ? (
-            <Text style={styles.subtitle}>You saved all of these. Pick one and go.</Text>
+            <Text style={styles.subtitle}>{t("You saved all of these. Pick one and go.")}</Text>
           ) : null}
         </View>
         {/* Closing is purely a dismissal — nothing is marked, declined, or archived. */}
@@ -137,7 +140,7 @@ export default function GroupedOpportunityScreen() {
           onPress={() => router.back()}
           hitSlop={12}
           accessibilityRole="button"
-          accessibilityLabel="Close"
+          accessibilityLabel={t("Close")}
           style={styles.closeBtn}
         >
           <Feather name="x" size={20} color={colors.text} />
@@ -148,10 +151,9 @@ export default function GroupedOpportunityScreen() {
         <View style={styles.empty}>
           <Feather name="map-pin" size={30} color={colors.textMuted} />
           <Text style={styles.emptyText}>
-            These places aren&apos;t saved anymore.
-          </Text>
+            {t("These places aren't saved anymore.")}</Text>
           <Button
-            title="Back to map"
+            title={t("Back to map")}
             variant="secondary"
             onPress={() => router.replace('/(tabs)/map')}
             style={styles.emptyBtn}
@@ -208,7 +210,7 @@ export default function GroupedOpportunityScreen() {
                   {visited ? (
                     <View style={styles.visitedRow}>
                       <Feather name="check" size={13} color={colors.accent} />
-                      <Text style={styles.visitedText}>You went here</Text>
+                      <Text style={styles.visitedText}>{t("You went here")}</Text>
                     </View>
                   ) : null}
                 </View>

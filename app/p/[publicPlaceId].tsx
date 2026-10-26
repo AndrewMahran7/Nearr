@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -39,6 +41,7 @@ function firstParam(value: string | string[] | undefined): string {
 }
 
 export default function SharedPlaceScreen() {
+  useLocale();
   const params = useLocalSearchParams<{
     publicPlaceId?: string | string[];
     ref?: string | string[];
@@ -47,7 +50,7 @@ export default function SharedPlaceScreen() {
   const router = useRouter();
   const { session, loading: authLoading } = useAuth();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
 
   const requestedId = firstParam(params.publicPlaceId).toLowerCase();
   const referralId = cleanReferralId(firstParam(params.ref));
@@ -157,7 +160,7 @@ export default function SharedPlaceScreen() {
       await rememberSharedPlaceAcquisition(referralId);
       await clearPendingSharedPlaceIntent();
     } catch {
-      Alert.alert('Could not save this place', 'Check your connection and try again.');
+      Alert.alert(t("Could not save this place"), t("Check your connection and try again."));
     } finally {
       setSaving(false);
     }
@@ -180,7 +183,7 @@ export default function SharedPlaceScreen() {
     return (
       <Screen style={styles.center}>
         <ActivityIndicator color={colors.primary} />
-        <Text style={[typography.body, styles.loadingText]}>Opening place…</Text>
+        <Text style={[typography.body, styles.loadingText]}>{t("Opening place…")}</Text>
       </Screen>
     );
   }
@@ -192,10 +195,10 @@ export default function SharedPlaceScreen() {
           <Feather name="map-pin" size={25} color={colors.primary} />
         </View>
         <Text style={[typography.heading, styles.errorTitle]}>
-          {error === 'not_found' ? "This place isn't here" : 'This place is unavailable'}
+          {error === 'not_found' ? t("This place isn't here") : t("This place is unavailable")}
         </Text>
-        <Text style={[typography.body, styles.muted]}>The link may be incomplete, or the place may have moved.</Text>
-        <Button title="Back to Nearr" onPress={() => router.replace('/')} style={styles.fullButton} />
+        <Text style={[typography.body, styles.muted]}>{t("The link may be incomplete, or the place may have moved.")}</Text>
+        <Button title={t("Back to Nearr")} onPress={() => router.replace('/')} style={styles.fullButton} />
       </Screen>
     );
   }
@@ -222,13 +225,13 @@ export default function SharedPlaceScreen() {
           <View style={styles.pinOuter}>
             <Ionicons name="location" size={42} color={colors.primary} />
           </View>
-          <Text style={styles.brand}>NEARR PLACE</Text>
+          <Text style={styles.brand}>{t("NEARR PLACE")}</Text>
         </View>
 
         <View style={styles.card}>
           <Text style={[typography.heading, styles.title]}>{place.name}</Text>
           <Text style={[typography.body, styles.location]}>
-            {location || place.displayAddress || 'Saved on Nearr'}
+            {location || place.displayAddress || t("Saved on Nearr")}
           </Text>
           {place.placeType || place.category ? (
             <View style={styles.pill}>
@@ -243,20 +246,19 @@ export default function SharedPlaceScreen() {
           ) : null}
 
           <Text style={[typography.body, styles.promise]}>
-            Save places you find online and remember them on your map.
-          </Text>
+            {t("Save places you find online and remember them on your map.")}</Text>
 
           <Button
-            title={ownedSave ? 'Saved' : 'Save to my map'}
+            title={ownedSave ? t("Saved") : t("Save to my map")}
             onPress={ownedSave ? openSaved : () => void performSave()}
             loading={saving}
             style={styles.fullButton}
           />
           {ownedSave ? (
-            <Button title="View on my map" variant="secondary" onPress={openSaved} style={styles.fullButton} />
+            <Button title={t("View on my map")} variant="secondary" onPress={openSaved} style={styles.fullButton} />
           ) : null}
           {original.kind === 'open' ? (
-            <Button title="Original video" variant="ghost" onPress={openOriginal} style={styles.fullButton} />
+            <Button title={t("Original video")} variant="ghost" onPress={openOriginal} style={styles.fullButton} />
           ) : null}
         </View>
       </ScrollView>

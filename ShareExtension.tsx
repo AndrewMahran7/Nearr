@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * ShareExtension — root component for the iOS Share Extension target.
  *
@@ -405,6 +407,7 @@ type UiState =
   | { kind: 'error'; message: string };
 
 export default function ShareExtension(props: ExtensionInitialProps) {
+  useLocale();
   const [aiPermissionGrantedUrl, setAiPermissionGrantedUrl] = useState<string | null>(null);
   const sharedUrl = pickSharedUrl(props);
   // The native controller only extracts the shared payload. Neither backend
@@ -427,6 +430,7 @@ export default function ShareExtension(props: ExtensionInitialProps) {
 }
 
 function LegacyShareExtension(props: ExtensionInitialProps) {
+  useLocale();
   const { colors, styles } = useExtensionStyles();
   // Guard against React 18 strict-mode double-invocation: only fire the
   // host-app handoff once per extension instantiation.
@@ -534,7 +538,7 @@ function LegacyShareExtension(props: ExtensionInitialProps) {
     return (
       <View style={styles.container}>
         <Text style={styles.checkmark}>✓</Text>
-        <Text style={styles.label}>{ui.message ?? 'Saved to Nearr'}</Text>
+        <Text style={styles.label}>{ui.message ?? t("Saved to Nearr")}</Text>
         {diagPanel}
       </View>
     );
@@ -552,7 +556,7 @@ function LegacyShareExtension(props: ExtensionInitialProps) {
   return (
     <View style={styles.container}>
       <ActivityIndicator color={colors.primary} />
-      <Text style={styles.label}>Saving to Nearr…</Text>
+      <Text style={styles.label}>{t("Saving to Nearr…")}</Text>
       {diagPanel}
     </View>
   );
@@ -597,6 +601,7 @@ function AsyncSurface({
   onClose: () => void;
   showClose?: boolean;
 }) {
+  useLocale();
   const { asyncStyles } = useExtensionStyles();
   return (
     <SafeAreaView style={asyncStyles.surface}>
@@ -608,7 +613,7 @@ function AsyncSurface({
             pressed ? asyncStyles.closeBtnPressed : null,
           ]}
           accessibilityRole="button"
-          accessibilityLabel="Cancel"
+          accessibilityLabel={t("Cancel")}
           hitSlop={8}
         >
           <Text style={asyncStyles.closeIcon}>×</Text>
@@ -631,6 +636,7 @@ function AsyncSurface({
  * final frame immediately when Reduce Motion is enabled.
  */
 function SavedMark() {
+  useLocale();
   const { asyncStyles } = useExtensionStyles();
   const reduceMotion = useReduceMotion();
   const progress = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
@@ -676,7 +682,7 @@ function SavedMark() {
       style={asyncStyles.markWrap}
       accessible
       accessibilityRole="image"
-      accessibilityLabel="Sent to Nearr"
+      accessibilityLabel={t("Sent to Nearr")}
     >
       {!reduceMotion ? (
         <Animated.View
@@ -695,6 +701,7 @@ function SavedMark() {
 }
 
 function AsyncShareExtension(props: ExtensionInitialProps) {
+  useLocale();
   const { colors, asyncStyles } = useExtensionStyles();
   const receipt = shareReceiptSource(pickSharedUrl(props), props.text, props.images);
   const acceptedFeedbackRef = useRef(false);
@@ -961,17 +968,17 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
   if (ui.kind === 'needs_setup') {
     return (
       <AsyncSurface onClose={finish}>
-        <Text style={asyncStyles.title}>Open Nearr once to finish setup</Text>
+        <Text style={asyncStyles.title}>{t("Open Nearr once to finish setup")}</Text>
         <Text style={asyncStyles.subtle}>
-          {'Open Nearr once so it can connect sharing. After that, sharing works without opening the app.'}
+          {t("Open Nearr once so it can connect sharing. After that, sharing works without opening the app.")}
         </Text>
         <Pressable
           style={asyncStyles.primaryBtn}
           onPress={() => openHost('needs_setup')}
           accessibilityRole="button"
-          accessibilityLabel="Open Nearr"
+          accessibilityLabel={t("Open Nearr")}
         >
-          <Text style={asyncStyles.primaryText}>Open Nearr</Text>
+          <Text style={asyncStyles.primaryText}>{t("Open Nearr")}</Text>
         </Pressable>
       </AsyncSurface>
     );
@@ -979,15 +986,15 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
   if (ui.kind === 'signed_out') {
     return (
       <AsyncSurface onClose={finish}>
-        <Text style={asyncStyles.title}>Open Nearr to sign in</Text>
-        <Text style={asyncStyles.subtle}>{'Sign in once so Nearr can save places you share.'}</Text>
+        <Text style={asyncStyles.title}>{t("Open Nearr to sign in")}</Text>
+        <Text style={asyncStyles.subtle}>{t("Sign in once so Nearr can save places you share.")}</Text>
         <Pressable
           style={asyncStyles.primaryBtn}
           onPress={() => openHost('signed_out')}
           accessibilityRole="button"
-          accessibilityLabel="Open Nearr"
+          accessibilityLabel={t("Open Nearr")}
         >
-          <Text style={asyncStyles.primaryText}>Open Nearr</Text>
+          <Text style={asyncStyles.primaryText}>{t("Open Nearr")}</Text>
         </Pressable>
       </AsyncSurface>
     );
@@ -995,17 +1002,17 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
   if (ui.kind === 'session_expired') {
     return (
       <AsyncSurface onClose={finish}>
-        <Text style={asyncStyles.title}>Open Nearr to finish saving</Text>
+        <Text style={asyncStyles.title}>{t("Open Nearr to finish saving")}</Text>
         <Text style={asyncStyles.subtle}>
-          {'Your session needs a refresh. Open Nearr and we\u2019ll save this post.'}
+          {t("Your session needs a refresh. Open Nearr and we’ll save this post.")}
         </Text>
         <Pressable
           style={asyncStyles.primaryBtn}
           onPress={() => openHost('session_expired')}
           accessibilityRole="button"
-          accessibilityLabel="Open Nearr"
+          accessibilityLabel={t("Open Nearr")}
         >
-          <Text style={asyncStyles.primaryText}>Open Nearr</Text>
+          <Text style={asyncStyles.primaryText}>{t("Open Nearr")}</Text>
         </Pressable>
       </AsyncSurface>
     );
@@ -1016,18 +1023,17 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
     // The code is shown because only a developer ever sees this screen.
     return (
       <AsyncSurface onClose={finish} showClose={false}>
-        <Text style={asyncStyles.title}>Sharing is unavailable</Text>
+        <Text style={asyncStyles.title}>{t("Sharing is unavailable")}</Text>
         <Text style={asyncStyles.subtle}>
-          Nothing was sent. Close this and try again after Nearr has been updated.
-          {areDeveloperToolsVisible() ? ` Development configuration: ${ui.codes}` : ''}
+          {t("Nothing was sent. Close this and try again after Nearr has been updated.")}{areDeveloperToolsVisible() ? ` Development configuration: ${ui.codes}` : ''}
         </Text>
         <Pressable
           style={asyncStyles.secondaryBtn}
           onPress={finish}
           accessibilityRole="button"
-          accessibilityLabel="Close"
+          accessibilityLabel={t("Close")}
         >
-          <Text style={asyncStyles.secondaryText}>Close</Text>
+          <Text style={asyncStyles.secondaryText}>{t("Close")}</Text>
         </Pressable>
       </AsyncSurface>
     );

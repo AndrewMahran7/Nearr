@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -21,8 +23,9 @@ export function LegalAgreementModal({
   onAgree,
   agreeing = false,
 }: Props) {
+  useLocale();
   const { colors, typography, resolvedTheme } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography, i18n.language]);
   const [agreed, setAgreed] = useState(false);
 
   useEffect(() => {
@@ -39,18 +42,17 @@ export function LegalAgreementModal({
     >
       <View style={styles.backdrop}>
         <Card style={styles.card}>
-          <Text style={typography.heading}>Before you continue</Text>
+          <Text style={typography.heading}>{t("Before you continue")}</Text>
           <Text style={[typography.body, styles.body]}>
-            Please review and accept Nearr&apos;s Terms of Service and Privacy Policy to continue.
-          </Text>
+            {t("Please review and accept Nearr's Terms of Service and Privacy Policy to continue.")}</Text>
 
           <ScrollView style={styles.links} contentContainerStyle={styles.linksContent}>
             <Pressable style={styles.linkRow} onPress={onViewTerms}>
-              <Text style={typography.bodyStrong}>View Terms</Text>
+              <Text style={typography.bodyStrong}>{t("View Terms")}</Text>
               <Text style={styles.chevron}>›</Text>
             </Pressable>
             <Pressable style={styles.linkRow} onPress={onViewPrivacy}>
-              <Text style={typography.bodyStrong}>View Privacy Policy</Text>
+              <Text style={typography.bodyStrong}>{t("View Privacy Policy")}</Text>
               <Text style={styles.chevron}>›</Text>
             </Pressable>
           </ScrollView>
@@ -60,13 +62,12 @@ export function LegalAgreementModal({
               {agreed ? <Text style={styles.checkboxTick}>✓</Text> : null}
             </View>
             <Text style={[typography.body, styles.checkboxText]}>
-              I agree to the Terms of Service and Privacy Policy.
-            </Text>
+              {t("I agree to the Terms of Service and Privacy Policy.")}</Text>
           </Pressable>
 
           <View style={styles.actions}>
             <Button
-              title="Agree and continue"
+              title={t("Agree and continue")}
               onPress={onAgree}
               disabled={!agreed || agreeing}
               loading={agreeing}

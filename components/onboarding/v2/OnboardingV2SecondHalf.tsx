@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -31,6 +33,7 @@ import { onboardingPhase2PracticeFromFixtureId } from '@/lib/onboardingPhase2Pra
 import { offlineOnboardingAsset } from '@/onboarding/assets/offlineOnboardingAssets';
 
 export function OnboardingV2SecondHalf({ state }: { state: OnboardingV2State }) {
+  useLocale();
   if (state.stage === 'why_nearr') return <ShareEducationScreen state={state} />;
   if (state.stage === 'nearby_value' || state.stage === 'location_education') return <NearbyPermissionScreen state={state} />;
   if (state.stage === 'location_background_education') return <BackgroundLocationScreen state={state} />;
@@ -42,21 +45,23 @@ export function OnboardingV2SecondHalf({ state }: { state: OnboardingV2State }) 
 }
 
 function ShareEducationScreen({ state }: { state: OnboardingV2State }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
-  return <Phase1Frame progress={0.73} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title="Set up nearby reminders" onPress={() => void continueOnboardingV2ToNearbyValue()} />}>
+  return <Phase1Frame progress={0.73} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title={t("Set up nearby reminders")} onPress={() => void continueOnboardingV2ToNearbyValue()} />}>
     <View style={styles.platformHero}><Feather name="map" size={35} color={Phase1Colors.onOrange} /></View>
-    <Text style={styles.eyebrow}>YOUR SAVES HAVE A HOME</Text>
-    <Text style={styles.headline}>Bring a saved place back when it matters.</Text>
-    <Text style={styles.body}>Your map keeps the place, its original post, and directions together. Nearby reminders are optional and require separate permission.</Text>
+    <Text style={styles.eyebrow}>{t("YOUR SAVES HAVE A HOME")}</Text>
+    <Text style={styles.headline}>{t("Bring a saved place back when it matters.")}</Text>
+    <Text style={styles.body}>{t("Your map keeps the place, its original post, and directions together. Nearby reminders are optional and require separate permission.")}</Text>
     <View style={styles.valueCard}><Feather name="check-circle" size={20} color={Phase1Colors.success} /><View style={styles.flex}><Text style={styles.valueTitle}>{painPointValueCopy(state.painPoint)}</Text><Text style={styles.valueBody}>{desiredValueCopy(state.desiredValue)}</Text></View></View>
   </Phase1Frame>;
 }
 
 function NearbyPermissionScreen({ state }: { state: OnboardingV2State }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   const [requestingOsPermission, setRequestingOsPermission] = useState(false);
   const operationRef = useRef(false);
@@ -81,17 +86,18 @@ function NearbyPermissionScreen({ state }: { state: OnboardingV2State }) {
       operationRef.current = false;
     }
   };
-  return <Phase1Frame progress={0.8} progressLabel="Onboarding progress" footer={<View style={styles.actions}><Phase1PrimaryButton title="Allow while using Nearr" onPress={() => void choose(true)} loading={requestingOsPermission} /><Pressable disabled={requestingOsPermission} onPress={() => void choose(false)} accessibilityRole="button" style={styles.skipButton}><Text style={styles.skipText}>Not now</Text></Pressable></View>}>
-    <Text style={styles.eyebrow}>USEFUL AT THE RIGHT MOMENT</Text><Text style={styles.headline}>Remember places when you're nearby.</Text>
-    <Text style={styles.body}>Location can connect your saved map to what is close—for example, {nearbyExample(state.selectedInterests).toLowerCase()}.</Text>
-    <View style={styles.radar} accessible accessibilityLabel={`Illustrative nearby-reminder example using ${state.tutorialResult?.place.name ?? 'a saved place'}; not a live distance`}><View style={styles.exampleBadge}><Text style={styles.exampleBadgeText}>EXAMPLE · NOT LIVE DISTANCE</Text></View><View style={styles.radarRingLarge} /><View style={styles.radarRingSmall} /><View style={styles.youDot}><Feather name="navigation" size={18} color={Phase1Colors.onOrange} /></View><View style={styles.savedNearby}><Feather name="map-pin" size={23} color={Phase1Colors.onOrange} /><Text style={styles.savedNearbyText} numberOfLines={1}>{state.tutorialResult?.place.name}</Text><Text style={styles.savedNearbyMeta}>saved place example</Text></View></View>
-    <View style={styles.privacyCard}><Feather name="shield" size={19} color={Phase1Colors.success} /><Text style={styles.privacyText}>First, Nearr needs location while the app is open. Background access is explained separately. Your map works if you decline.</Text></View>
+  return <Phase1Frame progress={0.8} progressLabel="Onboarding progress" footer={<View style={styles.actions}><Phase1PrimaryButton title={t("Allow while using Nearr")} onPress={() => void choose(true)} loading={requestingOsPermission} /><Pressable disabled={requestingOsPermission} onPress={() => void choose(false)} accessibilityRole="button" style={styles.skipButton}><Text style={styles.skipText}>{t("Not now")}</Text></Pressable></View>}>
+    <Text style={styles.eyebrow}>{t("USEFUL AT THE RIGHT MOMENT")}</Text><Text style={styles.headline}>{t("Remember places when you're nearby.")}</Text>
+    <Text style={styles.body}>{t("Location can connect your saved map to what is close—for example, ")}{nearbyExample(state.selectedInterests).toLowerCase()}.</Text>
+    <View style={styles.radar} accessible accessibilityLabel={`Illustrative nearby-reminder example using ${state.tutorialResult?.place.name ?? 'a saved place'}; not a live distance`}><View style={styles.exampleBadge}><Text style={styles.exampleBadgeText}>{t("EXAMPLE · NOT LIVE DISTANCE")}</Text></View><View style={styles.radarRingLarge} /><View style={styles.radarRingSmall} /><View style={styles.youDot}><Feather name="navigation" size={18} color={Phase1Colors.onOrange} /></View><View style={styles.savedNearby}><Feather name="map-pin" size={23} color={Phase1Colors.onOrange} /><Text style={styles.savedNearbyText} numberOfLines={1}>{state.tutorialResult?.place.name}</Text><Text style={styles.savedNearbyMeta}>{t("saved place example")}</Text></View></View>
+    <View style={styles.privacyCard}><Feather name="shield" size={19} color={Phase1Colors.success} /><Text style={styles.privacyText}>{t("First, Nearr needs location while the app is open. Background access is explained separately. Your map works if you decline.")}</Text></View>
   </Phase1Frame>;
 }
 
 function BackgroundLocationScreen({ state }: { state: OnboardingV2State }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   const [busy, setBusy] = useState(false);
   const operationRef = useRef(false);
@@ -142,22 +148,23 @@ function BackgroundLocationScreen({ state }: { state: OnboardingV2State }) {
   );
 
   return <Phase1Frame progress={0.84} progressLabel="Onboarding progress" footer={<View style={styles.actions}>
-    <Phase1PrimaryButton title={needsSettings ? 'Open Settings' : 'Allow background location'} onPress={() => void (needsSettings ? openSettings() : request())} loading={busy} />
-    <Pressable disabled={busy} onPress={continueWithout} accessibilityRole="button" style={styles.skipButton}><Text style={styles.skipText}>{needsSettings ? 'Continue without background reminders' : 'Not now'}</Text></Pressable>
+    <Phase1PrimaryButton title={needsSettings ? t("Open Settings") : t("Allow background location")} onPress={() => void (needsSettings ? openSettings() : request())} loading={busy} />
+    <Pressable disabled={busy} onPress={continueWithout} accessibilityRole="button" style={styles.skipButton}><Text style={styles.skipText}>{needsSettings ? t("Continue without background reminders") : t("Not now")}</Text></Pressable>
   </View>}>
     <View style={styles.heroIcon}><Feather name="map-pin" size={32} color={Phase1Colors.onOrange} /></View>
-    <Text style={styles.eyebrow}>REMEMBER PLACES LATER</Text>
-    <Text style={styles.headline}>Get a reminder even when Nearr isn't open.</Text>
-    <Text style={styles.body}>Allow background location so Nearr can notice when a saved place is nearby. The next control uses the supported system permission or Settings screen.</Text>
-    {Platform.OS === 'ios' ? <PermissionResultNote text="If you chose Allow Once, iOS may not show another prompt now. Nearr will verify the actual background status; you can enable Always in Settings." /> : null}
-    {Platform.OS === 'android' ? <PermissionResultNote text="On newer Android versions, the system may take you to Settings to choose Allow all the time." /> : null}
-    {needsSettings ? <PermissionResultNote text="Background access is not enabled. Saving and browsing still work; choose Open Settings to recover, or continue without reminders." /> : null}
+    <Text style={styles.eyebrow}>{t("REMEMBER PLACES LATER")}</Text>
+    <Text style={styles.headline}>{t("Get a reminder even when Nearr isn't open.")}</Text>
+    <Text style={styles.body}>{t("Allow background location so Nearr can notice when a saved place is nearby. The next control uses the supported system permission or Settings screen.")}</Text>
+    {Platform.OS === 'ios' ? <PermissionResultNote text={t("If you chose Allow Once, iOS may not show another prompt now. Nearr will verify the actual background status; you can enable Always in Settings.")} /> : null}
+    {Platform.OS === 'android' ? <PermissionResultNote text={t("On newer Android versions, the system may take you to Settings to choose Allow all the time.")} /> : null}
+    {needsSettings ? <PermissionResultNote text={t("Background access is not enabled. Saving and browsing still work; choose Open Settings to recover, or continue without reminders.")} /> : null}
   </Phase1Frame>;
 }
 
 function NotificationEducationScreen({ state }: { state: OnboardingV2State }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   const [requestingOsPermission, setRequestingOsPermission] = useState(false);
   const operationRef = useRef(false);
@@ -178,16 +185,17 @@ function NotificationEducationScreen({ state }: { state: OnboardingV2State }) {
       operationRef.current = false;
     }
   };
-  return <Phase1Frame progress={0.87} progressLabel="Onboarding progress" footer={<View style={styles.actions}><Phase1PrimaryButton title="Notify me" onPress={() => void choose(true)} loading={requestingOsPermission} /><Pressable disabled={requestingOsPermission} onPress={() => void choose(false)} accessibilityRole="button" style={styles.skipButton}><Text style={styles.skipText}>Not now</Text></Pressable></View>}>
-    <View style={styles.heroIcon}><Feather name="bell" size={32} color={Phase1Colors.onOrange} /></View><Text style={styles.eyebrow}>A QUIET HEADS-UP</Text><Text style={styles.headline}>Know when a saved place is nearby.</Text><Text style={styles.body}>Nearr can remind you at a useful moment. You stay in control in Settings.</Text>
-    {state.locationForegroundResult !== 'granted' ? <PermissionResultNote text="Location is off, so nearby alerts will wait. Your map still works." /> : state.locationBackgroundResult !== 'granted' ? <PermissionResultNote text="Only in-app location is enabled. Notifications alone cannot enable background nearby reminders." /> : null}
-    <View style={styles.notificationCard} accessible accessibilityLabel={`Example Nearr notification for ${nearbyExample(state.selectedInterests)}`}><View style={styles.notificationHeader}><Image source={require('../../../assets/icon.png')} style={styles.notificationLogo} /><Text style={styles.notificationApp}>NEARR · EXAMPLE</Text><Text style={styles.notificationTime}>now</Text></View><Text style={styles.notificationTitle}>A saved place is nearby</Text><Text style={styles.notificationBody}>{nearbyExample(state.selectedInterests)} is close to your route.</Text></View>
+  return <Phase1Frame progress={0.87} progressLabel="Onboarding progress" footer={<View style={styles.actions}><Phase1PrimaryButton title={t("Notify me")} onPress={() => void choose(true)} loading={requestingOsPermission} /><Pressable disabled={requestingOsPermission} onPress={() => void choose(false)} accessibilityRole="button" style={styles.skipButton}><Text style={styles.skipText}>{t("Not now")}</Text></Pressable></View>}>
+    <View style={styles.heroIcon}><Feather name="bell" size={32} color={Phase1Colors.onOrange} /></View><Text style={styles.eyebrow}>{t("A QUIET HEADS-UP")}</Text><Text style={styles.headline}>{t("Know when a saved place is nearby.")}</Text><Text style={styles.body}>{t("Nearr can remind you at a useful moment. You stay in control in Settings.")}</Text>
+    {state.locationForegroundResult !== 'granted' ? <PermissionResultNote text={t("Location is off, so nearby alerts will wait. Your map still works.")} /> : state.locationBackgroundResult !== 'granted' ? <PermissionResultNote text={t("Only in-app location is enabled. Notifications alone cannot enable background nearby reminders.")} /> : null}
+    <View style={styles.notificationCard} accessible accessibilityLabel={`Example Nearr notification for ${nearbyExample(state.selectedInterests)}`}><View style={styles.notificationHeader}><Image source={require('../../../assets/icon.png')} style={styles.notificationLogo} /><Text style={styles.notificationApp}>{t("NEARR · EXAMPLE")}</Text><Text style={styles.notificationTime}>{t("now")}</Text></View><Text style={styles.notificationTitle}>{t("A saved place is nearby")}</Text><Text style={styles.notificationBody}>{nearbyExample(state.selectedInterests)} {t(" is close to your route.")}</Text></View>
   </Phase1Frame>;
 }
 
 function MakingNearrYoursScreen({ state }: { state: OnboardingV2State }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   const startedRef = useRef(false);
   useEffect(() => {
@@ -208,20 +216,22 @@ function MakingNearrYoursScreen({ state }: { state: OnboardingV2State }) {
   const backgroundReady = state.locationBackgroundResult === 'granted';
   const notificationsReady = state.notificationPermissionResult === 'granted' || state.notificationPermissionResult === 'provisional';
   return <Phase1Frame progress={0.93} progressLabel="Onboarding progress" contentStyle={styles.makingContent}>
-    <Text style={styles.eyebrowCentered}>MAKING NEARR YOURS</Text><Text style={styles.headlineCentered}>Building your map around what matters to you.</Text>
+    <Text style={styles.eyebrowCentered}>{t("MAKING NEARR YOURS")}</Text><Text style={styles.headlineCentered}>{t("Building your map around what matters to you.")}</Text>
     <MapFormationIllustration placeName={state.tutorialResult?.place.name ?? 'Your first place'} platform={state.preferredPlatform} interest={state.interest} />
-    <View style={styles.checklist} accessibilityLiveRegion="polite"><SetupRow ready label="Practice place ready" /><SetupRow ready={!!state.sharingRehearsalCompletedAt} label={state.sharingRehearsalCompletedAt ? 'Sharing practice completed' : 'Sharing practice not completed'} neutral={!state.sharingRehearsalCompletedAt} /><SetupRow ready={state.mapHandoffResult === 'ready'} label={mapHandoffLabel(state.mapHandoffResult)} neutral={state.mapHandoffResult !== 'ready'} /><SetupRow ready={foregroundReady} label={foregroundReady ? 'Location while using Nearr allowed' : 'In-app location not allowed'} neutral={!foregroundReady} /><SetupRow ready={backgroundReady} label={backgroundReady ? 'Background location allowed' : 'Background location not allowed'} neutral={!backgroundReady} /><SetupRow ready={notificationsReady} label={notificationsReady ? 'Notifications allowed' : 'Notifications not allowed'} neutral={!notificationsReady} /><SetupRow ready={state.reminderInitializationResult === 'ready'} label={reminderInitializationLabel(state.reminderInitializationResult)} neutral={state.reminderInitializationResult !== 'ready'} /></View>
+    <View style={styles.checklist} accessibilityLiveRegion="polite"><SetupRow ready label={t("Practice place ready")} /><SetupRow ready={!!state.sharingRehearsalCompletedAt} label={state.sharingRehearsalCompletedAt ? t("Sharing practice completed") : t("Sharing practice not completed")} neutral={!state.sharingRehearsalCompletedAt} /><SetupRow ready={state.mapHandoffResult === 'ready'} label={mapHandoffLabel(state.mapHandoffResult)} neutral={state.mapHandoffResult !== 'ready'} /><SetupRow ready={foregroundReady} label={foregroundReady ? t("Location while using Nearr allowed") : t("In-app location not allowed")} neutral={!foregroundReady} /><SetupRow ready={backgroundReady} label={backgroundReady ? t("Background location allowed") : t("Background location not allowed")} neutral={!backgroundReady} /><SetupRow ready={notificationsReady} label={notificationsReady ? t("Notifications allowed") : t("Notifications not allowed")} neutral={!notificationsReady} /><SetupRow ready={state.reminderInitializationResult === 'ready'} label={reminderInitializationLabel(state.reminderInitializationResult)} neutral={state.reminderInitializationResult !== 'ready'} /></View>
   </Phase1Frame>;
 }
 
 function LegacyGrowingMapAdvance() {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
- useEffect(() => { void continueOnboardingV2AfterMakingNearrYours(); }, []); return <Phase1Frame contentStyle={styles.centered}><Text style={styles.bodyCentered}>Opening your map…</Text></Phase1Frame>; }
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
+ useEffect(() => { void continueOnboardingV2AfterMakingNearrYours(); }, []); return <Phase1Frame contentStyle={styles.centered}><Text style={styles.bodyCentered}>{t("Opening your map…")}</Text></Phase1Frame>; }
 
 function FinalActivationScreen({ state }: { state: OnboardingV2State }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   const [busy, setBusy] = useState(false);
   const { data: savedPlaces } = useSavedPlaces();
@@ -246,22 +256,24 @@ function FinalActivationScreen({ state }: { state: OnboardingV2State }) {
   const tutorialPlace = state.tutorialResult?.place;
   const savedCount = onboardingV2SavedPlaceProgress(state).count;
   return <View style={styles.flex}><Phase1Frame progress={1} progressLabel="Onboarding complete">
-    <View style={styles.finalHeader}><View style={styles.successMark}><Feather name="check" size={24} color={Phase1Colors.onOrange} /></View><View style={styles.progressPill}><Text style={styles.progressText}>{savedCount} {savedCount === 1 ? 'place' : 'places'} saved</Text></View></View>
-    <Text style={styles.eyebrow}>{realPracticeCompleted ? 'YOU JUST DID IT FOR REAL' : state.mapHandoffResult === 'ready' ? 'READY TO EXPLORE' : 'OPENING YOUR MAP'}</Text><Text style={styles.headline}>{realPracticeCompleted ? `${realPlaceName} is on your map.` : state.mapHandoffResult === 'ready' ? 'Your map is ready to use.' : 'Your map is getting ready.'}</Text><Text style={styles.body}>{realPracticeCompleted ? 'Your real shared post became a saved place, with its source and directions kept together.' : `${tutorialPlace?.name ?? 'Your tutorial place'} was a private practice example. Your next real share will use Nearr's live recognition.`}</Text>
-    {realPracticeCompleted ? realThumbnail || practice?.localPreviewAssetKey ? <Image source={realThumbnail ? { uri: realThumbnail } : offlineOnboardingAsset(practice!.localPreviewAssetKey!)} style={styles.realResultHero} resizeMode="cover" accessibilityLabel={`${realPlaceName} saved-place image`} /> : <View style={[styles.realResultHero, styles.realResultFallback]} accessibilityLabel="Saved place image unavailable"><Feather name="map-pin" size={34} color={Phase1Colors.orange} /><Text style={styles.realResultFallbackText}>{realPlaceName}</Text></View> : <MapFormationIllustration placeName={tutorialPlace?.name ?? 'Your first place'} platform={state.preferredPlatform} interest={state.interest} />}
+    <View style={styles.finalHeader}><View style={styles.successMark}><Feather name="check" size={24} color={Phase1Colors.onOrange} /></View><View style={styles.progressPill}><Text style={styles.progressText}>{savedCount} {savedCount === 1 ? t("place") : t("places")} {t(" saved")}</Text></View></View>
+    <Text style={styles.eyebrow}>{realPracticeCompleted ? t("YOU JUST DID IT FOR REAL") : state.mapHandoffResult === 'ready' ? t("READY TO EXPLORE") : t("OPENING YOUR MAP")}</Text><Text style={styles.headline}>{realPracticeCompleted ? `${realPlaceName} is on your map.` : state.mapHandoffResult === 'ready' ? t("Your map is ready to use.") : t("Your map is getting ready.")}</Text><Text style={styles.body}>{realPracticeCompleted ? t("Your real shared post became a saved place, with its source and directions kept together.") : `${tutorialPlace?.name ?? 'Your tutorial place'} was a private practice example. Your next real share will use Nearr's live recognition.`}</Text>
+    {realPracticeCompleted ? realThumbnail || practice?.localPreviewAssetKey ? <Image source={realThumbnail ? { uri: realThumbnail } : offlineOnboardingAsset(practice!.localPreviewAssetKey!)} style={styles.realResultHero} resizeMode="cover" accessibilityLabel={`${realPlaceName} saved-place image`} /> : <View style={[styles.realResultHero, styles.realResultFallback]} accessibilityLabel={t("Saved place image unavailable")}><Feather name="map-pin" size={34} color={Phase1Colors.orange} /><Text style={styles.realResultFallbackText}>{realPlaceName}</Text></View> : <MapFormationIllustration placeName={tutorialPlace?.name ?? 'Your first place'} platform={state.preferredPlatform} interest={state.interest} />}
     <Text style={styles.personalCopy}>{personalizedActivationCopy({ platform: state.preferredPlatform, interest: state.interest })}</Text>
-    <View style={styles.finalActions}><Phase1PrimaryButton title="Explore my map" onPress={() => void finish()} loading={busy} /></View>
-    <View style={styles.backupNote}><Feather name="shield" size={14} color={Phase1Colors.success} /><Text style={styles.backupText}>Your map is backed up to your account.</Text></View>
+    <View style={styles.finalActions}><Phase1PrimaryButton title={t("Explore my map")} onPress={() => void finish()} loading={busy} /></View>
+    <View style={styles.backupNote}><Feather name="shield" size={14} color={Phase1Colors.success} /><Text style={styles.backupText}>{t("Your map is backed up to your account.")}</Text></View>
   </Phase1Frame></View>;
 }
 
 function SetupRow({ label, ready, neutral }: { label: string; ready: boolean; neutral?: boolean }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
  return <View style={styles.setupRow}><View style={[styles.setupIcon, neutral && styles.setupIconNeutral]}><Feather name={ready ? 'check' : 'minus'} size={15} color={neutral ? Phase1Colors.textMuted : Phase1Colors.onOrange} /></View><Text style={[styles.setupLabel, neutral && styles.setupLabelNeutral]}>{label}</Text></View>; }
 function PermissionResultNote({ text }: { text: string }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
  return <View style={styles.permissionResult}><Feather name="info" size={17} color={Phase1Colors.orange} /><Text style={styles.permissionResultText}>{text}</Text></View>; }
 function reminderInitializationLabel(result: OnboardingReminderInitializationResult | null): string {
   if (result === 'ready') return 'Background reminder service ready';

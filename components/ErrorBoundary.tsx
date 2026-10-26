@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * components/ErrorBoundary.tsx
  *
@@ -62,16 +64,17 @@ export class ErrorBoundary extends Component<Props, State> {
 }
 
 function ErrorFallback({ title, body, message, onRetry }: { title?: string; body?: string; message: string; onRetry: () => void }) {
+  useLocale();
   const theme = useOptionalTheme();
   const styles = createStyles(theme?.colors ?? Colors);
   return (
       <View style={styles.container}>
-        <Text style={styles.title}>{title ?? 'Something went wrong'}</Text>
+        <Text style={styles.title}>{title ?? t("Something went wrong")}</Text>
         <Text style={styles.body}>
-          {body ?? 'This screen hit an unexpected error. Try again.'}
+          {body ?? t("This screen hit an unexpected error. Try again.")}
         </Text>
         <Pressable style={styles.button} onPress={onRetry} accessibilityRole="button">
-          <Text style={styles.buttonText}>Try again</Text>
+          <Text style={styles.buttonText}>{t("Try again")}</Text>
         </Pressable>
         {__DEV__ ? <Text style={styles.detail}>{message}</Text> : null}
       </View>

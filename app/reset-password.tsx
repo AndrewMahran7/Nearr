@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -38,6 +40,7 @@ import {
  * every other sign-in method.
  */
 export default function ResetPasswordScreen() {
+  useLocale();
   const router = useRouter();
   const { session, loading } = useAuth();
 
@@ -103,20 +106,19 @@ export default function ResetPasswordScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <OnboardingScreenShell>
-        <Text style={styles.headline}>Reset password</Text>
+        <Text style={styles.headline}>{t("Reset password")}</Text>
         <Text style={styles.subtext}>
-          Choose a new password for your Nearr account.
-        </Text>
+          {t("Choose a new password for your Nearr account.")}</Text>
 
         {linkUnusable ? (
           <View style={styles.card}>
             <View style={styles.icon}>
               <Feather name="alert-circle" size={20} color={OnboardingColors.orange} />
             </View>
-            <Text style={styles.cardTitle}>Link expired</Text>
+            <Text style={styles.cardTitle}>{t("Link expired")}</Text>
             <Text style={styles.cardBody}>{RECOVERY_LINK_EXPIRED_MESSAGE}</Text>
             <OnboardingSecondaryButton
-              title="Back to sign in"
+              title={t("Back to sign in")}
               onPress={() => router.replace('/(onboarding)/account')}
             />
           </View>
@@ -128,14 +130,14 @@ export default function ResetPasswordScreen() {
                 setPassword(value);
                 setErrorMessage(null);
               }}
-              placeholder="New password"
+              placeholder={t("New password")}
               autoComplete="new-password"
               textContentType="newPassword"
               returnKeyType="next"
               editable={!saving && !saved}
               visible={visible}
               onToggleVisible={() => setVisible((v) => !v)}
-              accessibilityLabel="New password"
+              accessibilityLabel={t("New password")}
             />
             <OnboardingPasswordField
               value={confirmPassword}
@@ -143,7 +145,7 @@ export default function ResetPasswordScreen() {
                 setConfirmPassword(value);
                 setErrorMessage(null);
               }}
-              placeholder="Confirm password"
+              placeholder={t("Confirm password")}
               autoComplete="new-password"
               textContentType="newPassword"
               returnKeyType="go"
@@ -151,7 +153,7 @@ export default function ResetPasswordScreen() {
               editable={!saving && !saved}
               visible={visible}
               onToggleVisible={() => setVisible((v) => !v)}
-              accessibilityLabel="Confirm new password"
+              accessibilityLabel={t("Confirm new password")}
             />
 
             {errorMessage ? (
@@ -165,12 +167,11 @@ export default function ResetPasswordScreen() {
 
             {saved ? (
               <Text style={styles.successText} accessibilityRole="alert">
-                Password updated. Taking you back to Nearr…
-              </Text>
+                {t("Password updated. Taking you back to Nearr…")}</Text>
             ) : null}
 
             <OnboardingPrimaryButton
-              title="Update password"
+              title={t("Update password")}
               onPress={() => void handleUpdatePassword()}
               loading={saving}
               disabled={saved}

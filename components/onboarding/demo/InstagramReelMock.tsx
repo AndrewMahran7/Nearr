@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useEffect, useRef } from 'react';
 import {
@@ -55,8 +57,9 @@ export function InstagramReelMock({
   media,
   style,
 }: Props) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   const mediaHeight = Math.round(width * (compact ? 0.82 : 1.02));
   const interactive = highlightShare && !!onSharePress;
@@ -99,10 +102,9 @@ export function InstagramReelMock({
       {!compact ? (
         <View style={styles.caption}>
           <Text style={styles.captionText} numberOfLines={2}>
-            <Text style={styles.captionHandle}>kaitpark </Text>
-            Perfect flat white and the best oat latte in Tokyo
-          </Text>
-          <Text style={styles.comments}>View all 58 comments</Text>
+            <Text style={styles.captionHandle}>{t("kaitpark ")}</Text>
+            {t("Perfect flat white and the best oat latte in Tokyo")}</Text>
+          <Text style={styles.comments}>{t("View all 58 comments")}</Text>
         </View>
       ) : null}
     </View>
@@ -111,8 +113,9 @@ export function InstagramReelMock({
 
 /** Native, tasteful cafe-storefront scene (no gradient lib, no photo asset). */
 function FauxStorefront() {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   return (
     <View style={styles.scene}>
@@ -123,7 +126,7 @@ function FauxStorefront() {
       </View>
       <View style={styles.sign}>
         <Feather name="coffee" size={14} color="#F4D9B8" />
-        <Text style={styles.signText}>ESPRESSO BAR</Text>
+        <Text style={styles.signText}>{t("ESPRESSO BAR")}</Text>
       </View>
       <View style={styles.planterRow}>
         <View style={styles.planter} />
@@ -144,8 +147,9 @@ function RailAction({
   label: string;
   compact?: boolean;
 }) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   return (
     <View style={styles.railAction}>
@@ -171,8 +175,9 @@ function ShareAction({
   interactive?: boolean;
   onPress?: () => void;
 }) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   const pulse = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
@@ -244,8 +249,8 @@ function ShareAction({
             hitSlop={10}
             style={styles.shareTarget}
             accessibilityRole="button"
-            accessibilityLabel="Share this post to Nearr"
-            accessibilityHint="Opens a simulated Instagram sharing panel"
+            accessibilityLabel={t("Share this post to Nearr")}
+            accessibilityHint={t("Opens a simulated Instagram sharing panel")}
           >
             {content}
           </Pressable>
@@ -255,7 +260,7 @@ function ShareAction({
       )}
       {!compact ? (
         <Text style={[styles.railLabel, highlighted && styles.shareRailLabel]}>
-          {highlighted ? 'Share' : '1,404'}
+          {highlighted ? t("Share") : '1,404'}
         </Text>
       ) : null}
     </View>

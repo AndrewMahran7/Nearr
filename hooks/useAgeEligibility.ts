@@ -1,79 +1,61 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { supabase } from '@/lib/supabase';
+import type { EligibilityDeclaration } from '@/lib/globalEligibility';
 
-export type AgeEligibilityState = 'loading' | 'pending' | 'adult' | 'under_18' | 'revoked' | 'error';
-
-function fromServerStatus(status: unknown): AgeEligibilityState {
-  if (status == null) return 'pending';
-  if (status === 'adult_self_declared') return 'adult';
-  if (status === 'under_18' || status === 'revoked') return status;
-  return 'error';
+export type AgeEligibilityState = 'loading' | 'pending' | 'eligible' | 'under_minimum' | 'region_unavailable' | 'revoked' | 'error';
+export type GlobalAccess = { status: AgeEligibilityState; aiAllowed: boolean; aiReason: string; aiPermission: boolean; legalApproved: boolean; termsAccepted: boolean; noticeVersion: string; termsVersion: string };
+const closed: GlobalAccess = { status: 'loading', aiAllowed: false, aiReason: 'eligibility_required', aiPermission: false, legalApproved: false, termsAccepted: false, noticeVersion: '', termsVersion: '' };
+function parseAccess(value: unknown): GlobalAccess {
+  if (!value || typeof value !== 'object') return { ...closed, status: 'error' };
+  const row = value as Record<string, unknown>;
+  const status = ['pending', 'eligible', 'under_minimum', 'region_unavailable', 'revoked'].includes(String(row.status)) ? row.status as AgeEligibilityState : 'error';
+  return { status, aiAllowed: status === 'eligible' && row.aiAllowed === true,
+    aiReason: typeof row.aiReason === 'string' ? row.aiReason : 'eligibility_required', aiPermission: row.aiPermission === true,
+    legalApproved: row.legalApproved === true, termsAccepted: row.termsAccepted === true,
+    noticeVersion: typeof row.noticeVersion === 'string' ? row.noticeVersion : '', termsVersion: typeof row.termsVersion === 'string' ? row.termsVersion : '' };
 }
 
-/** Server state only. A local boolean is never used as authorization. */
+/** Server decision, refreshed on identity change and foreground. Never grants
+ * provider access from the offline onboarding answer or a client boolean. */
 export function useAgeEligibility(userId: string | null, refreshKey: string | null = null) {
-  const [snapshot, setSnapshot] = useState<{ userId: string | null; status: AgeEligibilityState }>({
-    userId: null,
-    status: 'loading',
-  });
+  const [snapshot, setSnapshot] = useState<{ userId: string | null; value: GlobalAccess }>({ userId: null, value: closed });
   const [attempt, setAttempt] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const status = snapshot.userId === userId ? snapshot.status : 'loading';
-
+  const submittingRef = useRef(false);
+  const currentUser = useRef(userId); currentUser.current = userId;
+  const access = snapshot.userId === userId ? snapshot.value : closed;
+  const retry = useCallback(() => setAttempt(value => value + 1), []);
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
-    setSnapshot((previous) => previous.userId === userId
-      ? previous
-      : { userId, status: 'loading' });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+    setSnapshot({ userId, value: closed });
     void (async () => {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10_000);
       try {
-        const { data, error } = await supabase.from('account_age_eligibility')
-          .select('status').eq('user_id', userId).abortSignal(controller.signal).maybeSingle();
-        if (!cancelled) setSnapshot({ userId, status: error ? 'error' : fromServerStatus(data?.status) });
-      } catch {
-        if (!cancelled) setSnapshot({ userId, status: 'error' });
-      } finally {
-        clearTimeout(timeout);
-      }
+        const { data, error } = await supabase.rpc('get_my_global_access').abortSignal(controller.signal);
+        if (!cancelled) setSnapshot({ userId, value: error ? { ...closed, status: 'error' } : parseAccess(data) });
+      } catch { if (!cancelled) setSnapshot({ userId, value: { ...closed, status: 'error' } }); }
+      finally { clearTimeout(timeout); }
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; controller.abort(); clearTimeout(timeout); };
   }, [userId, attempt, refreshKey]);
-
-  const retry = useCallback(() => setAttempt((value) => value + 1), []);
   useEffect(() => {
-    if (!userId) return;
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') retry();
-    });
+    const subscription = AppState.addEventListener('change', state => { if (state === 'active') retry(); });
     return () => subscription.remove();
-  }, [userId, retry]);
-  const declare = useCallback(async (atLeast18: boolean): Promise<boolean> => {
-    if (!userId || submitting) return false;
-    setSubmitting(true);
+  }, [retry]);
+  const declare = useCallback(async (answer: EligibilityDeclaration): Promise<boolean> => {
+    if (!userId || submittingRef.current) return false;
+    submittingRef.current = true; setSubmitting(true);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10_000);
     try {
-      const { data, error } = await supabase.rpc('declare_age_eligibility_18_plus', {
-        p_at_least_18: atLeast18,
-      }).abortSignal(controller.signal);
-      if (error || typeof data !== 'string') {
-        retry();
-        return false;
-      }
-      setSnapshot({ userId, status: fromServerStatus(data) });
-      return true;
-    } catch {
-      retry();
-      return false;
-    } finally {
-      clearTimeout(timeout);
-      setSubmitting(false);
-    }
-  }, [userId, submitting, retry]);
-
-  return { status, submitting, retry, declare };
+      const { error } = await supabase.rpc('declare_global_eligibility', { p_age_band: answer.ageBand, p_country_code: answer.countryCode }).abortSignal(controller.signal);
+      if (error || currentUser.current !== userId) return false;
+      retry(); return true;
+    } catch { return false; }
+    finally { clearTimeout(timeout); submittingRef.current = false; setSubmitting(false); }
+  }, [userId, retry]);
+  return { ...access, submitting, retry, declare };
 }

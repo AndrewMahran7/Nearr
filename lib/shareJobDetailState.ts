@@ -23,6 +23,7 @@
  *
  * Unit-tested from Node (scripts/testShareJobDetailState.ts).
  */
+import { t } from './i18nEngine';
 
 import { classifyShareJobDetail } from './shareJobRouting';
 import {
@@ -213,10 +214,6 @@ function collectCandidates(
   return normalizeShareJobCandidates(fromSlots);
 }
 
-function pluralPlaces(count: number): string {
-  return `${count} possible ${count === 1 ? 'place' : 'places'}`;
-}
-
 /**
  * Map a persisted job to its detail-screen state. NEVER throws: any malformed
  * or unknown payload degrades to a safe, renderable state.
@@ -366,7 +363,7 @@ export function buildShareJobDetailState(
       failureCategory: null,
       kind: 'multi',
       copy: {
-        title: `We found ${count} ${count === 1 ? 'place' : 'places'}`,
+        title: t('We found {{count}} places', { count }),
         body: SHARE_JOB_DETAIL_COPY.multi.body,
       },
       reason: job.decision === 'multi_candidate_confirmation' ? 'multi_decision' : 'multi_slots',
@@ -384,7 +381,7 @@ export function buildShareJobDetailState(
       failureCategory: null,
       kind: 'picker',
       copy: {
-        title: automaticDeep ? 'Quick check' : `We found ${pluralPlaces(candidates.length)}`,
+        title: automaticDeep ? t('Quick check') : t('We found {{count}} possible places', { count: candidates.length }),
         body: automaticDeep ? 'We found a few likely matches.' : SHARE_JOB_DETAIL_COPY.picker.body,
       },
       reason: 'candidates_multiple',

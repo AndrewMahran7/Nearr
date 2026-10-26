@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * components/ShareJobHandoff.tsx
  *
@@ -38,6 +40,7 @@ type UiState =
   | { kind: 'error' };
 
 export function ShareJobHandoff({ url, submissionId }: { url: string; submissionId?: string }) {
+  useLocale();
   const router = useRouter();
   const { colors, typography } = useTheme();
   const vayrinEnabled = isVayrinProductUiEnabled();
@@ -153,16 +156,16 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
             />
           ) : (
             <>
-              <Text style={[typography.heading, styles.title]}>Added to your queue</Text>
+              <Text style={[typography.heading, styles.title]}>{t("Added to your queue")}</Text>
               <Text style={[typography.body, styles.subtle]}>
-                {"We'll notify you when it's ready. You can keep browsing."}
+                {t("We'll notify you when it's ready. You can keep browsing.")}
               </Text>
             </>
           )}
           <View style={{ height: Spacing.lg }} />
-          <Button title="View queue" onPress={() => router.replace('/share-jobs')} />
+          <Button title={t("View queue")} onPress={() => router.replace('/share-jobs')} />
           <Button
-            title="Done"
+            title={t("Done")}
             variant="ghost"
             onPress={() => router.replace('/(tabs)/map')}
             style={{ marginTop: Spacing.sm }}
@@ -176,12 +179,12 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
     return (
       <Screen>
         <View style={styles.centered}>
-          <Text style={[typography.heading, styles.title]}>Sign in to save</Text>
+          <Text style={[typography.heading, styles.title]}>{t("Sign in to save")}</Text>
           <Text style={[typography.body, styles.subtle]}>
-            {'Sign in so Nearr can find and save places you share.'}
+            {t("Sign in so Nearr can find and save places you share.")}
           </Text>
           <View style={{ height: Spacing.lg }} />
-          <Button title="Sign in" onPress={() => router.replace('/(onboarding)/account')} />
+          <Button title={t("Sign in")} onPress={() => router.replace('/(onboarding)/account')} />
         </View>
       </Screen>
     );
@@ -198,16 +201,16 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
             />
           ) : (
             <>
-              <Text style={[typography.heading, styles.title]}>{"Couldn't add to queue"}</Text>
+              <Text style={[typography.heading, styles.title]}>{t("Couldn't add to queue")}</Text>
               <Text style={[typography.body, styles.subtle]}>
-                {'Check your connection and try again.'}
+                {t("Check your connection and try again.")}
               </Text>
             </>
           )}
           <View style={{ height: Spacing.lg }} />
-          <Button title="Retry" onPress={() => void submit()} />
+          <Button title={t("Retry")} onPress={() => void submit()} />
           <Button
-            title="Cancel"
+            title={t("Cancel")}
             variant="ghost"
             onPress={() => router.replace('/(tabs)/map')}
             style={{ marginTop: Spacing.sm }}
@@ -235,10 +238,9 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
           <>
             <ActivityIndicator color={colors.primary} />
             <Text style={[typography.heading, styles.title, { marginTop: Spacing.md }]}>
-              Saving to Nearr
-            </Text>
+              {t("Saving to Nearr")}</Text>
             <Text style={[typography.body, styles.subtle]}>
-              {'Finding the place from this post…'}
+              {t("Finding the place from this post…")}
             </Text>
           </>
         )}

@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { Feather } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
@@ -80,6 +82,7 @@ export function PlaceBrowseWheel({
   onClose,
   onHeightChange,
 }: Props) {
+  useLocale();
   const { width } = useWindowDimensions();
   const { colors, typography } = useTheme();
   const listRef = useRef<FlatList<PlaceBrowseWheelItem> | null>(null);
@@ -87,7 +90,7 @@ export function PlaceBrowseWheel({
   const sideInset = placeBrowseWheelCardSideInset(width);
   const snapInterval = cardWidth + CARD_GAP;
   const selectedIndex = carouselIndexForSelection(items, selectedId);
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
 
   useEffect(() => {
     if (selectedIndex < 0) return;
@@ -150,11 +153,11 @@ export function PlaceBrowseWheel({
           onPress={() => onSelect(item, 'tap')}
           accessibilityRole="button"
           accessibilityLabel={cardAccessibilityLabel}
-          accessibilityHint="Selects this place on the map"
+          accessibilityHint={t("Selects this place on the map")}
           accessibilityState={{ selected }}
           accessibilityActions={[
-            { name: 'increment', label: 'Next place' },
-            { name: 'decrement', label: 'Previous place' },
+            { name: 'increment', label: t("Next place") },
+            { name: 'decrement', label: t("Previous place") },
           ]}
           onAccessibilityAction={selectAccessibleNeighbor}
           testID={`${testID}-card-${item.id}`}
@@ -221,7 +224,7 @@ export function PlaceBrowseWheel({
                 style={({ pressed }) => [styles.action, pressed && styles.pressed]}
               >
                 <Feather name="info" size={16} color={colors.text} />
-                <Text style={[styles.actionText, { color: colors.text }]}>Details</Text>
+                <Text style={[styles.actionText, { color: colors.text }]}>{t("Details")}</Text>
               </Pressable>
               <Pressable
                 onPress={() => onDirections(item)}
@@ -230,7 +233,7 @@ export function PlaceBrowseWheel({
                 style={({ pressed }) => [styles.action, pressed && styles.pressed]}
               >
                 <Feather name="navigation" size={16} color={colors.text} />
-                <Text style={[styles.actionText, { color: colors.text }]}>Directions</Text>
+                <Text style={[styles.actionText, { color: colors.text }]}>{t("Directions")}</Text>
               </Pressable>
               {onSave && item.stateTone === 'muted' ? (
                 <Pressable
@@ -243,7 +246,7 @@ export function PlaceBrowseWheel({
                 >
                   <Feather name="bookmark" size={16} color="#FFF7ED" />
                   <Text style={[styles.actionText, styles.saveActionText]}>
-                    {savingItemId === item.id ? 'Saving…' : 'Save'}
+                    {savingItemId === item.id ? t("Saving…") : t("Save")}
                   </Text>
                 </Pressable>
               ) : null}

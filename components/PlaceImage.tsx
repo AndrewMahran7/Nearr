@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -77,6 +79,7 @@ export function PlaceImage({
   presentationActive = true,
   presentationContext = { trigger: 'other' },
 }: Props) {
+  useLocale();
   const { colors } = useTheme();
   const googleLookupAllowed = hydrationPolicy
     ? allowsPlaceImageLookup(hydrationPolicy, Boolean(googlePlaceId))
@@ -88,7 +91,7 @@ export function PlaceImage({
   const normalizedInitialPhotos = useMemo(
     () => normalizedPhotoUrls(initialPhotoUrls),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [initialPhotoSignature],
+    [initialPhotoSignature, i18n.language],
   );
   const [placePhotoUrls, setPlacePhotoUrls] = useState<string[]>(normalizedInitialPhotos);
   const [failedUris, setFailedUris] = useState<Record<string, boolean>>({});
@@ -112,7 +115,7 @@ export function PlaceImage({
   contextRef.current = presentationContext;
   const frameStyle = useMemo(
     () => ({ width: width ?? size, height: height ?? size, borderRadius }),
-    [borderRadius, height, size, width],
+    [borderRadius, height, size, width, i18n.language],
   );
 
   useEffect(() => {
@@ -151,7 +154,7 @@ export function PlaceImage({
     photoUrls: normalizedInitialPhotos,
     sourceUri,
     fallbackSourceUri,
-  }), [fallbackSourceUri, googleLookupAllowed, googlePlaceId, normalizedInitialPhotos, presentationActive, sourceUri]);
+  }), [fallbackSourceUri, googleLookupAllowed, googlePlaceId, normalizedInitialPhotos, presentationActive, sourceUri, i18n.language]);
 
   useEffect(() => {
     if (presentationMode !== 'candidate') return;
@@ -373,11 +376,11 @@ export function PlaceImage({
           accessible={Boolean(accessibilityLabel)}
         />
       ) : imageAcquisitionPending || (loading && !resolutionTimedOut) ? (
-        <View style={[styles.skeleton, { backgroundColor: colors.border }]} accessibilityLabel="Loading place photo">
+        <View style={[styles.skeleton, { backgroundColor: colors.border }]} accessibilityLabel={t("Loading place photo")}>
           <ActivityIndicator size="small" color={colors.primary} />
         </View>
       ) : (
-        <View style={styles.neutral} accessibilityLabel="No place photo available">
+        <View style={styles.neutral} accessibilityLabel={t("No place photo available")}>
           <Feather name="map-pin" size={Math.max(22, Math.round(Math.min(size, height ?? size) * 0.28))} color={colors.accent} />
         </View>
       )}

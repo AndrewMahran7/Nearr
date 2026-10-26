@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Image, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -22,8 +24,9 @@ import { openOnboardingPracticePost } from '@/services/onboardingPracticeLaunche
 
 /** One route-owned surface for the real Phase 2 share, return, processing, and review states. */
 export function OnboardingV2RealPractice({ state }: { state: OnboardingV2State }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   const router = useRouter();
   const [opening, setOpening] = useState(false);
@@ -109,7 +112,7 @@ export function OnboardingV2RealPractice({ state }: { state: OnboardingV2State }
       await openOnboardingPracticePost(fixture);
       await markOnboardingV2PracticeWaitingForShare();
     } catch {
-      setError('The practice post could not open. Check your connection and try again.');
+      setError(t("The practice post could not open. Check your connection and try again."));
     } finally {
       setOpening(false);
     }
@@ -175,13 +178,13 @@ export function OnboardingV2RealPractice({ state }: { state: OnboardingV2State }
           disabled={opening}
           onPress={() => void deferOnboardingV2Practice()}
           accessibilityRole="button"
-          accessibilityLabel="I'll try this later"
+          accessibilityLabel={t("I'll try this later")}
         >
-          <Text style={styles.secondaryText}>I'll try this later</Text>
+          <Text style={styles.secondaryText}>{t("I'll try this later")}</Text>
         </Pressable>
       </View>}
     >
-      <Text style={styles.eyebrow}>REAL SAVE - OPTIONAL</Text>
+      <Text style={styles.eyebrow}>{t("REAL SAVE - OPTIONAL")}</Text>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.body}>{body}</Text>
       <View style={styles.previewCard}>
@@ -190,9 +193,9 @@ export function OnboardingV2RealPractice({ state }: { state: OnboardingV2State }
           style={styles.preview}
           resizeMode="cover"
           accessibilityLabel={`${practiceSource.expectedPlaceName} practice source preview`}
-        /> : <View style={styles.previewFallback} accessibilityLabel="Practice post preview unavailable"><Feather name="instagram" size={38} color="#FFFFFF" /><Text style={styles.previewFallbackText}>Open the real post to preview it</Text></View>}
+        /> : <View style={styles.previewFallback} accessibilityLabel={t("Practice post preview unavailable")}><Feather name="instagram" size={38} color="#FFFFFF" /><Text style={styles.previewFallbackText}>{t("Open the real post to preview it")}</Text></View>}
         <View style={styles.previewShade} />
-        <View style={styles.sourceBadge}><Feather name="share-2" size={14} color="#FFFFFF" /><Text style={styles.sourceBadgeText}>PRACTICE POST</Text></View>
+        <View style={styles.sourceBadge}><Feather name="share-2" size={14} color="#FFFFFF" /><Text style={styles.sourceBadgeText}>{t("PRACTICE POST")}</Text></View>
         <View style={styles.previewCopy}>
           <Text style={styles.placeName}>{practiceSource.expectedPlaceName}</Text>
           <Text style={styles.category}>{practiceSource.category}</Text>
@@ -204,10 +207,10 @@ export function OnboardingV2RealPractice({ state }: { state: OnboardingV2State }
         </View>
         <View style={styles.statusCopy}>
           <Text style={styles.statusLabel}>{status.replaceAll('_', ' ')}</Text>
-          <Text style={styles.statusText}>{received ? 'Submission received - this button will not launch the post again.' : needsReview ? 'Quick Check owns the next decision.' : 'Onboarding stays on this screen across the app switch.'}</Text>
+          <Text style={styles.statusText}>{received ? t("Submission received - this button will not launch the post again.") : needsReview ? t("Quick Check owns the next decision.") : t("Onboarding stays on this screen across the app switch.")}</Text>
         </View>
       </View>
-      {jobsError ? <Text style={styles.error} accessibilityRole="alert">Nearr could not refresh Queue yet. Your share is still safe; try again shortly.</Text> : null}
+      {jobsError ? <Text style={styles.error} accessibilityRole="alert">{t("Nearr could not refresh Queue yet. Your share is still safe; try again shortly.")}</Text> : null}
       {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
     </Phase1Frame>
   );

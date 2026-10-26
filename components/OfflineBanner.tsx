@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * OfflineBanner — slim "you're offline" pill rendered above lists when
  * the saved-places hook is serving from the local cache.
@@ -34,18 +36,17 @@ function formatLastSynced(iso: string | null | undefined): string | null {
 }
 
 export function OfflineBanner({ visible, lastSyncedAt }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   if (!visible) return null;
   const subline = formatLastSynced(lastSyncedAt);
   return (
     <View style={styles.container} accessibilityRole="alert">
       <Text style={[typography.bodyStrong, styles.title]}>
-        You&apos;re offline
-      </Text>
+        {t("You're offline")}</Text>
       <Text style={[typography.caption, styles.body]}>
-        Showing your saved places from this device.
-        {subline ? ` ${subline}.` : ''}
+        {t("Showing your saved places from this device.")}{subline ? ` ${subline}.` : ''}
       </Text>
     </View>
   );

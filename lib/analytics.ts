@@ -1,3 +1,4 @@
+import { optionalAnalyticsEnabled } from './providerAudiencePolicy';
 /**
  * Lightweight analytics helper for Nearr.
  *
@@ -102,6 +103,7 @@ export async function trackEvent(
   eventName: string,
   properties: AnalyticsProperties = {},
 ): Promise<void> {
+  if (!optionalAnalyticsEnabled()) return;
   // Skip offline UX modes — they're not real product usage.
   if (isDemoMode() || isMapPreviewMode()) {
     if (__DEV__) {

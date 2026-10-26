@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useRef } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -31,6 +33,7 @@ type FirstSaveSource = 'instagram' | 'tiktok' | 'paste_link';
  * place is confirmed and saved. No location/notification permission here.
  */
 export default function ActivateRoute() {
+  useLocale();
   const { session, loading: authLoading } = useAuth();
   const { state, loading } = useOnboardingV2();
   if (isOnboardingV2Enabled() && (loading || authLoading)) {
@@ -46,6 +49,7 @@ export default function ActivateRoute() {
 }
 
 function LegacyActivateScreen() {
+  useLocale();
   const router = useRouter();
 
   // Guard so a fast double-tap can't fire two launches / navigations.
@@ -80,13 +84,13 @@ function LegacyActivateScreen() {
     <OnboardingScreenShell
       footer={
         <OnboardingSecondaryButton
-          title="I'll save my first place later"
+          title={t("I'll save my first place later")}
           onPress={deferForNow}
         />
       }
     >
       <View style={styles.stepBlock}>
-        <Text style={styles.stepLabel}>Step 1 of 2</Text>
+        <Text style={styles.stepLabel}>{t("Step 1 of 2")}</Text>
         <View style={styles.progress}>
           <View style={[styles.segment, styles.segmentActive]} />
           <View style={[styles.segment, styles.segmentInactive]} />
@@ -101,19 +105,19 @@ function LegacyActivateScreen() {
       <View style={styles.actions}>
         <OnboardingActionCard
           icon="instagram"
-          title="Open Instagram"
+          title={t("Open Instagram")}
           emphasized
           onPress={() => selectSource('instagram')}
         />
         {/* Feather has no TikTok glyph — "music" stands in for the platform. */}
         <OnboardingActionCard
           icon="music"
-          title="Open TikTok"
+          title={t("Open TikTok")}
           onPress={() => selectSource('tiktok')}
         />
         <OnboardingActionCard
           icon="link"
-          title="Paste a link"
+          title={t("Paste a link")}
           onPress={() => selectSource('paste_link')}
         />
       </View>
@@ -123,10 +127,8 @@ function LegacyActivateScreen() {
           <Feather name="star" size={16} color={OnboardingColors.orange} />
         </View>
         <Text style={styles.tipText}>
-          <Text style={styles.tipLead}>Tip: </Text>
-          Don't see Nearr? Swipe through the apps or tap More. After your first save, add Nearr
-          to your share favorites for one-tap saving.
-        </Text>
+          <Text style={styles.tipLead}>{t("Tip: ")}</Text>
+          {t("Don't see Nearr? Swipe through the apps or tap More. After your first save, add Nearr to your share favorites for one-tap saving.")}</Text>
       </View>
     </OnboardingScreenShell>
   );

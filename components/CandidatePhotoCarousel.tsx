@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -63,9 +65,10 @@ export function CandidatePhotoCarousel({
   active = true,
   presentationContext = { trigger: 'other' },
 }: Props) {
+  useLocale();
   const { colors } = useTheme();
   const COLORS = { orange: colors.primary, cream: '#F7F4EE', muted: colors.textSecondary, surface: colors.surfaceElevated, border: colors.border };
-  const styles = useMemo(() => createStyles(COLORS), [colors]);
+  const styles = useMemo(() => createStyles(COLORS), [colors, i18n.language]);
   const { width: windowWidth } = useWindowDimensions();
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const width = measuredWidth || Math.max(280, windowWidth - Spacing.lg * 2);
@@ -74,7 +77,7 @@ export function CandidatePhotoCarousel({
     () => normalizedPhotoUrls(initialPhotoUrls, MAX_CANDIDATE_PHOTOS),
     // The signature avoids resetting on callers that reconstruct an equal array.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [initialPhotoSignature],
+    [initialPhotoSignature, i18n.language],
   );
   const [placePhotoUrls, setPlacePhotoUrls] = useState<string[]>(normalizedInitialPhotos);
   const [failedUris, setFailedUris] = useState<ReadonlySet<string>>(new Set());
@@ -97,7 +100,7 @@ export function CandidatePhotoCarousel({
     photoUrls: normalizedInitialPhotos,
     sourceUri,
     fallbackSourceUri,
-  }), [active, fallbackSourceUri, googlePlaceId, normalizedInitialPhotos, sourceUri]);
+  }), [active, fallbackSourceUri, googlePlaceId, normalizedInitialPhotos, sourceUri, i18n.language]);
 
   useEffect(() => {
     setPlacePhotoUrls(normalizedInitialPhotos);
@@ -198,7 +201,7 @@ export function CandidatePhotoCarousel({
     if (active && sourceUri && !failedUris.has(sourceUri)) return [{ uri: sourceUri, kind: 'source' }];
     if (fallbackSourceUri && !failedUris.has(fallbackSourceUri)) return [{ uri: fallbackSourceUri, kind: 'frame' }];
     return [];
-  }, [active, failedUris, fallbackSourceUri, loading, placePhotoUrls, sourceUri, timedOut]);
+  }, [active, failedUris, fallbackSourceUri, loading, placePhotoUrls, sourceUri, timedOut, i18n.language]);
 
   useEffect(() => {
     if (loading && !timedOut && items.length === 0) return;
@@ -257,7 +260,7 @@ export function CandidatePhotoCarousel({
     uri: item.uri,
     accessibilityLabel: `${item.kind === 'places' ? 'Destination photo' : 'From your video'}. ${accessibilityLabel}, photo ${index + 1} of ${items.length}`,
     footerLabel: item.kind === 'places' ? 'Destination photo' : 'From your video',
-  })), [accessibilityLabel, items]);
+  })), [accessibilityLabel, items, i18n.language]);
 
   if (variant === 'thumbnail') {
     const first = items[0] ?? null;
@@ -272,7 +275,7 @@ export function CandidatePhotoCarousel({
             onPress={() => setViewerIndex(0)}
             accessibilityRole="imagebutton"
             accessibilityLabel={`${accessibilityLabel}. Open gallery with ${items.length} ${items.length === 1 ? 'photo' : 'photos'}.`}
-            accessibilityHint="Opens the shared photo gallery"
+            accessibilityHint={t("Opens the shared photo gallery")}
             testID="candidate-photo-thumbnail-open"
           >
             <Image
@@ -283,7 +286,7 @@ export function CandidatePhotoCarousel({
               onError={() => markFailed(first.uri)}
               accessible={false}
             />
-            <View style={styles.provenanceBadge} pointerEvents="none"><Text style={styles.provenanceText}>{first.kind === 'places' ? 'Place photo' : 'From video'}</Text></View>
+            <View style={styles.provenanceBadge} pointerEvents="none"><Text style={styles.provenanceText}>{first.kind === 'places' ? t("Place photo") : t("From video")}</Text></View>
             <View style={styles.expandBadge} pointerEvents="none">
               <Feather name="maximize-2" size={15} color={COLORS.cream} />
             </View>
@@ -293,13 +296,13 @@ export function CandidatePhotoCarousel({
             </View>
           </Pressable>
         ) : loading && !timedOut ? (
-          <View style={styles.thumbnailState} accessibilityLabel="Loading place photos">
+          <View style={styles.thumbnailState} accessibilityLabel={t("Loading place photos")}>
             <ActivityIndicator color={COLORS.orange} />
           </View>
         ) : (
-          <View style={styles.thumbnailState} accessibilityLabel="No place photos available">
+          <View style={styles.thumbnailState} accessibilityLabel={t("No place photos available")}>
             <Feather name="map-pin" size={23} color={COLORS.orange} />
-            <Text style={styles.thumbnailFallback}>No photo</Text>
+            <Text style={styles.thumbnailFallback}>{t("No photo")}</Text>
           </View>
         )}
         <PhotoRolodexModal
@@ -342,13 +345,13 @@ export function CandidatePhotoCarousel({
                 onPress={() => setViewerIndex(index)}
                 accessibilityRole="imagebutton"
                 accessibilityLabel={`${accessibilityLabel}, photo ${index + 1} of ${items.length}`}
-                accessibilityHint="Opens the shared photo gallery"
+                accessibilityHint={t("Opens the shared photo gallery")}
                 testID={`candidate-photo-${index + 1}`}
               >
                 {visitedPhotoIndexes.has(index) ? (
                   <Image source={{ uri: item.uri }} style={styles.image} resizeMode="cover" onLoadStart={() => trackPhotoLoad(index, item.uri)} onError={() => markFailed(item.uri)} accessible={false} />
                 ) : (
-                  <View style={styles.lazyPlaceholder} accessibilityLabel="Photo loads when viewed"><Feather name="image" size={23} color={COLORS.muted} /></View>
+                  <View style={styles.lazyPlaceholder} accessibilityLabel={t("Photo loads when viewed")}><Feather name="image" size={23} color={COLORS.muted} /></View>
                 )}
               </Pressable>
             )}
@@ -367,11 +370,11 @@ export function CandidatePhotoCarousel({
           ) : null}
         </>
       ) : loading && !timedOut ? (
-        <View style={[styles.state, { height }]} accessibilityLabel="Loading place photos"><ActivityIndicator color={COLORS.orange} /></View>
+        <View style={[styles.state, { height }]} accessibilityLabel={t("Loading place photos")}><ActivityIndicator color={COLORS.orange} /></View>
       ) : (
-        <View style={[styles.state, { height }]} accessibilityLabel="No place photos available">
+        <View style={[styles.state, { height }]} accessibilityLabel={t("No place photos available")}>
           <Feather name="map-pin" size={28} color={COLORS.orange} />
-          <Text style={styles.fallbackText}>Place photos unavailable</Text>
+          <Text style={styles.fallbackText}>{t("Place photos unavailable")}</Text>
         </View>
       )}
       <PhotoRolodexModal

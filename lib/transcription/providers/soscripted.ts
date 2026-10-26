@@ -1,3 +1,4 @@
+import { providerAllowedForGlobalAudience } from '../../providerAudiencePolicy.ts';
 /**
  * SoScripted transcription provider.
  *
@@ -58,6 +59,7 @@ export async function fetchSoScriptedTranscript(url: string): Promise<SoScripted
     return { transcript: '', success: false, error: 'invalid_url' };
   }
 
+  if (!providerAllowedForGlobalAudience('soscripted')) return { transcript: '', success: false, error: 'provider_not_qualified' };
   const apiKey = process.env.SOSCRIPTED_API_KEY?.trim();
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);

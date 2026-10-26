@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,10 +29,11 @@ function rows(owner: PlaceVideoItem[], community: PlaceVideoItem[]): Row[] {
 }
 
 export default function PlaceVideosPage() {
+  useLocale();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography, i18n.language]);
   const [owner, setOwner] = useState<PlaceVideoItem[]>([]);
   const [community, setCommunity] = useState<PlaceVideoItem[]>([]);
   const [placeName, setPlaceName] = useState<string | null>(null);
@@ -45,7 +48,7 @@ export default function PlaceVideosPage() {
       if (canceled) return;
       setOwner(gallery.ownerVideos); setCommunity(gallery.communityVideos); setPlaceName(gallery.placeName); setCursor(gallery.nextCursor);
       void trackEvent('place_videos_page_opened', { place_id: gallery.placeId, owner_count: gallery.ownerVideos.length, community_count: gallery.communityVideos.length });
-    }).catch(() => { if (!canceled) Alert.alert('Videos unavailable', 'Nearr could not load videos from this place.'); }).finally(() => { if (!canceled) setLoading(false); });
+    }).catch(() => { if (!canceled) Alert.alert(t("Videos unavailable"), t("Nearr could not load videos from this place.")); }).finally(() => { if (!canceled) setLoading(false); });
     return () => { canceled = true; };
   }, [enabled, id]);
 
@@ -56,7 +59,7 @@ export default function PlaceVideosPage() {
       await Linking.openURL(video.originalUrl);
       void trackEvent(video.ownership === 'OWNER' ? 'owner_video_opened' : 'community_video_opened', { place_id: id, source_id: video.sourceId, platform: video.platform });
       void trackEvent('place_video_original_opened', { place_id: id, source_id: video.sourceId, ownership: video.ownership, platform: video.platform });
-    } catch { Alert.alert('Post unavailable', 'The original post can no longer be opened.'); }
+    } catch { Alert.alert(t("Post unavailable"), t("The original post can no longer be opened.")); }
   }
   async function more() {
     if (!cursor || !id) return;
@@ -66,9 +69,9 @@ export default function PlaceVideosPage() {
   }
   const data = rows(owner, community);
   return <View style={styles.screen}>
-    <Stack.Screen options={{ title: 'Videos from this place', headerBackTitle: 'Back' }} />
-    {!enabled ? <View style={styles.center}><Text style={styles.muted}>This Dev preview is not enabled.</Text><Pressable onPress={() => router.back()}><Text style={styles.link}>Go back</Text></Pressable></View> : loading ? <View style={styles.center}><ActivityIndicator color={colors.accent} /></View> :
-      <FlatList data={data} keyExtractor={(item) => item.key} contentContainerStyle={styles.list} ListHeaderComponent={placeName ? <Text style={styles.placeName}>{placeName}</Text> : null} ListEmptyComponent={<Text style={styles.muted}>No videos are available for this place yet.</Text>} onEndReached={() => { void more(); }} onEndReachedThreshold={0.5} renderItem={({ item }) => item.kind === 'header' ? <Text style={styles.header}>{item.title}</Text> : <View style={styles.row}>{item.videos.map((video) => { const attribution = resolvePlaceSource({ source_type: video.platform, source_url: video.originalUrl }); return <Pressable key={video.sourceId} onPress={() => { void open(video); }} accessibilityRole="link" style={styles.tile}><View style={styles.media}><Image source={{ uri: video.thumbnailUrl }} style={styles.image} resizeMode="cover" /><View style={styles.play}><Ionicons name={(attribution?.brandIcon ?? 'play') as React.ComponentProps<typeof Ionicons>['name']} size={15} color="#fff" /></View></View><Text style={styles.creator} numberOfLines={1}>{video.creatorHandle ? `@${video.creatorHandle.replace(/^@/, '')}` : attribution?.platformName}</Text><Text style={styles.label}>{video.ownership === 'OWNER' ? 'Saved by you' : 'Nearr community'}</Text></Pressable>; })}{item.videos.length === 1 ? <View style={styles.tile} /> : null}</View>} />}
+    <Stack.Screen options={{ title: t("Videos from this place"), headerBackTitle: 'Back' }} />
+    {!enabled ? <View style={styles.center}><Text style={styles.muted}>{t("This Dev preview is not enabled.")}</Text><Pressable onPress={() => router.back()}><Text style={styles.link}>{t("Go back")}</Text></Pressable></View> : loading ? <View style={styles.center}><ActivityIndicator color={colors.accent} /></View> :
+      <FlatList data={data} keyExtractor={(item) => item.key} contentContainerStyle={styles.list} ListHeaderComponent={placeName ? <Text style={styles.placeName}>{placeName}</Text> : null} ListEmptyComponent={<Text style={styles.muted}>{t("No videos are available for this place yet.")}</Text>} onEndReached={() => { void more(); }} onEndReachedThreshold={0.5} renderItem={({ item }) => item.kind === 'header' ? <Text style={styles.header}>{item.title}</Text> : <View style={styles.row}>{item.videos.map((video) => { const attribution = resolvePlaceSource({ source_type: video.platform, source_url: video.originalUrl }); return <Pressable key={video.sourceId} onPress={() => { void open(video); }} accessibilityRole="link" style={styles.tile}><View style={styles.media}><Image source={{ uri: video.thumbnailUrl }} style={styles.image} resizeMode="cover" /><View style={styles.play}><Ionicons name={(attribution?.brandIcon ?? 'play') as React.ComponentProps<typeof Ionicons>['name']} size={15} color="#fff" /></View></View><Text style={styles.creator} numberOfLines={1}>{video.creatorHandle ? `@${video.creatorHandle.replace(/^@/, '')}` : attribution?.platformName}</Text><Text style={styles.label}>{video.ownership === 'OWNER' ? t("Saved by you") : t("Nearr community")}</Text></Pressable>; })}{item.videos.length === 1 ? <View style={styles.tile} /> : null}</View>} />}
   </View>;
 }
 

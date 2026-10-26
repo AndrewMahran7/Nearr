@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * Map view for saved places.
  *
@@ -469,6 +471,7 @@ const PREVIEW_INITIAL_REGION: Region = {
 };
 
 export default function MapScreen() {
+  useLocale();
   const router = useRouter();
   const reduceMotion = useReduceMotion();
   // The long-lived GPS watcher reads the latest accessibility preference
@@ -496,10 +499,10 @@ export default function MapScreen() {
   // status bar instead of hugging the very top edge.
   const insets = useSafeAreaInsets();
   const safeTopInset = Math.max(insets.top, Spacing.xl);
-  const phase2MapLayout = useMemo(() => resolvePhase2MapLayout(safeTopInset), [safeTopInset]);
+  const phase2MapLayout = useMemo(() => resolvePhase2MapLayout(safeTopInset), [safeTopInset, i18n.language]);
   const styles = useMemo(
     () => createStyles(colors, typography, safeTopInset, topChromeClearance),
-    [colors, typography, safeTopInset, topChromeClearance],
+    [colors, typography, safeTopInset, topChromeClearance, i18n.language],
   );
   // Optional deep-link params: when present, the map should center on this
   // saved place and open its preview card. Set by "Show on map" actions, the
@@ -617,7 +620,7 @@ export default function MapScreen() {
             longitude: PREVIEW_INITIAL_REGION.longitude + (Math.floor(index / 10) - 4.5) * 0.003 } };
       });
     },
-    [fieldnotesNativeCapture, mapPreview, rawFieldnotesCount],
+    [fieldnotesNativeCapture, mapPreview, rawFieldnotesCount, i18n.language],
   );
   const fixtureSavedPlace = useMemo<SavedPlaceWithPlace | null>(() => {
     if (!shouldShowLocalTutorialPlace(onboardingV2State)) return null;
@@ -659,12 +662,12 @@ export default function MapScreen() {
         created_at: timestamp,
       },
     };
-  }, [onboardingV2State]);
+  }, [onboardingV2State, i18n.language]);
   const data = useMemo(() => {
     const base = mapPreview ? previewData : liveData;
     if (!fixtureSavedPlace || base.some((place) => place.id === fixtureSavedPlace.id)) return base;
     return [fixtureSavedPlace, ...base];
-  }, [fixtureSavedPlace, liveData, mapPreview, previewData]);
+  }, [fixtureSavedPlace, liveData, mapPreview, previewData, i18n.language]);
   useEffect(() => {
     const tutorialSavedPlaceId = onboardingV2State?.tutorialSave?.savedPlaceId;
     if (!tutorialSavedPlaceId || liveLoading || mapPreview || demo || onboardingV2State.mapEnteredAt) return;
@@ -677,15 +680,15 @@ export default function MapScreen() {
   const places = data;
   const mapGroupRequest = useMemo(
     () => getMapGroupFocusRequest(mapGroupId),
-    [mapGroupId],
+    [mapGroupId, i18n.language],
   );
   const requestedSourceGroup = useMemo(
     () => sourcePlaceGroupFromSeeds(places, mapGroupRequest?.savedPlaceIds ?? []),
-    [mapGroupRequest, places],
+    [mapGroupRequest, places, i18n.language],
   );
   const resolvedMapGroup = useMemo(
     () => resolveMapGroupPlaces(places, mapGroupRequest?.savedPlaceIds ?? []),
-    [mapGroupRequest, places],
+    [mapGroupRequest, places, i18n.language],
   );
 
   // Skip any saved place whose coordinates are missing or non-finite. Maps
@@ -710,7 +713,7 @@ export default function MapScreen() {
         return true;
       });
     },
-    [places],
+    [places, i18n.language],
   );
 
   // ---- DEBUG (Map Preview only) ----------------------------------------
@@ -772,13 +775,13 @@ export default function MapScreen() {
   selectedRef.current = selected;
   const selectedSourceGroup = useMemo(
     () => sourcePlaceGroupForAnchor(selected, places, requestedSourceGroup?.identityKey),
-    [places, requestedSourceGroup?.identityKey, selected],
+    [places, requestedSourceGroup?.identityKey, selected, i18n.language],
   );
   const activeSourceGroupPlaces = useMemo(
     () => selected && (selectedSourceGroup?.places.length ?? 0) > 1
       ? selectedSourceGroup!.places
       : resolvedMapGroup.places,
-    [resolvedMapGroup.places, selected, selectedSourceGroup],
+    [resolvedMapGroup.places, selected, selectedSourceGroup, i18n.language],
   );
   const activeSourceGroupIdentity = selected && (selectedSourceGroup?.places.length ?? 0) > 1
     ? selectedSourceGroup?.identityKey ?? null
@@ -789,12 +792,12 @@ export default function MapScreen() {
       return activeSourceGroupPlaces.some((place) => place.id === selected.id) ? selected : null;
     }
     return activeSourceGroupPlaces[0] ?? null;
-  }, [activeSourceGroupPlaces, selected]);
+  }, [activeSourceGroupPlaces, selected, i18n.language]);
   const mapGroupCoordinateIds = useMemo(
     () => new Set(activeSourceGroupPlaces
       .filter((place) => Number.isFinite(place.place?.latitude) && Number.isFinite(place.place?.longitude))
       .map((place) => place.id)),
-    [activeSourceGroupPlaces],
+    [activeSourceGroupPlaces, i18n.language],
   );
   const explorerSessionRef = useRef(0);
   const explorerUserMovedRef = useRef(false);
@@ -1021,11 +1024,11 @@ export default function MapScreen() {
 
   const explorerMarkerPlaces = useMemo(
     () => nearbyExplorer?.items.map(explorerItemToMarkerPlace) ?? [],
-    [nearbyExplorer?.items],
+    [nearbyExplorer?.items, i18n.language],
   );
   const explorerItemsById = useMemo(
     () => new Map(nearbyExplorer?.items.map((item) => [item.id, item]) ?? []),
-    [nearbyExplorer?.items],
+    [nearbyExplorer?.items, i18n.language],
   );
   const selectedMarkerId = nearbyExplorer?.selectedId
     ?? selected?.id
@@ -1044,7 +1047,7 @@ export default function MapScreen() {
         ? PHASE2_REQUIRED_MAP_FILTERS
         : [],
     ),
-    [mapPlaces, nearbyExplorer, onboardingV2State, phase2MapActive],
+    [mapPlaces, nearbyExplorer, onboardingV2State, phase2MapActive, i18n.language],
   );
 
   // The markers that actually render. One memoized pass over an array the map
@@ -1052,7 +1055,7 @@ export default function MapScreen() {
   // pinned visible so a focused place is never hidden by an active filter.
   const filterEligiblePlaces = useMemo(
     () => filterPlacesForMap(mapPlaces, mapCategoryFilter),
-    [mapCategoryFilter, mapPlaces],
+    [mapCategoryFilter, mapPlaces, i18n.language],
   );
   const visiblePlaces = useMemo(() => {
     if (!selectedMarkerId || filterEligiblePlaces.some((place) => place.id === selectedMarkerId)) {
@@ -1060,12 +1063,12 @@ export default function MapScreen() {
     }
     const liveSelected = mapPlaces.find((place) => place.id === selectedMarkerId);
     return liveSelected ? [...filterEligiblePlaces, liveSelected] : filterEligiblePlaces;
-  }, [filterEligiblePlaces, mapPlaces, selectedMarkerId]);
+  }, [filterEligiblePlaces, mapPlaces, selectedMarkerId, i18n.language]);
   const visibleExplorerItems = useMemo(() => {
     if (!nearbyExplorer) return [];
     const visibleIds = new Set(visiblePlaces.map((place) => place.id));
     return nearbyExplorer.items.filter((item) => visibleIds.has(item.id));
-  }, [nearbyExplorer, visiblePlaces]);
+  }, [nearbyExplorer, visiblePlaces, i18n.language]);
   const visiblePlacesRef = useRef<SavedPlaceWithPlace[]>(visiblePlaces);
   visiblePlacesRef.current = visiblePlaces;
   const mapCategoryFilterRef = useRef<MapVisibilityFilter>(mapCategoryFilter);
@@ -1178,7 +1181,7 @@ export default function MapScreen() {
   const availableHeight = mapAreaHeight || windowHeight;
   const sheetPartialHeight = useMemo(
     () => getSheetPartialHeight(availableHeight, fontScale, windowWidth < 380),
-    [availableHeight, fontScale, windowWidth],
+    [availableHeight, fontScale, windowWidth, i18n.language],
   );
   /**
    * Expanded Place Detail height.
@@ -1192,7 +1195,7 @@ export default function MapScreen() {
    */
   const expandedSheetHeight = useMemo(
     () => expandedPlaceDetailHeight({ availableHeight, safeTopInset }),
-    [availableHeight, safeTopInset],
+    [availableHeight, safeTopInset, i18n.language],
   );
   const { nearbyPlaces, locationState, requestLocationPermission } = useNearbyPlaces(data);
   const recentPlaces = useRecentPlaces(validPlaces, 5);
@@ -1272,7 +1275,7 @@ export default function MapScreen() {
       : insets.bottom + 76 + 58),
   }), [mapAreaWidth, windowWidth, availableHeight, shouldShowMapControls, topChromeBottom, safeTopInset,
     queueChromeBottom, keyboardOverlap, selected?.id, previewExpanded, expandedSheetHeight, selectedCardHeight, insets.bottom,
-    sourceGroupBrowseActive, mapGroupSelectorHeight]);
+    sourceGroupBrowseActive, mapGroupSelectorHeight, i18n.language]);
 
   // Show All is explicit navigation. It retires older ownership once, then
   // frames every eligible coordinate, never a reminder radius or a centroid.
@@ -1914,7 +1917,7 @@ export default function MapScreen() {
     // Intentionally only depends on mapPreview — initialRegion is captured
     // once at first mount and the camera is moved imperatively after that.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapPreview]);
+  }, [mapPreview, i18n.language]);
 
   // ---- clustering -------------------------------------------------------
   //
@@ -1947,14 +1950,14 @@ export default function MapScreen() {
   //     semantics survive clustering untouched
   const alwaysIndividualIds = useMemo(() => {
     return new Set<string>(mapGroupCoordinateIds);
-  }, [mapGroupCoordinateIds]);
+  }, [mapGroupCoordinateIds, i18n.language]);
 
   const clusterCandidates = useMemo(
     () =>
       clusteringRequested
         ? visiblePlaces.filter((place) => !alwaysIndividualIds.has(place.id))
         : [],
-    [alwaysIndividualIds, clusteringRequested, visiblePlaces],
+    [alwaysIndividualIds, clusteringRequested, visiblePlaces, i18n.language],
   );
 
   // The spatial index. Rebuilt only when the FILTERED set or the
@@ -1966,7 +1969,7 @@ export default function MapScreen() {
       const index = buildMapClusterIndex(clusterCandidates);
       return { index, durationMs: Date.now() - startedAt };
     },
-    [clusterCandidates],
+    [clusterCandidates, i18n.language],
   );
   const clusterIndex = clusterBuild.index;
   const clusterIndexRef = useRef(clusterIndex);
@@ -1985,10 +1988,10 @@ export default function MapScreen() {
   const continuousVisualZoom = useMemo(() => regionToClusterZoom({
       longitudeDelta: clusterRegion.longitudeDelta,
       viewportWidth,
-    }), [clusterRegion.longitudeDelta, viewportWidth]);
+    }), [clusterRegion.longitudeDelta, viewportWidth, i18n.language]);
   const clusterZoomDecision = useMemo(
     () => nextClusterZoomDecision(clusterZoom, continuousVisualZoom),
-    [clusterZoom, continuousVisualZoom],
+    [clusterZoom, continuousVisualZoom, i18n.language],
   );
   const effectiveClusterZoom = clusterZoomDecision.zoom;
   const clusterRegionRef = useRef(clusterRegion);
@@ -2014,7 +2017,7 @@ export default function MapScreen() {
         datasetRevision: datasetGeneration,
       };
     },
-    [cameraRevision, clusterIndex, clusterRegion, clusteringEnabled, datasetGeneration, effectiveClusterZoom, viewportSnapshot?.cameraRevision, viewportSnapshot?.viewportRevision, viewportWidth],
+    [cameraRevision, clusterIndex, clusterRegion, clusteringEnabled, datasetGeneration, effectiveClusterZoom, viewportSnapshot?.cameraRevision, viewportSnapshot?.viewportRevision, viewportWidth, i18n.language],
   );
   const clusterNodes = clusterQuery.nodes;
   const representationSynchronized = isLatestMapRepresentation({
@@ -2036,7 +2039,7 @@ export default function MapScreen() {
       if (projected.looseMemberId) looseMemberIds.add(projected.looseMemberId);
     }
     return { clusters, looseMemberIds };
-  }, [clusterNodes, effectiveClusterZoom, selectedMarkerId]);
+  }, [clusterNodes, effectiveClusterZoom, selectedMarkerId, i18n.language]);
   // Explorer saved/recommendation items share this SAME temporary spatial
   // cluster. A cluster is presentation, never semantic dedupe; its accessible
   // name reports the composition while individual pins/cards carry save state.
@@ -2055,7 +2058,7 @@ export default function MapScreen() {
       ].filter(Boolean).join(', ');
       return { ...cluster, accessibilityLabel: `${cluster.count} places: ${parts}` };
     });
-  }, [explorerItemsById, nearbyExplorer, selectedClusterProjection.clusters]);
+  }, [explorerItemsById, nearbyExplorer, selectedClusterProjection.clusters, i18n.language]);
 
   /**
    * The places drawn as ordinary Nearr pins: the always-individual exceptions
@@ -2074,7 +2077,7 @@ export default function MapScreen() {
         looseIds.has(place.id) ||
         selectedClusterProjection.looseMemberIds.has(place.id),
     );
-  }, [alwaysIndividualIds, clusterNodes, clusteringEnabled, selectedClusterProjection.looseMemberIds, selectedMarkerId, visiblePlaces]);
+  }, [alwaysIndividualIds, clusterNodes, clusteringEnabled, selectedClusterProjection.looseMemberIds, selectedMarkerId, visiblePlaces, i18n.language]);
 
   const primaryConservationLedger = useMemo(() => buildMapConservationLedger({
     datasetRevision: datasetGeneration,
@@ -2092,7 +2095,7 @@ export default function MapScreen() {
     clusterInputIds: clusterCandidates.map((place) => place.id),
     individualIds: primaryIndividualPlaces.map((place) => place.id),
     clusters: primaryClusterMarkers,
-  }), [cameraRevision, clusterCandidates, clusterIndex.datasetKey, clusterRegion, datasetGeneration, effectiveClusterZoom, explorerMarkerPlaces, mapCategoryFilter, nearbyExplorer, places, primaryClusterMarkers, primaryIndividualPlaces, querySynchronized, representationSynchronized, selectedMarkerId, clusteringRequested, viewportSnapshot?.viewportRevision, visiblePlaces]);
+  }), [cameraRevision, clusterCandidates, clusterIndex.datasetKey, clusterRegion, datasetGeneration, effectiveClusterZoom, explorerMarkerPlaces, mapCategoryFilter, nearbyExplorer, places, primaryClusterMarkers, primaryIndividualPlaces, querySynchronized, representationSynchronized, selectedMarkerId, clusteringRequested, viewportSnapshot?.viewportRevision, visiblePlaces, i18n.language]);
 
   const conservationFallbackActive = clusteringRequested && !primaryConservationLedger.ok;
   const rawMarkerLimitFallbackActive = !clusteringRequested &&
@@ -2120,7 +2123,7 @@ export default function MapScreen() {
       clusters: aggregate ? [aggregate] : [],
       individuals: visiblePlaces.filter((place) => individualIds.has(place.id)),
     };
-  }, [alwaysIndividualIds, clusterIndex.datasetKey, clusterRegion, conservationFallbackActive, effectiveClusterZoom, querySynchronized, rawMarkerLimitFallbackActive, selectedMarkerId, visiblePlaces]);
+  }, [alwaysIndividualIds, clusterIndex.datasetKey, clusterRegion, conservationFallbackActive, effectiveClusterZoom, querySynchronized, rawMarkerLimitFallbackActive, selectedMarkerId, visiblePlaces, i18n.language]);
 
   const candidateClusterMarkers = fallbackRepresentation?.clusters ?? primaryClusterMarkers;
   const candidateIndividualPlaces = fallbackRepresentation?.individuals ?? primaryIndividualPlaces;
@@ -2140,7 +2143,7 @@ export default function MapScreen() {
     clusterInputIds: clusterCandidates.map((place) => place.id),
     individualIds: candidateIndividualPlaces.map((place) => place.id),
     clusters: candidateClusterMarkers,
-  }), [cameraRevision, candidateClusterMarkers, candidateIndividualPlaces, clusterCandidates, clusterIndex.datasetKey, clusterRegion, datasetGeneration, effectiveClusterZoom, explorerMarkerPlaces, mapCategoryFilter, nearbyExplorer, places, querySynchronized, representationSynchronized, selectedMarkerId, clusteringRequested, viewportSnapshot?.viewportRevision, visiblePlaces]);
+  }), [cameraRevision, candidateClusterMarkers, candidateIndividualPlaces, clusterCandidates, clusterIndex.datasetKey, clusterRegion, datasetGeneration, effectiveClusterZoom, explorerMarkerPlaces, mapCategoryFilter, nearbyExplorer, places, querySynchronized, representationSynchronized, selectedMarkerId, clusteringRequested, viewportSnapshot?.viewportRevision, visiblePlaces, i18n.language]);
 
   type VisibleMapRepresentation = MapRepresentation<
     SavedPlaceWithPlace,
@@ -2168,7 +2171,7 @@ export default function MapScreen() {
         ledger: candidateConservationLedger,
         zoomTransitionReason: clusterZoomDecision.reason,
       },
-    }), [cameraRevision, candidateClusterMarkers, candidateConservationLedger, candidateIndividualPlaces, clusterIndex, clusterRegion, clusterZoomDecision.reason, continuousVisualZoom, datasetGeneration, effectiveClusterZoom, viewportSnapshot?.cameraRevision, viewportSnapshot?.source, viewportSnapshot?.viewportRevision, viewportWidth]);
+    }), [cameraRevision, candidateClusterMarkers, candidateConservationLedger, candidateIndividualPlaces, clusterIndex, clusterRegion, clusterZoomDecision.reason, continuousVisualZoom, datasetGeneration, effectiveClusterZoom, viewportSnapshot?.cameraRevision, viewportSnapshot?.source, viewportSnapshot?.viewportRevision, viewportWidth, i18n.language]);
   const latestCandidateRepresentationRef = useRef(candidateRepresentation);
   latestCandidateRepresentationRef.current = candidateRepresentation;
   const [visibleRepresentation, setVisibleRepresentation] = useState<VisibleMapRepresentation | null>(null);
@@ -2274,7 +2277,7 @@ export default function MapScreen() {
       latitudeDelta: markerLatitudeDelta,
       visibleCount: individualPlaces.length,
     }),
-    [individualPlaces.length, markerLatitudeDelta],
+    [individualPlaces.length, markerLatitudeDelta, i18n.language],
   );
 
   useEffect(() => {
@@ -3004,7 +3007,7 @@ export default function MapScreen() {
       { latitude: userRegion.latitude, longitude: userRegion.longitude },
       { latitude: selected.place.latitude, longitude: selected.place.longitude },
     );
-  }, [selected, userRegion]);
+  }, [selected, userRegion, i18n.language]);
 
   /**
    * Close the selected place. This NEVER moves the camera.
@@ -3303,7 +3306,7 @@ export default function MapScreen() {
       void trackEvent('place_marked_visited', { saved_place_id: selected.id });
     } catch (e: any) {
       restoreSavedPlacesCache(snapshot);
-      Alert.alert('Could not mark visited', e?.message ?? 'Unknown error.');
+      Alert.alert(t("Could not mark visited"), e?.message ?? 'Unknown error.');
     } finally {
       setReminderActionBusy(false);
     }
@@ -3333,7 +3336,7 @@ export default function MapScreen() {
       }
     } catch (e: any) {
       restoreSavedPlacesCache(snapshot);
-      Alert.alert('Could not update reminder', e?.message ?? 'Unknown error.');
+      Alert.alert(t("Could not update reminder"), e?.message ?? 'Unknown error.');
     } finally {
       setReminderActionBusy(false);
     }
@@ -3414,7 +3417,7 @@ export default function MapScreen() {
           }).start();
         },
       }),
-    [dismissSelectedPlace, previewTranslateY, selected, reduceMotion],
+    [dismissSelectedPlace, previewTranslateY, selected, reduceMotion, i18n.language],
   );
 
   // Stable handlers passed to MapView. onPanDrag fires on every gesture
@@ -3647,8 +3650,8 @@ export default function MapScreen() {
       return;
     }
     Alert.alert(
-      'No link copied',
-      'Copy a TikTok, Instagram, or place link first, then tap to save it.',
+      t("No link copied"),
+      t("Copy a TikTok, Instagram, or place link first, then tap to save it."),
     );
   }, [router]);
 
@@ -3726,7 +3729,7 @@ export default function MapScreen() {
         return result.saved;
       } catch (e: any) {
         console.warn('[map] direct save failed', e?.message);
-        Alert.alert('Could not save', e?.message ?? 'Please try again.');
+        Alert.alert(t("Could not save"), e?.message ?? 'Please try again.');
         return null;
       } finally {
         setSavingPlace(false);
@@ -3798,7 +3801,7 @@ export default function MapScreen() {
       } catch (e: any) {
         console.warn('[map] undo save failed', e?.message);
         restoreSavedPlacesCache(snapshot);
-        Alert.alert('Could not undo', e?.message ?? 'Please try again.');
+        Alert.alert(t("Could not undo"), e?.message ?? 'Please try again.');
       }
     },
     [dismissSelectedPlace, selected],
@@ -3863,7 +3866,7 @@ export default function MapScreen() {
     }
   }, [beginCameraMovement, userRegion, reduceMotion]);
 
-  const photoMarkerIds = useMemo(() => fieldnotesPhotoMarkerIds(individualPlaces, selectedMarkerId, markerDetailLevel), [individualPlaces, selectedMarkerId, markerDetailLevel]);
+  const photoMarkerIds = useMemo(() => fieldnotesPhotoMarkerIds(individualPlaces, selectedMarkerId, markerDetailLevel), [individualPlaces, selectedMarkerId, markerDetailLevel, i18n.language]);
 
   // -----------------------------------------------------------------------
   if (demo) {
@@ -3879,7 +3882,7 @@ export default function MapScreen() {
         <Pressable
           style={styles.fab}
           onPress={() => router.push('/add-place')}
-          accessibilityLabel="Save a place"
+          accessibilityLabel={t("Save a place")}
         >
           <Text style={styles.fabText}>+</Text>
         </Pressable>
@@ -3997,7 +4000,7 @@ export default function MapScreen() {
             savedState={explorerItemsById.get(p.id)?.savedState !== 'unsaved'}
             photoEligible={photoMarkerIds.has(p.id)}
             photoUri={photoMarkerIds.has(p.id) ? explorerItemsById.get(p.id)?.photoUrl ?? undefined : undefined}
-            accessibilityHint={nearbyExplorer ? 'Opens this nearby place' : undefined}
+            accessibilityHint={nearbyExplorer ? t("Opens this nearby place") : undefined}
           />
         ))}
       </MapView>
@@ -4014,12 +4017,12 @@ export default function MapScreen() {
               {`${clusterRegion.latitude.toFixed(2)},${clusterRegion.longitude.toFixed(2)} ±${(clusterRegion.latitudeDelta / 2).toFixed(2)},${(clusterRegion.longitudeDelta / 2).toFixed(2)}`}
             </Text>
             <View style={styles.mapDiagnosticsActions}>
-              <Pressable onPress={() => setDebugClusteringOverride((current) => !(current ?? configuredClusteringEnabled))} accessibilityRole="button" accessibilityLabel="Toggle map clustering"><Text style={styles.mapDiagnosticsActionText}>Toggle clustering</Text></Pressable>
-              <Pressable onPress={() => setMapDiagnosticsExpanded(false)} accessibilityRole="button" accessibilityLabel="Collapse map diagnostics"><Text style={styles.mapDiagnosticsActionText}>Collapse</Text></Pressable>
+              <Pressable onPress={() => setDebugClusteringOverride((current) => !(current ?? configuredClusteringEnabled))} accessibilityRole="button" accessibilityLabel={t("Toggle map clustering")}><Text style={styles.mapDiagnosticsActionText}>{t("Toggle clustering")}</Text></Pressable>
+              <Pressable onPress={() => setMapDiagnosticsExpanded(false)} accessibilityRole="button" accessibilityLabel={t("Collapse map diagnostics")}><Text style={styles.mapDiagnosticsActionText}>{t("Collapse")}</Text></Pressable>
             </View>
           </> : (
-            <Pressable onPress={() => setMapDiagnosticsExpanded(true)} accessibilityRole="button" accessibilityLabel="Expand map diagnostics" style={styles.mapDiagnosticsChip}>
-              <Text style={styles.mapDiagnosticsChipText}>QA</Text>
+            <Pressable onPress={() => setMapDiagnosticsExpanded(true)} accessibilityRole="button" accessibilityLabel={t("Expand map diagnostics")} style={styles.mapDiagnosticsChip}>
+              <Text style={styles.mapDiagnosticsChipText}>{t("QA")}</Text>
             </Pressable>
           )}
         </View>
@@ -4032,17 +4035,17 @@ export default function MapScreen() {
         <View style={[styles.emptyPill, { top: emptyStateTop }]} pointerEvents="box-none">
           <Text style={styles.emptyPillText}>
             {liveLoading && validPlaces.length === 0
-              ? 'Loading places…'
+              ? t("Loading places…")
               : mapFilterEmptyMessage(mapCategoryFilter)}
           </Text>
           {isMapFilterActive(mapCategoryFilter) ? (
             <Pressable
               onPress={() => handleSelectMapCategory(MAP_FILTER_ALL)}
               accessibilityRole="button"
-              accessibilityLabel="Show all saved places"
+              accessibilityLabel={t("Show all saved places")}
               style={styles.emptyPillAction}
             >
-              <Text style={styles.emptyPillActionText}>Show all places</Text>
+              <Text style={styles.emptyPillActionText}>{t("Show all places")}</Text>
             </Pressable>
           ) : null}
         </View>
@@ -4052,7 +4055,7 @@ export default function MapScreen() {
           Never blocks the map. */}
       {!mapPreview && permission === 'unavailable' ? (
         <View style={styles.locPill} pointerEvents="none">
-          <Text style={styles.locPillText}>Location unavailable</Text>
+          <Text style={styles.locPillText}>{t("Location unavailable")}</Text>
         </View>
       ) : null}
 
@@ -4065,7 +4068,7 @@ export default function MapScreen() {
       {mapPreview && !fieldnotesNativeCapture ? (
         <View style={styles.previewBadge} pointerEvents="none">
           <View style={styles.previewBadgeDot} />
-          <Text style={styles.previewBadgeText}>Map Preview Mode</Text>
+          <Text style={styles.previewBadgeText}>{t("Map Preview Mode")}</Text>
         </View>
       ) : null}
 
@@ -4076,9 +4079,9 @@ export default function MapScreen() {
         <Pressable
           style={styles.locPill}
           onPress={() => Linking.openSettings().catch(() => {})}
-          accessibilityLabel="Open location settings"
+          accessibilityLabel={t("Open location settings")}
         >
-          <Text style={styles.locPillText}>Location off — tap to enable</Text>
+          <Text style={styles.locPillText}>{t("Location off — tap to enable")}</Text>
         </Pressable>
       ) : null}
 
@@ -4123,7 +4126,7 @@ export default function MapScreen() {
                   <Pressable
                     onPress={() => dismissSelectedPlace()}
                     accessibilityRole="button"
-                    accessibilityLabel="Close place details"
+                    accessibilityLabel={t("Close place details")}
                     style={({ pressed }) => [styles.expandedHeaderButton, pressed && styles.controlPressed]}
                   >
                     <Feather name="x" size={20} color={colors.text} />
@@ -4153,7 +4156,7 @@ export default function MapScreen() {
                   <Pressable
                     onPress={() => dismissSelectedPlace()}
                     accessibilityRole="button"
-                    accessibilityLabel="Close place details"
+                    accessibilityLabel={t("Close place details")}
                     hitSlop={12}
                     style={({ pressed }) => [
                       styles.closeBtnFloating,
@@ -4232,12 +4235,11 @@ export default function MapScreen() {
                 {isNearbyReminderSelection ? (
                   <View style={styles.reminderContextWrap}>
                     <View style={styles.reminderBadge}>
-                      <Text style={styles.reminderBadgeText}>Nearby reminder</Text>
+                      <Text style={styles.reminderBadgeText}>{t("Nearby reminder")}</Text>
                     </View>
                     {nearbyCount && nearbyCount > 1 ? (
                       <Text style={[typography.caption, styles.reminderNearbyCount]}>
-                        {nearbyCount} saved places nearby
-                      </Text>
+                        {nearbyCount} {t(" saved places nearby")}</Text>
                     ) : null}
                   </View>
                 ) : null}
@@ -4255,7 +4257,7 @@ export default function MapScreen() {
                     accessibilityLabel={`Not this time — stop reminding me about ${selected.place.name} for now`}
                     style={styles.reminderAdjustRow}
                   >
-                    <Text style={styles.reminderAdjustText}>Maybe next time</Text>
+                    <Text style={styles.reminderAdjustText}>{t("Maybe next time")}</Text>
                   </Pressable>
                 ) : null}
 
@@ -4300,9 +4302,9 @@ export default function MapScreen() {
           </View>
           <View style={styles.mapContextRow}>
             <Pressable onPress={() => fitVisiblePlaces()} accessibilityRole="button"
-              accessibilityLabel={mapCategoryFilter === MAP_FILTER_ALL ? 'Show all saved pins' : 'Show all filtered saved pins'}
+              accessibilityLabel={mapCategoryFilter === MAP_FILTER_ALL ? t("Show all saved pins") : t("Show all filtered saved pins")}
               style={({ pressed }) => [styles.showAllButton, { backgroundColor: pressed ? colors.surfaceElevated : colors.surface, borderColor: colors.border }]}>
-              <Feather name="maximize" size={18} color={colors.primary} /><Text style={typography.label}>Show all pins</Text>
+              <Feather name="maximize" size={18} color={colors.primary} /><Text style={typography.label}>{t("Show all pins")}</Text>
             </Pressable>
             {!phase2MapActive ? <MapCategoryFilterBar
               options={mapFilterChoices} value={mapCategoryFilter}
@@ -4455,7 +4457,7 @@ export default function MapScreen() {
               ? mapGroupSelectorHeight + Spacing.xl
               : Spacing.lg + 4) + insets.bottom
         }
-        actionLabel={snackbar?.undoId ? 'Undo' : undefined}
+        actionLabel={snackbar?.undoId ? t("Undo") : undefined}
         onAction={
           snackbar?.undoId ? () => void handleUndoSave(snackbar.undoId as string) : undefined
         }

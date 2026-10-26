@@ -1,3 +1,6 @@
+/** This module is shared with Deno Edge. Translation is injected by the caller. */
+type Translate = (key: string, values?: Record<string, unknown>) => string;
+const english: Translate = (key, values) => key.replace(/\{\{(\w+)\}\}/g, (match, name: string) => values?.[name] == null ? match : String(values[name]));
 /**
  * Canonical, privacy-safe presentation for terminal share failures.
  *
@@ -55,12 +58,12 @@ function normalized(value: string | null | undefined): string {
   return typeof value === 'string' ? value.trim().toLowerCase() : '';
 }
 
-export function formatShareMediaDurationLimit(seconds = SHARE_MEDIA_MAX_DURATION_SECONDS): string {
+export function formatShareMediaDurationLimit(seconds = SHARE_MEDIA_MAX_DURATION_SECONDS, t: Translate = english): string {
   if (seconds > 0 && seconds % 60 === 0) {
     const minutes = seconds / 60;
-    return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+    return minutes === 1 ? t("{{count}} minute", { count: minutes }) : t("{{count}} minutes", { count: minutes });
   }
-  return `${Math.max(1, Math.floor(seconds))} seconds`;
+  return t("{{value0}} seconds", { value0: Math.max(1, Math.floor(seconds)) });
 }
 
 /**
@@ -88,7 +91,7 @@ export function classifyShareFailure(input: ShareFailureInput): ShareFailureCate
   return 'technical_failure';
 }
 
-export function presentShareFailure(input: ShareFailureInput): ShareFailurePresentation {
+export function presentShareFailure(input: ShareFailureInput, t: Translate = english): ShareFailurePresentation {
   const category = classifyShareFailure(input);
   const code = normalized(input.failureCode);
   const provider = normalized(input.provider);
@@ -98,16 +101,16 @@ export function presentShareFailure(input: ShareFailureInput): ShareFailurePrese
       if (code === 'authentication_required' && provider === 'tiktok') {
         return {
           category,
-          title: "We couldn't access this video",
-          body: "TikTok requires sign-in to view this post, so Nearr couldn't analyze it.",
+          title: t("We couldn't access this video"),
+          body: t("TikTok requires sign-in to view this post, so Nearr couldn't analyze it."),
           actions: ['back', 'manual_search'],
           retryable: false,
         };
       }
       return {
         category,
-        title: "We couldn't access this post",
-        body: "The source requires access Nearr doesn't currently have.",
+        title: t("We couldn't access this post"),
+        body: t("The source requires access Nearr doesn't currently have."),
         actions: ['back', 'manual_search'],
         retryable: false,
       };
@@ -115,8 +118,8 @@ export function presentShareFailure(input: ShareFailureInput): ShareFailurePrese
     case 'media_too_long':
       return {
         category,
-        title: 'This video is too long to analyze right now',
-        body: `Nearr currently supports videos up to ${formatShareMediaDurationLimit()}.`,
+        title: t("This video is too long to analyze right now"),
+        body: t("Nearr currently supports videos up to {{value0}}.", { value0: formatShareMediaDurationLimit(SHARE_MEDIA_MAX_DURATION_SECONDS, t) }),
         actions: ['back', 'manual_search'],
         retryable: false,
       };
@@ -124,8 +127,8 @@ export function presentShareFailure(input: ShareFailureInput): ShareFailurePrese
     case 'analysis_insufficient':
       return {
         category,
-        title: "We couldn't pin this one down",
-        body: 'Open Nearr to search manually.',
+        title: t("We couldn't pin this one down"),
+        body: t("Open Nearr to search manually."),
         actions: ['back', 'manual_search'],
         retryable: false,
       };
@@ -134,8 +137,8 @@ export function presentShareFailure(input: ShareFailureInput): ShareFailurePrese
     default:
       return {
         category: 'technical_failure',
-        title: 'Something went wrong',
-        body: "We couldn't finish checking this post. Open Nearr to try again.",
+        title: t("Something went wrong"),
+        body: t("We couldn't finish checking this post. Open Nearr to try again."),
         actions: ['back', 'retry'],
         retryable: true,
       };

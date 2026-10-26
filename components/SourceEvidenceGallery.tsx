@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -44,9 +46,10 @@ export function SourceEvidenceGallery({
   preview = false,
   paired = false,
 }: Props) {
+  useLocale();
   const { colors } = useTheme();
   const COLORS = { cream: colors.text, orange: colors.accent, surface: colors.surfaceElevated, border: colors.border, muted: colors.textSecondary, black: colors.surfaceElevated };
-  const styles = useMemo(() => createStyles(COLORS), [colors]);
+  const styles = useMemo(() => createStyles(COLORS), [colors, i18n.language]);
   const { width: windowWidth, fontScale } = useWindowDimensions();
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const stacked = windowWidth < 360 || fontScale > 1.25;
@@ -65,7 +68,7 @@ export function SourceEvidenceGallery({
   const [loading, setLoading] = useState(frames.length > 0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
-  const signature = useMemo(() => frames.map((frame) => `${frame.id}:${frame.storagePath ?? frame.url ?? ''}`).join('|'), [frames]);
+  const signature = useMemo(() => frames.map((frame) => `${frame.id}:${frame.storagePath ?? frame.url ?? ''}`).join('|'), [frames, i18n.language]);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,14 +85,14 @@ export function SourceEvidenceGallery({
     return () => { cancelled = true; };
   }, [signature]);
 
-  const available = useMemo(() => resolved.filter((frame) => !!frame.uri && !failedUris.has(frame.uri)), [resolved, failedUris]);
+  const available = useMemo(() => resolved.filter((frame) => !!frame.uri && !failedUris.has(frame.uri)), [resolved, failedUris, i18n.language]);
   const safeActiveIndex = Math.min(activeIndex, Math.max(0, available.length - 1));
   const rolodexItems = useMemo(() => available.map((frame, index) => ({
     key: frame.id,
     uri: frame.uri!,
-    accessibilityLabel: `Source video frame ${index + 1} of ${available.length} at ${formatCandidateTimestamp(frame.timestampSeconds)}`,
+    accessibilityLabel: t('Source video frame {{index}} of {{total}} at {{timestamp}}', { index: index + 1, total: available.length, timestamp: formatCandidateTimestamp(frame.timestampSeconds) }),
     footerLabel: formatCandidateTimestamp(frame.timestampSeconds),
-  })), [available]);
+  })), [available, i18n.language]);
   if (frames.length === 0 && !analysisAttempted) return null;
 
   return (
@@ -99,7 +102,7 @@ export function SourceEvidenceGallery({
       {loading ? (
         <View style={[styles.missing, { width: frameWidth, height: frameHeight }]}>
           <ActivityIndicator color={COLORS.orange} />
-          <Text style={styles.missingText}>Loading video frames…</Text>
+          <Text style={styles.missingText}>{t("Loading video frames…")}</Text>
         </View>
       ) : available.length > 0 ? (
         <>
@@ -137,7 +140,7 @@ export function SourceEvidenceGallery({
               >
                 <Image source={{ uri: item.uri! }} style={styles.frameImage as StyleProp<ImageStyle>} resizeMode="cover"
                   onError={() => setFailedUris((current) => new Set(current).add(item.uri!))} />
-                {paired ? <View style={styles.provenanceBadge}><Text style={styles.provenanceText}>From your video</Text></View> : null}
+                {paired ? <View style={styles.provenanceBadge}><Text style={styles.provenanceText}>{t("From your video")}</Text></View> : null}
                 <View style={styles.timestampBadge}><Text style={styles.timestamp}>{formatCandidateTimestamp(item.timestampSeconds)}</Text></View>
                 <View style={styles.expandBadge}><Feather name="maximize-2" size={15} color="#F7F4EE" /></View>
               </Pressable>
@@ -152,7 +155,7 @@ export function SourceEvidenceGallery({
       ) : (
         <View style={[styles.missing, paired && styles.missingPaired, { width: frameWidth, minHeight: paired ? 92 : compact ? 92 : 112 }]}>
           <Feather name="film" size={22} color={COLORS.muted} />
-          <Text style={styles.missingText}>Video frames are unavailable. You can still watch the original post.</Text>
+          <Text style={styles.missingText}>{t("Video frames are unavailable. You can still watch the original post.")}</Text>
         </View>
       )}
       <PhotoRolodexModal

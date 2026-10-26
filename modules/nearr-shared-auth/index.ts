@@ -25,6 +25,8 @@ type NativeShape = {
   setInitialized: () => boolean;
   isInitialized: () => boolean;
   getAppGroup: () => string | null;
+  getPreferredLocale: () => string | null;
+  setPreferredLocale: (locale: string) => boolean;
   getStatus: () => SharedAuthNativeStatus;
   recordShareTrace: (invocationId: string, event: string, detail: string | null) => boolean;
   getShareTrace: () => ShareTraceEvent[];
@@ -104,6 +106,14 @@ export function getAppGroup(): string | null {
   }
 }
 
+export function getPreferredLocale(): string | null {
+  try { return Native?.getPreferredLocale() ?? null; } catch { return null; }
+}
+
+export function setPreferredLocale(locale: string): boolean {
+  try { return Native?.setPreferredLocale(locale) ?? false; } catch { return false; }
+}
+
 export function getStatus(): SharedAuthNativeStatus | null {
   try {
     return Native?.getStatus() ?? null;
@@ -141,6 +151,8 @@ export default {
   setInitialized,
   isInitialized,
   getAppGroup,
+  getPreferredLocale,
+  setPreferredLocale,
   getStatus,
   recordShareTrace,
   getShareTrace,

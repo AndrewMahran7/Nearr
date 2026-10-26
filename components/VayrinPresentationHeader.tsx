@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { Radius, Spacing } from '@/constants';
@@ -13,6 +15,7 @@ export function VayrinPresentationHeader({
   presentation: VayrinPresentation;
   compact?: boolean;
 }) {
+  useLocale();
   const { colors, typography } = useTheme();
   const styles = createStyles(colors);
   const looking = presentation.kind === 'looking';
@@ -28,7 +31,7 @@ export function VayrinPresentationHeader({
     >
       <View style={styles.eyebrowRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
 
-        <Text style={styles.eyebrow}>{looking ? 'FINDING A PLACE' : 'FROM YOUR POST'}</Text>
+        <Text style={styles.eyebrow}>{looking ? t("FINDING A PLACE") : t("FROM YOUR POST")}</Text>
         {looking ? <ActivityIndicator size="small" color={colors.primary} /> : null}
       </View>
       <Text style={[compact ? typography.heading : typography.title, styles.headline]}>

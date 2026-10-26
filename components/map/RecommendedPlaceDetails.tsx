@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
@@ -48,11 +50,12 @@ export function RecommendedPlaceDetails({
   onSave,
   backAccessibilityLabel = 'Close nearby place',
 }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
   const { width: viewportWidth } = useWindowDimensions();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography, i18n.language]);
   const [saving, setSaving] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [failedPhotoUrls, setFailedPhotoUrls] = useState<Record<string, true>>({});
@@ -63,7 +66,7 @@ export function RecommendedPlaceDetails({
 
   const photoUrls = useMemo(
     () => visibleRecommendationPhotoUrls(recommendation, failedPhotoUrls),
-    [recommendation, failedPhotoUrls],
+    [recommendation, failedPhotoUrls, i18n.language],
   );
 
   useEffect(() => {
@@ -142,7 +145,7 @@ export function RecommendedPlaceDetails({
           >
             <Feather name="x" size={22} color={colors.text} />
           </Pressable>
-          <Text style={styles.headerTitle}>Nearby place</Text>
+          <Text style={styles.headerTitle}>{t("Nearby place")}</Text>
           <View style={styles.iconButton} />
         </View>
 
@@ -202,7 +205,7 @@ export function RecommendedPlaceDetails({
                 <View style={styles.fallbackIcon}>
                   <Feather name="map-pin" size={34} color={colors.accent} />
                 </View>
-                <Text style={styles.fallbackText}>No place photos yet</Text>
+                <Text style={styles.fallbackText}>{t("No place photos yet")}</Text>
               </View>
             )}
 
@@ -240,10 +243,10 @@ export function RecommendedPlaceDetails({
           </View>
 
           <View style={styles.actions}>
-            <Button title="Directions" icon="navigation" onPress={handleDirections} style={styles.action} />
+            <Button title={t("Directions")} icon="navigation" onPress={handleDirections} style={styles.action} />
             {onSave ? (
               <Button
-                title="Save place"
+                title={t("Save place")}
                 variant="save"
                 onPress={() => void handleSave()}
                 loading={saving}

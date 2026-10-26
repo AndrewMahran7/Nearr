@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -124,8 +126,9 @@ const DEV_PASSWORD_LOGIN_ENABLED =
  * `resolvePostAuthRoute`, the one save-aware post-auth resolver.
  */
 export default function AccountAuthScreen() {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
   const router = useRouter();
   const params = useLocalSearchParams<{ reason?: string; intent?: string | string[] }>();
   const { session } = useAuth();
@@ -292,7 +295,7 @@ export default function AccountAuthScreen() {
 
   function requireSupabase(): boolean {
     if (isSupabaseConfigured) return true;
-    setErrorMessage('App configuration is missing. Reinstall the latest build.');
+    setErrorMessage(t("App configuration is missing. Reinstall the latest build."));
     return false;
   }
 
@@ -734,7 +737,7 @@ export default function AccountAuthScreen() {
       returnKeyType="next"
       editable={!busy}
       style={styles.input}
-      accessibilityLabel="Email address"
+      accessibilityLabel={t("Email address")}
     />
   );
   const errorBanner = errorMessage ? (
@@ -755,7 +758,7 @@ export default function AccountAuthScreen() {
         onBack={signedIn ? undefined : () => void handleBack()}
       >
         <View style={styles.brand}>
-          <Image source={require('../../assets/icon.png')} style={styles.brandIcon} accessibilityLabel="Nearr logo" />
+          <Image source={require('../../assets/icon.png')} style={styles.brandIcon} accessibilityLabel={t("Nearr logo")} />
           <Text style={styles.wordmark}>Nearr</Text>
         </View>
 
@@ -771,15 +774,15 @@ export default function AccountAuthScreen() {
         <Text style={styles.subtext}>
           {sharedPlaceIntent
             ? signedIn
-              ? 'Your account is connected. Continue and Nearr will save it to your map.'
-              : 'Sign in or create an account, then Nearr will bring you back here and save it to your map.'
+              ? t("Your account is connected. Continue and Nearr will save it to your map.")
+              : t("Sign in or create an account, then Nearr will bring you back here and save it to your map.")
             : authCopy.subtext}
         </Text>
 
         {signedIn ? (
           <View style={styles.form}>
             <OnboardingPrimaryButton
-              title="Continue"
+              title={t("Continue")}
               onPress={handleContinueSignedIn}
               loading={accountTransitionBusy}
               disabled={accountTransitionBusy}
@@ -797,7 +800,7 @@ export default function AccountAuthScreen() {
               {checkEmailCopy(checkEmailReason ?? 'magic_link', email).body}
             </Text>
             <OnboardingSecondaryButton
-              title="Use a different email"
+              title={t("Use a different email")}
               onPress={() => transition('restart')}
             />
           </View>
@@ -831,7 +834,7 @@ export default function AccountAuthScreen() {
                 accessibilityState={{ expanded: false }}
                 style={styles.moreOptionsButton}
               >
-                <Text style={styles.moreOptionsText}>More options</Text>
+                <Text style={styles.moreOptionsText}>{t("More options")}</Text>
                 <Feather name="chevron-down" size={17} color={OnboardingColors.textMuted} />
               </Pressable>
             ) : (
@@ -843,16 +846,15 @@ export default function AccountAuthScreen() {
                 {emailInput}
                 {errorBanner}
                 <OnboardingPrimaryButton
-                  title="Continue with email"
+                  title={t("Continue with email")}
                   onPress={() => void handleSendMagicLink()}
                   loading={activeOperation === 'magic_link'}
                   disabled={busy && activeOperation !== 'magic_link'}
                 />
                 <Text style={styles.noteText}>
-                  We&apos;ll email you a secure sign-in link. No password needed.
-                </Text>
+                  {t("We'll email you a secure sign-in link. No password needed.")}</Text>
                 <LinkButton
-                  label="Use password instead"
+                  label={t("Use password instead")}
                   onPress={openPasswordMode}
                   disabled={busy}
                 />
@@ -868,7 +870,7 @@ export default function AccountAuthScreen() {
                     setPassword(value);
                     setErrorMessage(null);
                   }}
-                  placeholder="Password"
+                  placeholder={t("Password")}
                   autoComplete="current-password"
                   textContentType="password"
                   returnKeyType="go"
@@ -876,28 +878,28 @@ export default function AccountAuthScreen() {
                   editable={!busy}
                   visible={passwordVisible}
                   onToggleVisible={() => setPasswordVisible((v) => !v)}
-                  accessibilityLabel="Password"
+                  accessibilityLabel={t("Password")}
                 />
                 {errorBanner}
                 <OnboardingPrimaryButton
-                  title="Sign in"
+                  title={t("Sign in")}
                   onPress={() => void handlePasswordSignIn()}
                   loading={activeOperation === 'password_sign_in'}
                   disabled={busy && activeOperation !== 'password_sign_in'}
                 />
                 <LinkButton
-                  label="Forgot password?"
+                  label={t("Forgot password?")}
                   onPress={() => void handleForgotPassword()}
                   disabled={busy}
                   busy={activeOperation === 'password_reset'}
                 />
                 <LinkButton
-                  label="New to Nearr? Create account"
+                  label={t("New to Nearr? Create account")}
                   onPress={() => transition('create_account')}
                   disabled={busy}
                 />
                 <LinkButton
-                  label="Use magic link instead"
+                  label={t("Use magic link instead")}
                   onPress={() => transition('use_magic_link')}
                   disabled={busy}
                 />
@@ -913,14 +915,14 @@ export default function AccountAuthScreen() {
                     setPassword(value);
                     setErrorMessage(null);
                   }}
-                  placeholder="Password"
+                  placeholder={t("Password")}
                   autoComplete="new-password"
                   textContentType="newPassword"
                   returnKeyType="next"
                   editable={!busy}
                   visible={passwordVisible}
                   onToggleVisible={() => setPasswordVisible((v) => !v)}
-                  accessibilityLabel="New password"
+                  accessibilityLabel={t("New password")}
                 />
                 <OnboardingPasswordField
                   value={confirmPassword}
@@ -928,7 +930,7 @@ export default function AccountAuthScreen() {
                     setConfirmPassword(value);
                     setErrorMessage(null);
                   }}
-                  placeholder="Confirm password"
+                  placeholder={t("Confirm password")}
                   autoComplete="new-password"
                   textContentType="newPassword"
                   returnKeyType="go"
@@ -936,22 +938,22 @@ export default function AccountAuthScreen() {
                   editable={!busy}
                   visible={passwordVisible}
                   onToggleVisible={() => setPasswordVisible((v) => !v)}
-                  accessibilityLabel="Confirm password"
+                  accessibilityLabel={t("Confirm password")}
                 />
                 {errorBanner}
                 <OnboardingPrimaryButton
-                  title="Create account"
+                  title={t("Create account")}
                   onPress={() => void handlePasswordSignUp()}
                   loading={activeOperation === 'password_sign_up'}
                   disabled={busy && activeOperation !== 'password_sign_up'}
                 />
                 <LinkButton
-                  label="Already have an account? Sign in"
+                  label={t("Already have an account? Sign in")}
                   onPress={() => transition('have_account')}
                   disabled={busy}
                 />
                 <LinkButton
-                  label="Use magic link instead"
+                  label={t("Use magic link instead")}
                   onPress={() => transition('use_magic_link')}
                   disabled={busy}
                 />
@@ -970,19 +972,19 @@ export default function AccountAuthScreen() {
                       pressed && styles.developerPressed,
                     ]}
                     accessibilityRole="button"
-                    accessibilityLabel="Open developer login"
-                    accessibilityHint="Expands password sign-in for development accounts"
+                    accessibilityLabel={t("Open developer login")}
+                    accessibilityHint={t("Expands password sign-in for development accounts")}
                   >
                     <Feather name="tool" size={16} color={OnboardingColors.textMuted} />
-                    <Text style={styles.developerTriggerText}>Developer login</Text>
+                    <Text style={styles.developerTriggerText}>{t("Developer login")}</Text>
                     <Feather name="chevron-down" size={16} color={OnboardingColors.textMuted} />
                   </Pressable>
                 ) : (
                   <View style={styles.developerPanel}>
                     <View style={styles.developerHeader}>
                       <View>
-                        <Text style={styles.developerTitle}>Developer login</Text>
-                        <Text style={styles.developerSubtitle}>Real Supabase test account</Text>
+                        <Text style={styles.developerTitle}>{t("Developer login")}</Text>
+                        <Text style={styles.developerSubtitle}>{t("Real Supabase test account")}</Text>
                       </View>
                       <Pressable
                         onPress={closeDeveloperPanel}
@@ -990,7 +992,7 @@ export default function AccountAuthScreen() {
                         hitSlop={8}
                         style={styles.closeButton}
                         accessibilityRole="button"
-                        accessibilityLabel="Close developer login"
+                        accessibilityLabel={t("Close developer login")}
                       >
                         <Feather name="x" size={20} color={OnboardingColors.textMuted} />
                       </Pressable>
@@ -1002,7 +1004,7 @@ export default function AccountAuthScreen() {
                         setDeveloperEmail(value);
                         setDeveloperError(null);
                       }}
-                      placeholder="Developer email"
+                      placeholder={t("Developer email")}
                       placeholderTextColor={OnboardingColors.textMuted}
                       autoCapitalize="none"
                       autoComplete="email"
@@ -1010,7 +1012,7 @@ export default function AccountAuthScreen() {
                       keyboardType="email-address"
                       editable={!developerSigningIn}
                       style={styles.input}
-                      accessibilityLabel="Developer email address"
+                      accessibilityLabel={t("Developer email address")}
                     />
 
                     <OnboardingPasswordField
@@ -1019,14 +1021,14 @@ export default function AccountAuthScreen() {
                         setDeveloperPassword(value);
                         setDeveloperError(null);
                       }}
-                      placeholder="Password"
+                      placeholder={t("Password")}
                       autoComplete="password"
                       editable={!developerSigningIn}
                       returnKeyType="go"
                       onSubmitEditing={() => void handleDeveloperSignIn()}
                       visible={developerPasswordVisible}
                       onToggleVisible={() => setDeveloperPasswordVisible((v) => !v)}
-                      accessibilityLabel="Developer account password"
+                      accessibilityLabel={t("Developer account password")}
                     />
 
                     {developerError ? (
@@ -1036,7 +1038,7 @@ export default function AccountAuthScreen() {
                     ) : null}
 
                     <OnboardingPrimaryButton
-                      title="Sign in with password"
+                      title={t("Sign in with password")}
                       onPress={() => void handleDeveloperSignIn()}
                       loading={developerSigningIn}
                     />
@@ -1063,8 +1065,9 @@ function LinkButton({
   disabled?: boolean;
   busy?: boolean;
 }) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
   return (
     <Pressable
       onPress={onPress}
@@ -1078,7 +1081,7 @@ function LinkButton({
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled, busy: !!busy }}
     >
-      <Text style={styles.linkText}>{busy ? 'Sending…' : label}</Text>
+      <Text style={styles.linkText}>{busy ? t("Sending…") : label}</Text>
     </Pressable>
   );
 }

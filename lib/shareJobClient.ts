@@ -26,6 +26,10 @@ export type CreateShareJobResult =
         | 'invalid_url'
         | 'unauthorized'
         | 'age_eligibility_required'
+        | 'update_required'
+        | 'ai_permission_required'
+        | 'recognition_not_available'
+        | 'plus_allowance_exhausted'
         | 'timeout'
         | 'network'
         | 'http_error'
@@ -77,6 +81,7 @@ export async function createShareJob(args: {
       headers: {
         'content-type': 'application/json',
         authorization: `Bearer ${args.accessToken}`,
+        'x-nearr-contract': 'global-v1',
       },
       body: JSON.stringify({
         url: args.url,
@@ -114,6 +119,10 @@ export async function createShareJob(args: {
     if (res.status === 403 && json?.error === 'age_eligibility_required') {
       return { ok: false, reason: 'age_eligibility_required', ...diagnostic };
     }
+    if (json?.error === 'update_required') return { ok: false, reason: 'update_required', ...diagnostic };
+    if (json?.error === 'ai_permission_required') return { ok: false, reason: 'ai_permission_required', ...diagnostic };
+    if (json?.error === 'recognition_not_available') return { ok: false, reason: 'recognition_not_available', ...diagnostic };
+    if (json?.error === 'plus_allowance_exhausted') return { ok: false, reason: 'plus_allowance_exhausted', ...diagnostic };
     if (res.status === 400) return { ok: false, reason: 'invalid_url', ...diagnostic };
     if (!res.ok) return { ok: false, reason: 'http_error', ...diagnostic };
 

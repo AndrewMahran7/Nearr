@@ -1,15 +1,14 @@
 import { useMemo, useRef, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text } from 'react-native';
 
-import { Button, Card, Screen } from '@/components';
+import { Button, Screen } from '@/components';
 import {
   LEGAL_CONTACT_EMAIL,
-  LEGAL_EFFECTIVE_DATE,
   Spacing,
   TERMS_PUBLIC_URL,
-  TERMS_SECTIONS,
 } from '@/constants';
 import { useTheme, type ThemeColors } from '@/lib/theme';
+import { GlobalLegalDraft } from '@/components/GlobalLegalDraft';
 
 export default function TermsScreen() {
   const { colors, typography } = useTheme();
@@ -47,25 +46,10 @@ export default function TermsScreen() {
         <Text selectable style={[typography.caption, styles.meta]}>{TERMS_PUBLIC_URL}</Text>
         {linkFailed ? (
           <Text accessibilityRole="alert" style={[typography.body, styles.paragraph]}>
-            The website could not be opened. You can read the saved Terms below or try again.
+            The website could not be opened. Check your connection and try again.
           </Text>
         ) : null}
-        <Text style={[typography.caption, styles.meta]}>
-          Effective date: {LEGAL_EFFECTIVE_DATE}
-        </Text>
-
-        {TERMS_SECTIONS.map((section) => (
-          <Card key={section.heading} style={styles.card}>
-            <Text accessibilityRole="header" style={typography.bodyStrong}>{section.heading}</Text>
-            <View style={styles.paragraphs}>
-              {section.paragraphs.map((paragraph) => (
-                <Text key={paragraph} selectable style={[typography.body, styles.paragraph]}>
-                  {paragraph}
-                </Text>
-              ))}
-            </View>
-          </Card>
-        ))}
+        <GlobalLegalDraft kind="terms" />
 
         <Text selectable style={[typography.caption, styles.footer]}>
           Contact: {LEGAL_CONTACT_EMAIL}

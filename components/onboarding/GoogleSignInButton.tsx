@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
@@ -22,8 +24,9 @@ type Props = {
  * pulling in an SVG/brand-icon package.
  */
 export function GoogleSignInButton({ onPress, loading, disabled }: Props) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   const blocked = disabled || loading;
   return (
@@ -31,7 +34,7 @@ export function GoogleSignInButton({ onPress, loading, disabled }: Props) {
       onPress={onPress}
       disabled={blocked}
       accessibilityRole="button"
-      accessibilityLabel="Continue with Google"
+      accessibilityLabel={t("Continue with Google")}
       accessibilityState={{ disabled: !!blocked, busy: !!loading }}
       style={({ pressed }) => [
         styles.button,
@@ -44,7 +47,7 @@ export function GoogleSignInButton({ onPress, loading, disabled }: Props) {
       ) : (
         <View style={styles.content}>
           <AntDesign name="google" size={20} color={GOOGLE_BLUE} />
-          <Text style={styles.label}>Continue with Google</Text>
+          <Text style={styles.label}>{t("Continue with Google")}</Text>
         </View>
       )}
     </Pressable>
@@ -83,6 +86,7 @@ function createStyles(OnboardingColors: ReturnType<typeof useOnboardingColors>) 
 
 /** Thin "or" rule separating the provider buttons from the email form. */
 export function AuthDivider({ label = 'or' }: { label?: string }) {
+  useLocale();
   const dividerStyles = createDividerStyles(useOnboardingColors());
   return (
     <View style={dividerStyles.row} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">

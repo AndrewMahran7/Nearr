@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -36,8 +38,9 @@ const STEPS = [
 ] as const;
 
 export function NearrFavoritesHelp({ visible, onClose, onStepViewed }: Props) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   const [step, setStep] = useState(0);
   const viewedRef = useRef<Set<number>>(new Set());
@@ -69,17 +72,17 @@ export function NearrFavoritesHelp({ visible, onClose, onStepViewed }: Props) {
             style={styles.headerButton}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel={step > 0 ? 'Previous help step' : 'Close Nearr help'}
+            accessibilityLabel={step > 0 ? t("Previous help step") : t("Close Nearr help")}
           >
             <Feather name={step > 0 ? 'chevron-left' : 'x'} size={24} color={OnboardingColors.text} />
           </Pressable>
-          <Text style={styles.headerTitle}>iPhone Share Sheet help</Text>
+          <Text style={styles.headerTitle}>{t("iPhone Share Sheet help")}</Text>
           <Pressable
             onPress={onClose}
             style={styles.headerButton}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="Close Nearr help"
+            accessibilityLabel={t("Close Nearr help")}
           >
             <Feather name="x" size={22} color={OnboardingColors.textMuted} />
           </Pressable>
@@ -95,18 +98,18 @@ export function NearrFavoritesHelp({ visible, onClose, onStepViewed }: Props) {
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.eyebrow}>Step {step + 1}</Text>
+          <Text style={styles.eyebrow}>{t("Step ")}{step + 1}</Text>
           <Text style={styles.title}>{STEPS[step].title}</Text>
           <Text style={styles.body}>{STEPS[step].body}</Text>
 
-          <View style={styles.mockCard} accessibilityLabel="Illustrated iPhone Share Sheet instructions">
+          <View style={styles.mockCard} accessibilityLabel={t("Illustrated iPhone Share Sheet instructions")}>
             {step === 0 ? <MoreStep /> : step === 1 ? <SuggestionsStep /> : <FavoritesStep />}
           </View>
         </View>
 
         <View style={styles.footer}>
           <OnboardingPrimaryButton
-            title={isLast ? 'Back to Share Sheet' : 'Next'}
+            title={isLast ? t("Back to Share Sheet") : t("Next")}
             onPress={isLast ? onClose : () => setStep((current) => current + 1)}
           />
         </View>
@@ -116,75 +119,79 @@ export function NearrFavoritesHelp({ visible, onClose, onStepViewed }: Props) {
 }
 
 function MoreStep() {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   return (
     <View>
       <View style={styles.sheetGrabber} />
-      <Text style={styles.mockHeading}>Share with an app</Text>
+      <Text style={styles.mockHeading}>{t("Share with an app")}</Text>
       <View style={styles.appRow}>
         <AppTile icon="radio" label="AirDrop" color="#1E8FFF" />
-        <AppTile icon="message-circle" label="Messages" color="#31D158" />
-        <AppTile icon="mail" label="Mail" color="#1FA9F6" />
+        <AppTile icon="message-circle" label={t("Messages")} color="#31D158" />
+        <AppTile icon="mail" label={t("Mail")} color="#1FA9F6" />
         <View style={styles.appTile}>
           <View style={[styles.appIcon, styles.moreIcon, styles.highlightRing]}>
             <Feather name="more-horizontal" size={23} color="#3C3C43" />
           </View>
-          <Text style={styles.appLabel}>More</Text>
+          <Text style={styles.appLabel}>{t("More")}</Text>
         </View>
       </View>
       <View style={styles.instructionPill}>
         <Feather name="arrow-up" size={15} color={OnboardingColors.onOrange} />
-        <Text style={styles.instructionPillText}>Tap More</Text>
+        <Text style={styles.instructionPillText}>{t("Tap More")}</Text>
       </View>
     </View>
   );
 }
 
 function SuggestionsStep() {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   return (
     <View>
       <AppsEditorHeader />
-      <Text style={styles.sectionLabel}>Favorites</Text>
-      <EditorRow label="Messages" icon="message-circle" favorite />
-      <Text style={styles.sectionLabel}>Suggestions</Text>
+      <Text style={styles.sectionLabel}>{t("Favorites")}</Text>
+      <EditorRow label={t("Messages")} icon="message-circle" favorite />
+      <Text style={styles.sectionLabel}>{t("Suggestions")}</Text>
       <EditorRow label="Nearr" nearr highlighted />
-      <EditorRow label="Notes" icon="file-text" />
+      <EditorRow label={t("Notes")} icon="file-text" />
     </View>
   );
 }
 
 function FavoritesStep() {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   return (
     <View>
       <AppsEditorHeader doneHighlighted />
-      <Text style={styles.sectionLabel}>Favorites</Text>
-      <EditorRow label="Messages" icon="message-circle" favorite />
-      <EditorRow label="Mail" icon="mail" favorite />
+      <Text style={styles.sectionLabel}>{t("Favorites")}</Text>
+      <EditorRow label={t("Messages")} icon="message-circle" favorite />
+      <EditorRow label={t("Mail")} icon="mail" favorite />
       <EditorRow label="Nearr" nearr favorite />
       <View style={styles.successNote}>
         <Feather name="check-circle" size={18} color={OnboardingColors.orange} />
-        <Text style={styles.successText}>Nearr will be visible in the app row.</Text>
+        <Text style={styles.successText}>{t("Nearr will be visible in the app row.")}</Text>
       </View>
     </View>
   );
 }
 
 function AppsEditorHeader({ doneHighlighted = false }: { doneHighlighted?: boolean }) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   return (
     <View style={styles.editorHeader}>
       <View style={styles.headerSpacer} />
-      <Text style={styles.editorTitle}>Apps</Text>
+      <Text style={styles.editorTitle}>{t("Apps")}</Text>
       <View style={[styles.doneButton, doneHighlighted && styles.doneButtonHighlighted]}>
         <Feather name="check" size={19} color="#FFFFFF" />
       </View>
@@ -205,8 +212,9 @@ function EditorRow({
   favorite?: boolean;
   highlighted?: boolean;
 }) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   return (
     <View style={[styles.editorRow, highlighted && styles.editorRowHighlighted]}>
@@ -235,8 +243,9 @@ function AppTile({
   label: string;
   color: string;
 }) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   return (
     <View style={styles.appTile}>

@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { ReactNode } from 'react';
 import {
@@ -53,8 +55,9 @@ export function OnboardingScreenShell({
   scroll = true,
   contentStyle,
 }: Props) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   const insets = useSafeAreaInsets();
   const { fontScale, height } = useWindowDimensions();
@@ -78,7 +81,7 @@ export function OnboardingScreenShell({
                 hitSlop={12}
                 style={styles.backButton}
                 accessibilityRole="button"
-                accessibilityLabel="Go back"
+                accessibilityLabel={t("Go back")}
               >
                 <Feather name="chevron-left" size={26} color={OnboardingColors.text} />
               </Pressable>

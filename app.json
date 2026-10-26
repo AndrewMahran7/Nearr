@@ -3,7 +3,7 @@
     "name": "Nearr",
     "slug": "nearr",
     "scheme": "nearr",
-    "version": "1.6.59",
+    "version": "1.7.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -98,13 +98,15 @@
             "expo-updates",
             "expo-notifications",
             "expo-location",
-            "expo-task-manager"
+            "expo-task-manager",
+            "react-native-purchases"
           ],
           "height": 360
         }
       ],
       "./plugins/withCompactShareExtension",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "./plugins/withNearrLocalization"
     ],
     "extra": {
       "router": {

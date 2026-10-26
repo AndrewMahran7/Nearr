@@ -1,9 +1,12 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { Tabs, usePathname } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
 import { recordOnboardingV2RouteDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 
 export default function TabsLayout() {
+  useLocale();
   const { colors } = useTheme();
   const pathname = usePathname();
   return (
@@ -33,7 +36,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="map"
         options={{
-          title: 'Map',
+          title: t("Map"),
           // Map-first: full-screen feel. The Map screen renders its own
           // floating chrome (search bar + chips) and handles the top safe
           // area itself, so the tab header is hidden here ONLY.
@@ -44,7 +47,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: t("Home"),
           // Hidden from the tab bar (map-first) but kept as a reachable route
           // for rollback / onboarding. Set href back to default to restore it.
           href: null,
@@ -60,7 +63,7 @@ export default function TabsLayout() {
           }),
         }}
         options={{
-          title: 'Settings',
+          title: t("Settings"),
           href: null,
           tabBarIcon: ({ color, size }) => (
             <Feather name="settings" color={color} size={size} />

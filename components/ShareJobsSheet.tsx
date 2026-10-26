@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,10 +14,11 @@ type Props = {
 };
 
 export function ShareJobsSheet({ children, onDismiss, size = 'queue' }: Props) {
+  useLocale();
   const { colors, resolvedTheme } = useTheme();
   const { fontScale, height } = useWindowDimensions();
   const expandedForAccess = fontScale > 1.25 || height < 700;
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
 
   return (
     <View style={styles.backdrop}>
@@ -24,7 +27,7 @@ export function ShareJobsSheet({ children, onDismiss, size = 'queue' }: Props) {
         style={StyleSheet.absoluteFill}
         onPress={onDismiss}
         accessibilityRole="button"
-        accessibilityLabel="Close"
+        accessibilityLabel={t("Close")}
       />
       <SafeAreaView
         edges={['bottom', 'left', 'right']}

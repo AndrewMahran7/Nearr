@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Colors } from '@/constants';
@@ -13,6 +15,7 @@ export function StartupSurface({
   recovery?: boolean;
   onRetry?: () => void;
 }) {
+  useLocale();
   const theme = useOptionalTheme();
   const palette = theme?.colors ?? Colors;
   const styles = createStyles(palette);
@@ -21,17 +24,17 @@ export function StartupSurface({
       style={styles.container}
       accessible
       accessibilityRole="summary"
-      accessibilityLabel={recovery ? 'Nearr startup recovery' : 'Nearr is opening'}
+      accessibilityLabel={recovery ? t("Nearr startup recovery") : t("Nearr is opening")}
       testID={recovery ? 'startup-recovery' : 'startup-loading'}
     >
       <Image source={require('../assets/icon.png')} style={styles.mark} accessible={false} />
-      <Text style={styles.title}>{recovery ? 'Nearr needs another try' : 'Opening Nearr'}</Text>
+      <Text style={styles.title}>{recovery ? t("Nearr needs another try") : t("Opening Nearr")}</Text>
       <Text style={styles.body}>
         {recovery
-          ? 'Your saved places are safe. Check your connection, then try opening the app again.'
+          ? t("Your saved places are safe. Check your connection, then try opening the app again.")
           : owner === 'ONBOARDING'
-            ? 'Preparing your private map…'
-            : 'Restoring your map…'}
+            ? t("Preparing your private map…")
+            : t("Restoring your map…")}
       </Text>
       {recovery ? (
         <Pressable
@@ -39,14 +42,14 @@ export function StartupSurface({
           onPress={onRetry}
           disabled={!onRetry}
           accessibilityRole="button"
-          accessibilityLabel="Try opening Nearr again"
+          accessibilityLabel={t("Try opening Nearr again")}
         >
-          <Text style={styles.buttonText}>Try again</Text>
+          <Text style={styles.buttonText}>{t("Try again")}</Text>
         </Pressable>
       ) : (
         <ActivityIndicator color={palette.primary} size="small" />
       )}
-      {__DEV__ && <Text style={styles.owner}>STARTUP OWNER: {owner}</Text>}
+      {__DEV__ && <Text style={styles.owner}>{t("STARTUP OWNER: ")}{owner}</Text>}
     </View>
   );
 }

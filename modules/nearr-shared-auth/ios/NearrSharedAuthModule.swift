@@ -37,6 +37,7 @@ public class NearrSharedAuthModule: Module {
   // completed getSession() check (even when signed out) so the extension can
   // tell "first install, host never launched" apart from "signed out".
   private static let INITIALIZED_KEY = "shared_auth_initialized"
+  private static let PREFERRED_LOCALE_KEY = "preferred_ui_locale_v1"
   // Non-secret diagnostics: when the last token write happened (epoch ms) and
   // which target performed it (host vs extension). NEVER the token itself.
   private static let LAST_SYNC_KEY = "shared_auth_last_sync_at"
@@ -87,6 +88,16 @@ public class NearrSharedAuthModule: Module {
 
     Function("getAppGroup") { () -> String? in
       return Self.appGroupIdentifier()
+    }
+
+    Function("getPreferredLocale") { () -> String? in
+      return Self.defaults()?.string(forKey: Self.PREFERRED_LOCALE_KEY)
+    }
+
+    Function("setPreferredLocale") { (locale: String) -> Bool in
+      guard let defaults = Self.defaults() else { return false }
+      defaults.set(locale, forKey: Self.PREFERRED_LOCALE_KEY)
+      return true
     }
 
     // Non-secret diagnostic snapshot for reporting App Group / token health

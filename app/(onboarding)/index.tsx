@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 
@@ -55,11 +57,13 @@ function screenProps(index: number) {
  * location/notification permission is requested here.
  */
 export default function OnboardingRoute() {
+  useLocale();
   if (isOnboardingV2Enabled()) return <OnboardingV2PreAuth />;
   return <LegacyOnboardingScreen />;
 }
 
 function LegacyOnboardingScreen() {
+  useLocale();
   const router = useRouter();
   const [step, setStep] = useState(0);
 
@@ -216,14 +220,14 @@ function LegacyOnboardingScreen() {
 
   function renderFooter() {
     if (isWelcome) {
-      return <OnboardingPrimaryButton title="See how it works" onPress={handleSeeHowItWorks} />;
+      return <OnboardingPrimaryButton title={t("See how it works")} onPress={handleSeeHowItWorks} />;
     }
     if (isLast) {
-      return <OnboardingPrimaryButton title="Create your map" onPress={handleCreateYourMap} />;
+      return <OnboardingPrimaryButton title={t("Create your map")} onPress={handleCreateYourMap} />;
     }
     // Screen 4 saves itself, so it needs a way forward that is not a Save.
     if (step === 3) {
-      return <OnboardingPrimaryButton title="Continue" onPress={handleDemoContinue} />;
+      return <OnboardingPrimaryButton title={t("Continue")} onPress={handleDemoContinue} />;
     }
     // Screens 2–3 advance through in-screen interaction; no footer button.
     return null;

@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * MapFallbackList — list view shown in place of the native map when the
  * Google Maps SDK keys are not configured (typical in Demo Mode running
@@ -21,19 +23,19 @@ type Props = {
 };
 
 export function MapFallbackList({ data, onPressItem }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography, i18n.language]);
   return (
     <FlatList data={data} keyExtractor={item => item.id} initialNumToRender={8} windowSize={5} contentContainerStyle={styles.scroll} ListHeaderComponent={
       <View style={styles.headerCard}>
-        <Text style={typography.title}>Your places</Text>
+        <Text style={typography.title}>{t("Your places")}</Text>
         <Text style={[typography.caption, styles.muted, { marginTop: Spacing.xs }]}>
-          A little inspiration, everywhere. Explore your saved places below.
-        </Text>
+          {t("A little inspiration, everywhere. Explore your saved places below.")}</Text>
       </View>
       } ListEmptyComponent={
         <EmptyState
-          title="No places yet"
+          title={t("No places yet")}
           body="Save a place to see it here."
         />
       } renderItem={({ item: s }) => (
@@ -48,7 +50,7 @@ export function MapFallbackList({ data, onPressItem }: Props) {
                 </Text>
               ) : null}
               <View style={styles.actionRow}>
-                <Text style={styles.action}>View place</Text>
+                <Text style={styles.action}>{t("View place")}</Text>
               </View>
               </View>
               <Feather name="chevron-right" size={20} color={colors.textSecondary} />

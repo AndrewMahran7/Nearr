@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useEffect, useRef } from 'react';
 import { Animated, Image, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
@@ -22,11 +24,12 @@ export function platformIcon(platform: OnboardingPlatform | null): keyof typeof 
 }
 
 export function NearrSparkleMark({ size = 76 }: { size?: number }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   return (
-    <View style={[styles.sparkleWrap, { width: size + 34, height: size + 28 }]} accessible accessibilityLabel="Nearr sparkle pin">
+    <View style={[styles.sparkleWrap, { width: size + 34, height: size + 28 }]} accessible accessibilityLabel={t("Nearr sparkle pin")}>
       <View style={[styles.sparkleHalo, { width: size + 18, height: size + 18, borderRadius: (size + 18) / 2 }]} />
       <Image source={require('../../../assets/icon.png')} style={{ width: size, height: size, borderRadius: size * 0.27 }} />
       <Feather name="star" size={18} color={Phase1Colors.orange} style={styles.sparkleOne} />
@@ -42,28 +45,30 @@ export function SocialToMapIllustration({
   platform?: OnboardingPlatform | null;
   interest?: OnboardingInterest | null;
 }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   const { fontScale } = useWindowDimensions();
   const fixture = selectOfflineOnboardingFixture(platform, interest);
   const media = offlineOnboardingMedia(fixture.assetKey);
-  return <View style={[styles.storyVisual, { height: fontScale >= 1.5 ? 330 : 266 }]} accessibilityLabel="A bundled social post becomes a place on your personal map">
+  return <View style={[styles.storyVisual, { height: fontScale >= 1.5 ? 330 : 266 }]} accessibilityLabel={t("A bundled social post becomes a place on your personal map")}>
     <View style={[styles.fieldnotesPhoto, { backgroundColor: Phase1Colors.surface }]}>
       <Image source={media.placePhotoAssets[1] ?? media.placePhotoAssets[0]} style={styles.fieldnotesHero} resizeMode="cover" />
-      <View style={styles.fieldnotesPhotoCopy}><Text style={styles.fieldnotesPlaceName}>{fixture.place.name}</Text><Text style={styles.fieldnotesPlaceMeta}>A place to remember</Text></View>
+      <View style={styles.fieldnotesPhotoCopy}><Text style={styles.fieldnotesPlaceName}>{fixture.place.name}</Text><Text style={styles.fieldnotesPlaceMeta}>{t("A place to remember")}</Text></View>
     </View>
     <View style={[styles.fieldnotesSource, { backgroundColor: Phase1Colors.surface }]}>
       <Image source={offlineOnboardingAsset(fixture.assetKey)} style={styles.fieldnotesSourceImage} resizeMode="cover" />
-      <Text style={styles.fieldnotesPlaceMeta}>From your feed</Text>
+      <Text style={styles.fieldnotesPlaceMeta}>{t("From your feed")}</Text>
     </View>
     <View style={styles.fieldnotesLanding}><Image source={require('../../../assets/icon.png')} style={{ width: 40, height: 40, borderRadius: 10 }} /></View>
   </View>;
 }
 
 export function MagicScanner({ thumbnailUrl, platform }: { thumbnailUrl: string | null; platform: OnboardingPlatform | null }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   const reduceMotion = useOnboardingReduceMotion();
   const scan = useRef(new Animated.Value(0)).current;
@@ -78,7 +83,7 @@ export function MagicScanner({ thumbnailUrl, platform }: { thumbnailUrl: string 
   }, [reduceMotion, scan]);
   const translateY = scan.interpolate({ inputRange: [0, 1], outputRange: [-104, 104] });
   return (
-    <View style={styles.scanner} accessible accessibilityLabel="Nearr is looking at the post and matching it to a place">
+    <View style={styles.scanner} accessible accessibilityLabel={t("Nearr is looking at the post and matching it to a place")}>
       {thumbnailUrl ? <Image source={{ uri: thumbnailUrl }} style={styles.scannerImage} /> : <View style={styles.scannerFallback}><Ionicons name={platformIcon(platform)} size={58} color="#FFFFFF" /></View>}
       <View style={styles.scannerShade} />
       <Animated.View style={[styles.scanLine, { transform: [{ translateY }] }]} />
@@ -97,8 +102,9 @@ export function MapFormationIllustration({
   platform: OnboardingPlatform | null;
   interest: OnboardingInterest | null;
 }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   return (
     <View style={styles.formation} accessible accessibilityLabel={`Your map with ${placeName} saved`}>
@@ -106,7 +112,7 @@ export function MapFormationIllustration({
       <View style={styles.realPlacePin}><Feather name="map-pin" size={21} color="#FFFFFF" /><Text style={styles.realPlaceText} numberOfLines={1}>{placeName}</Text></View>
       <View style={[styles.futurePin, styles.futureOne]}><Feather name="map-pin" size={14} color="#A39B90" /></View>
       <View style={[styles.futurePin, styles.futureTwo]}><Feather name="map-pin" size={14} color="#A39B90" /></View>
-      <View style={styles.readyBadge}><Ionicons name={platformIcon(platform)} size={17} color={Phase1Colors.text} /><Text style={styles.readyBadgeText}>{interestLabel(interest)} ready</Text></View>
+      <View style={styles.readyBadge}><Ionicons name={platformIcon(platform)} size={17} color={Phase1Colors.text} /><Text style={styles.readyBadgeText}>{interestLabel(interest)} {t(" ready")}</Text></View>
     </View>
   );
 }

@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useRef, useState } from 'react';
 import {
@@ -39,8 +41,9 @@ export function ChooseNearrScreen({
   onHelpStepViewed,
   onHelpClosed,
 }: Props) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   const { width } = useWindowDimensions();
   const sheetWidth = width - Spacing.xl * 2;
@@ -96,11 +99,11 @@ export function ChooseNearrScreen({
           onPress={openHelp}
           style={({ pressed }) => [styles.helpButton, pressed && styles.helpButtonPressed]}
           accessibilityRole="button"
-          accessibilityLabel="Don't see Nearr?"
-          accessibilityHint="Opens iPhone Share Sheet instructions for adding Nearr to Favorites"
+          accessibilityLabel={t("Don't see Nearr?")}
+          accessibilityHint={t("Opens iPhone Share Sheet instructions for adding Nearr to Favorites")}
         >
           <Feather name="help-circle" size={17} color={OnboardingColors.orange} />
-          <Text style={styles.helpButtonText}>Don&apos;t see Nearr?</Text>
+          <Text style={styles.helpButtonText}>{t("Don't see Nearr?")}</Text>
         </Pressable>
       ) : null}
 

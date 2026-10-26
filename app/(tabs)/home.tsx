@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * Home screen.
  *
@@ -75,10 +77,11 @@ function formatCount(count: number): string {
 }
 
 export default function Home() {
+  useLocale();
   const router = useRouter();
   const { user, isLocalUiSession } = useAuth();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography, i18n.language]);
   const { data, loading, refreshing, error, offline, lastSyncedAt, refresh, revalidate } = useSavedPlaces();
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -112,7 +115,7 @@ export default function Home() {
       await deleteSavedPlace(id);
     } catch (e: any) {
       restoreSavedPlacesCache(snapshot);
-      Alert.alert('Could not remove', e?.message ?? 'Unknown error.');
+      Alert.alert(t("Could not remove"), e?.message ?? 'Unknown error.');
     }
   }
 
@@ -186,7 +189,7 @@ export default function Home() {
       <Screen>
         <View style={styles.content}>
           <Text style={[typography.title, styles.greeting]}>{greeting(user?.email)}</Text>
-          <Text style={[typography.body, styles.sub]}>Loading your dashboard...</Text>
+          <Text style={[typography.body, styles.sub]}>{t("Loading your dashboard...")}</Text>
         </View>
         <View style={styles.centerBox}>
           <ActivityIndicator />
@@ -203,12 +206,12 @@ export default function Home() {
           <Text style={[typography.title, styles.greeting]}>{greeting(user?.email)}</Text>
           <Text style={[typography.body, styles.sub]}>
             {offlineNoCache
-              ? 'You\u2019re offline and we don\u2019t have anything cached on this device yet.'
-              : 'We couldn\u2019t load your dashboard yet.'}
+              ? t("You’re offline and we don’t have anything cached on this device yet.")
+              : t("We couldn’t load your dashboard yet.")}
           </Text>
           <EmptyState
             variant="error"
-            title={offlineNoCache ? 'You\u2019re offline' : 'Couldn\u2019t load your places'}
+            title={offlineNoCache ? t("You’re offline") : t("Couldn’t load your places")}
             body={
               offlineNoCache
                 ? 'Reconnect to the internet and pull to refresh \u2014 your saved places will appear here.'
@@ -248,16 +251,15 @@ export default function Home() {
           <Text style={[typography.body, styles.sub]}>
             {hasPlaces
               ? `${formatCount(data.length)} ready when you are.`
-              : 'Save a place from Instagram, TikTok, or any link to get started.'}
+              : t("Save a place from Instagram, TikTok, or any link to get started.")}
           </Text>
         </View>
 
         {activationIncomplete ? (
           <Card style={styles.ctaCard}>
-            <Text style={typography.heading}>Build your first map</Text>
+            <Text style={typography.heading}>{t("Build your first map")}</Text>
             <Text style={[typography.body, styles.cardBody]}>
-              Save 3 places so Nearr can start feeling useful.
-            </Text>
+              {t("Save 3 places so Nearr can start feeling useful.")}</Text>
             <Text style={[typography.caption, styles.progressLabel]}>
               {getActivationProgressLabel(data.length)}
             </Text>
@@ -266,7 +268,7 @@ export default function Home() {
             </View>
             <View style={styles.ctaActions}>
               <Button
-                title="Save from link"
+                title={t("Save from link")}
                 onPress={() => {
                   handleActivationTap('save_from_link');
                   router.push('/share');
@@ -274,7 +276,7 @@ export default function Home() {
               />
               <View style={{ height: Spacing.sm }} />
               <Button
-                title="Open map"
+                title={t("Open map")}
                 variant="secondary"
                 onPress={() => {
                   handleActivationTap('open_map');
@@ -284,7 +286,7 @@ export default function Home() {
             </View>
             <View style={styles.inlineActionRow}>
               <Button
-                title="Find the right place"
+                title={t("Find the right place")}
                 variant="ghost"
                 onPress={() => {
                   handleActivationTap('search_manually');
@@ -295,22 +297,21 @@ export default function Home() {
           </Card>
         ) : (
           <Card style={styles.ctaCard}>
-            <Text style={typography.heading}>Save a place</Text>
+            <Text style={typography.heading}>{t("Save a place")}</Text>
             <Text style={[typography.body, styles.cardBody]}>
-              Paste a link from Instagram, TikTok, or anywhere else.
-            </Text>
+              {t("Paste a link from Instagram, TikTok, or anywhere else.")}</Text>
             <View style={styles.ctaActions}>
-              <Button title="Save from link" onPress={() => router.push('/share')} />
+              <Button title={t("Save from link")} onPress={() => router.push('/share')} />
               <View style={{ height: Spacing.sm }} />
               <Button
-                title="Open map"
+                title={t("Open map")}
                 variant="secondary"
                 onPress={() => router.push('/(tabs)/map')}
               />
             </View>
             <View style={styles.inlineActionRow}>
               <Button
-                title="Find the right place"
+                title={t("Find the right place")}
                 variant="ghost"
                 onPress={() => router.push('/add-place')}
               />
@@ -320,17 +321,16 @@ export default function Home() {
 
         <Pressable style={styles.helpRow} onPress={() => setHowNearrWorksVisible(true)}>
           <View style={styles.helpCopy}>
-            <Text style={typography.bodyStrong}>New here?</Text>
+            <Text style={typography.bodyStrong}>{t("New here?")}</Text>
             <Text style={[typography.caption, styles.helpBody]}>
-              See how Nearr works.
-            </Text>
+              {t("See how Nearr works.")}</Text>
           </View>
           <Text style={styles.helpChevron}>›</Text>
         </Pressable>
 
         {!hasPlaces ? (
           <EmptyState
-            title="No places yet"
+            title={t("No places yet")}
             body="Save a place from a share link, then Nearr will show it on your map and remind you when you&apos;re nearby."
             actionTitle="Save from link"
             onAction={() => router.push('/share')}
@@ -341,12 +341,11 @@ export default function Home() {
         ) : (
           <>
             <Card style={styles.ctaCard}>
-              <Text style={typography.heading}>Your map is ready</Text>
+              <Text style={typography.heading}>{t("Your map is ready")}</Text>
               <Text style={[typography.body, styles.cardBody]}>
-                {formatCount(data.length)} on your map — nearby spots are ready when you are.
-              </Text>
+                {formatCount(data.length)} {t(" on your map — nearby spots are ready when you are.")}</Text>
               <View style={styles.ctaActions}>
-                <Button title="Open map" onPress={() => router.push('/(tabs)/map')} />
+                <Button title={t("Open map")} onPress={() => router.push('/(tabs)/map')} />
               </View>
             </Card>
 

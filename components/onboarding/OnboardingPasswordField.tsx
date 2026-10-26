@@ -1,3 +1,5 @@
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { forwardRef } from 'react';
 import {
@@ -53,8 +55,8 @@ export const OnboardingPasswordField = forwardRef<TextInput, Props>(
           hitSlop={8}
           style={styles.toggle}
           accessibilityRole="button"
-          accessibilityLabel={visible ? 'Hide password' : 'Show password'}
-          accessibilityHint="Toggles whether the password characters are visible"
+          accessibilityLabel={visible ? t("Hide password") : t("Show password")}
+          accessibilityHint={t("Toggles whether the password characters are visible")}
         >
           <Feather
             name={visible ? 'eye-off' : 'eye'}

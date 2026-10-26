@@ -1,3 +1,4 @@
+import { i18n } from './i18nEngine';
 import {
   CATEGORY_BROWSE_SECTIONS,
   CATEGORY_LABELS,
@@ -108,6 +109,10 @@ export function savedPlaceNotePreview(saved: SavedPlaceWithPlace): {
 
 export function formatBrowseDistance(distanceMeters: number | null | undefined): string | null {
   if (typeof distanceMeters !== 'number' || !Number.isFinite(distanceMeters) || distanceMeters < 0) return null;
+  if (i18n.language !== 'en-US') {
+    const kilometers = distanceMeters / 1000;
+    return new Intl.NumberFormat(i18n.language, { style: 'unit', unit: 'kilometer', maximumFractionDigits: kilometers < 10 ? 1 : 0 }).format(kilometers);
+  }
   const miles = distanceMeters / 1609.344;
   if (miles < 0.1) return '<0.1 mi';
   if (miles < 10) return `${miles.toFixed(1)} mi`;

@@ -1,3 +1,4 @@
+import { providerAllowedForGlobalAudience } from './providerAudiencePolicy.ts';
 import { isGenericContentQuery, looksLikeVenueNameCandidate } from './queryValidation';
 import {
   buildVerifiedProfileQuery,
@@ -396,6 +397,7 @@ export async function extractPlaceAI(
   // Mobile bundles must never dispatch directly to a model provider: the
   // server owns account eligibility and consent enforcement. Evaluation
   // scripts retain the existing server-side model behavior.
+  if (!providerAllowedForGlobalAudience('gemini')) return buildFallback(input, 'provider_audience_restricted');
   if (options.allowProviderCall === false) {
     return buildFallback(input, 'client_model_dispatch_disabled');
   }

@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * SelectedPlaceDetails — THE canonical saved-place detail experience, shown
  * inside the EXPANDED map sheet (app/(tabs)/map.tsx).
@@ -210,6 +212,7 @@ export function SelectedPlaceDetails({
   transitionImageUri = null,
   transitionImageKind = 'unknown',
 }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
   const router = useRouter();
   const { fontScale } = useWindowDimensions();
@@ -217,7 +220,7 @@ export function SelectedPlaceDetails({
   const reduceMotion = useReduceMotion();
   const [moreOpen, setMoreOpen] = useState(false);
   const [reminderBusy, setReminderBusy] = useState(false);
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography, i18n.language]);
   const handledMoreMenuRequestRef = useRef(moreMenuRequest);
   const reminderSlotRectRef = useRef<{ width: number; height: number } | null>(null);
   const verifyReminderSwitchBounds = useCallback((event: LayoutChangeEvent) => {
@@ -240,7 +243,7 @@ export function SelectedPlaceDetails({
   }, [moreMenuRequest]);
   const { session } = useAuth();
   const { state: onboardingState } = useOnboardingV2();
-  const capabilities = useMemo(() => placeCapabilities(saved), [saved]);
+  const capabilities = useMemo(() => placeCapabilities(saved), [saved, i18n.language]);
   const tutorialPhotoUris = useMemo(() => {
     const fixture = offlineFixtureByPlaceId(saved.place.id);
     if (!fixture) return [];
@@ -248,7 +251,7 @@ export function SelectedPlaceDetails({
       .map((asset) => Image.resolveAssetSource(asset).uri)
       .filter(Boolean)
       .slice(0, 5);
-  }, [saved.place.id]);
+  }, [saved.place.id, i18n.language]);
   const onboardingTourStep = onboardingState?.stage === 'place_tour' &&
     onboardingState.tutorialSave?.savedPlaceId === saved.id
     ? onboardingState.placeTourStep
@@ -347,7 +350,7 @@ export function SelectedPlaceDetails({
       (allSavedPlaces ?? [])
         .map((entry) => entry.place.google_place_id?.trim())
         .filter((id): id is string => !!id),
-    [allSavedPlaces, savedProviderPlaceIds],
+    [allSavedPlaces, savedProviderPlaceIds, i18n.language],
   );
   const savedGooglePlaceIdsKey = savedGooglePlaceIds.slice().sort().join('|');
 
@@ -482,7 +485,7 @@ export function SelectedPlaceDetails({
     return Number.isFinite(parsed) && parsed > 0
       ? `Remind me when I’m about ${formatUnit(parsed, 'minutes')} away.`
       : 'Remind me when I’m about this many minutes away.';
-  }, [milesText, minutesText, mode]);
+  }, [milesText, minutesText, mode, i18n.language]);
 
   const dirty = useMemo(() => {
     if (!capabilities.canEdit) return false;
@@ -498,11 +501,11 @@ export function SelectedPlaceDetails({
     const parsed = Number.parseInt(minutesText, 10);
     if (!Number.isFinite(parsed) || parsed <= 0) return true;
     return saved.radius_unit !== 'minutes' || saved.radius_value !== parsed;
-  }, [capabilities.canEdit, milesText, minutesText, mode, notifyOn, saved]);
+  }, [capabilities.canEdit, milesText, minutesText, mode, notifyOn, saved, i18n.language]);
 
   // Only offer the "open original" affordance when a non-empty source URL is
   // actually stored (share/paste flows). Manual saves have none → no button.
-  const sourceCards = useMemo(() => placeSourceCards(saved), [saved]);
+  const sourceCards = useMemo(() => placeSourceCards(saved), [saved, i18n.language]);
   const sourceCardsKey = sourceCards
     .map((source) => `${source.key}|${source.url}|${source.thumbnailUrl ?? ''}`)
     .join('\n');
@@ -544,21 +547,21 @@ export function SelectedPlaceDetails({
     () => resolvePlaceSource(primarySource
       ? { source_type: primarySource.platform, source_url: primarySource.url }
       : saved),
-    [primarySource, saved],
+    [primarySource, saved, i18n.language],
   );
 
   const photoUrls = useMemo(() => {
     if (tutorialPhotoUris.length) return tutorialPhotoUris.filter((url) => !failedPhotoUrls[url]);
     if (!richDetails?.photoUrls?.length) return [];
     return richDetails.photoUrls.filter((url) => !failedPhotoUrls[url] && photoKinds[url] !== 'source').slice(0, 5);
-  }, [failedPhotoUrls, photoKinds, richDetails?.photoUrls, tutorialPhotoUris]);
+  }, [failedPhotoUrls, photoKinds, richDetails?.photoUrls, tutorialPhotoUris, i18n.language]);
 
   const photoRolodexItems = useMemo(() => photoUrls.map((uri, index) => ({
     key: uri,
     uri,
     accessibilityLabel: `${saved.place.name}, photo ${index + 1} of ${photoUrls.length}`,
     footerLabel: `${photoKinds[uri] === 'destination' ? 'Destination photo' : 'Saved photo'} · ${saved.place.name}`,
-  })), [photoKinds, photoUrls, saved.place.name]);
+  })), [photoKinds, photoUrls, saved.place.name, i18n.language]);
   useEffect(() => {
     if (galleryOpen && photoUrls.length === 0) setGalleryOpen(false);
   }, [galleryOpen, photoUrls.length]);
@@ -596,7 +599,7 @@ export function SelectedPlaceDetails({
       videoGalleryEnabled ? ownerPlaceVideos : [],
       videoGalleryEnabled ? communityPlaceVideos : [],
     ),
-    [communityPlaceVideos, ownerPlaceVideos, photoUrls, videoGalleryEnabled],
+    [communityPlaceVideos, ownerPlaceVideos, photoUrls, videoGalleryEnabled, i18n.language],
   );
   const sourceHeroUri = [
     ...(richDetails?.photoUrls.filter((uri) => photoKinds[uri] === 'source') ?? []),
@@ -625,11 +628,11 @@ export function SelectedPlaceDetails({
   // re-points `selected` at the refreshed cached row when that happens.
   const whySaved = useMemo(
     () => whySavedDisplay({ notes, ai_note: saved.ai_note }),
-    [notes, saved.ai_note],
+    [notes, saved.ai_note, i18n.language],
   );
   const visited = useMemo(
     () => visitedDisplay({ visited_at: visitedAt }),
-    [visitedAt],
+    [visitedAt, i18n.language],
   );
   /**
    * The user's other saves from the SAME post. A semantic relationship, so it
@@ -640,11 +643,11 @@ export function SelectedPlaceDetails({
    */
   const sameSource = useMemo(
     () => selectSameSourcePlaces(saved, allSavedPlaces ?? []),
-    [allSavedPlaces, saved],
+    [allSavedPlaces, saved, i18n.language],
   );
   const sameSourceIds = useMemo(
     () => sameSource.map((entry) => entry.id),
-    [sameSource],
+    [sameSource, i18n.language],
   );
 
   // The user's OWN saves near this one. Never a provider lookup.
@@ -659,13 +662,13 @@ export function SelectedPlaceDetails({
         excludeIds: sameSourceIds,
         categoryOf: savedPlaceCategory,
       }),
-    [allSavedPlaces, saved, sameSourceIds],
+    [allSavedPlaces, saved, sameSourceIds, i18n.language],
   );
   const relatedPhotoSignature = useMemo(
     () => [...sameSource, ...alsoNearby.map((entry) => entry.saved)]
       .map((entry) => `${entry.id}:${entry.place.google_place_id ?? ''}`)
       .join('|'),
-    [alsoNearby, sameSource],
+    [alsoNearby, sameSource, i18n.language],
   );
   useEffect(() => {
     let cancelled = false;
@@ -714,7 +717,7 @@ export function SelectedPlaceDetails({
           onPress: () => onSelectNearby?.(entry),
         };
       }),
-    [onSelectNearby, relatedPhotoUrls, sameSource, saved],
+    [onSelectNearby, relatedPhotoUrls, sameSource, saved, i18n.language],
   );
 
   // Built once per selection rather than on every render, so scrolling the
@@ -730,7 +733,7 @@ export function SelectedPlaceDetails({
         a11yLabel: `Open ${entry.saved.place.name}, ${formatNearbyDistance(entry.distanceMeters)} away`,
         onPress: () => onSelectNearby?.(entry.saved),
       })),
-    [alsoNearby, onSelectNearby, relatedPhotoUrls],
+    [alsoNearby, onSelectNearby, relatedPhotoUrls, i18n.language],
   );
   const recommendationEntries = useMemo(
     () =>
@@ -755,7 +758,7 @@ export function SelectedPlaceDetails({
           },
         };
       }),
-    [recommendations, saved.id],
+    [recommendations, saved.id, i18n.language],
   );
   const openNearbyMapExplorer = useCallback(() => {
     onSeeMap?.({
@@ -772,13 +775,13 @@ export function SelectedPlaceDetails({
       milesText,
       minutesText,
     }),
-    [milesText, minutesText, mode, notifyOn],
+    [milesText, minutesText, mode, notifyOn, i18n.language],
   );
   // Just the magnitude for the compact action-row control; the adjacent switch
   // already communicates on/off.
   const reminderDistance = useMemo(
     () => reminderDistanceLabel({ mode, milesText, minutesText }),
-    [milesText, minutesText, mode],
+    [milesText, minutesText, mode, i18n.language],
   );
 
   /**
@@ -797,7 +800,7 @@ export function SelectedPlaceDetails({
         hours: richDetails?.openingHours,
         utcOffsetMinutes: richDetails?.utcOffsetMinutes,
       }),
-    [richDetails?.openingHours, richDetails?.utcOffsetMinutes],
+    [richDetails?.openingHours, richDetails?.utcOffsetMinutes, i18n.language],
   );
   // Hold the row's height while the (cached) details resolve so the hero does
   // not visibly shove the rest of the sheet down a beat later.
@@ -813,9 +816,9 @@ export function SelectedPlaceDetails({
         const notificationsAllowed = await ensureNotificationPermission();
         const locationAllowed = notificationsAllowed && await ensureBackgroundLocationPermission();
         if (!notificationsAllowed || !locationAllowed) {
-          Alert.alert('Allow nearby reminders', 'Notifications and background location are needed to remind you when you are near this place.', [
-            { text: 'Not now', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => { void Linking.openSettings(); } },
+          Alert.alert(t("Allow nearby reminders"), t("Notifications and background location are needed to remind you when you are near this place."), [
+            { text: t("Not now"), style: 'cancel' },
+            { text: t("Open Settings"), onPress: () => { void Linking.openSettings(); } },
           ]);
           return;
         }
@@ -827,7 +830,7 @@ export function SelectedPlaceDetails({
       onSaved?.(updated);
       if (next) hapticSelection();
     } catch {
-      Alert.alert('Couldn?t update reminder', 'Your previous reminder setting is unchanged. Check your connection and try again.');
+      Alert.alert(t("Couldn?t update reminder"), t("Your previous reminder setting is unchanged. Check your connection and try again."));
     } finally {
       setReminderBusy(false);
     }
@@ -883,7 +886,7 @@ export function SelectedPlaceDetails({
       void trackEvent('place_video_original_opened', { place_id: saved.place.id, source_id: video.sourceId, ownership: video.ownership, platform: video.platform });
       void trackEvent(video.ownership === 'OWNER' ? 'owner_video_opened' : 'community_video_opened', { place_id: saved.place.id, source_id: video.sourceId, platform: video.platform });
     } catch {
-      Alert.alert('Post unavailable', 'The original post can no longer be opened.');
+      Alert.alert(t("Post unavailable"), t("The original post can no longer be opened."));
     }
   }
 
@@ -918,7 +921,7 @@ export function SelectedPlaceDetails({
       share_kind: content.kind,
     });
     if (!content.url) {
-      Alert.alert("Couldn't share this place", 'This place does not have a valid Nearr link yet.');
+      Alert.alert(t("Couldn't share this place"), t("This place does not have a valid Nearr link yet."));
       return;
     }
     try {
@@ -948,7 +951,7 @@ export function SelectedPlaceDetails({
     if (mode === 'miles') {
       const n = Number.parseFloat(milesText);
       if (!Number.isFinite(n) || n <= 0) {
-        Alert.alert('Invalid reminder distance', 'Enter a positive number of miles.');
+        Alert.alert(t("Invalid reminder distance"), t("Enter a positive number of miles."));
         return;
       }
       radiusValue = n;
@@ -956,7 +959,7 @@ export function SelectedPlaceDetails({
     } else if (mode === 'minutes') {
       const n = Number.parseInt(minutesText, 10);
       if (!Number.isFinite(n) || n <= 0) {
-        Alert.alert('Invalid reminder distance', 'Enter a positive number of minutes.');
+        Alert.alert(t("Invalid reminder distance"), t("Enter a positive number of minutes."));
         return;
       }
       radiusValue = n;
@@ -988,7 +991,7 @@ export function SelectedPlaceDetails({
     } catch (e: any) {
       // Offline mutations throw OfflineMutationError whose message is the
       // friendly "Internet required to update saved places." string.
-      Alert.alert('Couldn?t save changes', 'Your previous settings are unchanged. Check your connection and try again.');
+      Alert.alert(t("Couldn?t save changes"), t("Your previous settings are unchanged. Check your connection and try again."));
     } finally {
       setSaving(false);
     }
@@ -1064,7 +1067,7 @@ export function SelectedPlaceDetails({
     } catch (e: any) {
       setVisitedAt(saved.visited_at ?? null);
       restoreSavedPlacesCache(snapshot);
-      Alert.alert('Could not update', e?.message ?? 'Please try again.');
+      Alert.alert(t("Could not update"), e?.message ?? 'Please try again.');
     } finally {
       setVisitBusy(false);
     }
@@ -1093,7 +1096,7 @@ export function SelectedPlaceDetails({
               else onRequestDismiss();
             } catch (e: any) {
               restoreSavedPlacesCache(snapshot);
-              Alert.alert('Couldn?t remove place', 'Your saved place is still here. Check your connection and try again.');
+              Alert.alert(t("Couldn?t remove place"), t("Your saved place is still here. Check your connection and try again."));
             } finally {
               setDeleting(false);
             }
@@ -1106,7 +1109,7 @@ export function SelectedPlaceDetails({
   return (
     <View style={styles.wrap}>
       {showNavigation ? <View style={styles.detailNavigation}>
-        <Text style={styles.detailNavigationLabel}>Your saved place</Text>
+        <Text style={styles.detailNavigationLabel}>{t("Your saved place")}</Text>
         <Pressable accessibilityRole="button" accessibilityLabel={`More options for ${saved.place.name}`} onPress={() => setMoreOpen(true)} style={styles.moreButton}>
           <Feather name="more-horizontal" size={22} color={colors.text} />
         </Pressable>
@@ -1138,7 +1141,7 @@ export function SelectedPlaceDetails({
             {detailsLoading ? (
               <ActivityIndicator size="small" color={colors.accent} />
             ) : (
-              <><Feather name="image" size={28} color={colors.textSecondary} /><Text style={styles.noPhotoLabel}>No destination photo yet</Text></>
+              <><Feather name="image" size={28} color={colors.textSecondary} /><Text style={styles.noPhotoLabel}>{t("No destination photo yet")}</Text></>
             )}
           </View>
         )}
@@ -1153,11 +1156,11 @@ export function SelectedPlaceDetails({
         {videoHero && videoHero.kind !== 'PROVIDER' ? (
           <View style={styles.videoHeroPill}>
             <Feather name="play" size={13} color="#FFFFFF" />
-            <Text style={styles.photoCountText}>{videoHero.kind === 'OWNER_VIDEO' ? 'Saved by you' : 'Nearr community'}</Text>
+            <Text style={styles.photoCountText}>{videoHero.kind === 'OWNER_VIDEO' ? t("Saved by you") : t("Nearr community")}</Text>
           </View>
         ) : null}
 
-        {!videoHero && heroUri ? <View style={styles.videoHeroPill}><Text style={styles.photoCountText}>{sourceHeroUri ? 'From your post' : transitionImageKind === 'destination' ? 'Destination photo' : 'Saved image'}</Text></View> : null}
+        {!videoHero && heroUri ? <View style={styles.videoHeroPill}><Text style={styles.photoCountText}>{sourceHeroUri ? t("From your post") : transitionImageKind === 'destination' ? t("Destination photo") : t("Saved image")}</Text></View> : null}
       </Pressable>
 
       {photoUrls.length > 1 && !largeText ? (
@@ -1174,12 +1177,12 @@ export function SelectedPlaceDetails({
         <Text style={styles.heroMetaText}>{[categoryLabel, locality].filter(Boolean).join(' · ')}</Text>
       </View>
       <View style={[styles.destinationActions, largeText && styles.destinationActionsLarge]}>
-        <Button title="Directions" icon="navigation" accessibilityLabel={`Get directions to ${saved.place.name}`} onPress={onGetDirections} style={styles.directionsButton} />
+        <Button title={t("Directions")} icon="navigation" accessibilityLabel={`Get directions to ${saved.place.name}`} onPress={onGetDirections} style={styles.directionsButton} />
         {!largeText ? <Pressable onPress={() => void sharePlace()} accessibilityRole="button" accessibilityLabel={`Share ${saved.place.name}`} style={styles.shareButton}><Feather name="share" size={21} color={colors.text} /></Pressable> : null}
       </View>
       {onboardingTourStep && ['source', 'directions', 'close'].includes(onboardingTourStep) ? <PlaceTourCallout step={onboardingTourStep} placeName={saved.place.name} onContinue={onboardingTourStep === 'close' ? skipOnboardingTour : advanceOnboardingTour} onSkip={skipOnboardingTour} /> : null}
       {sourceAttribution ? <SourceRibbon
-        title={primarySource?.creator ? `@${primarySource.creator.replace(/^@/, '')}` : 'Your original post'}
+        title={primarySource?.creator ? `@${primarySource.creator.replace(/^@/, '')}` : t("Your original post")}
         platform={sourceAttribution.platformName}
         thumbnail={primarySource ? placeSourcePreviewCandidates(sourceEvidencePreviewUrls[primarySource.key], primarySource.thumbnailUrl).find((url) => !failedSourcePreviewUrls[url]) ?? null : null}
         caption={primarySource?.caption ?? undefined}
@@ -1235,19 +1238,19 @@ export function SelectedPlaceDetails({
 
       {hasReason ? <View style={styles.savedBecauseCard} accessibilityLiveRegion="polite">
         <View style={styles.savedBecauseHeader}>
-          <Text style={styles.savedBecauseTitle}>WHY YOU SAVED IT</Text>
-          {capabilities.canEdit ? <Pressable onPress={() => beginNoteEdit(whySaved.seedFromSourceNote)} accessibilityRole="button" accessibilityLabel="Edit why you saved this place" style={styles.textAction}><Text style={styles.changeLink}>Edit</Text></Pressable> : null}
+          <Text style={styles.savedBecauseTitle}>{t("WHY YOU SAVED IT")}</Text>
+          {capabilities.canEdit ? <Pressable onPress={() => beginNoteEdit(whySaved.seedFromSourceNote)} accessibilityRole="button" accessibilityLabel={t("Edit why you saved this place")} style={styles.textAction}><Text style={styles.changeLink}>{t("Edit")}</Text></Pressable> : null}
         </View>
         <>
           <Text style={styles.reasonText}>{whySaved.text}</Text>
-          <Text style={styles.attributionText}>{whySaved.origin === 'user' ? 'Your note' : 'From the post'}</Text>
+          <Text style={styles.attributionText}>{whySaved.origin === 'user' ? t("Your note") : t("From the post")}</Text>
         </>
-      </View> : capabilities.canEdit ? <Pressable onPress={() => beginNoteEdit()} accessibilityRole="button" accessibilityLabel="Add why you saved this place" style={styles.emptyNoteRow}><Feather name="edit-3" size={16} color={colors.accent} /><Text style={styles.addNoteLink}>Add a note for someday</Text><Feather name="chevron-right" size={16} color={colors.textMuted} /></Pressable> : null}
+      </View> : capabilities.canEdit ? <Pressable onPress={() => beginNoteEdit()} accessibilityRole="button" accessibilityLabel={t("Add why you saved this place")} style={styles.emptyNoteRow}><Feather name="edit-3" size={16} color={colors.accent} /><Text style={styles.addNoteLink}>{t("Add a note for someday")}</Text><Feather name="chevron-right" size={16} color={colors.textMuted} /></Pressable> : null}
       {capabilities.canSetReminder ? <View style={[styles.reminderRow, largeText && styles.reminderRowLarge]}>
         <View style={styles.reminderCopy}>
-          <Text style={styles.reminderTitle}>Remind me nearby</Text>
-          <Text style={styles.reminderDescription}>A little nudge when you?re close.</Text>
-          {notifyOn ? <Pressable onPress={() => setReminderSettingsExpanded((value) => !value)} accessibilityRole="button" accessibilityLabel={`Nearby reminder, ${reminderStatus}. Change distance`} accessibilityState={{ expanded: reminderSettingsExpanded }} style={styles.reminderControl}><Text style={styles.reminderDistanceText}>{reminderDistance} · Change distance</Text><Feather name={reminderSettingsExpanded ? 'chevron-down' : 'chevron-right'} size={16} color={colors.textSecondary} /></Pressable> : null}
+          <Text style={styles.reminderTitle}>{t("Remind me nearby")}</Text>
+          <Text style={styles.reminderDescription}>{t("A little nudge when you?re close.")}</Text>
+          {notifyOn ? <Pressable onPress={() => setReminderSettingsExpanded((value) => !value)} accessibilityRole="button" accessibilityLabel={`Nearby reminder, ${reminderStatus}. Change distance`} accessibilityState={{ expanded: reminderSettingsExpanded }} style={styles.reminderControl}><Text style={styles.reminderDistanceText}>{reminderDistance} {t(" · Change distance")}</Text><Feather name={reminderSettingsExpanded ? 'chevron-down' : 'chevron-right'} size={16} color={colors.textSecondary} /></Pressable> : null}
         </View>
         <View
           style={styles.reminderSwitchSlot}
@@ -1257,7 +1260,7 @@ export function SelectedPlaceDetails({
               height: event.nativeEvent.layout.height,
             };
           }}
-        >{reminderBusy ? <ActivityIndicator accessibilityLabel="Updating reminder" color={colors.primary} /> : <Switch
+        >{reminderBusy ? <ActivityIndicator accessibilityLabel={t("Updating reminder")} color={colors.primary} /> : <Switch
           value={notifyOn}
           onValueChange={(next) => void changeReminderEnabled(next)}
           accessibilityLabel={`Nearby reminder for ${saved.place.name}`}
@@ -1273,9 +1276,9 @@ export function SelectedPlaceDetails({
       {capabilities.canSetReminder && notifyOn && reminderSettingsExpanded ? (
         <View style={styles.reminderSettings}>
           <View style={styles.radiusGroup}>
-            <RadiusOption label="Auto" active={mode === 'default'} onPress={() => setMode('default')} />
-            <RadiusOption label="Distance" active={mode === 'miles'} onPress={() => setMode('miles')} />
-            <RadiusOption label="Time" active={mode === 'minutes'} onPress={() => setMode('minutes')} />
+            <RadiusOption label={t("Auto")} active={mode === 'default'} onPress={() => setMode('default')} />
+            <RadiusOption label={t("Distance")} active={mode === 'miles'} onPress={() => setMode('miles')} />
+            <RadiusOption label={t("Time")} active={mode === 'minutes'} onPress={() => setMode('minutes')} />
           </View>
           {mode === 'miles' ? (
             <Input
@@ -1301,7 +1304,7 @@ export function SelectedPlaceDetails({
 
       {dirty ? (
         <Button
-          title="Save changes"
+          title={t("Save changes")}
           variant="secondary"
           onPress={handleSave}
           loading={saving}
@@ -1322,10 +1325,10 @@ export function SelectedPlaceDetails({
         </View>
         <View style={styles.visitCopy}>
           <Text style={styles.visitTitle}>
-            {visited.visited ? 'You went here' : visited.prompt}
+            {visited.visited ? t("You went here") : visited.prompt}
           </Text>
           <Text style={styles.visitSupport}>
-            {visited.visited ? 'Nearby reminders are paused.' : visited.supportCopy}
+            {visited.visited ? t("Nearby reminders are paused.") : visited.supportCopy}
           </Text>
         </View>
         {/* Explicit labels preserve the existing visited and local-deferral
@@ -1339,7 +1342,7 @@ export function SelectedPlaceDetails({
             accessibilityLabel={`You went to ${saved.place.name}`}
           >
             <Feather name="check" size={16} color={colors.accent} />
-            <Text style={styles.visitStateButtonText}>Visited</Text>
+            <Text style={styles.visitStateButtonText}>{t("Visited")}</Text>
           </View>
         ) : (
           <View style={styles.visitActions}>
@@ -1349,7 +1352,7 @@ export function SelectedPlaceDetails({
               accessibilityRole="button"
               accessibilityState={{ selected: false, busy: visitBusy }}
               accessibilityLabel={`Mark ${saved.place.name} visited`}
-              accessibilityHint="Marks it visited and pauses its nearby reminders"
+              accessibilityHint={t("Marks it visited and pauses its nearby reminders")}
               hitSlop={6}
               style={({ pressed }) => [styles.visitStateButton, pressed && styles.pressed]}
             >
@@ -1358,7 +1361,7 @@ export function SelectedPlaceDetails({
               ) : (
                 <Feather name="check" size={16} color={colors.textSecondary} />
               )}
-              <Text style={styles.visitStateButtonText}>Mark visited</Text>
+              <Text style={styles.visitStateButtonText}>{t("Mark visited")}</Text>
             </Pressable>
             {/* Deliberately inert: "not yet" is the status quo, never a
                 mutation and never destructive. */}
@@ -1374,7 +1377,7 @@ export function SelectedPlaceDetails({
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.visitStateButtonText}>Not yet</Text>
+              <Text style={styles.visitStateButtonText}>{t("Not yet")}</Text>
             </Pressable>
           </View>
         )}
@@ -1392,37 +1395,37 @@ export function SelectedPlaceDetails({
         <PlaceCardRow
           title={`${sourceAttribution.siblingSectionTitle} · ${sameSourceEntries.length + 1}`}
           entries={sameSourceEntries}
-          actionLabel={onViewSourceGroup ? 'See all' : undefined}
+          actionLabel={onViewSourceGroup ? t("See all") : undefined}
           onAction={onViewSourceGroup}
         />
       ) : null}
 
       {alsoNearbyEntries.length > 0 ? (
         <PlaceCardRow
-          title="Near this place"
+          title={t("Near this place")}
           entries={alsoNearbyEntries}
-          actionLabel={onSeeMap && recommendationEntries.length === 0 ? 'See map' : undefined}
+          actionLabel={onSeeMap && recommendationEntries.length === 0 ? t("See map") : undefined}
           onAction={onSeeMap && recommendationEntries.length === 0 ? openNearbyMapExplorer : undefined}
         />
       ) : null}
 
       {recommendationsEnabled && recommendationEntries.length > 0 ? (
         <PlaceCardRow
-          title="Also nearby"
+          title={t("Also nearby")}
           entries={recommendationEntries}
-          actionLabel={onSeeMap ? 'See map' : undefined}
+          actionLabel={onSeeMap ? t("See map") : undefined}
           onAction={onSeeMap ? openNearbyMapExplorer : undefined}
         />
       ) : recommendationsEnabled && recommendationsLoading ? (
-        <View style={styles.recommendationsLoading} accessibilityLabel="Loading nearby places">
+        <View style={styles.recommendationsLoading} accessibilityLabel={t("Loading nearby places")}>
           <ActivityIndicator size="small" color={colors.accent} />
-          <Text style={styles.recommendationsLoadingText}>Finding places nearby…</Text>
+          <Text style={styles.recommendationsLoadingText}>{t("Finding places nearby…")}</Text>
         </View>
       ) : null}
 
       {!videoGalleryEnabled && shouldShowMoreVideos(sourceCards) ? (
         <View style={styles.moreVideosSection}>
-          <Text style={styles.moreVideosTitle}>More videos from this place</Text>
+          <Text style={styles.moreVideosTitle}>{t("More videos from this place")}</Text>
           <FlatList
             data={sourceCards}
             horizontal
@@ -1475,7 +1478,7 @@ export function SelectedPlaceDetails({
                     </View>
                     {item.primary ? (
                       <View style={styles.sourceCardPrimaryBadge}>
-                        <Text style={styles.sourceCardPrimaryText}>Original</Text>
+                        <Text style={styles.sourceCardPrimaryText}>{t("Original")}</Text>
                       </View>
                     ) : null}
                   </View>
@@ -1507,15 +1510,15 @@ export function SelectedPlaceDetails({
 
       <Modal visible={moreOpen} transparent animationType="none" statusBarTranslucent onRequestClose={() => setMoreOpen(false)}>
         <View style={styles.moreBackdrop}>
-          <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Close place options" onPress={() => setMoreOpen(false)} />
+          <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={t("Close place options")} onPress={() => setMoreOpen(false)} />
           <ScrollView style={styles.moreMenu} contentContainerStyle={styles.moreMenuContent} accessibilityViewIsModal>
             <Text accessibilityRole="header" style={styles.moreTitle}>{saved.place.name}</Text>
-            {capabilities.canEdit ? <Button title="Edit note" variant="text" icon="edit-3" onPress={() => { setMoreOpen(false); beginNoteEdit(whySaved.seedFromSourceNote); }} /> : null}
-            <Button title="Share place" variant="text" icon="share" onPress={() => { setMoreOpen(false); void sharePlace(); }} />
-            {capabilities.canMarkVisited && !visited.visited ? <Button title="Mark as visited" variant="text" icon="check-circle" onPress={() => { setMoreOpen(false); void handleMarkVisited(); }} /> : null}
-            {capabilities.canReportWrongPlace ? <Button title="Wrong place?" accessibilityLabel="Wrong place? Correct this saved place" variant="text" icon="map-pin" onPress={() => { setMoreOpen(false); setWrongPlaceOpen(true); }} /> : null}
-            {capabilities.canDelete ? <Button title="Remove saved place" accessibilityLabel={`Remove ${saved.place.name} from saved places`} variant="destructive" disabled={deleting} onPress={() => { setMoreOpen(false); confirmDelete(); }} /> : null}
-            <Button title="Done" variant="secondary" onPress={() => setMoreOpen(false)} />
+            {capabilities.canEdit ? <Button title={t("Edit note")} variant="text" icon="edit-3" onPress={() => { setMoreOpen(false); beginNoteEdit(whySaved.seedFromSourceNote); }} /> : null}
+            <Button title={t("Share place")} variant="text" icon="share" onPress={() => { setMoreOpen(false); void sharePlace(); }} />
+            {capabilities.canMarkVisited && !visited.visited ? <Button title={t("Mark as visited")} variant="text" icon="check-circle" onPress={() => { setMoreOpen(false); void handleMarkVisited(); }} /> : null}
+            {capabilities.canReportWrongPlace ? <Button title={t("Wrong place?")} accessibilityLabel={t("Wrong place? Correct this saved place")} variant="text" icon="map-pin" onPress={() => { setMoreOpen(false); setWrongPlaceOpen(true); }} /> : null}
+            {capabilities.canDelete ? <Button title={t("Remove saved place")} accessibilityLabel={`Remove ${saved.place.name} from saved places`} variant="destructive" disabled={deleting} onPress={() => { setMoreOpen(false); confirmDelete(); }} /> : null}
+            <Button title={t("Done")} variant="secondary" onPress={() => setMoreOpen(false)} />
           </ScrollView>
         </View>
       </Modal>
@@ -1564,8 +1567,9 @@ function RadiusOption({
   active: boolean;
   onPress: () => void;
 }) {
+  useLocale();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography, i18n.language]);
   return (
     <Pressable
       onPress={onPress}
@@ -1589,8 +1593,9 @@ function PlaceTourCallout({
   onContinue: () => void;
   onSkip: () => void;
 }) {
+  useLocale();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography, i18n.language]);
   const sentence = step === 'source'
     ? 'The original post stays with every place you save.'
     : step === 'directions'
@@ -1604,11 +1609,11 @@ function PlaceTourCallout({
       <Feather name="bookmark" size={16} color={colors.accent} />
       <Text style={styles.onboardingCalloutText}>{sentence}</Text>
       <Pressable onPress={onContinue} hitSlop={8} accessibilityRole="button">
-        <Text style={styles.onboardingCalloutAction}>{step === 'close' ? 'Back to map' : 'Got it'}</Text>
+        <Text style={styles.onboardingCalloutAction}>{step === 'close' ? t("Back to map") : t("Got it")}</Text>
       </Pressable>
       {step !== 'close' ? (
         <Pressable onPress={onSkip} hitSlop={8} accessibilityRole="button">
-          <Text style={styles.onboardingCalloutSkip}>Skip tour</Text>
+          <Text style={styles.onboardingCalloutSkip}>{t("Skip tour")}</Text>
         </Pressable>
       ) : null}
     </View>

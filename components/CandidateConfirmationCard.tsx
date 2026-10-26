@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -42,9 +44,10 @@ export function CandidateConfirmationCard({
   selectionRole = 'radio', presentationActive = true,
   presentationContext = { trigger: 'recognition_result' }, sourceEvidence,
 }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
   const { width, fontScale } = useWindowDimensions();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   const [expanded, setExpanded] = useState(false);
   const broad = isBroadCandidate(candidate);
   const category = candidateCategoryLabel(candidate);
@@ -52,12 +55,12 @@ export function CandidateConfirmationCard({
   const whyLines = candidateWhyMatchLines(candidate, locality);
   const conciseEvidence = evidence ?? matchedFrames;
   const stacked = width < 360 || fontScale > 1.25;
-  const accessibilityLabel = [candidate.name, locality, broad ? 'Area match' : 'Possible match',
-    saved ? 'Already saved; saving will attach this post' : null].filter(Boolean).join(', ');
+  const accessibilityLabel = [candidate.name, locality, broad ? t('Area match') : t('Possible match'),
+    saved ? t('Already saved; saving will attach this post') : null].filter(Boolean).join(', ');
   const selection = selectable && onPress ? (
     <Pressable onPress={onPress} accessibilityRole={selectionRole}
       accessibilityLabel={accessibilityLabel}
-      accessibilityHint={selectionRole === 'checkbox' ? 'Toggles this place for saving' : 'Selects this place for saving'}
+      accessibilityHint={selectionRole === 'checkbox' ? t("Toggles this place for saving") : t("Selects this place for saving")}
       accessibilityState={{ checked: selected }}
       style={({ pressed }) => [styles.selection, selectionRole === 'checkbox' && styles.checkbox,
         selected && styles.selectionSelected, pressed && styles.pressed]}
@@ -78,26 +81,26 @@ export function CandidateConfirmationCard({
     <View style={[styles.identity, compact && styles.identityCompact, compact && stacked && styles.stackedPane]}>
       <View style={styles.identityTop}>
         <View style={styles.copy}>
-          <Text style={styles.possible}>{broad ? 'AREA MATCH' : 'Possible match'}{rank ? ` · ${rank}` : ''}</Text>
+          <Text style={styles.possible}>{broad ? t("AREA MATCH") : t("Possible match")}{rank ? ` · ${rank}` : ''}</Text>
           <Text style={[compact ? typography.bodyStrong : typography.heading, styles.name]}>{candidate.name}</Text>
           {locality ? <Text style={styles.locality}>{locality}</Text> : null}
           {category && !broad ? <Text style={styles.category}>{category}</Text> : null}
         </View>
         {selection}
       </View>
-      {broad ? <Text style={styles.evidence}>The video was narrowed to this area.</Text> : null}
+      {broad ? <Text style={styles.evidence}>{t("The video was narrowed to this area.")}</Text> : null}
       {conciseEvidence ? <Text style={styles.evidence}>{conciseEvidence}</Text> : !compact ? (
-        <Text style={styles.evidence}>Check the name and location before saving.</Text>
+        <Text style={styles.evidence}>{t("Check the name and location before saving.")}</Text>
       ) : null}
       {whyLines.length > 0 ? (
         <Pressable onPress={() => setExpanded((current) => !current)} accessibilityRole="button"
-          accessibilityLabel="Why this match?" accessibilityState={{ expanded }}
+          accessibilityLabel={t("Why this match?")} accessibilityState={{ expanded }}
           style={styles.whyButton} testID="candidate-why-match">
-          <Text style={styles.whyButtonText}>Why this match?</Text>
+          <Text style={styles.whyButtonText}>{t("Why this match?")}</Text>
           <Feather name={expanded ? 'chevron-up' : 'chevron-right'} size={17} color={colors.accent} />
         </Pressable>
       ) : null}
-      {saved ? <Text style={styles.saved}>Already on your map · this post will be attached</Text> : null}
+      {saved ? <Text style={styles.saved}>{t("Already on your map · this post will be attached")}</Text> : null}
     </View>
   );
   return (
@@ -112,7 +115,7 @@ export function CandidateConfirmationCard({
       </>}
       {expanded ? (
         <View style={styles.whyPanel}>
-          <Text style={styles.whyTitle}>Why this matches</Text>
+          <Text style={styles.whyTitle}>{t("Why this matches")}</Text>
           {whyLines.map((line) => <Text key={line} style={styles.whyText}>• {line}</Text>)}
         </View>
       ) : null}

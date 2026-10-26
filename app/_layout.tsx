@@ -1,3 +1,7 @@
+import { LocaleAccountSync } from '@/components/LocaleAccountSync';
+import { LocaleProvider, useLocale } from '@/hooks/useLocale';
+import { PreAccountEligibility } from '@/components/PreAccountEligibility';
+import { t } from '@/lib/i18n';
 import { Component, useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
@@ -267,7 +271,9 @@ function AuthGate({
     ageRequired ? session?.user.id ?? null : null,
     onboardingV2?.stage ?? null,
   );
-  const ageAccessApproved = !ageRequired || ageEligibility.status === 'adult';
+  const ageAccessApproved = !ageRequired || ageEligibility.status === 'eligible';
+  const [dataAccessOwner, setDataAccessOwner] = useState<string | null>(null);
+  const viewingSavedData = !!session && dataAccessOwner === session.user.id;
   const segments = useSegments();
   const router = useRouter();
   const currentRoute = onboardingRouteKey(segments);
@@ -660,7 +666,7 @@ function AuthGate({
     );
   }
 
-  if (ageRequired && ageEligibility.status !== 'adult') {
+  if (ageRequired && ageEligibility.status !== 'eligible' && !viewingSavedData) {
     // Expo Router's root Stack must remain mounted. Keep it invisible and
     // non-interactive while the eligibility surface owns the full viewport.
     return (
@@ -674,6 +680,7 @@ function AuthGate({
             submitting={ageEligibility.submitting}
             onDeclare={ageEligibility.declare}
             onRetry={ageEligibility.retry}
+            onViewSavedData={() => { setDataAccessOwner(session?.user.id ?? null); router.replace('/(tabs)/saved'); }}
             onSignOut={() => supabase.auth.signOut().then(() => undefined)}
           />
         </View>
@@ -682,7 +689,7 @@ function AuthGate({
   }
 
   return (
-    <AgeEligibilityAccessContext.Provider value={!!session && (isDevSession || ageEligibility.status === 'adult')}>
+    <AgeEligibilityAccessContext.Provider value={!!session && ageEligibility.aiAllowed}>
       {children}
       <NotificationTapController authReady={!loading && !!session && !authLinkPending && ageAccessApproved} />
       <AutoSaveUndoToast />
@@ -707,12 +714,13 @@ function AuthGate({
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <RootLayoutContent />
+      <LocaleProvider><PreAccountEligibility><RootLayoutContent /></PreAccountEligibility></LocaleProvider>
     </ThemeProvider>
   );
 }
 
 function RootLayoutContent() {
+  useLocale();
   const router = useRouter();
   const segments = useSegments();
   const pathname = usePathname();
@@ -877,6 +885,7 @@ function RootLayoutContent() {
         <SafeAreaProvider>
           <AuthLinkStatusContext.Provider value={authLinkStatus}>
           <AuthGate authLinkPending={authLinkPending}>
+            <LocaleAccountSync />
             <Stack
               screenOptions={{
                 headerShown: false,

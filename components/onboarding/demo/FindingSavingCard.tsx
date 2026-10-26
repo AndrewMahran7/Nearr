@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -41,8 +43,9 @@ const SAVE_DELAY = 550;
  * anything real. Respects Reduce Motion by jumping straight to the saved state.
  */
 export function FindingSavingCard({ playKey = 0, onSaved, style }: Props) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   const progress = useRef(new Animated.Value(0)).current;
   const reveal = useRef(new Animated.Value(0)).current;
@@ -149,7 +152,7 @@ export function FindingSavingCard({ playKey = 0, onSaved, style }: Props) {
           <Feather name="film" size={18} color={OnboardingColors.text} />
         </View>
         <View style={styles.previewText}>
-          <Text style={styles.previewTitle}>Instagram reel</Text>
+          <Text style={styles.previewTitle}>{t("Instagram reel")}</Text>
           <Text style={styles.previewSub}>@kaitpark</Text>
           <Text style={styles.previewSub}>Tokyo, Japan</Text>
         </View>
@@ -169,12 +172,12 @@ export function FindingSavingCard({ playKey = 0, onSaved, style }: Props) {
         ) : (
           <Feather name="star" size={18} color={OnboardingColors.orange} />
         )}
-        <Text style={styles.findingText}>{found ? 'Found it' : 'Finding the place...'}</Text>
+        <Text style={styles.findingText}>{found ? t("Found it") : t("Finding the place...")}</Text>
       </View>
       <View
         style={styles.track}
         accessibilityRole="progressbar"
-        accessibilityLabel={found ? 'Found it' : 'Finding the place'}
+        accessibilityLabel={found ? t("Found it") : t("Finding the place")}
       >
         <Animated.View style={[styles.fill, { width: barWidth }]} />
       </View>
@@ -198,8 +201,7 @@ export function FindingSavingCard({ playKey = 0, onSaved, style }: Props) {
                 Allpress Espresso
               </Text>
               <Text style={styles.placeMeta} numberOfLines={1}>
-                Coffee shop · Tokyo, Japan
-              </Text>
+                {t("Coffee shop · Tokyo, Japan")}</Text>
             </View>
           </View>
 
@@ -214,7 +216,7 @@ export function FindingSavingCard({ playKey = 0, onSaved, style }: Props) {
               <View style={styles.check}>
                 <Feather name="check" size={13} color={OnboardingColors.orange} />
               </View>
-              <Text style={styles.savedText}>Saved to your map</Text>
+              <Text style={styles.savedText}>{t("Saved to your map")}</Text>
             </Animated.View>
           ) : null}
         </Animated.View>

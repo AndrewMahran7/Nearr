@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -27,8 +29,9 @@ export function OnboardingSavedPlacePreview({
   detail = 'Coffee shop · Tokyo, Japan',
   style,
 }: Props) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   return (
     <View style={[styles.card, style]}>
@@ -51,7 +54,7 @@ export function OnboardingSavedPlacePreview({
 
         <View style={styles.badge}>
           <Feather name="bookmark" size={12} color={OnboardingColors.orange} />
-          <Text style={styles.badgeText}>Saved</Text>
+          <Text style={styles.badgeText}>{t("Saved")}</Text>
         </View>
       </View>
     </View>

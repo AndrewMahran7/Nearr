@@ -1,3 +1,4 @@
+import { providerAllowedForGlobalAudience } from '../providerAudiencePolicy.ts';
 /**
  * Backend-first share-extraction AI agent. SHADOW MODE ONLY (Stage 1).
  *
@@ -639,6 +640,7 @@ async function callGemini(
   // clamp this via `Math.min(remainingMs(), geminiTimeoutMs)`.
   timeoutMs = 15_000,
 ): Promise<{ text: string; latencyMs: number; diagnostics: GeminiDiagnostics }> {
+  if (!providerAllowedForGlobalAudience('gemini')) throw new Error('provider_audience_restricted');
   const start = nowMs();
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
     model,

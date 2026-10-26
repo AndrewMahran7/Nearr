@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -48,9 +50,10 @@ export function SavedPlaceResult({
   onViewOnMap,
   openMessage,
 }: Props) {
+  useLocale();
   const { width } = useWindowDimensions();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   const [visibleAlternativeIndex, setVisibleAlternativeIndex] = useState(0);
   const multiple = alternatives.length > 1;
   const cardWidth = multiple
@@ -131,7 +134,7 @@ export function SavedPlaceResult({
             ) : (
               <Feather name={saved ? 'check' : 'plus'} size={17} color={colors.accent} />
             )}
-            <Text style={styles.saveTooText}>{saved ? 'Saved' : 'Save too'}</Text>
+            <Text style={styles.saveTooText}>{saved ? t("Saved") : t("Save too")}</Text>
           </Pressable>
           {!saved ? (
             <Pressable
@@ -143,7 +146,7 @@ export function SavedPlaceResult({
               style={({ pressed }) => [styles.alternativeAction, styles.useInsteadAction, pressed && styles.pressed]}
             >
               {pending === 'promote' ? <ActivityIndicator size="small" color={colors.text} /> : null}
-              <Text style={styles.useInsteadText}>Use instead</Text>
+              <Text style={styles.useInsteadText}>{t("Use instead")}</Text>
             </Pressable>
           ) : null}
           {!saved ? (
@@ -235,7 +238,7 @@ export function SavedPlaceResult({
                 style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed]}
               >
                 <Feather name="alert-triangle" size={18} color={colors.textSecondary} />
-                <Text style={styles.primaryActionText}>Wrong place?</Text>
+                <Text style={styles.primaryActionText}>{t("Wrong place?")}</Text>
               </Pressable>
             </View>
             {openMessage ? <Text accessibilityLiveRegion="polite" style={styles.openMessage}>{openMessage}</Text> : null}
@@ -246,9 +249,9 @@ export function SavedPlaceResult({
           <View style={styles.similarSection} testID="soft-alternatives-review">
             <View style={styles.sectionHeadingRow}>
               <View style={styles.sectionAccent} />
-              <Text accessibilityRole="header" style={[typography.heading, styles.sectionHeading]}>Similar results</Text>
+              <Text accessibilityRole="header" style={[typography.heading, styles.sectionHeading]}>{t("Similar results")}</Text>
             </View>
-            <Text style={[typography.body, styles.sectionHelp]}>Other places that may match this video.</Text>
+            <Text style={[typography.body, styles.sectionHelp]}>{t("Other places that may match this video.")}</Text>
             <FlatList
               horizontal
               data={alternatives as ShareJobSoftAlternative[]}
@@ -284,7 +287,7 @@ export function SavedPlaceResult({
       </ScrollView>
       <View style={styles.footer}>
         <Button
-          title="View on map"
+          title={t("View on map")}
           accessibilityLabel={`View ${primary.name} on map`}
           onPress={onViewOnMap}
           style={styles.mapButton}

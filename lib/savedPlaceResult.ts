@@ -1,3 +1,4 @@
+import { t } from './i18nEngine';
 import { splitPlaceAddress } from './sharePhase1Ui';
 import { resolvePlaceSource, type PlaceSourceAttribution } from './placeSource';
 import type { SavedPlaceSource, SavedPlaceWithPlace } from '@/types';
@@ -19,7 +20,7 @@ export type SavedPlaceResultViewModel = {
   name: string;
   location: string | null;
   googlePlaceId: string | null;
-  statusLabel: 'Saved automatically' | 'Saved';
+  statusLabel: string;
   source: PlaceSourceAttribution | null;
   sourceCopy: string | null;
   sourceThumbnailUrl: string | null;
@@ -100,7 +101,7 @@ export function buildSavedPlaceResultViewModel(args: {
   const statusLabel = savedResultStatusLabel(args);
   if (!savedPlaceId || !statusLabel) return null;
 
-  const name = clean(args.saved?.place.name) ?? clean(args.candidate?.name) ?? 'Saved place';
+  const name = clean(args.saved?.place.name) ?? clean(args.candidate?.name) ?? t("Saved place");
   const source = resolvePlaceSource({
     source_type: args.sourcePlatform,
     source_url: args.sourceUrl,
@@ -114,7 +115,7 @@ export function buildSavedPlaceResultViewModel(args: {
     googlePlaceId: clean(args.saved?.place.google_place_id) ?? clean(args.candidate?.googlePlaceId),
     statusLabel,
     source,
-    sourceCopy: source ? `Saved from ${source.platformName === 'Link' ? 'a shared link' : source.platformName}` : null,
+    sourceCopy: source ? t('Saved from {{platform}}', { platform: source.platformName === 'Link' ? t('a shared link') : source.platformName }) : null,
     sourceThumbnailUrl: clean(matchedSource?.thumbnail_url),
     candidatePhotoUrl: clean(args.candidate?.photoUrl),
     candidatePhotoUrls: (args.candidate?.photoUrls ?? [])

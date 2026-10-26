@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
@@ -95,8 +97,9 @@ export function HowNearrWorksModal({
   primaryLabel = 'Got it',
   secondaryLabel = 'Skip for now',
 }: Props) {
+  useLocale();
   const { colors, typography, resolvedTheme } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   const [shareStepsVisible, setShareStepsVisible] = useState(false);
 
   useEffect(() => {
@@ -136,7 +139,7 @@ export function HowNearrWorksModal({
     >
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={typography.heading}>How Nearr Works</Text>
+          <Text style={typography.heading}>{t("How Nearr Works")}</Text>
           <Pressable onPress={handleSecondary} style={styles.closeButton} hitSlop={12}>
             <Text style={[typography.bodyStrong, styles.closeText]}>X</Text>
           </Pressable>
@@ -148,12 +151,11 @@ export function HowNearrWorksModal({
           showsVerticalScrollIndicator={false}
         >
           <Text style={[typography.body, styles.intro]}>
-            Nearr helps you go from seeing a place online to actually going there.
-          </Text>
+            {t("Nearr helps you go from seeing a place online to actually going there.")}</Text>
 
           {STEPS.map((step, index) => (
             <Card key={step.title} style={styles.card}>
-              <Text style={[typography.caption, styles.stepNumber]}>Step {index + 1}</Text>
+              <Text style={[typography.caption, styles.stepNumber]}>{t("Step ")}{index + 1}</Text>
               <Text style={[typography.bodyStrong, styles.cardTitle]}>{step.title}</Text>
               <Text style={[typography.body, styles.cardBody]}>{step.body}</Text>
             </Card>
@@ -161,16 +163,15 @@ export function HowNearrWorksModal({
 
           <Card style={styles.tipCard}>
             <Text style={[typography.bodyStrong, styles.cardTitle]}>
-              Add Nearr to Share Favorites
-            </Text>
+              {t("Add Nearr to Share Favorites")}</Text>
             <Text style={[typography.body, styles.cardBody]}>
               {Platform.OS === 'ios'
-                ? 'Tip: Add Nearr to your iPhone Share Favorites so it shows up faster.'
-                : 'On iPhone, you can add Nearr to Share Favorites so it shows up faster.'}
+                ? t("Tip: Add Nearr to your iPhone Share Favorites so it shows up faster.")
+                : t("On iPhone, you can add Nearr to Share Favorites so it shows up faster.")}
             </Text>
             <View style={{ height: Spacing.md }} />
             <Button
-              title={shareStepsVisible ? 'Hide Share Favorites steps' : 'See Share Favorites steps'}
+              title={shareStepsVisible ? t("Hide Share Favorites steps") : t("See Share Favorites steps")}
               variant="secondary"
               onPress={handleOpenShareSteps}
             />
@@ -179,8 +180,8 @@ export function HowNearrWorksModal({
               <View style={styles.shareStepsSection}>
                 <Text style={[typography.caption, styles.shareStepsIntro]}>
                   {Platform.OS === 'ios'
-                    ? 'Follow these steps once on your iPhone:'
-                    : 'These steps are for iPhone:'}
+                    ? t("Follow these steps once on your iPhone:")
+                    : t("These steps are for iPhone:")}
                 </Text>
                 {SHARE_FAVORITES_STEPS.map((step, index) => (
                   <View key={step} style={styles.shareStepRow}>
@@ -197,8 +198,7 @@ export function HowNearrWorksModal({
           </Card>
 
           <Text style={[typography.caption, styles.footerNote]}>
-            You can come back to this anytime in Settings.
-          </Text>
+            {t("You can come back to this anytime in Settings.")}</Text>
 
           <View style={styles.actions}>
             <Button title={primaryLabel} onPress={handlePrimary} />

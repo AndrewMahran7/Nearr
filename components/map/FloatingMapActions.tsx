@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /** Quiet recenter control; social-link import lives in Search and Saved. */
 
 import { useMemo } from 'react';
@@ -19,8 +21,9 @@ type Props = {
 };
 
 export function FloatingMapActions({ onRecenter, liftY, bottomInset = 0 }: Props) {
+  useLocale();
   const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
 
   return (
     <Animated.View
@@ -30,7 +33,7 @@ export function FloatingMapActions({ onRecenter, liftY, bottomInset = 0 }: Props
       <Pressable
         onPress={onRecenter}
         accessibilityRole="button"
-        accessibilityLabel="Recenter on my location"
+        accessibilityLabel={t("Recenter on my location")}
         style={({ pressed }) => [styles.locBtn, pressed && styles.pressed]}
       >
         <Feather name="crosshair" size={20} color={colors.text} />

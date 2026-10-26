@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -34,6 +36,7 @@ export function MapBottomSheet({ mode, loading, nearbyPlaces, locationState, sav
   partialHeight, availableHeight, topInset, bottomInset = 0, openSignal, minimizeSignal,
   onSnapChange, onRequestSavedMode, onSelectPlace, onSaveFromLink, onSearchManually,
   requestLocationPermission, offline = false }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
   const router = useRouter();
   const reducedMotion = useReduceMotion();
@@ -65,22 +68,22 @@ export function MapBottomSheet({ mode, loading, nearbyPlaces, locationState, sav
       const target = (['full', 'partial', 'minimized'] as SheetSnap[]).reduce((best, next) => Math.abs(projected - snapOffset(next)) < Math.abs(projected - snapOffset(best)) ? next : best, 'partial');
       if (target === 'full') onRequestSavedMode(); snapTo(target);
     }, onPanResponderTerminate: () => snapTo(snapRef.current),
-  }), [hiddenOffset, onRequestSavedMode, snapOffset, snapTo, translateY]);
+  }), [hiddenOffset, onRequestSavedMode, snapOffset, snapTo, translateY, i18n.language]);
   return <View pointerEvents="box-none" style={[styles.clip, { bottom: bottomInset, height: expandedHeight }, expanded && styles.expanded]}><Animated.View style={[styles.sheet, { height: expandedHeight, backgroundColor: colors.surface, borderColor: colors.border, transform: [{ translateY }] }]}>
     <View {...pan.panHandlers}>
-      <Pressable onPress={() => expanded ? snapTo('partial') : openSaved()} hitSlop={10} accessibilityRole="button" accessibilityLabel={expanded ? 'Return to map' : 'Open saved places'} style={styles.handleTarget}><View style={[styles.handle, { backgroundColor: colors.border }]} /></Pressable>
+      <Pressable onPress={() => expanded ? snapTo('partial') : openSaved()} hitSlop={10} accessibilityRole="button" accessibilityLabel={expanded ? t("Return to map") : t("Open saved places")} style={styles.handleTarget}><View style={[styles.handle, { backgroundColor: colors.border }]} /></Pressable>
       {expanded ? <View style={styles.header}>
-        <View style={styles.flex}><Text style={typography.title} accessibilityRole="header">Your places</Text><Text style={typography.caption}>{offline ? 'Offline · ' : ''}{savedPlaces.length} {savedPlaces.length === 1 ? 'place' : 'places'} to come back to</Text></View>
+        <View style={styles.flex}><Text style={typography.title} accessibilityRole="header">{t("Your places")}</Text><Text style={typography.caption}>{offline ? t("Offline · ") : ''}{savedPlaces.length} {savedPlaces.length === 1 ? t("place") : t("places")} {t(" to come back to")}</Text></View>
         <ShareQueueButton />
-        <Pressable onPress={() => router.push('/(tabs)/settings')} accessibilityRole="button" accessibilityLabel="Account and Settings" style={[styles.icon, { backgroundColor: colors.surfaceElevated }]}><Feather name="user" size={22} color={colors.text} /></Pressable>
+        <Pressable onPress={() => router.push('/(tabs)/settings')} accessibilityRole="button" accessibilityLabel={t("Account and Settings")} style={[styles.icon, { backgroundColor: colors.surfaceElevated }]}><Feather name="user" size={22} color={colors.text} /></Pressable>
       </View> : null}
     </View>
     {expanded ? <MemoizedSavedPlacesLibrary savedPlaces={savedPlaces} nearbyPlaces={nearbyPlaces} locationState={locationState} loading={loading} requestLocationPermission={requestLocationPermission} onSelectPlace={onSelectPlace} onSaveFromLink={onSaveFromLink} onSearchManually={onSearchManually} /> :
       <Pressable onPress={openSaved} accessibilityRole="button" accessibilityLabel={`Open Saved, ${savedPlaces.length} places`} style={styles.peek}>
-        {minimized ? <Text style={typography.label}>{savedPlaces.length} saved {savedPlaces.length === 1 ? 'place' : 'places'} · Open Saved</Text> : <>
-        <Text style={[styles.eyebrow, { color: colors.accent }]}>{offline ? 'SAVED ON THIS PHONE' : 'SAVED FOR SOMEDAY'}</Text>
-        <View style={styles.peekTitle}><Text style={[typography.heading, styles.flex]}>{savedPlaces.length ? `${savedPlaces.length} ${savedPlaces.length === 1 ? 'place. A new possibility.' : 'places. So many possibilities.'}` : loading ? 'Your world is coming into view' : 'Your next memory starts here.'}</Text><Feather name="arrow-up-right" size={22} color={colors.text} /></View>
-        <Text style={[typography.caption, { marginTop: 4 }]}>{savedPlaces.length ? 'A little inspiration, everywhere.' : 'Share a post or find a place to save.'}</Text>
+        {minimized ? <Text style={typography.label}>{savedPlaces.length} {t(" saved ")}{savedPlaces.length === 1 ? t("place") : t("places")} {t(" · Open Saved")}</Text> : <>
+        <Text style={[styles.eyebrow, { color: colors.accent }]}>{offline ? t("SAVED ON THIS PHONE") : t("SAVED FOR SOMEDAY")}</Text>
+        <View style={styles.peekTitle}><Text style={[typography.heading, styles.flex]}>{savedPlaces.length ? `${savedPlaces.length} ${savedPlaces.length === 1 ? 'place. A new possibility.' : 'places. So many possibilities.'}` : loading ? t("Your world is coming into view") : t("Your next memory starts here.")}</Text><Feather name="arrow-up-right" size={22} color={colors.text} /></View>
+        <Text style={[typography.caption, { marginTop: 4 }]}>{savedPlaces.length ? t("A little inspiration, everywhere.") : t("Share a post or find a place to save.")}</Text>
         </>}
       </Pressable>}
   </Animated.View></View>;

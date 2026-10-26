@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /** Native-feeling horizontal actions for queue rows. */
 import {
   cloneElement,
@@ -56,8 +58,9 @@ export function SwipeableRow({
   accessibilityLabel,
   disabled = false,
 }: Props) {
+  useLocale();
   const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   const swipeableRef = useRef<Swipeable | null>(null);
   const reduceMotion = useReducedMotion();
 
@@ -102,7 +105,7 @@ export function SwipeableRow({
           isSave ? styles.saveAction : styles.removeAction,
         ]}
         accessibilityRole="button"
-        accessibilityLabel={isSave ? 'Save to my map' : 'Remove from queue'}
+        accessibilityLabel={isSave ? t("Save to my map") : t("Remove from queue")}
       >
         <Animated.View style={[styles.actionContent, { opacity, transform: [{ scale }] }]}>
           <Feather
@@ -110,7 +113,7 @@ export function SwipeableRow({
             size={19}
             color={colors.textInverse}
           />
-          <Text style={styles.actionText}>{isSave ? 'Save' : 'Remove'}</Text>
+          <Text style={styles.actionText}>{isSave ? t("Save") : t("Remove")}</Text>
         </Animated.View>
       </Pressable>
     );

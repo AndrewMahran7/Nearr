@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /** Dedicated provider-correction sheet for an existing saved place. */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -73,8 +75,9 @@ export function WrongPlaceSheet({
   onCorrected,
   onRejected,
 }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   const { results, loading, error, lastQuery, search, reset } = usePlacesSearch();
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<PlaceCandidate | null>(null);
@@ -94,7 +97,7 @@ export function WrongPlaceSheet({
       currentName: saved.place.name,
       locality: splitPlaceAddress(saved.place.formatted_address).locality,
     }),
-    [extractedName, saved.place.formatted_address, saved.place.name],
+    [extractedName, saved.place.formatted_address, saved.place.name, i18n.language],
   );
 
   const runSearch = useCallback(async (value: string) => {
@@ -133,13 +136,13 @@ export function WrongPlaceSheet({
     query: lastQuery ?? query,
     expectedName: extractedName ?? saved.place.name,
     candidates: results.filter((candidate) => candidate.googlePlaceId !== saved.place.google_place_id),
-  }), [extractedName, lastQuery, query, results, saved.place.google_place_id, saved.place.name]);
+  }), [extractedName, lastQuery, query, results, saved.place.google_place_id, saved.place.name, i18n.language]);
   const chosen = selected;
   const visibleResults = useMemo(
     () => usableFallbackCandidates(
       results.filter((candidate) => candidate.googlePlaceId !== saved.place.google_place_id),
     ),
-    [results, saved.place.google_place_id],
+    [results, saved.place.google_place_id, i18n.language],
   );
 
   const selectCandidate = useCallback((candidate: PlaceCandidate) => {
@@ -180,7 +183,7 @@ export function WrongPlaceSheet({
     }, candidate);
 
     if (!plan.ok) {
-      Alert.alert('Could not correct', correctionRejectionMessage(plan.reason));
+      Alert.alert(t("Could not correct"), correctionRejectionMessage(plan.reason));
       return;
     }
 
@@ -223,7 +226,7 @@ export function WrongPlaceSheet({
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : 'Please try again.';
       setSaveError(message);
-      Alert.alert('Could not correct', message);
+      Alert.alert(t("Could not correct"), message);
     } finally {
       saveInFlightRef.current = false;
       setSaving(false);
@@ -249,25 +252,25 @@ export function WrongPlaceSheet({
   async function openOriginalPost() {
     const original = planOpenOriginal(saved.source_url);
     if (original.kind !== 'open') {
-      Alert.alert('Original post unavailable');
+      Alert.alert(t("Original post unavailable"));
       return;
     }
     try {
       await Linking.openURL(original.url);
     } catch {
-      Alert.alert('Could not open the original post');
+      Alert.alert(t("Could not open the original post"));
     }
   }
 
   function rejectWithoutReplacement() {
     if (saving) return;
     Alert.alert(
-      'Mark this result as wrong?',
-      'Nearr will remove it and will not silently auto-save this same place for this post again.',
+      t("Mark this result as wrong?"),
+      t("Nearr will remove it and will not silently auto-save this same place for this post again."),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t("Cancel"), style: 'cancel' },
         {
-          text: 'Mark as wrong',
+          text: t("Mark as wrong"),
           style: 'destructive',
           onPress: async () => {
             const snapshot = getSavedPlacesCacheSnapshot();
@@ -284,7 +287,7 @@ export function WrongPlaceSheet({
               onClose();
             } catch (caught) {
               restoreSavedPlacesCache(snapshot);
-              Alert.alert('Could not mark as wrong', caught instanceof Error ? caught.message : 'Please try again.');
+              Alert.alert(t("Could not mark as wrong"), caught instanceof Error ? caught.message : 'Please try again.');
             } finally {
               setSaving(false);
             }
@@ -324,13 +327,13 @@ export function WrongPlaceSheet({
           onPress={close}
           disabled={saving}
           accessibilityRole="button"
-          accessibilityLabel="Close place correction"
+          accessibilityLabel={t("Close place correction")}
           accessibilityState={{ disabled: saving }}
         />
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <View style={styles.handle} />
           {finderMode ? (
-            <View style={styles.finderLabel} accessible accessibilityLabel="Place correction">
+            <View style={styles.finderLabel} accessible accessibilityLabel={t("Place correction")}>
               <View style={styles.finderRule} />
               <Text style={styles.finderLabelText}>NEARR</Text>
             </View>
@@ -342,7 +345,7 @@ export function WrongPlaceSheet({
               disabled={saving}
               style={styles.closeButton}
               accessibilityRole="button"
-              accessibilityLabel="Close place correction"
+              accessibilityLabel={t("Close place correction")}
               accessibilityState={{ disabled: saving }}
             >
               <Feather name="x" size={22} color={colors.textSecondary} />
@@ -356,18 +359,18 @@ export function WrongPlaceSheet({
             value={query}
             onChangeText={changeQuery}
             onSubmitEditing={() => void runSearch(query)}
-            placeholder="Search for the right place"
+            placeholder={t("Search for the right place")}
             autoCorrect={false}
             returnKeyType="search"
             editable={!saving}
             style={styles.input}
-            accessibilityLabel="Search for the correct place"
+            accessibilityLabel={t("Search for the correct place")}
           />
 
           {loading ? (
             <View style={styles.loading} accessibilityLiveRegion="polite">
               <ActivityIndicator color={colors.primary} />
-              <Text style={[typography.caption, styles.loadingText]}>Finding the right place…</Text>
+              <Text style={[typography.caption, styles.loadingText]}>{t("Finding the right place…")}</Text>
             </View>
           ) : (
             <ScrollView
@@ -438,11 +441,10 @@ export function WrongPlaceSheet({
               {!loading && visibleResults.length === 0 && lastQuery ? (
                 <View style={styles.empty} accessibilityLiveRegion="polite">
                   <Text style={[typography.bodyStrong, styles.emptyTitle]}>
-                    {error ? 'Could not search places' : 'No places found'}
+                    {error ? t("Could not search places") : t("No places found")}
                   </Text>
                   <Text style={[typography.caption, styles.emptyBody]}>
-                    Edit the search above and try again.
-                  </Text>
+                    {t("Edit the search above and try again.")}</Text>
                 </View>
               ) : null}
             </ScrollView>
@@ -454,13 +456,12 @@ export function WrongPlaceSheet({
               accessibilityRole="alert"
               accessibilityLiveRegion="assertive"
             >
-              {saveError} Select {fallbackCorrectionLabel(chosen?.name)} to try again.
-            </Text>
+              {saveError} {t(" Select ")}{fallbackCorrectionLabel(chosen?.name)} {t(" to try again.")}</Text>
           ) : null}
           {chosen ? (
             <Button
-              title={saving ? 'Saving…' : fallbackCorrectionLabel(chosen.name)}
-              accessibilityLabel={saving ? 'Saving correction' : fallbackCorrectionLabel(chosen.name)}
+              title={saving ? t("Saving…") : fallbackCorrectionLabel(chosen.name)}
+              accessibilityLabel={saving ? t("Saving correction") : fallbackCorrectionLabel(chosen.name)}
               onPress={() => void apply(chosen)}
               disabled={saving}
               style={styles.primaryButton}
@@ -468,7 +469,7 @@ export function WrongPlaceSheet({
           ) : null}
           {error ? (
             <Button
-              title="Retry"
+              title={t("Retry")}
               variant="secondary"
               onPress={() => void runSearch(query)}
               disabled={loading || saving || !query.trim()}
@@ -477,7 +478,7 @@ export function WrongPlaceSheet({
           ) : null}
           {!loading && lastQuery ? (
             <Button
-              title="Search another place"
+              title={t("Search another place")}
               variant="secondary"
               onPress={searchAnotherPlace}
               disabled={saving}
@@ -485,7 +486,7 @@ export function WrongPlaceSheet({
             />
           ) : null}
           <Button
-            title="This isn’t the place"
+            title={t("This isn’t the place")}
             variant="ghost"
             onPress={rejectWithoutReplacement}
             disabled={saving}
@@ -493,7 +494,7 @@ export function WrongPlaceSheet({
           />
           {planOpenOriginal(saved.source_url).kind === 'open' ? (
             <Button
-              title="Open original post"
+              title={t("Open original post")}
               variant="ghost"
               onPress={() => void openOriginalPost()}
               disabled={saving}

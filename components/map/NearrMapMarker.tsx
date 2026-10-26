@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * Memoized saved-place marker with a default-off legacy path.
  *
@@ -89,8 +91,9 @@ function NearrMapMarkerView({
   photoEligible = false,
   accessibilityHint,
 }: Props) {
+  useLocale();
   const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   const [tracksViewChanges, setTracksViewChanges] = useState(true);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoFailed, setPhotoFailed] = useState(false);
@@ -150,7 +153,7 @@ function NearrMapMarkerView({
       savedState,
       photoEligible,
     }),
-    [detailLevel, detailVisible, photoFailed, photoUri, place, savedState, selected, photoEligible],
+    [detailLevel, detailVisible, photoFailed, photoUri, place, savedState, selected, photoEligible, i18n.language],
   );
 
   // The label capsule is part of the rasterized visual, so its presence also
@@ -238,7 +241,7 @@ function NearrMapMarkerView({
       accessible
       accessibilityRole="button"
       accessibilityLabel={presentation.accessibilityLabel}
-      accessibilityHint={accessibilityHint ?? 'Opens saved place details'}
+      accessibilityHint={accessibilityHint ?? t("Opens saved place details")}
       accessibilityState={{ selected }}
     >
       {!redesignEnabled ? (

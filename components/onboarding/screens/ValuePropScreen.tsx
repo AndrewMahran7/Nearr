@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useEffect, useRef } from 'react';
 import {
@@ -26,8 +28,9 @@ const ORB = 70;
  * iPhones but never clips on small ones.
  */
 export function ValuePropScreen() {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   const { width } = useWindowDimensions();
   const reelEntrance = useRef(new Animated.Value(0)).current;
@@ -151,8 +154,9 @@ function MapPinCard({
   pinTranslate: Animated.AnimatedInterpolation<string | number>;
   pinScale: Animated.AnimatedInterpolation<string | number>;
 }) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   return (
     <View style={[styles.mapCard, { width }]}>
@@ -171,8 +175,7 @@ function MapPinCard({
         </Text>
         {/* City, never a distance — onboarding does not know where the user is. */}
         <Text style={styles.mapMeta} numberOfLines={1}>
-          Coffee shop · Tokyo
-        </Text>
+          {t("Coffee shop · Tokyo")}</Text>
       </View>
     </View>
   );

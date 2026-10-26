@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -29,8 +31,9 @@ type Props = {
 };
 
 export function NoteEditorModal({ visible, initialValue, aiNote, onClose, onSave }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [draft, setDraft] = useState(initialValue);
@@ -54,7 +57,7 @@ export function NoteEditorModal({ visible, initialValue, aiNote, onClose, onSave
       Keyboard.dismiss();
       onClose();
     } catch (error) {
-      Alert.alert('Could not save note', error instanceof Error ? error.message : 'Please try again.');
+      Alert.alert(t("Could not save note"), error instanceof Error ? error.message : 'Please try again.');
     } finally {
       setSaving(false);
     }
@@ -72,23 +75,23 @@ export function NoteEditorModal({ visible, initialValue, aiNote, onClose, onSave
         <View style={[styles.header, { paddingTop: insets.top }]}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Cancel note editing"
+            accessibilityLabel={t("Cancel note editing")}
             disabled={saving}
             onPress={cancel}
             style={({ pressed }) => [styles.headerActionButton, styles.headerActionStart, pressed && styles.pressed]}
           >
-            <Text style={[typography.bodyStrong, styles.headerAction]}>Cancel</Text>
+            <Text style={[typography.bodyStrong, styles.headerAction]}>{t("Cancel")}</Text>
           </Pressable>
-          <Text accessibilityRole="header" numberOfLines={1} style={[typography.heading, styles.headerTitle]}>Your note</Text>
+          <Text accessibilityRole="header" numberOfLines={1} style={[typography.heading, styles.headerTitle]}>{t("Your note")}</Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Save note"
+            accessibilityLabel={t("Save note")}
             accessibilityState={{ disabled: saving, busy: saving }}
             disabled={saving}
             onPress={() => void save()}
             style={({ pressed }) => [styles.headerActionButton, styles.headerActionEnd, pressed && styles.pressed]}
           >
-            <Text style={[typography.bodyStrong, styles.headerAction]}>{saving ? 'Saving…' : 'Save'}</Text>
+            <Text style={[typography.bodyStrong, styles.headerAction]}>{saving ? t("Saving…") : t("Save")}</Text>
           </Pressable>
         </View>
 
@@ -103,12 +106,12 @@ export function NoteEditorModal({ visible, initialValue, aiNote, onClose, onSave
             keyboardDismissMode={NOTE_EDITOR_BEHAVIOR.keyboardDismissMode}
             keyboardShouldPersistTaps="handled"
           >
-            <Text style={[typography.bodyStrong, styles.prompt]}>Why did you save this one?</Text>
+            <Text style={[typography.bodyStrong, styles.prompt]}>{t("Why did you save this one?")}</Text>
             <Input
               value={draft}
               onChangeText={setDraft}
-              placeholder="What do you want to remember?"
-              accessibilityLabel="Your note"
+              placeholder={t("What do you want to remember?")}
+              accessibilityLabel={t("Your note")}
               autoFocus={NOTE_EDITOR_BEHAVIOR.autoFocus}
               multiline={NOTE_EDITOR_BEHAVIOR.multiline}
               blurOnSubmit={false}
@@ -121,16 +124,16 @@ export function NoteEditorModal({ visible, initialValue, aiNote, onClose, onSave
               <View style={styles.suggestion}>
                 <View style={styles.suggestionHeading}>
                   <Feather name="play" size={14} color={colors.accent} />
-                  <Text style={[typography.bodyStrong, styles.suggestionLabel]}>From the post</Text>
+                  <Text style={[typography.bodyStrong, styles.suggestionLabel]}>{t("From the post")}</Text>
                 </View>
                 <Text style={[typography.body, styles.suggestionText]}>{aiNote.trim()}</Text>
                 <Pressable
                   onPress={() => setDraft(aiNote.trim())}
                   accessibilityRole="button"
-                  accessibilityLabel="Use the post suggestion as your note"
+                  accessibilityLabel={t("Use the post suggestion as your note")}
                   style={({ pressed }) => [styles.useSuggestion, pressed && styles.pressed]}
                 >
-                  <Text style={styles.useSuggestionText}>Use this</Text>
+                  <Text style={styles.useSuggestionText}>{t("Use this")}</Text>
                 </Pressable>
               </View>
             ) : null}

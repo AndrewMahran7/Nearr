@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * SetupChecklist
  *
@@ -71,8 +73,9 @@ export async function getLocationStatus(): Promise<
 // ---------------------------------------------------------------------------
 
 export function SetupChecklist() {
+  useLocale();
   const { colors, typography, resolvedTheme } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography, i18n.language]);
   const [notificationStatus, setNotificationStatus] = useState<
     'granted' | 'denied' | 'undetermined' | null
   >(null);
@@ -114,8 +117,8 @@ export function SetupChecklist() {
     if (notificationStatus === 'denied') {
       Linking.openSettings().catch(() => {
         Alert.alert(
-          'Cannot open settings',
-          'Open iPhone Settings, then enable notifications for Nearr.',
+          t("Cannot open settings"),
+          t("Open iPhone Settings, then enable notifications for Nearr."),
         );
       });
       return;
@@ -150,7 +153,7 @@ export function SetupChecklist() {
       {/* ---- Notifications item -------------------------------------- */}
       <ChecklistItem
         done={notificationsDone}
-        title="Turn on Notifications"
+        title={t("Turn on Notifications")}
         body={
           notificationsDone
             ? 'Notifications are on. Nearr can remind you when a saved place is nearby.'
@@ -160,8 +163,8 @@ export function SetupChecklist() {
           notificationsDone
             ? undefined
             : notificationStatus === 'denied'
-              ? 'Open Settings'
-              : 'Enable Notifications'
+              ? t("Open Settings")
+              : t("Enable Notifications")
         }
         onPrimary={notificationsDone ? undefined : handleNotificationPrimary}
         styles={styles}
@@ -173,21 +176,21 @@ export function SetupChecklist() {
       {/* ---- Location item -------------------------------------------- */}
       <ChecklistItem
         done={locationDone}
-        title="Turn on Always Location"
+        title={t("Turn on Always Location")}
         body={
           locationDone
             ? 'Always Location is on. Nearby reminders can keep working when you are not in the app.'
             : 'Turn on Always Location so Nearr can keep nearby reminders working in the background.'
         }
-        primaryLabel={locationDone ? undefined : 'Open Location Settings'}
+        primaryLabel={locationDone ? undefined : t("Open Location Settings")}
         onPrimary={
           locationDone
             ? undefined
             : () => {
                 Linking.openSettings().catch(() => {
                   Alert.alert(
-                    'Cannot open settings',
-                    'Go to Settings \u203a Privacy \u203a Location Services \u203a Nearr and set to Always.',
+                    t("Cannot open settings"),
+                    t("Go to Settings › Privacy › Location Services › Nearr and set to Always."),
                   );
                 });
               }
@@ -201,7 +204,7 @@ export function SetupChecklist() {
       {/* ---- Share favorites item -------------------------------------- */}
       <ChecklistItem
         done={shareFavDone}
-        title="Add Nearr to Share Favorites"
+        title={t("Add Nearr to Share Favorites")}
         body={
           shareFavDone
             ? 'Nearr is in your Share Sheet favorites.'
@@ -209,9 +212,9 @@ export function SetupChecklist() {
               ? 'Put Nearr at the front of your iPhone Share Sheet so saving places takes two taps.'
               : 'On iPhone, put Nearr at the front of the Share Sheet so saving places takes two taps.'
         }
-        primaryLabel={shareFavDone ? undefined : 'Show Steps'}
+        primaryLabel={shareFavDone ? undefined : t("Show Steps")}
         onPrimary={shareFavDone ? undefined : () => setStepsVisible(true)}
-        secondaryLabel={shareFavDone ? 'Undo' : undefined}
+        secondaryLabel={shareFavDone ? t("Undo") : undefined}
         onSecondary={shareFavDone ? handleUnmarkShareFav : undefined}
         styles={styles}
         typography={typography}
@@ -255,6 +258,7 @@ function ChecklistItem({
   styles: ReturnType<typeof createStyles>;
   typography: ReturnType<typeof useTheme>['typography'];
 }) {
+  useLocale();
   return (
     <View style={[styles.item, done && styles.itemDone]}>
       <View style={styles.itemHeader}>
@@ -314,6 +318,7 @@ function ShareStepsModal({
   typography: ReturnType<typeof useTheme>['typography'];
   resolvedTheme: ReturnType<typeof useTheme>['resolvedTheme'];
 }) {
+  useLocale();
   return (
     <Modal
       visible={visible}
@@ -324,7 +329,7 @@ function ShareStepsModal({
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalHeader}>
-          <Text style={typography.heading}>Add Nearr to Share Favorites</Text>
+          <Text style={typography.heading}>{t("Add Nearr to Share Favorites")}</Text>
           <Pressable onPress={onDismiss} style={styles.modalClose} hitSlop={12}>
             <Text style={[typography.bodyStrong, styles.modalCloseText]}>✕</Text>
           </Pressable>
@@ -333,8 +338,8 @@ function ShareStepsModal({
         <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent}>
           <Text style={[typography.body, styles.modalIntro]}>
             {Platform.OS === 'ios'
-              ? 'Follow these steps once on your iPhone so saving places from Instagram or TikTok takes just two taps.'
-              : 'These are the iPhone steps for adding Nearr to Share Favorites.'}
+              ? t("Follow these steps once on your iPhone so saving places from Instagram or TikTok takes just two taps.")
+              : t("These are the iPhone steps for adding Nearr to Share Favorites.")}
           </Text>
 
           {SHARE_STEPS.map((step, i) => (
@@ -360,8 +365,7 @@ function ShareStepsModal({
 
           <Pressable onPress={onDismiss} style={styles.btnGhost}>
             <Text style={[typography.caption, styles.secondaryActionText]}>
-              Not now
-            </Text>
+              {t("Not now")}</Text>
           </Pressable>
 
           <View style={{ height: Spacing.xxl }} />

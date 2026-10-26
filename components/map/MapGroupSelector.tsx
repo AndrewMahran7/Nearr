@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 
 import {
@@ -31,6 +33,7 @@ export function MapGroupSelector({
   onClose,
   onHeightChange,
 }: Props) {
+  useLocale();
   const wheelItems = useMemo<PlaceBrowseWheelItem[]>(() => places.map((place) => {
     const sourceThumbnail = place.sources?.find(
       (source) => source.identity_key === sourceIdentityKey,
@@ -49,18 +52,18 @@ export function MapGroupSelector({
       stateLabel: 'Saved',
       stateTone: 'accent',
     };
-  }), [places, sourceIdentityKey]);
-  const byId = useMemo(() => new Map(places.map((place) => [place.id, place])), [places]);
+  }), [places, sourceIdentityKey, i18n.language]);
+  const byId = useMemo(() => new Map(places.map((place) => [place.id, place])), [places, i18n.language]);
   const resolve = (item: PlaceBrowseWheelItem) => byId.get(item.id);
 
   return (
     <PlaceBrowseWheel
       items={wheelItems}
       selectedId={selectedId}
-      title="Places from this video"
+      title={t("Places from this video")}
       subtitle={failedCount > 0
         ? `Swipe cards or tap a pin · ${failedCount} still need attention`
-        : 'Swipe cards or tap a pin'}
+        : t("Swipe cards or tap a pin")}
       accessibilityLabel={`${places.length} saved places from this video`}
       closeAccessibilityLabel="Close places from this video"
       testID="source-group-nearby-wheel"

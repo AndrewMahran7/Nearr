@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * Share entry screen — one-tap save flow.
  *
@@ -38,6 +40,8 @@ import { Button, Card, Input, Screen } from '@/components';
 import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
 import { ShareJobHandoff } from '@/components/ShareJobHandoff';
 import { AiSharePermissionPrompt } from '@/components/AiSharePermissionPrompt';
+import { supabase } from '@/lib/supabase';
+import { shareAccessPresentation } from '@/lib/shareAccessPresentation';
 import { VayrinPresentationHeader } from '@/components/VayrinPresentationHeader';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
 import { Radius, Spacing } from '@/constants';
@@ -400,6 +404,7 @@ function buildProfileDebugReason(profile: {
 }
 
 export default function ShareScreen() {
+  useLocale();
   const params = useLocalSearchParams<{ url?: string; sid?: string }>();
   const submissionId = typeof params.sid === 'string' ? params.sid : undefined;
   const [tracedSubmissionId, setTracedSubmissionId] = useState<string | null>(null);
@@ -449,6 +454,7 @@ function sharePlatform(url: string): string {
 }
 
 function LegacyShareScreen() {
+  useLocale();
   const router = useRouter();
   const safeAreaInsets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -462,7 +468,7 @@ function LegacyShareScreen() {
   // dark-only palette. See docs/UI_THEME_NOTES.md.
   const { colors, typography: Typography } = useTheme();
   const vayrinEnabled = isVayrinProductUiEnabled();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
 
   const [url, setUrl] = useState(params.url ?? '');
   const [pendingAiPermissionUrl, setPendingAiPermissionUrl] = useState<string | null>(null);
@@ -599,7 +605,7 @@ function LegacyShareScreen() {
     // navigation uses router.replace (a REPLACE action) which is NOT a
     // user dismissal and is unaffected by this guard.
     if (phaseRef.current === 'saving') {
-      Alert.alert('Saving…', 'Please wait for the save to finish.');
+      Alert.alert(t("Saving…"), t("Please wait for the save to finish."));
       return;
     }
     if (navigation.canGoBack()) {
@@ -616,7 +622,7 @@ function LegacyShareScreen() {
     navigation.setOptions({
       headerLeft: () => (
         <Pressable onPress={safeClose} hitSlop={12} style={styles.headerClose}>
-          <Text style={[Typography.body, styles.headerCloseText]}>Close</Text>
+          <Text style={[Typography.body, styles.headerCloseText]}>{t("Close")}</Text>
         </Pressable>
       ),
     });
@@ -633,8 +639,8 @@ function LegacyShareScreen() {
       if (phaseRef.current === 'saving' && actionType === 'GO_BACK') {
         event.preventDefault();
         Alert.alert(
-          'Saving…',
-          'Please wait for the save to finish before leaving.',
+          t("Saving…"),
+          t("Please wait for the save to finish before leaving."),
         );
       }
     });
@@ -689,8 +695,8 @@ function LegacyShareScreen() {
     const trimmed = rawUrl.trim();
     if (!isLikelyUrl(trimmed)) {
       Alert.alert(
-        'Paste a valid link',
-        'The link should start with http:// or https://',
+        t("Paste a valid link"),
+        t("The link should start with http:// or https://"),
       );
       return;
     }
@@ -699,6 +705,17 @@ function LegacyShareScreen() {
     if (aiPermissionGrantedUrlRef.current !== trimmed) {
       aiPermissionDecisionRef.current = false;
       setPendingAiPermissionUrl(trimmed);
+      return;
+    }
+    // Permission may have been withdrawn after the prompt or between retries.
+    // Recheck before even fetching source metadata, with an unchanged owner.
+    const beforeAccess = (await supabase.auth.getSession()).data.session;
+    const access = await supabase.rpc('get_my_global_access');
+    const afterAccess = (await supabase.auth.getSession()).data.session;
+    if (!beforeAccess?.user.id || afterAccess?.user.id !== beforeAccess.user.id || access.error || access.data?.aiAllowed !== true) {
+      aiPermissionGrantedUrlRef.current = null;
+      setFailMessage(shareAccessPresentation('recognition_not_available')!.body);
+      setPhase('failed');
       return;
     }
     if (params.url?.trim() === trimmed) void prepareOnboardingV2RealPracticeShare(trimmed);
@@ -894,28 +911,17 @@ function LegacyShareScreen() {
         backendHttpStatus: httpStatus ?? prev.backendHttpStatus,
       }));
     }
-    // 2026-05-26: explicit one-line log when we drop to the legacy heuristic
-    // path so it's trivial to grep `[share-mobile-debug] fallback_to_legacy`
-    // in metro/adb/Console.app and correlate with missing
-    // process-share-link Edge Function logs in Supabase.
+    // All global recognition results require a qualified server response.
     if (!serverExtraction) {
-      const reason = !isProcessShareLinkConfigured()
-        ? 'backend_not_configured'
-        : serverExtractionError
-          ? (serverExtractionError instanceof Error
-              ? serverExtractionError.name
-              : 'request_failed')
-          : 'no_extraction';
-      console.log(
-        `[share-mobile-debug] fallback_to_legacy reason=${reason} entry_path=${runtimePath}`,
-      );
-      setDebugState((prev) => ({
-        ...prev,
-        legacyExtractionUsed: true,
-        extractionPathAttempted: 'legacy_client',
-        fallbackReason: prev.fallbackReason ?? reason,
-      }));
-    } else {
+      // The global contract cannot route a denied, unavailable or malformed
+      // server response into an unqualified client recognition fallback.
+      aiPermissionGrantedUrlRef.current = null;
+      const rejection = shareAccessPresentation(backendOutcomeRef.current?.failureDetail);
+      setFailMessage(rejection?.body ?? t("We couldn't finish checking this post. Open Nearr to try again."));
+      setPhase('failed');
+      return;
+    }
+    {
       setDebugState((prev) => ({
         ...prev,
         legacyExtractionUsed: false,
@@ -2197,13 +2203,13 @@ function LegacyShareScreen() {
 
       if (result.status === 'duplicate' && !vayrinEnabled) {
         Alert.alert(
-          'Already saved',
+          t("Already saved"),
           `${candidate.name} is already on your map.`,
         );
       } else {
         const postSaveCount = await getPostSaveCount();
         if (postSaveCount == null) {
-          if (!vayrinEnabled) Alert.alert('Saved to your map', candidate.name);
+          if (!vayrinEnabled) Alert.alert(t("Saved to your map"), candidate.name);
         } else {
           const feedback = getActivationSaveFeedback(postSaveCount);
           if (!vayrinEnabled) Alert.alert(feedback.title, feedback.message);
@@ -2286,7 +2292,7 @@ function LegacyShareScreen() {
         google_place_id: candidate.googlePlaceId ?? null,
         error_code: 'save_threw',
       });
-      Alert.alert("Couldn't save", msg);
+      Alert.alert(t("Couldn't save"), msg);
       // Stay on the choose/failed screen so the user can try again.
       setPhase(candidates.length > 0 ? 'choose' : 'failed');
       pushShareDebug('[share-debug] FINAL_RESULT', {
@@ -2422,15 +2428,15 @@ function LegacyShareScreen() {
     // on the picker so they can retry the unsaved ones.
     const failedNames = failed.map((f) => f.candidate.name).join(', ');
     if (saved.length === 0) {
-      Alert.alert("Couldn't save", `Failed to save: ${failedNames}.`);
+      Alert.alert(t("Couldn't save"), `Failed to save: ${failedNames}.`);
     } else {
       Alert.alert(
-        'Some places saved',
+        t("Some places saved"),
         `Saved ${saved.length} of ${selected.length}. Couldn't save: ${failedNames}.`,
         completion.createdSavedPlaceIds.length + completion.duplicateSavedPlaceIds.length > 0
           ? [
-              { text: 'Try remaining', style: 'cancel' },
-              { text: 'View saved', onPress: openSuccessfulPlaces },
+              { text: t("Try remaining"), style: 'cancel' },
+              { text: t("View saved"), onPress: openSuccessfulPlaces },
             ]
           : undefined,
       );
@@ -2550,7 +2556,7 @@ function LegacyShareScreen() {
     if (plan.kind !== 'open') return;
     void trackEvent('share_original_post_opened', { source: 'sync', host: plan.host });
     void Linking.openURL(plan.url).catch(() => {
-      Alert.alert("Couldn't open this post", 'Try opening it again from the source app.');
+      Alert.alert(t("Couldn't open this post"), t("Try opening it again from the source app."));
     });
   }
 
@@ -2659,17 +2665,17 @@ function LegacyShareScreen() {
             <>
               <Text style={[Typography.title, styles.headerTitle]}>
                 {onboardingShare
-                  ? 'Finding the place…'
+                  ? t("Finding the place…")
                   : launchedFromShare
-                    ? 'Saving from share…'
-                    : 'Save from a link'}
+                    ? t("Saving from share…")
+                    : t("Save from a link")}
               </Text>
               <Text style={[Typography.body, styles.muted, styles.headerBody]}>
                 {onboardingShare
-                  ? 'Post received. Checking it for a real place.'
+                  ? t("Post received. Checking it for a real place.")
                   : launchedFromShare
-                    ? 'Nearr received a link from another app. Finding the place now.'
-                    : 'Paste a link to test. In production, this opens automatically from the share sheet.'}
+                    ? t("Nearr received a link from another app. Finding the place now.")
+                    : t("Paste a link to test. In production, this opens automatically from the share sheet.")}
               </Text>
             </>
           )}
@@ -2684,7 +2690,7 @@ function LegacyShareScreen() {
                 autoCorrect={false}
                 keyboardType="url"
                 editable={!busy}
-                accessibilityLabel="Video link"
+                accessibilityLabel={t("Video link")}
                 onSubmitEditing={() => {
                   void runSaveFlow(url).catch((err) => {
                     console.warn('[share] save flow failed', (err as Error)?.message ?? err);
@@ -2695,8 +2701,8 @@ function LegacyShareScreen() {
               <View style={{ height: Spacing.md }} />
 
               <Button
-                title={vayrinEnabled ? 'Find the place' : primaryButtonTitle}
-                accessibilityLabel={vayrinEnabled ? 'Find the place from this video' : undefined}
+                title={vayrinEnabled ? t("Find the place") : primaryButtonTitle}
+                accessibilityLabel={vayrinEnabled ? t("Find the place from this video") : undefined}
                 onPress={() => {
                   void runSaveFlow(url).catch((err) => {
                     console.warn('[share] save flow failed', (err as Error)?.message ?? err);
@@ -2710,9 +2716,7 @@ function LegacyShareScreen() {
 
           {phase === 'idle' && !launchedFromShare ? (
             <Text style={[Typography.caption, styles.muted, styles.hint]}>
-              We only read the public link preview. We never sign in or
-              scrape private content.
-            </Text>
+              {t("We only read the public link preview. We never sign in or scrape private content.")}</Text>
           ) : null}
 
           {phase === 'saved' && savedResult ? (
@@ -2725,9 +2729,9 @@ function LegacyShareScreen() {
                   </Text>
                 ) : null}
               </Card>
-              <Button title="View on map" onPress={openSavedResult} />
+              <Button title={t("View on map")} onPress={openSavedResult} />
               <Button
-                title="Not it"
+                title={t("Not it")}
                 variant="secondary"
                 onPress={async () => {
                   void trackEvent('vayrin_not_it', { source: 'sync_found' });
@@ -2752,11 +2756,11 @@ function LegacyShareScreen() {
                   <Text style={[Typography.label, styles.muted]}>
                     {onboardingShare
                       ? renderableCandidates.length === 1
-                        ? 'I think this is it.'
-                        : "I've got a few leads."
+                        ? t("I think this is it.")
+                        : t("I've got a few leads.")
                       : renderableCandidates.length === 1
-                        ? 'Found this place. Confirm it?'
-                        : 'Found a few matches. Pick the right one:'}
+                        ? t("Found this place. Confirm it?")
+                        : t("Found a few matches. Pick the right one:")}
                   </Text>
                   <View style={{ height: Spacing.sm }} />
                 </>
@@ -2821,7 +2825,7 @@ function LegacyShareScreen() {
                 style={styles.manualLink}
               >
                 <Text style={[Typography.caption, styles.manualLinkText]}>
-                  {renderableCandidates.length === 1 ? 'Not this place' : 'None of these'}
+                  {renderableCandidates.length === 1 ? t("Not this place") : t("None of these")}
                 </Text>
               </Pressable>
               <Pressable
@@ -2832,18 +2836,18 @@ function LegacyShareScreen() {
                   setPhase('failed');
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Find the right place"
+                accessibilityLabel={t("Find the right place")}
                 style={styles.manualLink}
               >
-                <Text style={[Typography.caption, styles.searchPlaceText]}>Find the right place</Text>
+                <Text style={[Typography.caption, styles.searchPlaceText]}>{t("Find the right place")}</Text>
               </Pressable>
               <Pressable
                 onPress={openOriginalPost}
                 accessibilityRole="button"
-                accessibilityLabel="View original post"
+                accessibilityLabel={t("View original post")}
                 style={styles.manualLink}
               >
-                <Text style={[Typography.caption, styles.originalPostText]}>View original post</Text>
+                <Text style={[Typography.caption, styles.originalPostText]}>{t("View original post")}</Text>
               </Pressable>
             </View>
           ) : null}
@@ -2854,8 +2858,7 @@ function LegacyShareScreen() {
               {!vayrinEnabled ? (
                 <>
                   <Text style={[Typography.label, styles.muted]}>
-                    {multiPlaceTitle(renderableCandidates.length)} in this post. Choose which to save.
-                  </Text>
+                    {multiPlaceTitle(renderableCandidates.length)} {t(" in this post. Choose which to save.")}</Text>
                   <View style={{ height: Spacing.sm }} />
                 </>
               ) : null}
@@ -2863,7 +2866,7 @@ function LegacyShareScreen() {
                 <Pressable
                   hitSlop={8}
                   accessibilityRole="button"
-                  accessibilityLabel="Select all eligible places"
+                  accessibilityLabel={t("Select all eligible places")}
                   onPress={() => {
                     const all = new Set<string>(
                       renderableCandidates.map((c) => c.googlePlaceId).filter(Boolean) as string[],
@@ -2872,18 +2875,16 @@ function LegacyShareScreen() {
                   }}
                 >
                   <Text style={[Typography.caption, styles.manualLinkText]}>
-                    Select all
-                  </Text>
+                    {t("Select all")}</Text>
                 </Pressable>
                 <Pressable
                   hitSlop={8}
                   accessibilityRole="button"
-                  accessibilityLabel="Clear all place selections"
+                  accessibilityLabel={t("Clear all place selections")}
                   onPress={() => setMultiSelectedIds(new Set<string>())}
                 >
                   <Text style={[Typography.caption, styles.manualLinkText]}>
-                    Clear all
-                  </Text>
+                    {t("Clear all")}</Text>
                 </Pressable>
               </View> : null}
               {renderableCandidates.length >= 3 ? <View style={{ height: Spacing.sm }} /> : null}
@@ -2955,8 +2956,8 @@ function LegacyShareScreen() {
               <Button
                 title={
                   multiSelectedIds.size === 0
-                    ? 'Select at least one'
-                    : saveSelectedLabel(multiSelectedIds.size)
+                    ? t("Select at least one")
+                    : t('Save selected ({{count}})', { count: multiSelectedIds.size })
                 }
                 disabled={multiSelectedIds.size === 0 || busy}
                 onPress={() => {
@@ -3008,8 +3009,7 @@ function LegacyShareScreen() {
                 style={styles.manualLink}
               >
                 <Text style={[Typography.caption, styles.manualLinkText]}>
-                  None of these — search manually
-                </Text>
+                  {t("None of these — search manually")}</Text>
               </Pressable>
             </View>
           ) : null}
@@ -3018,7 +3018,7 @@ function LegacyShareScreen() {
           {phase === 'failed' ? (
             <Card style={styles.section}>
               <Text style={Typography.heading}>
-                {vayrinEnabled ? 'Find the right place' : onboardingShare ? 'Not enough to go on.' : 'Find the right place'}
+                {vayrinEnabled ? t("Find the right place") : onboardingShare ? t("Not enough to go on.") : t("Find the right place")}
               </Text>
               {!vayrinEnabled ? (
                 <Text
@@ -3033,7 +3033,7 @@ function LegacyShareScreen() {
               ) : null}
               {vayrinEnabled && vayrinPresentation?.kind === 'technical_failure' ? (
                 <Button
-                  title="Try again"
+                  title={t("Try again")}
                   variant="secondary"
                   onPress={() => void runSaveFlow(url)}
                   style={{ marginTop: Spacing.md }}
@@ -3043,13 +3043,13 @@ function LegacyShareScreen() {
               <Input
                 value={manualQuery}
                 onChangeText={setManualQuery}
-                placeholder="Search by place name"
+                placeholder={t("Search by place name")}
                 autoCapitalize="words"
                 onSubmitEditing={runManualSearch}
               />
               <View style={{ height: Spacing.sm }} />
               <Button
-                title="Search"
+                title={t("Search")}
                 onPress={() => {
                   if (vayrinEnabled) {
                     void trackEvent('vayrin_manual_fallback', { source: 'sync' });
@@ -3063,10 +3063,10 @@ function LegacyShareScreen() {
                 <Pressable
                   onPress={openOriginalPost}
                   accessibilityRole="button"
-                  accessibilityLabel="View original post"
+                  accessibilityLabel={t("View original post")}
                   style={styles.manualLink}
                 >
-                  <Text style={[Typography.caption, styles.originalPostText]}>View original post</Text>
+                  <Text style={[Typography.caption, styles.originalPostText]}>{t("View original post")}</Text>
                 </Pressable>
               ) : null}
             </Card>

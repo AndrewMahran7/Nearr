@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * Settings screen.
  *
@@ -112,6 +114,7 @@ function isValidHhmm(s: string): boolean {
 // ---------------------------------------------------------------------------
 
 export default function SettingsScreen() {
+  useLocale();
   useEffect(() => {
     recordOnboardingV2RouteDiagnostic('screen_mounted', {
       route: '/(tabs)/settings',
@@ -122,7 +125,7 @@ export default function SettingsScreen() {
   const { user, isDevSession, isLocalUiSession } = useAuth();
   const { colors, typography, themePreference, setThemePreference } = useTheme();
   const { fontScale } = useWindowDimensions();
-  const styles = useMemo(() => createStyles(colors, typography, fontScale), [colors, typography, fontScale]);
+  const styles = useMemo(() => createStyles(colors, typography, fontScale), [colors, typography, fontScale, i18n.language]);
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -194,7 +197,7 @@ export default function SettingsScreen() {
     quietEnd,
     quietOn,
     quietStart,
-  ]);
+  , i18n.language]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -206,7 +209,7 @@ export default function SettingsScreen() {
         // returns null. Don't surface that as an error — the DevModeBanner
         // already explains why.
         if (!isDevSession) {
-          setLoadError('Could not load your profile. Try again.');
+          setLoadError(t("Could not load your profile. Try again."));
         }
         return;
       }
@@ -247,8 +250,8 @@ export default function SettingsScreen() {
         const ok = await ensureNotificationPermission();
         if (!ok) {
           Alert.alert(
-            'Notifications blocked',
-            'Settings were saved, but enable notifications in system settings to receive nearby alerts.',
+            t("Notifications blocked"),
+            t("Settings were saved, but enable notifications in system settings to receive nearby alerts."),
           );
           return;
         }
@@ -274,15 +277,15 @@ export default function SettingsScreen() {
       const e = quietEnd.trim();
       if (!isValidHhmm(s) || !isValidHhmm(e)) {
         Alert.alert(
-          'Invalid quiet hours',
-          'Use 24-hour HH:MM format, e.g. 22:00 and 07:30.',
+          t("Invalid quiet hours"),
+          t("Use 24-hour HH:MM format, e.g. 22:00 and 07:30."),
         );
         return;
       }
       if (s === e) {
         Alert.alert(
-          'Invalid quiet hours',
-          'Start and end times must be different.',
+          t("Invalid quiet hours"),
+          t("Start and end times must be different."),
         );
         return;
       }
@@ -319,10 +322,10 @@ export default function SettingsScreen() {
       }
 
       console.log('[settings] save success');
-      Alert.alert('Saved', 'Your settings have been updated.');
+      Alert.alert(t("Saved"), t("Your settings have been updated."));
     } catch (e: any) {
       console.warn('[settings] save failed', e);
-      Alert.alert('Save failed', e?.message ?? 'Unknown error.');
+      Alert.alert(t("Save failed"), e?.message ?? 'Unknown error.');
     } finally {
       console.log('[settings] save finished');
       setSaving(false);
@@ -335,10 +338,10 @@ export default function SettingsScreen() {
   function handleSignOut() {
     // Never let Sign out race an in-flight account deletion.
     if (deletingAccount) return;
-    Alert.alert('Sign out?', 'You can sign back in any time with a magic link.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t("Sign out?"), t("You can sign back in any time with a magic link."), [
+      { text: t("Cancel"), style: 'cancel' },
       {
-        text: 'Sign out',
+        text: t("Sign out"),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -373,7 +376,7 @@ export default function SettingsScreen() {
             router.replace('/(onboarding)/account');
           } catch (e: any) {
             console.warn('[signOut] failed', e);
-            Alert.alert('Sign out failed', e?.message ?? 'Unknown error.');
+            Alert.alert(t("Sign out failed"), e?.message ?? 'Unknown error.');
           }
         },
       },
@@ -395,7 +398,7 @@ export default function SettingsScreen() {
       // trace's duplicate onboarding_email_started event.
     } catch (error) {
       console.warn('[settings] map backup entry failed', error);
-      Alert.alert('Could not open map backup', 'Your map is still safe on this device. Try again.');
+      Alert.alert(t("Could not open map backup"), t("Your map is still safe on this device. Try again."));
       setOpeningMapBackup(false);
     }
   }
@@ -454,7 +457,7 @@ export default function SettingsScreen() {
         // button and let them retry.
         console.warn('[account] deletion failed', result.reason);
         setDeletingAccount(false);
-        Alert.alert('Delete failed', result.message);
+        Alert.alert(t("Delete failed"), result.message);
         return;
       }
       // Server confirmed the hard delete. Tear down local state, then send
@@ -465,7 +468,7 @@ export default function SettingsScreen() {
     } catch (e: any) {
       console.warn('[account] deletion threw', e?.message ?? e);
       setDeletingAccount(false);
-      Alert.alert('Delete failed', DELETE_ACCOUNT_FAILURE_MESSAGE);
+      Alert.alert(t("Delete failed"), DELETE_ACCOUNT_FAILURE_MESSAGE);
     }
   }
 
@@ -481,20 +484,20 @@ export default function SettingsScreen() {
 
   function handleResetDemoData() {
     Alert.alert(
-      'Reset demo data?',
-      'This restores the seeded demo profile and saved places. Your real account is not affected.',
+      t("Reset demo data?"),
+      t("This restores the seeded demo profile and saved places. Your real account is not affected."),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t("Cancel"), style: 'cancel' },
         {
-          text: 'Reset',
+          text: t("Reset"),
           style: 'destructive',
           onPress: async () => {
             try {
               await resetAllDemoData();
               await load();
-              Alert.alert('Demo data reset', 'Seed data has been restored.');
+              Alert.alert(t("Demo data reset"), t("Seed data has been restored."));
             } catch (e: any) {
-              Alert.alert('Reset failed', e?.message ?? 'Unknown error.');
+              Alert.alert(t("Reset failed"), e?.message ?? 'Unknown error.');
             }
           },
         },
@@ -522,8 +525,8 @@ export default function SettingsScreen() {
     const ok = await ensureNotificationPermission();
     if (!ok) {
       Alert.alert(
-        'Notifications blocked',
-        'Enable notifications first to test local alerts.',
+        t("Notifications blocked"),
+        t("Enable notifications first to test local alerts."),
       );
       return;
     }
@@ -556,14 +559,14 @@ export default function SettingsScreen() {
     ]
       .filter(Boolean)
       .join('\n');
-  }, [placesDiagnosticText]);
+  }, [placesDiagnosticText, i18n.language]);
 
   async function handleCopyBuildInfo() {
     try {
       await Clipboard.setStringAsync(buildInfoText);
-      Alert.alert('Build info copied', 'Paste it into the task or bug report.');
+      Alert.alert(t("Build info copied"), t("Paste it into the task or bug report."));
     } catch (err) {
-      Alert.alert('Could not copy', (err as Error)?.message ?? 'Please try again.');
+      Alert.alert(t("Could not copy"), (err as Error)?.message ?? 'Please try again.');
     }
   }
 
@@ -636,11 +639,11 @@ export default function SettingsScreen() {
       );
       await Clipboard.setStringAsync(parts.join('\n\n'));
       Alert.alert(
-        'Diagnostic copied',
-        'Paste it into a bug report. No tokens or private URLs are included.',
+        t("Diagnostic copied"),
+        t("Paste it into a bug report. No tokens or private URLs are included."),
       );
     } catch (err) {
-      Alert.alert('Could not copy', (err as Error)?.message ?? 'Please try again.');
+      Alert.alert(t("Could not copy"), (err as Error)?.message ?? 'Please try again.');
     }
   }
 
@@ -653,12 +656,12 @@ export default function SettingsScreen() {
   function handleResetOnboardingOnly() {
     if (resettingOnboarding) return;
     Alert.alert(
-      'Reset onboarding?',
-      'Clear onboarding progress and server checkpoints while keeping this anonymous identity, its saves, and its jobs?',
+      t("Reset onboarding?"),
+      t("Clear onboarding progress and server checkpoints while keeping this anonymous identity, its saves, and its jobs?"),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t("Cancel"), style: 'cancel' },
         {
-          text: 'Reset onboarding',
+          text: t("Reset onboarding"),
           style: 'destructive',
           onPress: () => void runOnboardingReset('onboarding_only'),
         },
@@ -670,12 +673,12 @@ export default function SettingsScreen() {
   function handleFreshAnonymousReset() {
     if (resettingOnboarding) return;
     Alert.alert(
-      'Create a fresh QA user?',
-      'Sign out only this device and create a brand-new anonymous identity? Existing account data, saves, and jobs stay untouched.',
+      t("Create a fresh QA user?"),
+      t("Sign out only this device and create a brand-new anonymous identity? Existing account data, saves, and jobs stay untouched."),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t("Cancel"), style: 'cancel' },
         {
-          text: 'Fresh anonymous user',
+          text: t("Fresh anonymous user"),
           style: 'destructive',
           onPress: () => void runOnboardingReset('fresh_anonymous'),
         },
@@ -693,7 +696,7 @@ export default function SettingsScreen() {
     if (!result.ok) {
       setResettingOnboarding(false);
       Alert.alert(
-        'Reset blocked',
+        t("Reset blocked"),
         result.code === 'ONBOARDING_DEV_RESET_BLOCKED_NON_DEV'
           ? 'Onboarding reset is available only in the development app connected to Nearr-Dev.'
           : result.code === 'ONBOARDING_DEV_RESET_REQUIRES_ANONYMOUS'
@@ -717,8 +720,8 @@ export default function SettingsScreen() {
   async function handleLeaveReview() {
     if (!APP_STORE_APP_ID) {
       Alert.alert(
-        'Coming soon',
-        'Reviews will be available after Nearr is live on the App Store.',
+        t("Coming soon"),
+        t("Reviews will be available after Nearr is live on the App Store."),
       );
       return;
     }
@@ -729,8 +732,8 @@ export default function SettingsScreen() {
       await Linking.openURL(canOpen ? deepLink : webUrl);
     } catch {
       Alert.alert(
-        'Could not open the App Store',
-        'Please try again from the App Store app.',
+        t("Could not open the App Store"),
+        t("Please try again from the App Store app."),
       );
     }
   }
@@ -751,13 +754,10 @@ export default function SettingsScreen() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <DevModeBanner visible />
           <Text style={[typography.body, styles.muted]}>
-            Settings are disabled in Local UI Mode because there is no
-            Supabase profile to read or write. Exit Local UI Mode and sign in
-            with a magic link to manage notification preferences.
-          </Text>
+            {t("Settings are disabled in Local UI Mode because there is no Supabase profile to read or write. Exit Local UI Mode and sign in with a magic link to manage notification preferences.")}</Text>
           <View style={{ height: Spacing.xl }} />
           <Button
-            title="Exit Local UI Mode"
+            title={t("Exit Local UI Mode")}
             variant="secondary"
             onPress={handleExitDevMode}
           />
@@ -771,21 +771,20 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.pageHeader}>
           <View style={{ flex: 1, gap: 8 }}>
-            <Text style={typography.eyebrow}>MAKE IT YOURS</Text>
-            <Text style={typography.largeTitle}>Settings</Text>
+            <Text style={typography.eyebrow}>{t("MAKE IT YOURS")}</Text>
+            <Text style={typography.largeTitle}>{t("Settings")}</Text>
           </View>
-          <IconButton icon="x" label="Close settings" onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/map')} />
+          <IconButton icon="x" label={t("Close settings")} onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/map')} />
         </View>
         <DevModeBanner visible={isLocalUiSession} />
         <DemoModeBanner />
-        <Text style={styles.sectionLabel}>Appearance</Text>
+        <Text style={styles.sectionLabel}>{t("Appearance")}</Text>
         <Card style={styles.section}>
           <Text style={[typography.caption, styles.muted]}>
-            Choose how Nearr looks on this device.
-          </Text>
+            {t("Choose how Nearr looks on this device.")}</Text>
           <View style={styles.themeOptionsRow}>
             <ThemeOption
-              label="System"
+              label={t("System")}
               active={themePreference === 'system'}
               onPress={() => setThemePreference('system')}
               colors={colors}
@@ -793,7 +792,7 @@ export default function SettingsScreen() {
               styles={styles}
             />
             <ThemeOption
-              label="Light"
+              label={t("Light")}
               active={themePreference === 'light'}
               onPress={() => setThemePreference('light')}
               colors={colors}
@@ -801,7 +800,7 @@ export default function SettingsScreen() {
               styles={styles}
             />
             <ThemeOption
-              label="Dark"
+              label={t("Dark")}
               active={themePreference === 'dark'}
               onPress={() => setThemePreference('dark')}
               colors={colors}
@@ -813,21 +812,21 @@ export default function SettingsScreen() {
 
         {loading ? (
           <Card style={styles.section}>
-            <View style={styles.unitRow}><ActivityIndicator /><Text style={[typography.caption, styles.muted]}>Loading account preferences…</Text></View>
+            <View style={styles.unitRow}><ActivityIndicator /><Text style={[typography.caption, styles.muted]}>{t("Loading account preferences…")}</Text></View>
           </Card>
         ) : loadError && !profile ? (
           <Card style={styles.section}>
-            <Text style={typography.bodyStrong}>Couldn’t load account preferences</Text>
+            <Text style={typography.bodyStrong}>{t("Couldn’t load account preferences")}</Text>
             <Text style={[typography.caption, styles.muted]}>{loadError}</Text>
-            <Button title="Try again" variant="secondary" onPress={load} />
+            <Button title={t("Try again")} variant="secondary" onPress={load} />
           </Card>
         ) : null}
 
         {/* --- Notifications ------------------------------------------- */}
-        <Text style={styles.sectionLabel}>Nearby alerts</Text>
+        <Text style={styles.sectionLabel}>{t("Nearby alerts")}</Text>
         <Card style={styles.section}>
           <ToggleRow
-            label="Allow notifications"
+            label={t("Allow notifications")}
             sub="Let Nearr send reminders and updates."
             value={notificationsOn}
             onValueChange={setNotificationsOn}
@@ -835,7 +834,7 @@ export default function SettingsScreen() {
           />
           <View style={styles.divider} />
           <ToggleRow
-            label="Nearby alerts"
+            label={t("Nearby alerts")}
             sub="Remind me when I&apos;m near a place I saved."
             value={nearbyOn}
             onValueChange={setNearbyOn}
@@ -846,23 +845,22 @@ export default function SettingsScreen() {
             style={styles.helpRow}
             onPress={() => void Linking.openSettings().catch(() => undefined)}
             accessibilityRole="button"
-            accessibilityLabel="Open system permission settings"
+            accessibilityLabel={t("Open system permission settings")}
           >
             <View style={styles.helpCopy}>
-              <Text style={typography.bodyStrong}>System permissions</Text>
+              <Text style={typography.bodyStrong}>{t("System permissions")}</Text>
               <Text style={[typography.caption, styles.muted, styles.helpBody]}>
-                Change location or notification access for Nearr.
-              </Text>
+                {t("Change location or notification access for Nearr.")}</Text>
             </View>
             <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
           </Pressable>
         </Card>
 
         {/* --- Quiet hours --------------------------------------------- */}
-        <Text style={styles.sectionLabel}>Quiet hours</Text>
+        <Text style={styles.sectionLabel}>{t("Quiet hours")}</Text>
         <Card style={styles.section}>
           <ToggleRow
-            label="Enable quiet hours"
+            label={t("Enable quiet hours")}
             sub="Pause reminders during a daily window."
             value={quietOn}
             onValueChange={setQuietOn}
@@ -871,7 +869,7 @@ export default function SettingsScreen() {
           {quietOn ? (
             <View style={styles.quietGrid}>
               <View style={styles.quietField}>
-                <Text style={[typography.caption, styles.muted]}>Start (24h)</Text>
+                <Text style={[typography.caption, styles.muted]}>{t("Start (24h)")}</Text>
                 <Input
                   value={quietStart}
                   onChangeText={setQuietStart}
@@ -883,7 +881,7 @@ export default function SettingsScreen() {
               </View>
               <View style={{ width: Spacing.md }} />
               <View style={styles.quietField}>
-                <Text style={[typography.caption, styles.muted]}>End (24h)</Text>
+                <Text style={[typography.caption, styles.muted]}>{t("End (24h)")}</Text>
                 <Input
                   value={quietEnd}
                   onChangeText={setQuietEnd}
@@ -901,20 +899,19 @@ export default function SettingsScreen() {
         {hasUnsavedChanges ? (
           <>
             <View style={{ height: Spacing.lg }} />
-            <Button title="Save changes" onPress={handleSave} loading={saving} disabled={loading || !profile} />
+            <Button title={t("Save changes")} onPress={handleSave} loading={saving} disabled={loading || !profile} />
           </>
         ) : null}
 
         {/* --- Help ---------------------------------------------------- */}
         <View style={{ height: Spacing.xxl }} />
-        <Text style={styles.sectionLabel}>Help</Text>
+        <Text style={styles.sectionLabel}>{t("Help")}</Text>
         <Card style={styles.section}>
           <Pressable style={styles.helpRow} onPress={openHowNearrWorks}>
             <View style={styles.helpCopy}>
-              <Text style={typography.bodyStrong}>How Nearr works</Text>
+              <Text style={typography.bodyStrong}>{t("How Nearr works")}</Text>
               <Text style={[typography.caption, styles.muted, styles.helpBody]}>
-                See the save to reminder to go loop again.
-              </Text>
+                {t("See the save to reminder to go loop again.")}</Text>
             </View>
             <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
           </Pressable>
@@ -926,44 +923,40 @@ export default function SettingsScreen() {
             }
           >
             <View style={styles.helpCopy}>
-              <Text style={typography.bodyStrong}>Send feedback</Text>
+              <Text style={typography.bodyStrong}>{t("Send feedback")}</Text>
               <Text style={[typography.caption, styles.muted, styles.helpBody]}>
-                Tell me what&apos;s confusing, broken, or missing.
-              </Text>
+                {t("Tell me what's confusing, broken, or missing.")}</Text>
             </View>
             <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
           </Pressable>
           <View style={styles.divider} />
           <Pressable style={styles.helpRow} onPress={() => void handleLeaveReview()}>
             <View style={styles.helpCopy}>
-              <Text style={typography.bodyStrong}>Leave a review</Text>
+              <Text style={typography.bodyStrong}>{t("Leave a review")}</Text>
               <Text style={[typography.caption, styles.muted, styles.helpBody]}>
-                Enjoying Nearr? A quick review helps a lot.
-              </Text>
+                {t("Enjoying Nearr? A quick review helps a lot.")}</Text>
             </View>
             <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
           </Pressable>
         </Card>
 
         <View style={{ height: Spacing.xxl }} />
-        <Text style={styles.sectionLabel}>Legal</Text>
+        <Text style={styles.sectionLabel}>{t("Legal")}</Text>
         <Card style={styles.section}>
           <Pressable style={styles.helpRow} onPress={() => router.push('/legal/terms')}>
             <View style={styles.helpCopy}>
-              <Text style={typography.bodyStrong}>Terms of Service</Text>
+              <Text style={typography.bodyStrong}>{t("Terms of Service")}</Text>
               <Text style={[typography.caption, styles.muted, styles.helpBody]}>
-                Read the current Terms and effective date.
-              </Text>
+                {t("Read the current Terms and effective date.")}</Text>
             </View>
             <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
           </Pressable>
           <View style={styles.divider} />
           <Pressable style={styles.helpRow} onPress={() => router.push('/legal/privacy')}>
             <View style={styles.helpCopy}>
-              <Text style={typography.bodyStrong}>Privacy Policy</Text>
+              <Text style={typography.bodyStrong}>{t("Privacy Policy")}</Text>
               <Text style={[typography.caption, styles.muted, styles.helpBody]}>
-                How Nearr handles accounts, saved places, and nearby-reminder data.
-              </Text>
+                {t("How Nearr handles accounts, saved places, and nearby-reminder data.")}</Text>
             </View>
             <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
           </Pressable>
@@ -971,14 +964,14 @@ export default function SettingsScreen() {
           {__DEV__ ? (
             <>
               <Text style={[typography.caption, styles.muted]}>
-                Legal acceptance required now: {LEGAL_ACCEPTANCE_REQUIRED ? 'Yes' : 'No'}
+                {t("Legal acceptance required now: ")}{LEGAL_ACCEPTANCE_REQUIRED ? t("Yes") : t("No")}
               </Text>
               <Text style={[typography.caption, styles.muted]}>
-                Legacy acceptance record version: {LEGAL_VERSION}
+                {t("Legacy acceptance record version: ")}{LEGAL_VERSION}
               </Text>
               {legalAcceptedVersion ? (
                 <Text style={[typography.caption, styles.muted]}>
-                  Accepted version: {legalAcceptedVersion}
+                  {t("Accepted version: ")}{legalAcceptedVersion}
                   {formatAcceptedAt(legalAcceptedAt) ? ` on ${formatAcceptedAt(legalAcceptedAt)}` : ''}
                 </Text>
               ) : null}
@@ -988,7 +981,7 @@ export default function SettingsScreen() {
 
         {/* --- Setup -------------------------------------------------- */}
         <View style={{ height: Spacing.xxl }} />
-        <Text style={styles.sectionLabel}>Setup Nearr</Text>
+        <Text style={styles.sectionLabel}>{t("Setup Nearr")}</Text>
         <SetupChecklist />
 
         {/* --- Build info (non-production builds only) ----------------- */}
@@ -1006,12 +999,12 @@ export default function SettingsScreen() {
         {areDeveloperToolsVisible() ? (
           <>
             <View style={{ height: Spacing.xxl }} />
-            <Text style={styles.sectionLabel}>Build info</Text>
+            <Text style={styles.sectionLabel}>{t("Build info")}</Text>
             <Card style={styles.section}>
               <Text style={[typography.caption, styles.muted]}>{buildInfoText}</Text>
               <View style={{ height: Spacing.sm }} />
               <Button
-                title="Copy build info"
+                title={t("Copy build info")}
                 variant="ghost"
                 onPress={() => void handleCopyBuildInfo()}
               />
@@ -1023,27 +1016,26 @@ export default function SettingsScreen() {
         {onboardingResetAvailable ? (
           <>
             <View style={{ height: Spacing.xxl }} />
-            <Text style={styles.sectionLabel}>Development QA</Text>
+            <Text style={styles.sectionLabel}>{t("Development QA")}</Text>
             <Card style={styles.section}>
               <Text style={[typography.caption, styles.muted]}>
-                Reset progress in place, or rotate to a truly fresh anonymous identity. Both operations are hard-gated to Nearr-Dev.
-              </Text>
+                {t("Reset progress in place, or rotate to a truly fresh anonymous identity. Both operations are hard-gated to Nearr-Dev.")}</Text>
               <Button
-                title="Reset onboarding only"
+                title={t("Reset onboarding only")}
                 variant="secondary"
                 loading={resettingOnboarding}
                 onPress={handleResetOnboardingOnly}
               />
               <View style={{ height: Spacing.sm }} />
               <Button
-                title="Fresh anonymous QA user"
+                title={t("Fresh anonymous QA user")}
                 variant="secondary"
                 loading={resettingOnboarding}
                 onPress={handleFreshAnonymousReset}
               />
               <View style={{ height: Spacing.sm }} />
               <Button
-                title="Open standalone QA reset"
+                title={t("Open standalone QA reset")}
                 variant="ghost"
                 disabled={resettingOnboarding}
                 onPress={() => router.push('/dev-qa')}
@@ -1056,51 +1048,47 @@ export default function SettingsScreen() {
         {onboardingResetAvailable ? (
           <>
             <View style={{ height: Spacing.xxl }} />
-            <Text style={styles.sectionLabel}>Testing</Text>
+            <Text style={styles.sectionLabel}>{t("Testing")}</Text>
             <Card style={styles.section}>
               <Text style={[typography.caption, styles.muted]}>
-                Development app only. Tools for checking this build.
-              </Text>
+                {t("Development app only. Tools for checking this build.")}</Text>
               <Button
-                title="Send test notification"
+                title={t("Send test notification")}
                 variant="secondary"
                 onPress={() => void handleSendTestNotification()}
               />
               <View style={{ height: Spacing.sm }} />
               <Button
-                title="Preview onboarding"
+                title={t("Preview onboarding")}
                 variant="ghost"
                 onPress={handleTestOnboarding}
               />
               <Text style={[typography.caption, styles.muted]}>
-                Opens the pre-auth onboarding intro flow.
-              </Text>
+                {t("Opens the pre-auth onboarding intro flow.")}</Text>
               <View style={{ height: Spacing.sm }} />
               <Button
-                title="Copy diagnostic"
+                title={t("Copy diagnostic")}
                 variant="ghost"
                 onPress={() => void handleCopyDiagnostic()}
               />
               <Text style={[typography.caption, styles.muted]}>
-                Copies the last sanitized crash + App Group auth status (no tokens/URLs).
-              </Text>
+                {t("Copies the last sanitized crash + App Group auth status (no tokens/URLs).")}</Text>
             </Card>
           </>
         ) : null}
 
         {/* --- Account ------------------------------------------------- */}
         <View style={{ height: Spacing.xxl }} />
-        <Text style={styles.sectionLabel}>Account</Text>
+        <Text style={styles.sectionLabel}>{t("Account")}</Text>
         <Card style={styles.section}>
           {user?.is_anonymous === true ? (
             <>
-              <Text style={typography.bodyStrong}>Back up your map</Text>
+              <Text style={typography.bodyStrong}>{t("Back up your map")}</Text>
               <Text style={[typography.caption, styles.muted]}>
-                Add a sign-in to recover your saved places and use them on another device. You can keep using Nearr without one.
-              </Text>
+                {t("Add a sign-in to recover your saved places and use them on another device. You can keep using Nearr without one.")}</Text>
               <View style={{ height: Spacing.md }} />
               <Button
-                title={openingMapBackup ? 'Opening…' : 'Back up my map'}
+                title={openingMapBackup ? t("Opening…") : t("Back up my map")}
                 variant="secondary"
                 onPress={() => void handleBackUpMap()}
                 disabled={openingMapBackup}
@@ -1110,12 +1098,12 @@ export default function SettingsScreen() {
           ) : null}
           {profile?.email ? (
             <Text style={[typography.body, styles.muted]}>
-              Signed in as {profile.email}
+              {t("Signed in as ")}{profile.email}
             </Text>
           ) : null}
           <View style={{ height: Spacing.md }} />
           {user?.is_anonymous !== true ? <Button
-            title="Sign out"
+            title={t("Sign out")}
             variant="secondary"
             onPress={handleSignOut}
             disabled={deletingAccount}
@@ -1126,16 +1114,14 @@ export default function SettingsScreen() {
             onPress={handleDeleteAccount}
             disabled={deletingAccount}
             accessibilityRole="button"
-            accessibilityLabel="Delete account"
+            accessibilityLabel={t("Delete account")}
             accessibilityState={{ disabled: deletingAccount, busy: deletingAccount }}
           >
             <View style={styles.helpCopy}>
               <Text style={[typography.bodyStrong, styles.deleteTitle]}>
-                Delete account
-              </Text>
+                {t("Delete account")}</Text>
               <Text style={[typography.caption, styles.deleteSubtitle]}>
-                Permanently delete your account and saved data.
-              </Text>
+                {t("Permanently delete your account and saved data.")}</Text>
             </View>
             {deletingAccount ? (
               <ActivityIndicator color={colors.danger} />
@@ -1148,29 +1134,25 @@ export default function SettingsScreen() {
         {demo ? (
           <>
             <View style={{ height: Spacing.xxl }} />
-            <Text style={styles.sectionLabel}>Demo Mode</Text>
+            <Text style={styles.sectionLabel}>{t("Demo Mode")}</Text>
             <Card style={styles.section}>
               <Text style={[typography.caption, styles.muted]}>
-                External APIs are mocked. Saved places, profile, and search
-                use local seeded data.
-              </Text>
+                {t("External APIs are mocked. Saved places, profile, and search use local seeded data.")}</Text>
               <View style={{ height: Spacing.md }} />
               <Button
-                title="Simulate nearby notification"
+                title={t("Simulate nearby notification")}
                 variant="secondary"
                 onPress={handleSimulateNearby}
               />
               <View style={{ height: Spacing.sm }} />
               <Button
-                title="Reset demo data"
+                title={t("Reset demo data")}
                 variant="ghost"
                 onPress={handleResetDemoData}
               />
               <View style={{ height: Spacing.md }} />
               <Text style={[typography.caption, styles.muted]}>
-                Disable Demo Mode by removing EXPO_PUBLIC_DEMO_MODE from
-                your .env and restarting Metro.
-              </Text>
+                {t("Disable Demo Mode by removing EXPO_PUBLIC_DEMO_MODE from your .env and restarting Metro.")}</Text>
             </Card>
           </>
         ) : null}
@@ -1179,7 +1161,7 @@ export default function SettingsScreen() {
           <>
             <View style={{ height: Spacing.lg }} />
             <Button
-              title="Exit Local UI Mode"
+              title={t("Exit Local UI Mode")}
               variant="ghost"
               onPress={handleExitDevMode}
             />
@@ -1188,8 +1170,8 @@ export default function SettingsScreen() {
       </ScrollView>
       <HowNearrWorksModal
         visible={howNearrWorksVisible}
-        primaryLabel="Got it"
-        secondaryLabel="Close"
+        primaryLabel={t("Got it")}
+        secondaryLabel={t("Close")}
         onPrimary={() => closeHowNearrWorks('completed')}
         onSecondary={() => closeHowNearrWorks('skipped')}
       />
@@ -1214,6 +1196,7 @@ function ThemeOption({
   typography: ReturnType<typeof useTheme>['typography'];
   styles: ReturnType<typeof createStyles>;
 }) {
+  useLocale();
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={`${label} appearance`} accessibilityState={{ selected: active }} onPress={onPress} style={[styles.unitOption, active && styles.unitOptionActive]}>
       <Text style={[typography.label, { color: active ? colors.textInverse : colors.text }]}>
@@ -1236,8 +1219,9 @@ function ToggleRow({
   onValueChange: (v: boolean) => void;
   disabled?: boolean;
 }) {
+  useLocale();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography, i18n.language]);
   return (
     <View style={[styles.toggleRow, disabled && { opacity: 0.5 }]}>
       <View style={{ flex: 1 }}>

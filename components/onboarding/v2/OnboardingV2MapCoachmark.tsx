@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
@@ -21,8 +23,9 @@ import { openOnboardingPracticePost } from '@/services/onboardingPracticeLaunche
 
 /** Real Phase 2 share UI, backed by the durable queue rather than a local guess. */
 export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
+  useLocale();
   const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   const { height, fontScale } = useWindowDimensions();
   const router = useRouter();
   const { state } = useOnboardingV2();
@@ -72,7 +75,7 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
       await openOnboardingPracticePost(fixture);
       await markOnboardingV2PracticeWaitingForShare();
     } catch {
-      setError('The practice video could not open. Check your connection or try this later.');
+      setError(t("The practice video could not open. Check your connection or try this later."));
     } finally {
       setOpening(false);
     }
@@ -108,16 +111,16 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
   };
 
   return <View style={[styles.dock, { top: topOffset, maxHeight: Math.max(180, height - topOffset - 96) }]}><ScrollView showsVerticalScrollIndicator={false}>
-    {practiceSource?.localPreviewAssetKey ? <Image source={offlineOnboardingAsset(practiceSource.localPreviewAssetKey)} style={styles.preview} resizeMode="cover" accessibilityLabel={`${practiceSource.expectedPlaceName} practice source preview`} /> : practiceSource ? <View style={styles.previewFallback} accessibilityLabel="Practice post preview unavailable"><Feather name="instagram" size={24} color={colors.accent} /><Text style={styles.previewFallbackText}>Real post preview opens in Instagram</Text></View> : null}
+    {practiceSource?.localPreviewAssetKey ? <Image source={offlineOnboardingAsset(practiceSource.localPreviewAssetKey)} style={styles.preview} resizeMode="cover" accessibilityLabel={`${practiceSource.expectedPlaceName} practice source preview`} /> : practiceSource ? <View style={styles.previewFallback} accessibilityLabel={t("Practice post preview unavailable")}><Feather name="instagram" size={24} color={colors.accent} /><Text style={styles.previewFallbackText}>{t("Real post preview opens in Instagram")}</Text></View> : null}
     <View style={styles.header}>
       <View style={styles.icon}><Feather name="share-2" size={16} color={colors.textInverse} /></View>
       <View style={styles.copy}>
-        <Text style={styles.eyebrow}>REAL SAVE · OPTIONAL</Text>
+        <Text style={styles.eyebrow}>{t("REAL SAVE · OPTIONAL")}</Text>
         <Text style={styles.title}>{title}</Text>
       </View>
     </View>
     <Text style={styles.body}>{body}</Text>
-    {jobsError ? <Text style={styles.error} accessibilityRole="alert">Nearr could not refresh Activity yet. Your share is still safe; try again shortly.</Text> : null}
+    {jobsError ? <Text style={styles.error} accessibilityRole="alert">{t("Nearr could not refresh Activity yet. Your share is still safe; try again shortly.")}</Text> : null}
     {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
     <View style={[styles.actions, fontScale >= 1.5 && { flexDirection: 'column', alignItems: 'stretch' }]}>
       <Pressable
@@ -125,11 +128,11 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
         disabled={opening || (needsReview && !practiceSession.shareJobId)}
         onPress={primaryAction}
         accessibilityRole="button"
-        accessibilityLabel={needsReview ? 'Review the place' : received ? 'Continue while Nearr works' : 'Open practice video'}
+        accessibilityLabel={needsReview ? t("Review the place") : received ? t("Continue while Nearr works") : t("Open practice video")}
       >
-        <Text style={styles.primaryText}>{opening ? 'Opening…' : needsReview ? 'Review the place' : received ? 'Continue while Nearr works' : failed ? 'Retry practice video' : 'Open practice video'}</Text>
+        <Text style={styles.primaryText}>{opening ? t("Opening…") : needsReview ? t("Review the place") : received ? t("Continue while Nearr works") : failed ? t("Retry practice video") : t("Open practice video")}</Text>
       </Pressable>
-      <Pressable style={styles.secondary} disabled={opening} onPress={() => void deferOnboardingV2Practice()} accessibilityRole="button" accessibilityLabel="I'll try this later"><Text style={styles.secondaryText}>I’ll try this later</Text></Pressable>
+      <Pressable style={styles.secondary} disabled={opening} onPress={() => void deferOnboardingV2Practice()} accessibilityRole="button" accessibilityLabel={t("I'll try this later")}><Text style={styles.secondaryText}>{t("I’ll try this later")}</Text></Pressable>
     </View>
   </ScrollView></View>;
 }

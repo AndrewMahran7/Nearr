@@ -1,3 +1,4 @@
+import { t, initializeLocale, i18n } from './i18n';
 /**
  * Nearr — nearby notifications.
  *

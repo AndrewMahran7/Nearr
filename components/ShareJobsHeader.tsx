@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 /**
  * ShareJobsHeader — compact navigation header for the share-job queue and the
  * per-job confirmation screen.
@@ -49,8 +51,9 @@ export function ShareJobsHeader({
   reduceMotion = false,
   rightAction,
 }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   const showBadge = typeof count === 'number' && count > 0;
 
   return (
@@ -91,7 +94,7 @@ export function ShareJobsHeader({
         </View>
       ) : (
         <View style={styles.spacer} accessible={refreshing} accessibilityRole={refreshing ? 'progressbar' : undefined}
-          accessibilityLabel={refreshing ? 'Updating this find' : undefined}>
+          accessibilityLabel={refreshing ? t("Updating this find") : undefined}>
           {refreshing ? reduceMotion ? <Feather name="refresh-cw" size={18} color={colors.textSecondary} /> : <ActivityIndicator size="small" color={colors.primary} /> : null}
         </View>
       )}

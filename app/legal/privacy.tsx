@@ -1,10 +1,13 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Constants from 'expo-constants';
+import { consentRpc } from '@/lib/aiSharingConsent';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Card, Screen } from '@/components';
 import { Spacing } from '@/constants';
 import { openPrivacyPolicyWebsite, privacyPolicy } from '@/lib/privacyPolicy';
 import { useTheme, type ThemeColors } from '@/lib/theme';
+import { GlobalLegalDraft } from '@/components/GlobalLegalDraft';
 
 export default function PrivacyScreen() {
   const { colors, typography } = useTheme();
@@ -13,6 +16,24 @@ export default function PrivacyScreen() {
   const [linkFailed, setLinkFailed] = useState(false);
   const openingRef = useRef(false);
   const { snapshot, canonicalUrl } = privacyPolicy;
+  useEffect(() => {
+    // Only an actually rendered, approved version can produce a presentation
+    // receipt. A website link, absent snapshot or development draft cannot.
+    if (!snapshot || snapshot.version !== 'nearr-global-privacy-v1') return;
+    let visible = true;
+    void (async () => {
+      const { supabase } = require('../../lib/supabase') as typeof import('../../lib/supabase');
+      const first = (await supabase.auth.getSession()).data.session;
+      if (!first?.access_token) return;
+      const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string>;
+      const transport = { supabaseUrl: (process.env.EXPO_PUBLIC_SUPABASE_URL ?? extra.supabaseUrl ?? '').replace(/\/$/, ''), publicKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? extra.supabaseAnonKey ?? '', accessToken: first.access_token };
+      const access = await consentRpc(transport, 'get_my_global_access') as Record<string, unknown>;
+      const current = (await supabase.auth.getSession()).data.session;
+      if (!visible || current?.user.id !== first.user.id || access.legalApproved !== true || access.privacyVersion !== snapshot.version) return;
+      await consentRpc({ ...transport, accessToken: current.access_token }, 'record_global_privacy_notice', { p_notice_version: snapshot.version });
+    })().catch(() => {});
+    return () => { visible = false; };
+  }, [snapshot]);
 
   async function openWebsite() {
     if (openingRef.current) return;
@@ -77,6 +98,8 @@ export default function PrivacyScreen() {
             </Text>
           </Card>
         )}
+
+        <GlobalLegalDraft kind="privacy" />
       </ScrollView>
     </Screen>
   );

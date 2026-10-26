@@ -1,5 +1,7 @@
 /** Pure presentation rules for Vayrin's pre-save candidate confirmation. */
 
+import { t } from './i18nEngine';
+
 export type CandidateConfirmationPlace = {
   googlePlaceId: string;
   name: string;
@@ -232,14 +234,14 @@ export function confirmationMode(
 export function confirmationPrompt(mode: CandidateConfirmationMode): string {
   switch (mode) {
     case 'single':
-      return 'Is this the place?';
+      return t('Is this the place?');
     case 'multiple':
-      return 'Which one is it?';
+      return t('Which one is it?');
     case 'broad':
-      return 'Is it around here?';
+      return t('Is it around here?');
     case 'none':
     default:
-      return "Couldn't pin this one down.";
+      return t("Couldn't pin this one down.");
   }
 }
 
@@ -252,7 +254,7 @@ export function candidateEvidenceLabel(
   timestamps: readonly number[] | null | undefined,
 ): string | null {
   const first = timestamps?.find((value) => Number.isFinite(value) && value >= 0);
-  return first == null ? null : `Seen around ${formatCandidateTimestamp(first)}`;
+  return first == null ? null : t('Seen around {{timestamp}}', { timestamp: formatCandidateTimestamp(first) });
 }
 
 export function candidateContextEvidenceLabel(
@@ -261,11 +263,11 @@ export function candidateContextEvidenceLabel(
   const label = candidate.contextLabel?.trim();
   if (!label) return null;
   if (candidate.contextReason === 'near_resolved_video_place') {
-    return `Near the other place in this video · ${label}`;
+    return t('Near the other place in this video · {{area}}', { area: label });
   }
   if (candidate.localityMatch || candidate.contextReason === 'source_locality' ||
     candidate.contextReason === 'exact_source_evidence' || candidate.contextReason === 'video_geo_hint') {
-    return `Matches the ${label} area`;
+    return t('Matches the {{area}} area', { area: label });
   }
   return null;
 }
@@ -293,7 +295,7 @@ export function candidateMatchStrength(
 
 export function candidateMatchLabel(candidate: CandidateConfirmationPlace): string | null {
   const strength = candidateMatchStrength(candidate);
-  return strength ? `${strength[0]!.toUpperCase()}${strength.slice(1)} match` : null;
+  return strength === 'high' ? t('High match') : strength === 'medium' ? t('Medium match') : strength === 'low' ? t('Low match') : null;
 }
 
 function uniqueFiniteTimestamps(values: readonly number[] | null | undefined): number[] {
@@ -310,7 +312,7 @@ export function candidateMatchedFramesLabel(
   const analyzed = typeof candidate.analyzedFrameCount === 'number' && candidate.analyzedFrameCount >= matched.length
     ? Math.floor(candidate.analyzedFrameCount)
     : null;
-  return analyzed ? `Matched frames: ${matched.length} of ${analyzed}` : 'Matched multiple video frames';
+  return analyzed ? t('Matched frames: {{matched}} of {{analyzed}}', { matched: matched.length, analyzed }) : t('Matched multiple video frames');
 }
 
 const REASON_COPY: Readonly<Record<string, string>> = {
@@ -338,15 +340,18 @@ export function candidateWhyMatchLines(
   };
   const frameCount = uniqueFiniteTimestamps(candidate.matchedFrameTimestamps).length;
   if (frameCount > 0) {
-    add(`${frameCount} analyzed video ${frameCount === 1 ? 'frame contains' : 'frames contain'} supporting visual evidence.`);
+    add(t('{{count}} analyzed video frames contain supporting visual evidence.', { count: frameCount }));
   }
-  for (const reason of candidate.reasons ?? []) add(REASON_COPY[reason]);
+  for (const reason of candidate.reasons ?? []) {
+    const copy = REASON_COPY[reason];
+    if (copy) add(t(copy));
+  }
   const sources = new Set((candidate.evidenceItems ?? []).map((item) => item.source));
-  if (sources.has('visible_text')) add('Visible text in the video supports this match.');
-  if (sources.has('speech')) add('Spoken evidence in the video supports this match.');
-  if (sources.has('caption')) add('The post caption supports this match.');
+  if (sources.has('visible_text')) add(t('Visible text in the video supports this match.'));
+  if (sources.has('speech')) add(t('Spoken evidence in the video supports this match.'));
+  if (sources.has('caption')) add(t('The post caption supports this match.'));
   if (locality && [...(candidate.reasons ?? [])].some((reason) => reason.includes('state') || reason.includes('country'))) {
-    add(`Video evidence points to ${locality}.`);
+    add(t('Video evidence points to {{locality}}.', { locality }));
   }
   return lines.slice(0, 4);
 }

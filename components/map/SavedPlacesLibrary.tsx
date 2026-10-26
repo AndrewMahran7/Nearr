@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -53,10 +55,11 @@ export function SavedPlacesLibrary({
   onSaveFromLink,
   onSearchManually,
 }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SavedBrowseSort>('recent');
   const [filters, setFilters] = useState<SavedBrowseFilters>(EMPTY_FILTERS);
@@ -65,7 +68,7 @@ export function SavedPlacesLibrary({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [locationNotice, setLocationNotice] = useState(false);
 
-  const currentPlaces = useMemo(() => currentSavedPlaces(savedPlaces), [savedPlaces]);
+  const currentPlaces = useMemo(() => currentSavedPlaces(savedPlaces), [savedPlaces, i18n.language]);
   const results = useMemo(
     () => buildSavedPlacesBrowseResults({
       places: savedPlaces,
@@ -75,7 +78,7 @@ export function SavedPlacesLibrary({
       filters,
       sort,
     }),
-    [filters, locationState, nearbyPlaces, query, savedPlaces, sort],
+    [filters, locationState, nearbyPlaces, query, savedPlaces, sort, i18n.language],
   );
   const filterCount = browseFilterCount(filters);
   // One recent memory leads the unfiltered collection; all remaining saves
@@ -143,8 +146,8 @@ export function SavedPlacesLibrary({
         <Input
           value={query}
           onChangeText={setQuery}
-          placeholder="Search saved places"
-          accessibilityLabel="Search saved places"
+          placeholder={t("Search saved places")}
+          accessibilityLabel={t("Search saved places")}
           autoCapitalize="none"
           autoCorrect={false}
           clearButtonMode="while-editing"
@@ -166,7 +169,7 @@ export function SavedPlacesLibrary({
         >
           <Feather name="bar-chart-2" size={17} color={sort === 'nearby' ? colors.accent : colors.textSecondary} />
           <Text style={[typography.label, styles.controlLabel]}>
-            {sort === 'nearby' ? 'Nearby' : 'Sort'}
+            {sort === 'nearby' ? t("Nearby") : t("Sort")}
           </Text>
           <Feather name="chevron-down" size={16} color={colors.textMuted} />
         </Pressable>
@@ -182,7 +185,7 @@ export function SavedPlacesLibrary({
         >
           <Feather name="sliders" size={17} color={filterCount > 0 ? colors.accent : colors.textSecondary} />
           <Text style={[typography.label, styles.controlLabel]}>
-            {filterCount > 0 ? `Filter (${filterCount})` : 'Filter'}
+            {filterCount > 0 ? `Filter (${filterCount})` : t("Filter")}
           </Text>
         </Pressable>
       </View>
@@ -191,19 +194,19 @@ export function SavedPlacesLibrary({
         <View style={styles.locationNotice} accessibilityLiveRegion="polite">
           <Feather name="map-pin" size={18} color={colors.accent} />
           <View style={styles.locationNoticeCopy}>
-            <Text style={[typography.label, styles.locationNoticeTitle]}>Location is needed for Nearby</Text>
-            <Text style={[typography.caption, styles.locationNoticeBody]}>Recently saved remains selected.</Text>
+            <Text style={[typography.label, styles.locationNoticeTitle]}>{t("Location is needed for Nearby")}</Text>
+            <Text style={[typography.caption, styles.locationNoticeBody]}>{t("Recently saved remains selected.")}</Text>
           </View>
           <Pressable onPress={() => void Linking.openSettings()} accessibilityRole="button" hitSlop={8}>
-            <Text style={styles.settingsText}>Settings</Text>
+            <Text style={styles.settingsText}>{t("Settings")}</Text>
           </Pressable>
         </View>
       ) : null}
       {featuredPlace ? (
         <View style={styles.featureSection}>
-          <Text style={styles.eyebrow}>SAVED FOR SOMEDAY</Text>
+          <Text style={styles.eyebrow}>{t("SAVED FOR SOMEDAY")}</Text>
           <SavedPlaceBrowseCard saved={featuredPlace} onPress={onSelectPlace} featured />
-          {listPlaces.length > 0 ? <Text accessibilityRole="header" style={[typography.heading, styles.recentHeading]}>More from your world</Text> : null}
+          {listPlaces.length > 0 ? <Text accessibilityRole="header" style={[typography.heading, styles.recentHeading]}>{t("More from your world")}</Text> : null}
         </View>
       ) : null}
     </View>
@@ -214,7 +217,7 @@ export function SavedPlacesLibrary({
       return (
         <View style={styles.empty} accessibilityLiveRegion="polite">
           <ActivityIndicator color={colors.primary} />
-          <Text style={[typography.body, styles.emptyBody]}>Loading saved places…</Text>
+          <Text style={[typography.body, styles.emptyBody]}>{t("Loading saved places…")}</Text>
         </View>
       );
     }
@@ -222,28 +225,28 @@ export function SavedPlacesLibrary({
       return (
         <View style={styles.empty}>
           <Feather name="bookmark" size={30} color={colors.accent} />
-          <Text style={[typography.heading, styles.emptyTitle]}>No saved places yet</Text>
-          <Text style={[typography.body, styles.emptyBody]}>Share a place to Nearr or add one from search.</Text>
-          <Button title="Save from link" onPress={onSaveFromLink} style={styles.emptyAction} />
-          <Button title="Find the right place" variant="secondary" onPress={onSearchManually} style={styles.emptySecondary} />
+          <Text style={[typography.heading, styles.emptyTitle]}>{t("No saved places yet")}</Text>
+          <Text style={[typography.body, styles.emptyBody]}>{t("Share a place to Nearr or add one from search.")}</Text>
+          <Button title={t("Save from link")} onPress={onSaveFromLink} style={styles.emptyAction} />
+          <Button title={t("Find the right place")} variant="secondary" onPress={onSearchManually} style={styles.emptySecondary} />
         </View>
       );
     }
     if (query.trim()) {
       return (
         <View style={styles.empty}>
-          <Text style={typography.heading}>No matches</Text>
-          <Text style={[typography.body, styles.emptyBody]}>Try another search.</Text>
-          <Button title="Clear search" variant="secondary" onPress={() => setQuery('')} style={styles.emptyAction} />
+          <Text style={typography.heading}>{t("No matches")}</Text>
+          <Text style={[typography.body, styles.emptyBody]}>{t("Try another search.")}</Text>
+          <Button title={t("Clear search")} variant="secondary" onPress={() => setQuery('')} style={styles.emptyAction} />
         </View>
       );
     }
     if (filterCount > 0) {
       return (
         <View style={styles.empty}>
-          <Text style={typography.heading}>Nothing matches these filters</Text>
-          <Text style={[typography.body, styles.emptyBody]}>Clear filters to see all your saved places.</Text>
-          <Button title="Clear filters" variant="secondary" onPress={clearFilters} style={styles.emptyAction} />
+          <Text style={typography.heading}>{t("Nothing matches these filters")}</Text>
+          <Text style={[typography.body, styles.emptyBody]}>{t("Clear filters to see all your saved places.")}</Text>
+          <Button title={t("Clear filters")} variant="secondary" onPress={clearFilters} style={styles.emptyAction} />
         </View>
       );
     }
@@ -270,23 +273,23 @@ export function SavedPlacesLibrary({
       />
 
       <Modal visible={sortOpen} transparent animationType={reduceMotion ? 'none' : 'slide'} onRequestClose={() => setSortOpen(false)}>
-        <SheetBackdrop label="Close sort" onClose={() => setSortOpen(false)} styles={styles}>
+        <SheetBackdrop label={t("Close sort")} onClose={() => setSortOpen(false)} styles={styles}>
           <View style={styles.modalHandle} />
           <View style={styles.modalHeader}>
-            <Text style={[typography.heading, styles.modalTitle]}>Sort saved places</Text>
-            <Pressable onPress={() => setSortOpen(false)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close sort">
+            <Text style={[typography.heading, styles.modalTitle]}>{t("Sort saved places")}</Text>
+            <Pressable onPress={() => setSortOpen(false)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("Close sort")}>
               <Feather name="x" size={23} color={colors.textSecondary} />
             </Pressable>
           </View>
           <SortOption
-            label="Recently saved"
+            label={t("Recently saved")}
             detail="Newest saves first"
             selected={sort === 'recent'}
             onPress={() => { setSort('recent'); setLocationNotice(false); setSortOpen(false); }}
             styles={styles}
           />
           <SortOption
-            label="Nearby"
+            label={t("Nearby")}
             detail="Nearest places first"
             selected={sort === 'nearby'}
             onPress={() => void chooseNearby()}
@@ -297,18 +300,18 @@ export function SavedPlacesLibrary({
       </Modal>
 
       <Modal visible={filtersOpen} transparent animationType={reduceMotion ? 'none' : 'slide'} onRequestClose={() => setFiltersOpen(false)}>
-        <SheetBackdrop label="Close filters" onClose={() => setFiltersOpen(false)} styles={styles} tall>
+        <SheetBackdrop label={t("Close filters")} onClose={() => setFiltersOpen(false)} styles={styles} tall>
           <View style={styles.modalHandle} />
           <View style={styles.modalHeader}>
-            <Text style={[typography.heading, styles.modalTitle]}>Filter saved places</Text>
-            <Pressable onPress={() => setFiltersOpen(false)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close filters">
+            <Text style={[typography.heading, styles.modalTitle]}>{t("Filter saved places")}</Text>
+            <Pressable onPress={() => setFiltersOpen(false)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("Close filters")}>
               <Feather name="x" size={23} color={colors.textSecondary} />
             </Pressable>
           </View>
           <ScrollView style={styles.filterScroll} contentContainerStyle={styles.filterContent} showsVerticalScrollIndicator={false}>
             {SAVED_CATEGORY_FILTER_SECTIONS.map((section) => (
               <View key={section.id} style={styles.filterSection}>
-                <Text style={[typography.label, styles.sectionLabel]}>{section.label}</Text>
+                <Text style={[typography.label, styles.sectionLabel]}>{t(section.label)}</Text>
                 <View style={styles.categoryGrid}>
                   {section.categories.map((category) => {
                     const selected = draftFilters.categories.includes(category);
@@ -330,7 +333,7 @@ export function SavedPlacesLibrary({
                 </View>
               </View>
             ))}
-            <Text style={[typography.label, styles.sectionLabel]}>Source</Text>
+            <Text style={[typography.label, styles.sectionLabel]}>{t("Source")}</Text>
             <Pressable
               onPress={() => setDraftFilters((current) => ({ ...current, hasOriginalPost: !current.hasOriginalPost }))}
               accessibilityRole="checkbox"
@@ -339,8 +342,8 @@ export function SavedPlacesLibrary({
             >
               <View style={styles.sourceIcon}><Feather name="play" size={16} color={colors.accent} /></View>
               <View style={styles.sourceCopy}>
-                <Text style={[typography.bodyStrong, styles.sourceTitle]}>Has original post</Text>
-                <Text style={[typography.caption, styles.sourceBody]}>Instagram, TikTok, YouTube, or another supported post</Text>
+                <Text style={[typography.bodyStrong, styles.sourceTitle]}>{t("Has original post")}</Text>
+                <Text style={[typography.caption, styles.sourceBody]}>{t("Instagram, TikTok, YouTube, or another supported post")}</Text>
               </View>
               <View style={[styles.checkbox, draftFilters.hasOriginalPost && styles.checkboxSelected]}>
                 {draftFilters.hasOriginalPost ? <Feather name="check" size={15} color={colors.textInverse} /> : null}
@@ -349,14 +352,14 @@ export function SavedPlacesLibrary({
           </ScrollView>
           <View style={[styles.modalActions, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}>
             <Pressable onPress={() => setDraftFilters(EMPTY_FILTERS)} accessibilityRole="button" style={styles.clearButton}>
-              <Text style={styles.clearText}>Clear</Text>
+              <Text style={styles.clearText}>{t("Clear")}</Text>
             </Pressable>
             <Pressable
               onPress={() => { setFilters(draftFilters); setFiltersOpen(false); }}
               accessibilityRole="button"
               style={styles.applyButton}
             >
-              <Text style={styles.applyText}>Apply</Text>
+              <Text style={styles.applyText}>{t("Apply")}</Text>
             </Pressable>
           </View>
         </SheetBackdrop>
@@ -372,6 +375,7 @@ function SortOption({ label, detail, selected, onPress, styles }: {
   onPress: () => void;
   styles: ReturnType<typeof createStyles>;
 }) {
+  useLocale();
   const { typography } = useTheme();
   return (
     <Pressable onPress={onPress} accessibilityRole="radio" accessibilityState={{ selected }} style={styles.sortOption}>
@@ -391,6 +395,7 @@ function SheetBackdrop({ label, onClose, styles, tall, children }: {
   tall?: boolean;
   children: React.ReactNode;
 }) {
+  useLocale();
   return (
     <View style={styles.modalBackdrop}>
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel={label} />

@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { memo, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -30,10 +32,11 @@ function savedDate(value: string): string | null {
 }
 
 export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
   const { width, fontScale } = useWindowDimensions();
   const largeText = fontScale >= 1.5;
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
   const category = CATEGORY_LABELS[savedPlaceCategory(saved)];
   const locality = splitPlaceAddress(saved.place.formatted_address).locality;
   const distance = formatBrowseDistance(saved.distanceMeters);
@@ -42,7 +45,7 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
   const date = savedDate(saved.created_at);
   const sourceImageUri = useMemo(
     () => placeSourceCards(saved).find((source) => !!source.thumbnailUrl)?.thumbnailUrl ?? null,
-    [saved],
+    [saved, i18n.language],
   );
   const [savedImageUri, setSavedImageUri] = useState<string | null>(null);
   const [savedImageKind, setSavedImageKind] = useState<SavedPlacePhotoKind>('unknown');
@@ -85,7 +88,7 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
       onPress={() => onPress(saved)}
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityHint="Opens saved place details"
+      accessibilityHint={t("Opens saved place details")}
       style={({ pressed }) => [styles.card, showFeature && styles.featured, largeText && styles.largeTextCard, pressed && styles.pressed]}
     >
       <View style={[styles.imageWrap, showFeature && styles.featuredImageWrap]}>
@@ -101,7 +104,7 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
           style={[styles.image, showFeature && styles.featuredImage]}
         />
         {imageResolution === 'source' || savedImageKind === 'source' ? (
-          <View style={[styles.imageOrigin, { backgroundColor: colors.surface }]}><Text style={styles.imageOriginText}>Post</Text></View>
+          <View style={[styles.imageOrigin, { backgroundColor: colors.surface }]}><Text style={styles.imageOriginText}>{t("Post")}</Text></View>
         ) : hasSource ? (
           <View style={styles.sourceBadge} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
             <Feather name="play" size={12} color={colors.textInverse} />

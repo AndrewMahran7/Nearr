@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
@@ -49,8 +51,9 @@ type Props = {
 };
 
 export function ShareSheetMock({ width, onNearrPress, style }: Props) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   const innerWidth = Math.max(200, width - H_PADDING * 2);
   const recipientSlot = innerWidth / 5;
@@ -60,7 +63,7 @@ export function ShareSheetMock({ width, onNearrPress, style }: Props) {
   const nearrSize = Math.max(38, Math.min(52, Math.round(appSlot - 18)));
 
   return (
-    <View style={[styles.sheet, { width }, style]} accessibilityLabel="Example iOS share sheet">
+    <View style={[styles.sheet, { width }, style]} accessibilityLabel={t("Example iOS share sheet")}>
       <View style={styles.grabber} />
 
       <View style={styles.previewRow}>
@@ -69,14 +72,13 @@ export function ShareSheetMock({ width, onNearrPress, style }: Props) {
         </View>
         <View style={styles.previewText}>
           <Text style={styles.previewTitle} numberOfLines={1}>
-            Reel from a creator
-          </Text>
+            {t("Reel from a creator")}</Text>
           <Text style={styles.previewSub} numberOfLines={1}>
             instagram.com
           </Text>
         </View>
         <View style={styles.exampleTag}>
-          <Text style={styles.exampleTagText}>Example</Text>
+          <Text style={styles.exampleTagText}>{t("Example")}</Text>
         </View>
       </View>
 
@@ -112,7 +114,7 @@ export function ShareSheetMock({ width, onNearrPress, style }: Props) {
           >
             <Feather name="more-horizontal" size={20} color="#3C3C43" />
           </View>
-          <Text style={styles.tileLabel}>More</Text>
+          <Text style={styles.tileLabel}>{t("More")}</Text>
         </View>
       </View>
 
@@ -141,9 +143,9 @@ export function ShareSheetMock({ width, onNearrPress, style }: Props) {
 
       <View style={styles.divider} />
 
-      <ActionRow icon="copy" label="Copy" />
+      <ActionRow icon="copy" label={t("Copy")} />
       <View style={styles.rowDivider} />
-      <ActionRow icon="bookmark" label="Add to Reading List" />
+      <ActionRow icon="bookmark" label={t("Add to Reading List")} />
     </View>
   );
 }
@@ -158,8 +160,9 @@ function NearrTile({
   nearrSize: number;
   onPress?: () => void;
 }) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   const scale = useRef(new Animated.Value(1)).current;
   const firedRef = useRef(false);
@@ -183,7 +186,7 @@ function NearrTile({
         style={styles.nearrTarget}
         accessibilityRole="button"
         accessibilityLabel="Nearr"
-        accessibilityHint="Sends the post to Nearr and advances the tutorial"
+        accessibilityHint={t("Sends the post to Nearr and advances the tutorial")}
       >
         <Animated.View style={{ transform: [{ scale }] }}>
           <NearrAppIcon size={nearrSize} highlighted />
@@ -203,8 +206,9 @@ function ActionRow({
   icon: keyof typeof Feather.glyphMap;
   label: string;
 }) {
+  useLocale();
   const OnboardingColors = useOnboardingColors();
-  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors]);
+  const styles = useMemo(() => createStyles(OnboardingColors), [OnboardingColors, i18n.language]);
 
   return (
     <View style={styles.actionRow}>

@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -37,8 +39,9 @@ const PLATFORM_LABELS: Record<OnboardingTutorialFixture['platform'], string> = {
 
 /** A framed rehearsal. Durable stages wait for intentional taps; timers never advance it. */
 export function ImmersiveGuidedSave({ stage, fixture, onBack, onAdvance }: Props) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   const insets = useSafeAreaInsets();
   const { height, fontScale } = useWindowDimensions();
@@ -48,44 +51,48 @@ export function ImmersiveGuidedSave({ stage, fixture, onBack, onAdvance }: Props
   const sheetHeight = Math.min(height - insets.top - 72, Math.max(fontScale >= 1.5 ? height * 0.76 : 360, height * 0.56));
 
   return <View style={styles.root}>
-    <View style={styles.progressTrack} accessible accessibilityRole="progressbar" accessibilityLabel="Onboarding progress" accessibilityValue={{ min: 0, max: 100, now: Math.round(PROGRESS[stage] * 100) }}>
+    <View style={styles.progressTrack} accessible accessibilityRole="progressbar" accessibilityLabel={t("Onboarding progress")} accessibilityValue={{ min: 0, max: 100, now: Math.round(PROGRESS[stage] * 100) }}>
       <View style={[styles.progressFill, { width: `${PROGRESS[stage] * 100}%` }]} />
     </View>
     <View style={styles.sourceCard} accessibilityLabel={`Practice sharing the selected ${platform} post`}>
       {localFixture ? <OfflineFixtureVideo assetKey={localFixture.assetKey} style={StyleSheet.absoluteFill} accessibilityLabel={`${platform} bundled practice video`} /> : <View style={styles.missingFrame}><Feather name="image" size={32} color="#FFFFFF" /></View>}
       <View style={styles.shade} />
-      <View style={[styles.header, { top: insets.top + 18 }]}><View style={styles.practiceBadge}><Text style={styles.practiceBadgeText}>PRACTICE INSIDE NEARR</Text></View><Text style={styles.platformLabel}>{platform}</Text></View>
-      <View style={styles.sourceAttribution}><Ionicons name={platformKey === 'instagram' ? 'logo-instagram' : platformKey === 'youtube' ? 'logo-youtube' : 'play-circle'} size={18} color="#FFFFFF" /><View style={styles.sourceCopy}><Text style={styles.sourceTitle}>A post worth saving</Text><Text style={styles.sourceMeta}>{fixture ? `Bundled ${platform} practice post` : 'Guided sharing practice'}</Text></View></View>
-      <View style={styles.actionRail}><View style={styles.hint}><Text style={styles.hintText}>{stage === 'tutorial_ready' ? (platformKey === 'instagram' ? 'Tap Send' : 'Tap Share') : 'Nice'}</Text></View><Pressable disabled={stage !== 'tutorial_ready'} onPress={() => onAdvance('share')} accessibilityRole="button" accessibilityLabel={platformKey === 'instagram' ? 'Send or share this Instagram post' : `Share this ${platform} post`} accessibilityHint="Opens the next step of this Nearr practice lesson" style={({ pressed }) => [styles.sendButton, stage === 'tutorial_ready' && styles.activeTarget, pressed && styles.pressed]}><Feather name={platformKey === 'instagram' ? 'send' : 'share-2'} size={28} color="#FFFFFF" /></Pressable><Text style={styles.actionLabel}>{platformKey === 'instagram' ? 'Send' : 'Share'}</Text></View>
+      <View style={[styles.header, { top: insets.top + 18 }]}><View style={styles.practiceBadge}><Text style={styles.practiceBadgeText}>{t("PRACTICE INSIDE NEARR")}</Text></View><Text style={styles.platformLabel}>{platform}</Text></View>
+      <View style={styles.sourceAttribution}><Ionicons name={platformKey === 'instagram' ? 'logo-instagram' : platformKey === 'youtube' ? 'logo-youtube' : 'play-circle'} size={18} color="#FFFFFF" /><View style={styles.sourceCopy}><Text style={styles.sourceTitle}>{t("A post worth saving")}</Text><Text style={styles.sourceMeta}>{fixture ? `Bundled ${platform} practice post` : t("Guided sharing practice")}</Text></View></View>
+      <View style={styles.actionRail}><View style={styles.hint}><Text style={styles.hintText}>{stage === 'tutorial_ready' ? (platformKey === 'instagram' ? t("Tap Send") : t("Tap Share")) : t("Nice")}</Text></View><Pressable disabled={stage !== 'tutorial_ready'} onPress={() => onAdvance('share')} accessibilityRole="button" accessibilityLabel={platformKey === 'instagram' ? t("Send or share this Instagram post") : `Share this ${platform} post`} accessibilityHint={t("Opens the next step of this Nearr practice lesson")} style={({ pressed }) => [styles.sendButton, stage === 'tutorial_ready' && styles.activeTarget, pressed && styles.pressed]}><Feather name={platformKey === 'instagram' ? 'send' : 'share-2'} size={28} color="#FFFFFF" /></Pressable><Text style={styles.actionLabel}>{platformKey === 'instagram' ? t("Send") : t("Share")}</Text></View>
     </View>
-    <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={8} style={({ pressed }) => [styles.back, { top: insets.top + 10 }, pressed && styles.pressed]}><Feather name="arrow-left" size={22} color="#FFFFFF" /></Pressable>
+    <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel={t("Go back")} hitSlop={8} style={({ pressed }) => [styles.back, { top: insets.top + 10 }, pressed && styles.pressed]}><Feather name="arrow-left" size={22} color="#FFFFFF" /></Pressable>
     {stage === 'tutorial_share_tapped' ? <PlatformShareMenu height={sheetHeight} platform={platform} onMore={() => onAdvance('more')} /> : null}
     {stage === 'tutorial_more_tapped' ? <SystemShareSheet height={sheetHeight} onNearr={() => onAdvance('nearr')} /> : null}
   </View>;
 }
 
 function PlatformShareMenu({ height, platform, onMore }: { height: number; platform: string; onMore: () => void }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
-  return <ScrollView contentContainerStyle={styles.sheetContent} style={[styles.darkSheet, { height }]} accessibilityLabel={`${platform} sharing choices`}><View style={styles.grabber} /><Text style={styles.sheetTitle}>Share</Text><View style={styles.peopleRow}>{['A', 'S', 'J', 'M'].map((name) => <View key={name} style={styles.person}><View style={styles.personCircle}><Text style={styles.personInitial}>{name}</Text></View><Text style={styles.personName}>Friend</Text></View>)}</View><View style={styles.menuActions}><MenuAction icon="link" label="Copy link" /><Pressable onPress={onMore} accessibilityRole="button" accessibilityLabel="Open more sharing apps" accessibilityHint="Opens the system share sheet" style={({ pressed }) => [styles.moreAction, styles.activeTarget, pressed && styles.pressed]}><View style={styles.menuIcon}><Feather name="more-horizontal" size={24} color="#FFFFFF" /></View><Text style={styles.menuLabel}>Share to…</Text><View style={styles.hintAbove}><Text style={styles.hintText}>Tap here</Text></View></Pressable></View><Text style={styles.lessonNote}>Nearr may be under Share to… or More the first time.</Text></ScrollView>;
+  return <ScrollView contentContainerStyle={styles.sheetContent} style={[styles.darkSheet, { height }]} accessibilityLabel={`${platform} sharing choices`}><View style={styles.grabber} /><Text style={styles.sheetTitle}>{t("Share")}</Text><View style={styles.peopleRow}>{['A', 'S', 'J', 'M'].map((name) => <View key={name} style={styles.person}><View style={styles.personCircle}><Text style={styles.personInitial}>{name}</Text></View><Text style={styles.personName}>{t("Friend")}</Text></View>)}</View><View style={styles.menuActions}><MenuAction icon="link" label={t("Copy link")} /><Pressable onPress={onMore} accessibilityRole="button" accessibilityLabel={t("Open more sharing apps")} accessibilityHint={t("Opens the system share sheet")} style={({ pressed }) => [styles.moreAction, styles.activeTarget, pressed && styles.pressed]}><View style={styles.menuIcon}><Feather name="more-horizontal" size={24} color="#FFFFFF" /></View><Text style={styles.menuLabel}>{t("Share to…")}</Text><View style={styles.hintAbove}><Text style={styles.hintText}>{t("Tap here")}</Text></View></Pressable></View><Text style={styles.lessonNote}>{t("Nearr may be under Share to… or More the first time.")}</Text></ScrollView>;
 }
 
 function MenuAction({ icon, label }: { icon: keyof typeof Feather.glyphMap; label: string }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
  return <View style={styles.moreAction}><View style={styles.menuIcon}><Feather name={icon} size={22} color="#FFFFFF" /></View><Text style={styles.menuLabel}>{label}</Text></View>; }
 
 function SystemShareSheet({ height, onNearr }: { height: number; onNearr: () => void }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
-  return <ScrollView contentContainerStyle={styles.sheetContent} style={[styles.systemSheet, { height }]} accessibilityLabel="System share sheet practice"><View style={styles.systemGrabber} /><View style={styles.systemSource}><View style={styles.systemThumb}><Feather name="play" size={17} color="#FFFFFF" /></View><View style={styles.sourceCopy}><Text style={styles.systemTitle}>Social post</Text><Text style={styles.systemMeta}>Practice post inside Nearr</Text></View></View><Text style={styles.appsHeading}>Share with an app</Text><View style={styles.appsRow}><AppTile icon="message-circle" label="Messages" color="#31C95A" /><Pressable onPress={onNearr} accessibilityRole="button" accessibilityLabel="Choose Nearr" accessibilityHint="Continues the local guided save" style={({ pressed }) => [styles.nearrTile, styles.activeTargetLight, pressed && styles.pressed]}><NearrAppIcon size={58} highlighted /><Text style={styles.appLabel}>Nearr</Text><View style={styles.hintAbove}><Text style={styles.hintText}>Choose Nearr</Text></View></Pressable><AppTile icon="more-horizontal" label="More" color="#D4D4D8" dark /></View><Text style={styles.systemLesson}>Your tap starts a quick practice run. Nothing is uploaded or added to your real map.</Text></ScrollView>;
+  return <ScrollView contentContainerStyle={styles.sheetContent} style={[styles.systemSheet, { height }]} accessibilityLabel={t("System share sheet practice")}><View style={styles.systemGrabber} /><View style={styles.systemSource}><View style={styles.systemThumb}><Feather name="play" size={17} color="#FFFFFF" /></View><View style={styles.sourceCopy}><Text style={styles.systemTitle}>{t("Social post")}</Text><Text style={styles.systemMeta}>{t("Practice post inside Nearr")}</Text></View></View><Text style={styles.appsHeading}>{t("Share with an app")}</Text><View style={styles.appsRow}><AppTile icon="message-circle" label={t("Messages")} color="#31C95A" /><Pressable onPress={onNearr} accessibilityRole="button" accessibilityLabel={t("Choose Nearr")} accessibilityHint={t("Continues the local guided save")} style={({ pressed }) => [styles.nearrTile, styles.activeTargetLight, pressed && styles.pressed]}><NearrAppIcon size={58} highlighted /><Text style={styles.appLabel}>Nearr</Text><View style={styles.hintAbove}><Text style={styles.hintText}>{t("Choose Nearr")}</Text></View></Pressable><AppTile icon="more-horizontal" label={t("More")} color="#D4D4D8" dark /></View><Text style={styles.systemLesson}>{t("Your tap starts a quick practice run. Nothing is uploaded or added to your real map.")}</Text></ScrollView>;
 }
 
 function AppTile({ icon, label, color, dark }: { icon: keyof typeof Feather.glyphMap; label: string; color: string; dark?: boolean }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
  return <View style={styles.nearrTile}><View style={[styles.appGlyph, { backgroundColor: color }]}><Feather name={icon} size={22} color={dark ? '#333338' : '#FFFFFF'} /></View><Text style={styles.appLabel}>{label}</Text></View>; }
 
 function createStyles(Phase1Colors: ReturnType<typeof usePhase1Colors>) { return StyleSheet.create({

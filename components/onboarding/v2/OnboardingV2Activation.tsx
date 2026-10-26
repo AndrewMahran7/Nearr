@@ -1,3 +1,5 @@
+import { i18n, t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { useMemo } from 'react';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
@@ -24,8 +26,9 @@ const LEARN_PROGRESS: Partial<Record<OnboardingV2Stage, number>> = {
 };
 
 export function OnboardingV2Activation() {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   const router = useRouter();
   const { state } = useOnboardingV2();
@@ -59,8 +62,8 @@ export function OnboardingV2Activation() {
   if (!state || !stage || !content || !actionInput) {
     return (
       <Phase1Frame onBack={() => router.replace('/(onboarding)')}>
-        <Text style={styles.eyebrow}>SAVE PAUSED</Text>
-        <Text style={styles.headline}>Choose a new post to continue.</Text>
+        <Text style={styles.eyebrow}>{t("SAVE PAUSED")}</Text>
+        <Text style={styles.headline}>{t("Choose a new post to continue.")}</Text>
       </Phase1Frame>
     );
   }
@@ -96,7 +99,7 @@ export function OnboardingV2Activation() {
   if (stage === 'tutorial_processing') {
     return (
       <Phase1Frame onBack={goBack} progress={progress} progressLabel="Finding the place" scroll={false} contentStyle={styles.processingContent}>
-        <View style={styles.finderVisual} accessible accessibilityLabel="Matching the post to the map">
+        <View style={styles.finderVisual} accessible accessibilityLabel={t("Matching the post to the map")}>
           <View style={styles.finderOrbitLarge} />
           <View style={styles.finderOrbitSmall} />
           <View style={styles.finderTrace} />
@@ -106,8 +109,8 @@ export function OnboardingV2Activation() {
         </View>
         <View accessibilityLiveRegion="polite" style={styles.processingCopy}>
           <Text style={styles.eyebrow}>NEARR</Text>
-          <Text style={[styles.headline, styles.centerText]}>Finding the place</Text>
-          <Text style={[styles.body, styles.centerText]}>Turning that post into a place on your map.</Text>
+          <Text style={[styles.headline, styles.centerText]}>{t("Finding the place")}</Text>
+          <Text style={[styles.body, styles.centerText]}>{t("Turning that post into a place on your map.")}</Text>
         </View>
       </Phase1Frame>
     );
@@ -120,17 +123,17 @@ export function OnboardingV2Activation() {
     const streetAddress = fullAddress.split(',')[0]?.trim() || shortAddress;
     const locality = content.knownPlace?.locality ?? shortAddress;
     return (
-      <Phase1Frame onBack={goBack} progress={progress} progressLabel="Place found" footer={<Phase1PrimaryButton title="Save to my map" onPress={() => void savePlace()} loading={saving} />}>
+      <Phase1Frame onBack={goBack} progress={progress} progressLabel="Place found" footer={<Phase1PrimaryButton title={t("Save to my map")} onPress={() => void savePlace()} loading={saving} />}>
         <FoundPlaceHero name={placeName} locality={locality} />
         <View style={styles.resultCopy} accessibilityLiveRegion="polite">
-          <Text style={styles.eyebrow}>PLACE FOUND</Text>
+          <Text style={styles.eyebrow}>{t("PLACE FOUND")}</Text>
           <Text style={styles.resultHeadline}>{placeName}</Text>
           <View style={styles.addressLine}>
             <Feather name="map-pin" size={16} color={Phase1Colors.orange} />
             <View style={styles.addressCopy}><Text style={styles.addressText}>{streetAddress}</Text><Text style={styles.addressLocality}>{locality}</Text></View>
           </View>
         </View>
-        {saveError ? <Text style={styles.error}>{saveError} Try again.</Text> : null}
+        {saveError ? <Text style={styles.error}>{saveError} {t(" Try again.")}</Text> : null}
       </Phase1Frame>
     );
   }
@@ -155,8 +158,9 @@ export function OnboardingV2Activation() {
 }
 
 function FoundPlaceHero({ name, locality }: { name: string; locality: string }) {
+  useLocale();
   const Phase1Colors = usePhase1Colors();
-  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors]);
+  const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
   return (
     <View style={styles.foundHero} accessible accessibilityLabel={`Place found: ${name}, ${locality}`}>
@@ -166,7 +170,7 @@ function FoundPlaceHero({ name, locality }: { name: string; locality: string }) 
       <View style={styles.heroEgg} />
       <View style={styles.heroYolk} />
       <View style={styles.heroBase} />
-      <View style={styles.foundBadge}><Feather name="check" size={13} color={Phase1Colors.onOrange} /><Text style={styles.foundBadgeText}>FOUND</Text></View>
+      <View style={styles.foundBadge}><Feather name="check" size={13} color={Phase1Colors.onOrange} /><Text style={styles.foundBadgeText}>{t("FOUND")}</Text></View>
       <View style={styles.foundCard}><Text style={styles.foundCardName} numberOfLines={1}>{name}</Text><Text style={styles.foundCardLocality} numberOfLines={1}>{locality}</Text></View>
     </View>
   );
