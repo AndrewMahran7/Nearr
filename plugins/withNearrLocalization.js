@@ -42,6 +42,21 @@ function ensureTargetResourcesPhase(project, targetUuid) {
   return added.buildPhase;
 }
 
+function ensureExtensionVersionPreAction({ platformProjectRoot, projectName, hostTargetUuid, hostTargetName, extensionTargetName }) {
+  const schemePath = path.join(platformProjectRoot, `${projectName}.xcodeproj`, 'xcshareddata', 'xcschemes', `${projectName}.xcscheme`);
+  if (!fs.existsSync(schemePath)) throw new Error(`Nearr localization: missing shared scheme ${schemePath}`);
+  let scheme = fs.readFileSync(schemePath, 'utf8');
+  const title = 'Sync Share Extension build number';
+  if (scheme.includes(`title = "${title}"`)) return;
+  const anchor = '      <BuildActionEntries>';
+  if (!scheme.includes(anchor)) throw new Error('Nearr localization: shared scheme BuildActionEntries missing');
+  const script = `HOST_BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "\${PROJECT_DIR}/${hostTargetName}/Info.plist")\n/usr/libexec/PlistBuddy -c "Set :CFBundleVersion \${HOST_BUILD}" "\${PROJECT_DIR}/${extensionTargetName}/Info.plist"`;
+  const escaped = script.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('\n', '&#10;');
+  const preAction = `      <PreActions>\n         <ExecutionAction\n            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">\n            <ActionContent\n               title = "${title}"\n               scriptText = "${escaped}">\n               <EnvironmentBuildable>\n                  <BuildableReference\n                     BuildableIdentifier = "primary"\n                     BlueprintIdentifier = "${hostTargetUuid}"\n                     BuildableName = "${hostTargetName}.app"\n                     BlueprintName = "${hostTargetName}"\n                     ReferencedContainer = "container:${projectName}.xcodeproj">\n                  </BuildableReference>\n               </EnvironmentBuildable>\n            </ActionContent>\n         </ExecutionAction>\n      </PreActions>\n`;
+  scheme = scheme.replace(anchor, preAction + anchor);
+  fs.writeFileSync(schemePath, scheme);
+}
+
 function writeNativeLocales({ projectRoot, platformProjectRoot, project, buildNumber = '1' }) {
   const targets = Object.entries(project.pbxNativeTargetSection()).filter(([key, target]) =>
     !key.endsWith('_comment') && /com.apple.product-type.(application|app-extension)/.test(target.productType));
@@ -118,11 +133,24 @@ module.exports = function withNearrLocalization(config) {
     project.parseSync();
     if (writeNativeLocales({ projectRoot, platformProjectRoot, project, buildNumber: mod.ios?.buildNumber || '1' }) < 2) throw new Error('Nearr localization: host and Share Extension targets required');
     fs.writeFileSync(filename, project.writeSync());
+    const targets = Object.entries(project.pbxNativeTargetSection()).filter(([key]) => !key.endsWith('_comment'));
+    const host = targets.find(([, target]) => /com.apple.product-type.application/.test(target.productType));
+    const extension = targets.find(([, target]) => /com.apple.product-type.app-extension/.test(target.productType));
+    if (!host || !extension) throw new Error('Nearr localization: host and Share Extension targets required');
+    const projectName = projectDirectory.slice(0, -'.xcodeproj'.length);
+    ensureExtensionVersionPreAction({
+      platformProjectRoot,
+      projectName,
+      hostTargetUuid: host[0],
+      hostTargetName: host[1].name.replaceAll('"', ''),
+      extensionTargetName: extension[1].name.replaceAll('"', ''),
+    });
     return mod;
   }]);
 };
 
 module.exports.writeNativeLocales = writeNativeLocales;
 module.exports.ensureTargetResourcesPhase = ensureTargetResourcesPhase;
+module.exports.ensureExtensionVersionPreAction = ensureExtensionVersionPreAction;
 module.exports.NATIVE_KEYS = NATIVE_KEYS;
 module.exports.LOCALES = LOCALES;
