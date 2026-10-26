@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-26",
+  "workerSourceSha": "9f2b1299824b2f7102fd3443da7d3a888f4d8c94",
+  "workerTypecheckExit": 0,
+  "workerBuildExit": 0,
+  "workerTests": { "total": 664, "passed": 657, "skipped": 7, "failed": 0 },
+  "newRegression": {
+    "name": "revocation after claim bookkeeping blocks the later acquisition dispatch",
+    "beforeFix": { "passed": false, "simulatedUnauthorizedAcquisitionCalls": 1 },
+    "afterFix": { "passed": true, "simulatedUnauthorizedAcquisitionCalls": 0 }
+  },
+  "localPostgres": { "suitesPassed": 12, "ageRegionCombinations": 60 },
+  "hostConsentBoundary": "pass",
+  "consentIdentityBoundary": "pass",
+  "tutorialCorpus": { "sources": 11, "checkGroupsPassed": 5 },
+  "auditPreflightChecksPassed": 38,
+  "quickCheckResolutionChecksPassed": 12,
+  "benchmarkDryRun": { "caseIds": ["C07"], "groundTruthLoaded": false, "cacheReads": false, "inferenceCalls": 0 },
+  "liveRecognitionAccuracy": null,
+  "paidInferenceSpendUsd": 0,
+  "dependencyAudit": { "high": 1, "advisory": "GHSA-mrhx-c7xc-m3w5", "package": "zod", "forcedUpgradeApplied": false },
+  "limitations": ["Mocked dispatch counts are not provider billing logs", "No qualified positive adult/minor recognition run", "Seven optional worker tests skipped", "Initial Quick Check filename typo corrected before passing actual test"]
+}

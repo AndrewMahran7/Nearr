@@ -1,0 +1,209 @@
+{
+  "runId": "eebc76c8-be69-4d21-a8e5-5c69025a4309",
+  "startedAt": "2026-10-26T19:55:23.922Z",
+  "kind": "live-disabled-route-denial-only",
+  "tests": [
+    {
+      "scenario": "adult",
+      "declaration": "eligible",
+      "reason": "region_not_available",
+      "createShareJob": {
+        "status": 403,
+        "data": {
+          "error": "age_eligibility_required"
+        }
+      },
+      "legacyProcessShareLink": {
+        "status": 426,
+        "data": {
+          "status": "failed",
+          "reason": "update_required"
+        }
+      },
+      "modernProcessShareLink": {
+        "status": 403,
+        "data": {
+          "status": "failed",
+          "reason": "age_eligibility_required"
+        }
+      },
+      "jobCount": 0,
+      "mediaTaskCount": 0,
+      "denialRequestGroupLatencyMs": 1929
+    },
+    {
+      "scenario": "minor13",
+      "declaration": "eligible",
+      "reason": "region_not_available",
+      "createShareJob": {
+        "status": 403,
+        "data": {
+          "error": "age_eligibility_required"
+        }
+      },
+      "legacyProcessShareLink": {
+        "status": 426,
+        "data": {
+          "status": "failed",
+          "reason": "update_required"
+        }
+      },
+      "modernProcessShareLink": {
+        "status": 403,
+        "data": {
+          "status": "failed",
+          "reason": "age_eligibility_required"
+        }
+      },
+      "jobCount": 0,
+      "mediaTaskCount": 0,
+      "denialRequestGroupLatencyMs": 1664
+    },
+    {
+      "scenario": "under13",
+      "declaration": "under_minimum",
+      "reason": "eligibility_required",
+      "createShareJob": {
+        "status": 403,
+        "data": {
+          "error": "age_eligibility_required"
+        }
+      },
+      "legacyProcessShareLink": {
+        "status": 426,
+        "data": {
+          "status": "failed",
+          "reason": "update_required"
+        }
+      },
+      "modernProcessShareLink": {
+        "status": 403,
+        "data": {
+          "status": "failed",
+          "reason": "age_eligibility_required"
+        }
+      },
+      "jobCount": 0,
+      "mediaTaskCount": 0,
+      "denialRequestGroupLatencyMs": 1585
+    },
+    {
+      "scenario": "withdrawn",
+      "declaration": "eligible",
+      "reason": "region_not_available",
+      "createShareJob": {
+        "status": 403,
+        "data": {
+          "error": "age_eligibility_required"
+        }
+      },
+      "legacyProcessShareLink": {
+        "status": 426,
+        "data": {
+          "status": "failed",
+          "reason": "update_required"
+        }
+      },
+      "modernProcessShareLink": {
+        "status": 403,
+        "data": {
+          "status": "failed",
+          "reason": "age_eligibility_required"
+        }
+      },
+      "jobCount": 0,
+      "mediaTaskCount": 0,
+      "denialRequestGroupLatencyMs": 1593
+    },
+    {
+      "scenario": "legacy14",
+      "declaration": "adult_self_declared",
+      "reason": "eligibility_required",
+      "createShareJob": {
+        "status": 403,
+        "data": {
+          "error": "age_eligibility_required"
+        }
+      },
+      "legacyProcessShareLink": {
+        "status": 426,
+        "data": {
+          "status": "failed",
+          "reason": "update_required"
+        }
+      },
+      "modernProcessShareLink": {
+        "status": 403,
+        "data": {
+          "status": "failed",
+          "reason": "age_eligibility_required"
+        }
+      },
+      "jobCount": 0,
+      "mediaTaskCount": 0,
+      "denialRequestGroupLatencyMs": 1671
+    }
+  ],
+  "cleanup": [
+    {
+      "userId": "bf7d2914-98ba-431f-a36e-fcda95034e08",
+      "deleted": true,
+      "authReadback": 404,
+      "jobs": 0,
+      "mediaTasks": 0
+    },
+    {
+      "userId": "cbef9672-fad5-4527-96fe-7a0ad68d0bf4",
+      "deleted": true,
+      "authReadback": 404,
+      "jobs": 0,
+      "mediaTasks": 0
+    },
+    {
+      "userId": "d18d6606-26f4-44c1-b114-cde74ffde87b",
+      "deleted": true,
+      "authReadback": 404,
+      "jobs": 0,
+      "mediaTasks": 0
+    },
+    {
+      "userId": "c1b33a78-cbff-4fbb-acec-e80c0feda21d",
+      "deleted": true,
+      "authReadback": 404,
+      "jobs": 0,
+      "mediaTasks": 0
+    },
+    {
+      "userId": "87dfee32-e1c5-4437-9574-7b3377771cf9",
+      "deleted": true,
+      "authReadback": 404,
+      "jobs": 0,
+      "mediaTasks": 0
+    }
+  ],
+  "externalInferenceRequestsIssuedByHarness": 0,
+  "workerDeployment": "70fc5c6f-1b8b-4e5c-915e-7c30ccbab360",
+  "policyBefore": {
+    "singleton": true,
+    "policy_version": "nearr-global-13-v1",
+    "ai_notice_version": "nearr-ai-openai-v1",
+    "privacy_notice_version": "nearr-global-privacy-v1",
+    "terms_version": "nearr-global-terms-v1",
+    "legal_approved": false,
+    "recognition_qualified": false,
+    "purchase_qualified": false,
+    "provider_route": "disabled",
+    "evidence_reference": null
+  },
+  "sourceCase": "instagram_dorset_quarry_visual_candidate_01",
+  "workerAuthenticatedWake": {
+    "status": 503,
+    "body": {
+      "error": "not_ready"
+    }
+  },
+  "policyUnchanged": true,
+  "passed": true,
+  "finishedAt": "2026-10-26T19:55:44.063Z",
+  "cleanupComplete": true
+}

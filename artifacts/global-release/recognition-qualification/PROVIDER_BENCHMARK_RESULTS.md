@@ -17,6 +17,8 @@ After account, guardian, processor and market qualification: cap at 8 retained d
 
 ## Actual regression results
 
+Final worker correction at `9f2b1299824b2f7102fd3443da7d3a888f4d8c94`: added a regression for revocation after claim bookkeeping, reproduced its failure, then fixed pre-acquisition authorization. Full rerun: **664 tests, 657 pass, 7 skipped, 0 fail**, typecheck/build pass. Consent identity test also passes. Earlier numbers below describe the initial deployment, not the final corrected suite.
+
 Worker at `001eea5d40ee1ebca742bb1f48f042ba40f802b9`: typecheck and build pass; 663 tests, **656 pass, 7 intentionally skipped, 0 fail**. Local PostgreSQL: 12 eligibility/security suites including 60 age/region combinations pass. Host consent boundary passes. Corpus validator: 5 groups pass. Recognition audit preflight: all 38 checks pass. Quick Check resolution: 12 checks pass. An initial mistyped Quick Check test filename failed to resolve; rerunning the actual package-script target passed. No product regression inferred from that invocation error.
 
 Railway's install audit reported one pre-existing high-severity Zod advisory, GHSA-mrhx-c7xc-m3w5, confirmed by `npm audit --omit=dev`. Its advertised repair is a major upgrade to Zod 4.6.7. No forced dependency upgrade was applied during the disabled deployment. Response bounds reduce exposure on the OpenAI adapter but do not constitute a full exploitability review; assess/remediate before recognition activation/public release.

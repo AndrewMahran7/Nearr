@@ -1,5 +1,7 @@
 # Development deployment record
 
+Later 26 October update: the unified disabled Railway worker is now deployed. This document retains the earlier iOS/Edge record; use [UNIFIED_WORKER_DEPLOYMENT](./recognition-qualification/UNIFIED_WORKER_DEPLOYMENT.md) for the current Railway source, image, health and containment evidence.
+
 Recorded 25 October 2026 PT / 26 October UTC. Production was not changed and no OTA was published.
 
 ## Source and database

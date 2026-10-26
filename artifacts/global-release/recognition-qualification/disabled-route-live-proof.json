@@ -1,6 +1,6 @@
 {
-  "runId": "08b237a0-7080-47e7-b276-808defcddd22",
-  "startedAt": "2026-10-26T19:45:50.913Z",
+  "runId": "eebc76c8-be69-4d21-a8e5-5c69025a4309",
+  "startedAt": "2026-10-26T19:55:23.922Z",
   "kind": "live-disabled-route-denial-only",
   "tests": [
     {
@@ -20,9 +20,16 @@
           "reason": "update_required"
         }
       },
+      "modernProcessShareLink": {
+        "status": 403,
+        "data": {
+          "status": "failed",
+          "reason": "age_eligibility_required"
+        }
+      },
       "jobCount": 0,
       "mediaTaskCount": 0,
-      "denialPairLatencyMs": 1920
+      "denialRequestGroupLatencyMs": 1929
     },
     {
       "scenario": "minor13",
@@ -41,9 +48,16 @@
           "reason": "update_required"
         }
       },
+      "modernProcessShareLink": {
+        "status": 403,
+        "data": {
+          "status": "failed",
+          "reason": "age_eligibility_required"
+        }
+      },
       "jobCount": 0,
       "mediaTaskCount": 0,
-      "denialPairLatencyMs": 1485
+      "denialRequestGroupLatencyMs": 1664
     },
     {
       "scenario": "under13",
@@ -62,9 +76,16 @@
           "reason": "update_required"
         }
       },
+      "modernProcessShareLink": {
+        "status": 403,
+        "data": {
+          "status": "failed",
+          "reason": "age_eligibility_required"
+        }
+      },
       "jobCount": 0,
       "mediaTaskCount": 0,
-      "denialPairLatencyMs": 775
+      "denialRequestGroupLatencyMs": 1585
     },
     {
       "scenario": "withdrawn",
@@ -83,9 +104,16 @@
           "reason": "update_required"
         }
       },
+      "modernProcessShareLink": {
+        "status": 403,
+        "data": {
+          "status": "failed",
+          "reason": "age_eligibility_required"
+        }
+      },
       "jobCount": 0,
       "mediaTaskCount": 0,
-      "denialPairLatencyMs": 1365
+      "denialRequestGroupLatencyMs": 1593
     },
     {
       "scenario": "legacy14",
@@ -104,42 +132,49 @@
           "reason": "update_required"
         }
       },
+      "modernProcessShareLink": {
+        "status": 403,
+        "data": {
+          "status": "failed",
+          "reason": "age_eligibility_required"
+        }
+      },
       "jobCount": 0,
       "mediaTaskCount": 0,
-      "denialPairLatencyMs": 1468
+      "denialRequestGroupLatencyMs": 1671
     }
   ],
   "cleanup": [
     {
-      "userId": "bb919a1e-7119-4d36-bdcd-f14cf21ca9ca",
+      "userId": "bf7d2914-98ba-431f-a36e-fcda95034e08",
       "deleted": true,
       "authReadback": 404,
       "jobs": 0,
       "mediaTasks": 0
     },
     {
-      "userId": "51048828-f379-4f60-bf56-c026fcf59dad",
+      "userId": "cbef9672-fad5-4527-96fe-7a0ad68d0bf4",
       "deleted": true,
       "authReadback": 404,
       "jobs": 0,
       "mediaTasks": 0
     },
     {
-      "userId": "72479888-daac-4247-bcdd-08943a73bc62",
+      "userId": "d18d6606-26f4-44c1-b114-cde74ffde87b",
       "deleted": true,
       "authReadback": 404,
       "jobs": 0,
       "mediaTasks": 0
     },
     {
-      "userId": "50cf84e1-3ed1-44a5-bf06-cb1227f54a0d",
+      "userId": "c1b33a78-cbff-4fbb-acec-e80c0feda21d",
       "deleted": true,
       "authReadback": 404,
       "jobs": 0,
       "mediaTasks": 0
     },
     {
-      "userId": "93813b88-8980-4ef5-abe5-b49f408324d7",
+      "userId": "87dfee32-e1c5-4437-9574-7b3377771cf9",
       "deleted": true,
       "authReadback": 404,
       "jobs": 0,
@@ -147,6 +182,7 @@
     }
   ],
   "externalInferenceRequestsIssuedByHarness": 0,
+  "workerDeployment": "70fc5c6f-1b8b-4e5c-915e-7c30ccbab360",
   "policyBefore": {
     "singleton": true,
     "policy_version": "nearr-global-13-v1",
@@ -168,5 +204,6 @@
   },
   "policyUnchanged": true,
   "passed": true,
-  "finishedAt": "2026-10-26T19:46:08.474Z"
+  "finishedAt": "2026-10-26T19:55:44.063Z",
+  "cleanupComplete": true
 }

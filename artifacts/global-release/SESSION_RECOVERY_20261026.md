@@ -1,5 +1,7 @@
 # Nearr 1.7 stalled-session recovery
 
+Subsequent same-day work supersedes this report's Railway access/deployment and disposable-account limitations: see [recognition qualification handoff](./recognition-qualification/RECOGNITION_QUALIFICATION_FINAL_HANDOFF.md). Authentication succeeded, unified disabled worker was deployed, and new test-owned accounts were deleted with receipts. Earlier unrelated account cleanup remains unproven; no pre-existing account was deleted.
+
 Recovered on 2026-10-26 PT without resetting, cleaning, or discarding any work.
 
 ## Recovered Git state

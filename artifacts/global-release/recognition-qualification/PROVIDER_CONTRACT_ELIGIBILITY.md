@@ -2,6 +2,8 @@
 
 Decision: no end-to-end route is currently qualified for Nearr's intended 13+ audience (higher regional thresholds remain). This is an engineering qualification record, not a legal opinion. No agreement was accepted and no paid inference was performed. Published terms establish possible arrangements, not the exact contracting account's approval.
 
+Founder response in this task: “I don't know” whether an existing OpenAI/Anthropic commercial agreement or reviewed guardian process exists. Therefore those remain **unverified**, not known absent and not implicitly approved. No password/token is needed in chat; inspect the existing organization billing/legal records through an authorized session in the next qualification step.
+
 | Component | Classification and primary evidence | Nearr-specific gap |
 |---|---|---|
 | Gemini Developer API | Explicitly prohibited for an app likely accessed by under-18 users under the [API Terms](https://ai.google.dev/gemini-api/terms), effective 23 March 2026. Account-holder age and paid tier do not waive the client restriction. | Keep blocked; a different written arrangement would need independent review. |

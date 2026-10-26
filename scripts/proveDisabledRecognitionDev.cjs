@@ -39,7 +39,7 @@ const deployment = spawnSync(cli.file, [...cli.prefixArgs, 'deployment', 'list',
 });
 assert.equal(deployment.status, 0, 'Unable to verify worker deployment');
 const active = JSON.parse(deployment.stdout)[0];
-assert.equal(active.id, '0f738ab6-ec1a-4b34-a2c6-bc67488b74c3', 'Review a newer deployment before rerunning this release-specific proof');
+assert.equal(active.id, '70fc5c6f-1b8b-4e5c-915e-7c30ccbab360', 'Review a newer deployment before rerunning this release-specific proof');
 assert.equal(active.status, 'SUCCESS');
 report.workerDeployment = active.id;
 async function request(route, body, token = key, method = body === undefined ? 'GET' : 'POST', headers = {}) {
@@ -100,12 +100,15 @@ async function main() {
     const submission = await request('/functions/v1/create-share-job', { url: source.url, submissionPath: 'host_app', clientRequestId: randomUUID() }, token, 'POST', { 'x-nearr-contract': 'global-v1' });
     assert.equal(submission.status, 403, `Submission not denied for ${scenario}`);
     assert.equal(submission.data.error, 'age_eligibility_required');
-    const legacy = await request('/functions/v1/process-share-link', { url: source.url, accessToken: token, mode: 'save' }, token);
+    const legacy = await request('/functions/v1/process-share-link', { url: source.url, accessToken: token, mode: 'save' }, token, 'POST', { 'x-nearr-app-version': '1.4' });
     assert.equal(legacy.status, 426, `Legacy submission not denied for ${scenario}`);
     assert.equal(legacy.data.reason, 'update_required');
+    const modernDirect = await request('/functions/v1/process-share-link', { url: source.url, accessToken: token, mode: 'save' }, token, 'POST', { 'x-nearr-contract': 'global-v1' });
+    assert.equal(modernDirect.status, 403);
+    assert.equal(modernDirect.data.reason, 'age_eligibility_required');
     assert.equal(await ownCount('share_jobs', id), 0);
     assert.equal(await ownCount('share_media_tasks', id), 0);
-    report.tests.push({ scenario, declaration: declaration.data, reason: reason.data, createShareJob: submission, legacyProcessShareLink: legacy, jobCount: 0, mediaTaskCount: 0, denialPairLatencyMs: Date.now() - start });
+    report.tests.push({ scenario, declaration: declaration.data, reason: reason.data, createShareJob: submission, legacyProcessShareLink: legacy, modernProcessShareLink: modernDirect, jobCount: 0, mediaTaskCount: 0, denialRequestGroupLatencyMs: Date.now() - start });
   }
   const wake = await fetch(worker + '/v1/process-media-tasks', { method: 'POST', headers: { Authorization: `Bearer ${vars.SHARE_MEDIA_WORKER_SECRET}` }, signal: AbortSignal.timeout(20_000) });
   const wakeBody = await wake.json();

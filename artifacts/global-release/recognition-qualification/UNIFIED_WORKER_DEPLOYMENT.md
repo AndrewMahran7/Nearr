@@ -1,5 +1,22 @@
 # Unified Development worker deployment
 
+## Final corrected deployment — current
+
+The revocation regression found during qualification was fixed and redeployed. **`70fc5c6f-1b8b-4e5c-915e-7c30ccbab360` observed SUCCESS** after its `/health` check passed on 26 October. It supersedes the initial deployment recorded below.
+
+- Source: `9f2b1299824b2f7102fd3443da7d3a888f4d8c94`, committed and pushed before upload.
+- Worker Git tree: `4f8f50dc7253a1b4451b4f960ff9d144a965c040`.
+- 190-file exact Git archive SHA-256: `22b5448d0a6a0b84939cb63e00d88e58ff3fa7c04d752d84a576ce1d33a45109`.
+- Railway final imageDigest: `sha256:0ca141b72cd33c64cfaaa58014db13d0be9df91f82223534c9362e28c110737f`.
+- Created: `2026-10-26T19:49:42.071Z`; SUCCESS readback at approximately 19:55 UTC.
+- Change: recheck server eligibility immediately before media acquisition, after awaited bookkeeping; regression proves zero dispatch after revocation.
+- Verification before upload: typecheck/build pass; 664 tests, 657 pass, 7 skipped, zero fail.
+- Concurrency check before upload: exact prior unified deployment `0f738ab6...` still SUCCESS; backend URL, disabled route and OpenAI-disabled flag unchanged. No additional variable mutation.
+- Processing remains intentionally disabled. Use **this corrected source/archive**, not the initial source below or the old adult-only worker, for forward repair/rebuild with all gates closed.
+- Final runtime startup: `2026-10-26T19:55:01.103Z`. Live `/health` 200; `/ready` 503 with working media binaries and deliberately disabled config. Final release-specific harness passed five profiles/15 denied share requests, authenticated processing wake 503, unchanged DB policy and complete fixture deletion. Receipt: `disabled-route-live-proof-eebc76c8-be69-4d21-a8e5-5c69025a4309.json`.
+
+## Initial unified deployment — historical checkpoint
+
 26 October 2026. **Deployed successfully, intentionally not ready for recognition.** Railway authentication completed through one fresh browser login; CLI then confirmed the authorized account. No password/token was requested in chat.
 
 | Evidence | Value |
