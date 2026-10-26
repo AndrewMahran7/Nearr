@@ -12,8 +12,8 @@ const project = xcode.project(path.join(nativeRoot, 'test.pbxproj'));
 project.hash = { project: { archiveVersion: 1, classes: {}, objectVersion: 54, rootObject: 'P', objects: {
   PBXProject: { P: { isa:'PBXProject', mainGroup:'G', targets:[{value:'T1',comment:'Nearr'},{value:'T2',comment:'NearrShareExtension'}], knownRegions:['en'] }, P_comment:'Project object' },
   PBXGroup: { G: {isa:'PBXGroup',children:[],sourceTree:'"<group>"'},G_comment:'Main' },
-  PBXNativeTarget: { T1:{isa:'PBXNativeTarget',name:'Nearr',productType:'"com.apple.product-type.application"',buildPhases:[{value:'R1',comment:'Resources'}]}, T1_comment:'Nearr', T2:{isa:'PBXNativeTarget',name:'NearrShareExtension',productType:'"com.apple.product-type.app-extension"',buildPhases:[{value:'R2',comment:'Resources'}]}, T2_comment:'NearrShareExtension' },
-  PBXResourcesBuildPhase:{R1:{isa:'PBXResourcesBuildPhase',buildActionMask:2147483647,files:[],runOnlyForDeploymentPostprocessing:0},R1_comment:'Resources',R2:{isa:'PBXResourcesBuildPhase',buildActionMask:2147483647,files:[],runOnlyForDeploymentPostprocessing:0},R2_comment:'Resources'},
+  PBXNativeTarget: { T1:{isa:'PBXNativeTarget',name:'Nearr',productType:'"com.apple.product-type.application"',buildPhases:[{value:'R1',comment:'Resources'}]}, T1_comment:'Nearr', T2:{isa:'PBXNativeTarget',name:'NearrShareExtension',productType:'"com.apple.product-type.app-extension"',buildPhases:[]}, T2_comment:'NearrShareExtension' },
+  PBXResourcesBuildPhase:{R1:{isa:'PBXResourcesBuildPhase',buildActionMask:2147483647,files:[],runOnlyForDeploymentPostprocessing:0},R1_comment:'Resources'},
   PBXBuildFile:{}, PBXFileReference:{}, PBXVariantGroup:{}
 } } };
 assert.equal(writeNativeLocales({projectRoot,platformProjectRoot:nativeRoot,project}),2);
@@ -33,7 +33,13 @@ function verify(p, root) {
     assert.match(plist,/NSLocationWhenInUseUsageDescription/);
     assert.match(plist,/NSLocationAlwaysAndWhenInUseUsageDescription/);
   }
-  for(const [,phase] of Object.entries(p.hash.project.objects.PBXResourcesBuildPhase).filter(([key])=>!key.endsWith('_comment'))) assert.equal(phase.files.length,2,'only variant groups, not every lproj child, are target resources');
+  const hostResources=p.pbxResourcesBuildPhaseObj('T1');
+  const extensionResources=p.pbxResourcesBuildPhaseObj('T2');
+  assert.equal(hostResources.files.length,2,'host contains only its two variant groups');
+  assert.equal(extensionResources.files.length,2,'extension gets its own Resources phase and two variant groups');
+  const hostRefs=hostResources.files.map(file=>p.pbxBuildFileSection()[file.value].fileRef);
+  const extensionRefs=extensionResources.files.map(file=>p.pbxBuildFileSection()[file.value].fileRef);
+  assert.equal(new Set([...hostRefs,...extensionRefs]).size,4,'no variant group is copied into both targets');
 }
 verify(project,nativeRoot);
 const before=project.writeSync();

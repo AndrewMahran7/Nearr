@@ -5,8 +5,8 @@ npm: 10.9.9
 Node archive SHA-256: 1805bcd35e6815559bd2eb97db438d3fdb0eb3a5e6a977b7c1badca76337e9ce
 Candidate: isolated copy of integration/nearr-global-fieldnotes-monetization after the 143/143 validation run
 
-Command:
-CI=1 npx expo prebuild --platform ios --no-install
+Final command after the build-63 duplicate-resource repair:
+CI=1 npx expo prebuild --platform ios --no-install --clean
 
 Output:
 - Creating native directory (./ios)
@@ -22,6 +22,14 @@ Post-run resource inspection:
 - 20 InfoPlist.strings files: 10 host-app locales and 10 Share Extension locales
 - 20 Localizable.strings files: 10 host-app locales and 10 Share Extension locales
 - Locales: en-US, es-MX, es-ES, pt-BR, fr, de, it, ja, ko, zh-Hans
+- Nearr Resources phase: 6 total entries, exactly 2 localized variant groups
+- NearrShareExtension Resources phase: 2 total entries, exactly 2 localized variant groups
+- All 4 localized variant-group references are disjoint across the two targets
+
+The final inspection specifically covers the Xcode "Multiple commands produce"
+failure from EAS build 63. The plugin now creates a Share Extension Resources
+phase before adding its target-scoped variant groups, preventing node-xcode from
+falling back to the host application's Resources phase.
 
 Scope limit: --no-install does not run CocoaPods, Xcode compilation, code signing,
 IPA export, simulator execution, Share Extension embedding checks, or physical-device QA.

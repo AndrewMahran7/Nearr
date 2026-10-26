@@ -30,6 +30,14 @@ function writeNativeLocales({ projectRoot, platformProjectRoot, project }) {
   for (const [uuid, target] of targets) {
     const targetName = target.name.replaceAll('"', '');
     const groupName = `NearrLocales-${targetName}`;
+    // expo-share-extension does not create a Resources phase for its native
+    // target. node-xcode silently falls back to the first target's Resources
+    // phase when the requested target has none, which schedules both targets'
+    // variant groups into the host app and makes Xcode report duplicate output
+    // files. Create the phase before adding target-scoped resources.
+    if (!project.buildPhase('Resources', uuid)) {
+      project.addBuildPhase([], 'PBXResourcesBuildPhase', 'Resources', uuid);
+    }
     let groupId = project.findPBXGroupKey({ name: groupName });
     if (!groupId) {
       const group = project.addPbxGroup([], groupName);
