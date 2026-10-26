@@ -1,35 +1,31 @@
-Date: 2026-10-25 America/Los_Angeles
+﻿Date: 2026-10-25 America/Los_Angeles
 Environment: WSL2 Linux x86_64
 Node: v22.23.4
 npm: 10.9.9
 Node archive SHA-256: 1805bcd35e6815559bd2eb97db438d3fdb0eb3a5e6a977b7c1badca76337e9ce
-Candidate: isolated copy of integration/nearr-global-fieldnotes-monetization after the 143/143 validation run
+Candidate: integration/nearr-global-fieldnotes-monetization after EAS build 64 diagnosis
 
-Final command after the build-63 duplicate-resource repair:
+Commands:
 CI=1 npx expo prebuild --platform ios --no-install --clean
+NODE_ENV=production npx react-native bundle --platform ios --dev false --entry-file index.share.js --bundle-output /tmp/nearr-share.jsbundle --assets-dest /tmp/nearr-share-assets --max-workers 2
 
-Output:
-- Creating native directory (./ios)
-Created native directory
-- Updating package.json
-Updated package.json | no changes
-- Running prebuild
-Finished prebuild
-
-Exit code: 0
-
-Post-run resource inspection:
+Results:
+- Clean iOS prebuild exit code: 0
+- Standalone Share Extension Metro bundle exit code: 0
+- Metro wrote /tmp/nearr-share.jsbundle and copied its asset successfully
 - 20 InfoPlist.strings files: 10 host-app locales and 10 Share Extension locales
 - 20 Localizable.strings files: 10 host-app locales and 10 Share Extension locales
 - Locales: en-US, es-MX, es-ES, pt-BR, fr, de, it, ja, ko, zh-Hans
-- Nearr Resources phase: 6 total entries, exactly 2 localized variant groups
-- NearrShareExtension Resources phase: 2 total entries, exactly 2 localized variant groups
-- All 4 localized variant-group references are disjoint across the two targets
+- Nearr has exactly one PBXResourcesBuildPhase with 6 entries, including exactly 2 localization variant groups
+- NearrShareExtension has exactly one PBXResourcesBuildPhase with 2 entries, both localization variant groups
+- All 4 localized variant-group references are target-specific and disjoint
+- The expo-share-extension placeholder resource phase is relabeled and reused; no duplicate Resources phase is created
+- Metro resolves the repository @/ alias for Xcode-driven Share Extension bundles
 
-The final inspection specifically covers the Xcode "Multiple commands produce"
-failure from EAS build 63. The plugin now creates a Share Extension Resources
-phase before adding its target-scoped variant groups, preventing node-xcode from
-falling back to the host application's Resources phase.
+This validation directly covers both issues exposed by EAS build 64:
+1. the extension bundle could not resolve @/lib/i18n and then a transitive @/lib/sharedAuth import;
+2. the extension target contained two Copy Bundle Resources phases.
 
 Scope limit: --no-install does not run CocoaPods, Xcode compilation, code signing,
 IPA export, simulator execution, Share Extension embedding checks, or physical-device QA.
+The EAS Development archive is the qualification step for those cloud-native stages.

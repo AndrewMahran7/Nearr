@@ -1,5 +1,5 @@
 {
-  "testedAt": "2026-10-26T02:04:46.333Z",
+  "testedAt": "2026-10-26T03:23:33.344Z",
   "engine": "PostgreSQL 18.3 on x86_64-windows, compiled by msvc-19.44.35223, 64-bit",
   "scope": "disposable PostgreSQL, actual three age migrations; synthetic qualification only",
   "passed": 12,

@@ -12,6 +12,22 @@ function withShareExtension(config) {
   return config;
 }
 
+/** Resolve the repository alias when Xcode invokes `react-native bundle`
+ * directly for the Share Extension. Expo CLI resolves tsconfig paths for the
+ * host app, but the native extension build does not pass through that layer.
+ *
+ * @param {import('expo/metro-config').MetroConfig} config
+ */
+function withProjectAlias(config) {
+  config.resolver.resolveRequest = (context, moduleName, platform) => {
+    const request = moduleName.startsWith('@/')
+      ? path.join(__dirname, moduleName.slice(2))
+      : moduleName;
+    return context.resolveRequest(context, request, platform);
+  };
+  return config;
+}
+
 /**
  * Isolate the Phase 2 media worker (services/media-worker) from Metro.
  *
@@ -33,4 +49,4 @@ function withMediaWorkerIgnored(config) {
   return config;
 }
 
-module.exports = withMediaWorkerIgnored(withShareExtension(getDefaultConfig(__dirname)));
+module.exports = withMediaWorkerIgnored(withProjectAlias(withShareExtension(getDefaultConfig(__dirname))));

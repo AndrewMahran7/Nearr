@@ -1,5 +1,8 @@
-import { t } from '@/lib/i18n';
-import { useLocale } from '@/hooks/useLocale';
+// The extension is bundled by React Native's Xcode script, outside Expo
+// Router's tsconfig-path resolver. Keep its dependency graph on relative
+// imports so the standalone bundle resolves identically in EAS and locally.
+import { t } from './lib/i18n';
+import { useLocale } from './hooks/useLocale';
 /**
  * ShareExtension — root component for the iOS Share Extension target.
  *

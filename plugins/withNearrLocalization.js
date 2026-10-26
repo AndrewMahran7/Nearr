@@ -24,20 +24,32 @@ function strings(entries) {
   return Object.entries(entries).map(([key, value]) => `${JSON.stringify(key)} = ${JSON.stringify(value)};`).join('\n') + '\n';
 }
 
+function ensureTargetResourcesPhase(project, targetUuid) {
+  const target = project.pbxNativeTargetSection()[targetUuid];
+  const section = project.hash.project.objects.PBXResourcesBuildPhase || {};
+  const existing = target.buildPhases.find(phase => section[phase.value]);
+  if (existing) {
+    // expo-share-extension creates all three empty native phases with the
+    // placeholder label "Embed Foundation Extensions". Relabel its resource
+    // phase so node-xcode can find it by target instead of creating a second
+    // PBXResourcesBuildPhase (which Xcode warns may build incorrectly).
+    existing.comment = 'Resources';
+    section[`${existing.value}_comment`] = 'Resources';
+    return section[existing.value];
+  }
+  const added = project.addBuildPhase([], 'PBXResourcesBuildPhase', 'Resources', targetUuid);
+  return added.buildPhase;
+}
+
 function writeNativeLocales({ projectRoot, platformProjectRoot, project }) {
   const targets = Object.entries(project.pbxNativeTargetSection()).filter(([key, target]) =>
     !key.endsWith('_comment') && /com.apple.product-type.(application|app-extension)/.test(target.productType));
   for (const [uuid, target] of targets) {
     const targetName = target.name.replaceAll('"', '');
     const groupName = `NearrLocales-${targetName}`;
-    // expo-share-extension does not create a Resources phase for its native
-    // target. node-xcode silently falls back to the first target's Resources
-    // phase when the requested target has none, which schedules both targets'
-    // variant groups into the host app and makes Xcode report duplicate output
-    // files. Create the phase before adding target-scoped resources.
-    if (!project.buildPhase('Resources', uuid)) {
-      project.addBuildPhase([], 'PBXResourcesBuildPhase', 'Resources', uuid);
-    }
+    // Normalize or create one target-scoped Resources phase before adding
+    // variant groups. node-xcode otherwise falls back to the first target.
+    const resourcesPhase = ensureTargetResourcesPhase(project, uuid);
     let groupId = project.findPBXGroupKey({ name: groupName });
     if (!groupId) {
       const group = project.addPbxGroup([], groupName);
@@ -50,9 +62,9 @@ function writeNativeLocales({ projectRoot, platformProjectRoot, project }) {
       if (!variantId) {
         variantId = project.pbxCreateVariantGroup(resource);
         project.addToPbxGroup(variantId, groupId);
-        const build = { uuid: project.generateUuid(), fileRef: variantId, basename: resource, target: uuid };
+        const build = { uuid: project.generateUuid(), fileRef: variantId, basename: resource, group: 'Resources', target: uuid };
         project.addToPbxBuildFileSection(build);
-        project.addToPbxResourcesBuildPhase(build);
+        resourcesPhase.files.push({ value: build.uuid, comment: `${resource} in Resources` });
       }
       for (const locale of LOCALES) {
         const catalog = JSON.parse(fs.readFileSync(path.join(projectRoot, 'locales', `${locale}.json`), 'utf8'));
@@ -100,5 +112,6 @@ module.exports = function withNearrLocalization(config) {
 };
 
 module.exports.writeNativeLocales = writeNativeLocales;
+module.exports.ensureTargetResourcesPhase = ensureTargetResourcesPhase;
 module.exports.NATIVE_KEYS = NATIVE_KEYS;
 module.exports.LOCALES = LOCALES;
