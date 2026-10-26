@@ -680,7 +680,10 @@ function AuthGate({
             submitting={ageEligibility.submitting}
             onDeclare={ageEligibility.declare}
             onRetry={ageEligibility.retry}
-            onViewSavedData={() => { setDataAccessOwner(session?.user.id ?? null); router.replace('/(tabs)/saved'); }}
+            onViewSavedData={() => {
+              setDataAccessOwner(session?.user.id ?? null);
+              router.replace('/(tabs)/map');
+            }}
             onSignOut={() => supabase.auth.signOut().then(() => undefined)}
           />
         </View>

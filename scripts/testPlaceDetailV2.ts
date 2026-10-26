@@ -493,6 +493,27 @@ import {
   assert.ok(detail.includes('await ensureNotificationPermission()'));
   assert.ok(detail.includes('await ensureBackgroundLocationPermission()'));
   assert.ok(detail.includes('Your previous reminder setting is unchanged'));
+
+  const notifications = readFileSync(join(process.cwd(), 'lib/notifications.ts'), 'utf8');
+  assert.ok(
+    notifications.includes('PERMISSION_REQUEST_TIMEOUT_MS = 10_000'),
+    'native permission calls have a bounded wait',
+  );
+  assert.ok(
+    notifications.includes("'notification permission request'") &&
+      notifications.includes("'foreground location permission request'") &&
+      notifications.includes("'background location permission request'"),
+    'notification, foreground, and background location prompts use the bounded wait',
+  );
+  assert.ok(
+    notifications.includes('Location.getForegroundPermissionsAsync()') &&
+      notifications.includes('Location.getBackgroundPermissionsAsync()'),
+    'already-granted location access is read before opening another native prompt',
+  );
+  assert.ok(
+    notifications.includes('if (!req) return false;') && notifications.includes('if (!bg) return false;'),
+    'a stalled or failed native prompt recovers through the existing denied-permission UI',
+  );
 }
 
 // Also Nearby: three compact cards previewable, plus the See map affordance.

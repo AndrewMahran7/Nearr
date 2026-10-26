@@ -830,7 +830,7 @@ export function SelectedPlaceDetails({
       onSaved?.(updated);
       if (next) hapticSelection();
     } catch {
-      Alert.alert(t("Couldn?t update reminder"), t("Your previous reminder setting is unchanged. Check your connection and try again."));
+      Alert.alert(t("Couldn't update reminder"), t("Your previous reminder setting is unchanged. Check your connection and try again."));
     } finally {
       setReminderBusy(false);
     }
@@ -991,7 +991,7 @@ export function SelectedPlaceDetails({
     } catch (e: any) {
       // Offline mutations throw OfflineMutationError whose message is the
       // friendly "Internet required to update saved places." string.
-      Alert.alert(t("Couldn?t save changes"), t("Your previous settings are unchanged. Check your connection and try again."));
+      Alert.alert(t("Couldn't save changes"), t("Your previous settings are unchanged. Check your connection and try again."));
     } finally {
       setSaving(false);
     }
@@ -1096,7 +1096,7 @@ export function SelectedPlaceDetails({
               else onRequestDismiss();
             } catch (e: any) {
               restoreSavedPlacesCache(snapshot);
-              Alert.alert(t("Couldn?t remove place"), t("Your saved place is still here. Check your connection and try again."));
+              Alert.alert(t("Couldn't remove place"), t("Your saved place is still here. Check your connection and try again."));
             } finally {
               setDeleting(false);
             }
@@ -1249,7 +1249,7 @@ export function SelectedPlaceDetails({
       {capabilities.canSetReminder ? <View style={[styles.reminderRow, largeText && styles.reminderRowLarge]}>
         <View style={styles.reminderCopy}>
           <Text style={styles.reminderTitle}>{t("Remind me nearby")}</Text>
-          <Text style={styles.reminderDescription}>{t("A little nudge when you?re close.")}</Text>
+          <Text style={styles.reminderDescription}>{t("A little nudge when you're close.")}</Text>
           {notifyOn ? <Pressable onPress={() => setReminderSettingsExpanded((value) => !value)} accessibilityRole="button" accessibilityLabel={`Nearby reminder, ${reminderStatus}. Change distance`} accessibilityState={{ expanded: reminderSettingsExpanded }} style={styles.reminderControl}><Text style={styles.reminderDistanceText}>{reminderDistance} {t(" · Change distance")}</Text><Feather name={reminderSettingsExpanded ? 'chevron-down' : 'chevron-right'} size={16} color={colors.textSecondary} /></Pressable> : null}
         </View>
         <View

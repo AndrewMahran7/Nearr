@@ -90,6 +90,33 @@ type LocationTaskStartStatus = 'started' | 'already_started' | 'skipped';
 
 export type NotificationPermissionState = 'granted' | 'denied' | 'undetermined';
 
+/** Native permission prompts occasionally fail to settle after the user leaves
+ * Android Settings. Keep every caller recoverable instead of leaving its UI in
+ * a permanent loading state. */
+export const PERMISSION_REQUEST_TIMEOUT_MS = 10_000;
+
+async function waitForPermissionResult<T>(
+  label: string,
+  request: Promise<T>,
+): Promise<T | null> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timedOut = new Promise<null>((resolve) => {
+    timeout = setTimeout(() => {
+      console.warn(`[notifications] ${label} timed out`);
+      resolve(null);
+    }, PERMISSION_REQUEST_TIMEOUT_MS);
+  });
+
+  try {
+    return await Promise.race([request, timedOut]);
+  } catch (error) {
+    console.warn(`[notifications] ${label} failed`, error);
+    return null;
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
 /** How long to wait before re-notifying for the *same* saved place. */
 const ALERT_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours
 
@@ -403,15 +430,23 @@ try {
 // ---------------------------------------------------------------------------
 
 export async function ensureNotificationPermission(): Promise<boolean> {
-  const cur = await Notifications.getPermissionsAsync();
+  const cur = await waitForPermissionResult(
+    'notification permission status request',
+    Notifications.getPermissionsAsync(),
+  );
+  if (!cur) return false;
   if (cur.status === 'granted') return true;
-  const req = await Notifications.requestPermissionsAsync({
-    ios: {
-      allowAlert: true,
-      allowBadge: false,
-      allowSound: true,
-    },
-  });
+  const req = await waitForPermissionResult(
+    'notification permission request',
+    Notifications.requestPermissionsAsync({
+      ios: {
+        allowAlert: true,
+        allowBadge: false,
+        allowSound: true,
+      },
+    }),
+  );
+  if (!req) return false;
   const ok = req.status === 'granted';
   logDebug('notifications', 'permission', { granted: ok });
   return ok;
@@ -430,7 +465,18 @@ export async function getNotificationPermissionState(): Promise<NotificationPerm
  * watch use `ensureBackgroundLocationPermission()`.
  */
 export async function ensureForegroundLocationPermission(): Promise<boolean> {
-  const fg = await Location.requestForegroundPermissionsAsync();
+  const current = await waitForPermissionResult(
+    'foreground location permission status request',
+    Location.getForegroundPermissionsAsync(),
+  );
+  if (!current) return false;
+  const fg = current.status === 'granted'
+    ? current
+    : await waitForPermissionResult(
+        'foreground location permission request',
+        Location.requestForegroundPermissionsAsync(),
+      );
+  if (!fg) return false;
   return fg.status === 'granted';
 }
 
@@ -443,9 +489,32 @@ export async function ensureForegroundLocationPermission(): Promise<boolean> {
  * `app.json` and only effective in an EAS dev/prod build (not Expo Go).
  */
 export async function ensureBackgroundLocationPermission(): Promise<boolean> {
-  const fg = await Location.requestForegroundPermissionsAsync();
+  const currentFg = await waitForPermissionResult(
+    'foreground location permission status request',
+    Location.getForegroundPermissionsAsync(),
+  );
+  if (!currentFg) return false;
+  const fg = currentFg.status === 'granted'
+    ? currentFg
+    : await waitForPermissionResult(
+        'foreground location permission request',
+        Location.requestForegroundPermissionsAsync(),
+      );
+  if (!fg) return false;
   if (fg.status !== 'granted') return false;
-  const bg = await Location.requestBackgroundPermissionsAsync();
+
+  const currentBg = await waitForPermissionResult(
+    'background location permission status request',
+    Location.getBackgroundPermissionsAsync(),
+  );
+  if (!currentBg) return false;
+  const bg = currentBg.status === 'granted'
+    ? currentBg
+    : await waitForPermissionResult(
+        'background location permission request',
+        Location.requestBackgroundPermissionsAsync(),
+      );
+  if (!bg) return false;
   return bg.status === 'granted';
 }
 

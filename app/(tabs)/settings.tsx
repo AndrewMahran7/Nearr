@@ -35,6 +35,7 @@ import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 
 import { Button, Card, DemoModeBanner, DevModeBanner, HowNearrWorksModal, IconButton, Input, Screen, SetupChecklist } from '@/components';
+import { LanguageSelector } from '@/components/localization/LanguageSelector';
 import { Radius, Spacing } from '@/constants';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -810,6 +811,10 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
+        <Card style={styles.section}>
+          <LanguageSelector />
+        </Card>
+
         {loading ? (
           <Card style={styles.section}>
             <View style={styles.unitRow}><ActivityIndicator /><Text style={[typography.caption, styles.muted]}>{t("Loading account preferences…")}</Text></View>
@@ -827,7 +832,7 @@ export default function SettingsScreen() {
         <Card style={styles.section}>
           <ToggleRow
             label={t("Allow notifications")}
-            sub="Let Nearr send reminders and updates."
+            sub={t("Let Nearr send reminders and updates.")}
             value={notificationsOn}
             onValueChange={setNotificationsOn}
             disabled={loading || !profile}
@@ -835,7 +840,7 @@ export default function SettingsScreen() {
           <View style={styles.divider} />
           <ToggleRow
             label={t("Nearby alerts")}
-            sub="Remind me when I&apos;m near a place I saved."
+            sub={t("Remind me when I'm near a place I saved.")}
             value={nearbyOn}
             onValueChange={setNearbyOn}
             disabled={loading || !profile || !notificationsOn}
@@ -861,7 +866,7 @@ export default function SettingsScreen() {
         <Card style={styles.section}>
           <ToggleRow
             label={t("Enable quiet hours")}
-            sub="Pause reminders during a daily window."
+            sub={t("Pause reminders during a daily window.")}
             value={quietOn}
             onValueChange={setQuietOn}
             disabled={loading || !profile}
@@ -1198,7 +1203,7 @@ function ThemeOption({
 }) {
   useLocale();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`${label} appearance`} accessibilityState={{ selected: active }} onPress={onPress} style={[styles.unitOption, active && styles.unitOptionActive]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: active }} onPress={onPress} style={[styles.unitOption, active && styles.unitOptionActive]}>
       <Text style={[typography.label, { color: active ? colors.textInverse : colors.text }]}>
         {label}
       </Text>

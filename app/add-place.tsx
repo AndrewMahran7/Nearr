@@ -72,7 +72,7 @@ function placesErrorMessage(err: PlacesError): string {
     case 'NOT_FOUND':
       return 'No results.';
     default:
-      return 'Couldn?t search places. Please try again.';
+      return "Couldn't search places. Please try again.";
   }
 }
 
@@ -275,7 +275,7 @@ export default function SavePlace() {
         google_place_id: selected.googlePlaceId ?? null,
         error_code: 'save_threw',
       });
-      Alert.alert(t("Could not save"), t("Your place wasn?t saved. Check your connection and try again."));
+      Alert.alert(t("Could not save"), t("Your place wasn't saved. Check your connection and try again."));
     } finally {
       setSaving(false);
     }

@@ -307,6 +307,12 @@ async function main() {
     /internet/i,
     'the blocked-mutation message explains itself to the user',
   );
+  const rootLayout = read('app/_layout.tsx');
+  assert.ok(
+    rootLayout.includes("router.replace('/(tabs)/map')") &&
+      !rootLayout.includes("router.replace('/(tabs)/saved')"),
+    'eligibility recovery routes offline users through the real cached map route',
+  );
   const service = read('services/savedPlacesService.ts');
   for (const mutation of [
     'updateSavedPlace',

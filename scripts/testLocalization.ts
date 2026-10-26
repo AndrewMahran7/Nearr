@@ -8,13 +8,26 @@ import { translateNotification } from '../lib/notificationLocalization';
 
 const root = process.cwd();
 const en: Record<string,string> = JSON.parse(readFileSync(join(root,'locales/en-US.json'),'utf8'));
+const settingsSource = readFileSync(join(root, 'app/(tabs)/settings.tsx'), 'utf8');
+assert.ok(
+  settingsSource.includes("import { LanguageSelector }") && settingsSource.includes('<LanguageSelector />'),
+  'authenticated users can change language from Settings after onboarding',
+);
 const placeholders = (value: string) => [...value.matchAll(/\{\{(\w+)\}\}/g)].map(match=>match[1]).sort();
+const settingsDescriptionKeys = [
+  'Let Nearr send reminders and updates.',
+  "Remind me when I'm near a place I saved.",
+  'Pause reminders during a daily window.',
+];
 const reports = SUPPORTED_LOCALES.map(locale => {
   const catalog: Record<string,string> = JSON.parse(readFileSync(join(root,'locales',`${locale}.json`),'utf8'));
   const missing = Object.keys(en).filter(key=>!catalog[key]);
   const interpolation = Object.keys(en).filter(key=>catalog[key] && JSON.stringify(placeholders(en[key]))!==JSON.stringify(placeholders(catalog[key])));
   const replacementCharacters = Object.entries(catalog).filter(([key,value]) => Object.hasOwn(en,key) && /\uFFFD/.test(key+value)).map(([key])=>key);
-  return {locale,keys:Object.keys(en).length,missing,interpolation,replacementCharacters,review:'model draft; native review outstanding'};
+  const suspiciousSettingsQuestionMarks = locale === 'en-US'
+    ? []
+    : settingsDescriptionKeys.filter(key => /\?/.test(catalog[key] ?? ''));
+  return {locale,keys:Object.keys(en).length,missing,interpolation,replacementCharacters,suspiciousSettingsQuestionMarks,review:'model draft; native review outstanding'};
 });
 mkdirSync(join(root,'artifacts/global-release/localization'),{recursive:true});
 writeFileSync(join(root,'artifacts/global-release/localization/catalog-audit.json'),JSON.stringify(reports,null,2)+'\n');
@@ -22,6 +35,7 @@ for(const report of reports) {
   assert.deepEqual(report.missing,[],`${report.locale} missing keys`);
   assert.deepEqual(report.interpolation,[],`${report.locale} interpolation mismatch`);
   assert.deepEqual(report.replacementCharacters,[],`${report.locale} corrupt characters`);
+  assert.deepEqual(report.suspiciousSettingsQuestionMarks,[],`${report.locale} corrupt Settings descriptions`);
 }
 for(const [tags, expected] of [
   [[], 'en-US'], [['ar-SA'],'en-US'], [['fr-CA'],'fr'], [['es-ES'],'es-ES'], [['es-AR'],'es-MX'],
