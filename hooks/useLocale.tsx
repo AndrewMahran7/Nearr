@@ -1,7 +1,7 @@
-import { useEffect, type PropsWithChildren } from 'react';
+import { useEffect, useSyncExternalStore, type PropsWithChildren } from 'react';
 import { AppState } from 'react-native';
 import { I18nextProvider, useTranslation } from 'react-i18next';
-import { changeLocale, getLocalePreference, i18n, initializeLocale, refreshDeviceLocale } from '../lib/i18n';
+import { changeLocale, getLocalePreference, i18n, initializeLocale, refreshDeviceLocale, subscribeLocalePreference, localePreferenceSnapshot, localePreferenceState } from '../lib/i18n';
 
 export function LocaleProvider({ children }: PropsWithChildren) {
   useEffect(() => {
@@ -17,5 +17,6 @@ export function LocaleProvider({ children }: PropsWithChildren) {
 /** Subscribe without remounting navigation, forms, selected places, or in-flight work. */
 export function useLocale() {
   useTranslation(undefined, { i18n });
-  return { locale: i18n.language, preference: getLocalePreference(), setLocale: changeLocale };
+  useSyncExternalStore(subscribeLocalePreference, localePreferenceSnapshot, localePreferenceSnapshot);
+  return { locale: i18n.language, preference: getLocalePreference(), setLocale: changeLocale, ...localePreferenceState() };
 }

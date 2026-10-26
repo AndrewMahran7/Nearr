@@ -4,7 +4,7 @@ export type AppLocale = (typeof SUPPORTED_LOCALES)[number];
 export type LocalePreference = AppLocale | 'system';
 export const LOCALE_STORAGE_KEY = 'nearr.locale.v1';
 export const LOCALE_NAMES: Record<AppLocale, string> = {
-  'en-US': 'English (US)',
+  'en-US': 'English',
   'es-MX': 'Español (México)',
   'es-ES': 'Español (España)',
   'pt-BR': 'Português (Brasil)',

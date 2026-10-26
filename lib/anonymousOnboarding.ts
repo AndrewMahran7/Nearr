@@ -22,6 +22,7 @@ import {
 } from '@/lib/onboardingV2';
 import { onboardingV2ResumeEligibility } from '@/lib/onboardingV2Core';
 import { supabase } from '@/lib/supabase';
+import { bindLocalDeclarationToNewAnonymous } from '@/lib/localEligibility';
 import { markOnboardingComplete } from '@/lib/onboarding';
 import { realSavedPlaceIds } from '@/lib/savedPlaceIdentity';
 import { hashCreateMapTraceId, traceCreateMapContinue } from '@/lib/createMapContinueTrace';
@@ -112,6 +113,9 @@ export async function bootstrapAnonymousOnboarding(): Promise<AnonymousBootstrap
       return { kind: 'failed', reason: created.error?.message ?? 'anonymous_session_missing' };
     }
     session = created.data.session;
+    // Reuse the minimized offline answer only for this newly created identity.
+    // Failure simply requires the server gate's normal declaration screen.
+    await bindLocalDeclarationToNewAnonymous(session.user.id).catch(() => undefined);
   }
 
   let checkpoint = await hydrateOnboardingV2FromServer(session.user.id);

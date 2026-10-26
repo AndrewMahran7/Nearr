@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import type { EligibilityDeclaration } from '@/lib/globalEligibility';
+import { readOwnedLocalDeclaration } from '@/lib/localEligibility';
 
 export type AgeEligibilityState = 'loading' | 'pending' | 'eligible' | 'under_minimum' | 'region_unavailable' | 'revoked' | 'error';
 export type GlobalAccess = { status: AgeEligibilityState; aiAllowed: boolean; aiReason: string; aiPermission: boolean; legalApproved: boolean; termsAccepted: boolean; noticeVersion: string; termsVersion: string };
@@ -18,7 +19,7 @@ function parseAccess(value: unknown): GlobalAccess {
 
 /** Server decision, refreshed on identity change and foreground. Never grants
  * provider access from the offline onboarding answer or a client boolean. */
-export function useAgeEligibility(userId: string | null, refreshKey: string | null = null) {
+export function useAgeEligibility(userId: string | null, refreshKey: string | null = null, isAnonymous = false) {
   const [snapshot, setSnapshot] = useState<{ userId: string | null; value: GlobalAccess }>({ userId: null, value: closed });
   const [attempt, setAttempt] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -34,13 +35,21 @@ export function useAgeEligibility(userId: string | null, refreshKey: string | nu
     setSnapshot({ userId, value: closed });
     void (async () => {
       try {
-        const { data, error } = await supabase.rpc('get_my_global_access').abortSignal(controller.signal);
+        let { data, error } = await supabase.rpc('get_my_global_access').abortSignal(controller.signal);
+        if (!error && !cancelled && parseAccess(data).status === 'pending' && isAnonymous) {
+          const answer = await readOwnedLocalDeclaration(userId);
+          if (answer && !cancelled && currentUser.current === userId) {
+            const declaration = await supabase.rpc('declare_global_eligibility', { p_age_band: answer.ageBand, p_country_code: answer.countryCode }).abortSignal(controller.signal);
+            if (declaration.error) throw new Error('eligibility_check_delayed');
+            ({ data, error } = await supabase.rpc('get_my_global_access').abortSignal(controller.signal));
+          }
+        }
         if (!cancelled) setSnapshot({ userId, value: error ? { ...closed, status: 'error' } : parseAccess(data) });
       } catch { if (!cancelled) setSnapshot({ userId, value: { ...closed, status: 'error' } }); }
       finally { clearTimeout(timeout); }
     })();
     return () => { cancelled = true; controller.abort(); clearTimeout(timeout); };
-  }, [userId, attempt, refreshKey]);
+  }, [userId, attempt, refreshKey, isAnonymous]);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', state => { if (state === 'active') retry(); });
     return () => subscription.remove();

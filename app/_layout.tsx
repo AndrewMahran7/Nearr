@@ -270,6 +270,7 @@ function AuthGate({
   const ageEligibility = useAgeEligibility(
     ageRequired ? session?.user.id ?? null : null,
     onboardingV2?.stage ?? null,
+    isAnonymousSession,
   );
   const ageAccessApproved = !ageRequired || ageEligibility.status === 'eligible';
   const [dataAccessOwner, setDataAccessOwner] = useState<string | null>(null);
@@ -676,6 +677,7 @@ function AuthGate({
         </AgeEligibilityAccessContext.Provider>
         <View style={StyleSheet.absoluteFill}>
           <AgeEligibilityGate
+            key={session?.user.id}
             status={ageEligibility.status}
             submitting={ageEligibility.submitting}
             onDeclare={ageEligibility.declare}
