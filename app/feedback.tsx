@@ -77,7 +77,7 @@ export default function FeedbackScreen() {
       <Screen>
         <View style={styles.successWrap}>
           <Text style={[typography.heading, styles.successTitle]}>
-            {t("Thanks â€” I'll take a look.")}</Text>
+            {t("Thanks — I'll take a look.")}</Text>
           <Text style={[typography.body, styles.successBody]}>
             {t("Every message comes straight to me. Thanks for helping make Nearr better.")}</Text>
           <View style={{ height: Spacing.lg }} />

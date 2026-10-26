@@ -13,6 +13,12 @@ assert.ok(
   settingsSource.includes("import { LanguageSelector }") && settingsSource.includes('<LanguageSelector />'),
   'authenticated users can change language from Settings after onboarding',
 );
+const feedbackSource = readFileSync(join(root, 'app/feedback.tsx'), 'utf8');
+assert.ok(
+  feedbackSource.includes(`t("Thanks — I'll take a look.")`) &&
+    !feedbackSource.includes('â€”'),
+  'feedback success copy uses the canonical localized em-dash key',
+);
 const placeholders = (value: string) => [...value.matchAll(/\{\{(\w+)\}\}/g)].map(match=>match[1]).sort();
 const settingsDescriptionKeys = [
   'Let Nearr send reminders and updates.',

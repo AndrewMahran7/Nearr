@@ -2,6 +2,8 @@
 
 Verified on 2026-10-26 against `integration/nearr-global-fieldnotes-monetization`, starting from `d1c500593f1e4c38fe69c287ae6c75141c0eed3a`.
 
+Recovery addendum: [`SESSION_RECOVERY_20261026.md`](./SESSION_RECOVERY_20261026.md) records the clean recovered checkpoint at `8bcd0bdb6fa4973da66ba77672592593511e97c0`, the additional Feedback mojibake correction, live service readbacks, and bounded cold-reopen evidence. It also narrows an earlier catalog claim: all live/canonical keys pass, but German, French, and Italian retain 51 unreferenced legacy duplicate keys apiece containing U+FFFD. Those dead extras require later cleanup before claiming every catalog key is clean.
+
 ## A. Overall release status and exact blockers
 
 **HOLD — Nearr 1.7 is not qualified for App Review or public release.** The unified app and Development backend are substantially prepared, and Android runtime QA is complete for the safe paths. Four external gates remain:
