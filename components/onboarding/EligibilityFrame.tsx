@@ -29,7 +29,7 @@ export function EligibilityFrame({ title, subtitle, children, footer, onBack }: 
 }
 export function EligibilityContinue({ onPress, disabled = false, busy = false }: { onPress: () => void; disabled?: boolean; busy?: boolean }) {
   const { colors } = useTheme();
-  return <Pressable testID="eligibility-continue" accessibilityRole="button" accessibilityState={{ disabled: disabled || busy, busy }} disabled={disabled || busy} onPress={onPress}
+  return <Pressable testID="eligibility-continue" accessibilityRole="button" accessibilityLabel={busy ? t('Saving…') : t('Continue')} accessibilityState={{ disabled: disabled || busy, busy }} disabled={disabled || busy} onPress={onPress}
     style={({ pressed }) => [styles.continue, { backgroundColor: colors.primary, opacity: disabled || busy ? 0.4 : pressed ? 0.8 : 1 }]}>
     <Text style={[styles.continueText, { color: colors.textInverse }]}>{busy ? t('Saving…') : t('Continue')}</Text>
   </Pressable>;

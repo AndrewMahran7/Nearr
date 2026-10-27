@@ -71,6 +71,14 @@ Module._load = function(request: string, parent: unknown, isMain: boolean) {
 async function main() {
   const { AgeEligibilityGate } = require('../components/AgeEligibilityGate');
   const { BirthdayPicker } = require('../components/onboarding/BirthdayPicker');
+  const { EligibilityContinue } = require('../components/onboarding/EligibilityFrame');
+  let cta!: ReactTestRenderer;
+  await act(async () => { cta = create(React.createElement(EligibilityContinue, { onPress() {}, busy: true })); });
+  assert.equal(cta.root.findByType('Pressable').props.accessibilityLabel, 'Saving…');
+  await act(async () => { cta.update(React.createElement(EligibilityContinue, { onPress() {}, busy: false })); });
+  assert.equal(cta.root.findByType('Pressable').props.accessibilityLabel, 'Continue', 'busy announcement must clear after language saving');
+  assert.equal(cta.root.findByType('Pressable').props.accessibilityState.busy, false);
+  await act(async () => { cta.unmount(); });
   const { PreAccountEligibility } = require('../components/PreAccountEligibility');
   const { bindLocalDeclarationToNewAnonymous, readOwnedLocalDeclaration, LOCAL_ELIGIBILITY_KEY } = require('../lib/localEligibility');
   const { useAgeEligibility } = require('../hooks/useAgeEligibility');
