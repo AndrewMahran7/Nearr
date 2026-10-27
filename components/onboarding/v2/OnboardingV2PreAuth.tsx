@@ -219,7 +219,7 @@ function PlatformScreen({ state }: { state: OnboardingV2State }) {
   const Phase1Colors = usePhase1Colors();
   const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
-  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.14} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title={t("Continue")} disabled={!state.preferredPlatform} onPress={() => void completeOnboardingV2Platforms()} />}>
+  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.14} progressLabel={t("Onboarding progress")} footer={<Phase1PrimaryButton title={t("Continue")} disabled={!state.preferredPlatform} onPress={() => void completeOnboardingV2Platforms()} />}>
     <Text style={styles.eyebrow}>{t("START WITH YOUR FEED")}</Text><Text style={styles.headline}>{t("Where do you usually find places?")}</Text><Text style={styles.body}>{t("Choose the one you use most.")}</Text>
     <View style={styles.choiceGrid}>{PLATFORMS.map((item) => { const selected = state.preferredPlatform === item.value; return <Pressable key={item.value} onPress={() => { hapticSelection(); void chooseOnboardingV2PrimaryPlatform(item.value); }} accessibilityRole="radio" accessibilityState={{ checked: selected }} accessibilityLabel={item.label} style={[styles.platformCard, selected && styles.selectedCard]}><View style={[styles.platformIcon, { backgroundColor: item.tint }]}><Ionicons name={item.icon} size={29} color="#171615" /></View><Text style={styles.choiceTitle}>{item.label}</Text><View style={[styles.radio, selected && styles.radioSelected]}>{selected ? <Feather name="check" size={13} color={Phase1Colors.onOrange} /> : null}</View></Pressable>; })}</View>
   </Phase1Frame>;
@@ -229,9 +229,9 @@ function InterestScreen({ state }: { state: OnboardingV2State }) {
   const Phase1Colors = usePhase1Colors();
   const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
-  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.22} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title={t("Continue")} disabled={state.selectedInterests.length === 0} onPress={() => void completeOnboardingV2Interests()} />}>
+  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.22} progressLabel={t("Onboarding progress")} footer={<Phase1PrimaryButton title={t("Continue")} disabled={state.selectedInterests.length === 0} onPress={() => void completeOnboardingV2Interests()} />}>
     <Text style={styles.eyebrow}>{t("MAKE IT YOURS")}</Text><Text style={styles.headline}>{t("What do you save most?")}</Text><Text style={styles.body}>{t("Pick everything that sounds like you.")}</Text>
-    <View style={styles.interestGrid}>{INTERESTS.map((item) => { const selected = state.selectedInterests.includes(item.value); return <Pressable key={item.value} onPress={() => { hapticSelection(); void toggleOnboardingV2Interest(item.value); }} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} accessibilityLabel={item.label} style={[styles.interestCard, selected && styles.selectedInterestCard]}><View style={[styles.interestIcon, selected && styles.selectedInterestIcon]}><Feather name={item.icon} size={21} color={selected ? Phase1Colors.onOrange : Phase1Colors.orange} /></View><Text style={[styles.interestLabel, selected && styles.selectedInterestText]}>{item.label}</Text>{selected ? <Feather name="check-circle" size={18} color={Phase1Colors.orange} /> : null}</Pressable>; })}</View>
+    <View style={styles.interestGrid}>{INTERESTS.map((item) => { const selected = state.selectedInterests.includes(item.value); return <Pressable key={item.value} onPress={() => { hapticSelection(); void toggleOnboardingV2Interest(item.value); }} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} accessibilityLabel={t(item.label)} style={[styles.interestCard, selected && styles.selectedInterestCard]}><View style={[styles.interestIcon, selected && styles.selectedInterestIcon]}><Feather name={item.icon} size={21} color={selected ? Phase1Colors.onOrange : Phase1Colors.orange} /></View><Text style={[styles.interestLabel, selected && styles.selectedInterestText]}>{t(item.label)}</Text>{selected ? <Feather name="check-circle" size={18} color={Phase1Colors.orange} /> : null}</Pressable>; })}</View>
   </Phase1Frame>;
 }
 function PersonalizedPayoffScreen({ state }: { state: OnboardingV2State }) {
@@ -241,7 +241,7 @@ function PersonalizedPayoffScreen({ state }: { state: OnboardingV2State }) {
 
   const platform = PLATFORM_LABELS[state.preferredPlatform ?? 'other'];
   const interest = interestLabel(state.interest);
-  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.3} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title={t("Show me")} onPress={() => void continueOnboardingV2FromPersonalizedPayoff()} />} contentStyle={styles.payoffContent}>
+  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.3} progressLabel={t("Onboarding progress")} footer={<Phase1PrimaryButton title={t("Show me")} onPress={() => void continueOnboardingV2FromPersonalizedPayoff()} />} contentStyle={styles.payoffContent}>
     <Text style={styles.payoffKicker}>{t("Perfect ")}<Text accessibilityLabel="celebration">✦</Text></Text>
     <Text style={styles.payoffHeadline}>{t("Nearr can turn ")}{interest.toLowerCase()} {t(" you find on ")}{platform} {t(" into places on your map.")}</Text>
     <SocialToMapIllustration platform={state.preferredPlatform} interest={state.interest} />
@@ -253,14 +253,14 @@ function PainPointScreen() {
   const Phase1Colors = usePhase1Colors();
   const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
-  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.6} progressLabel="Onboarding progress"><Text style={styles.eyebrow}>{t("NOW THAT YOU'VE SEEN IT")}</Text><Text style={styles.headline}>{t("What's most annoying about saving places?")}</Text><View style={styles.stack}>{PAIN_POINTS.slice(0, 4).map((item) => <Pressable key={item.value} onPress={() => { hapticSelection(); void setOnboardingV2PainPoint(item.value); }} accessibilityRole="button" accessibilityLabel={item.label} style={styles.painCard}><View style={styles.smallIcon}><Feather name={item.icon} size={20} color={Phase1Colors.orange} /></View><Text style={styles.painText}>{item.label}</Text><Feather name="arrow-right" size={18} color={Phase1Colors.textMuted} /></Pressable>)}</View></Phase1Frame>;
+  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.6} progressLabel={t("Onboarding progress")}><Text style={styles.eyebrow}>{t("NOW THAT YOU'VE SEEN IT")}</Text><Text style={styles.headline}>{t("What's most annoying about saving places?")}</Text><View style={styles.stack}>{PAIN_POINTS.slice(0, 4).map((item) => <Pressable key={item.value} onPress={() => { hapticSelection(); void setOnboardingV2PainPoint(item.value); }} accessibilityRole="button" accessibilityLabel={t(item.label)} style={styles.painCard}><View style={styles.smallIcon}><Feather name={item.icon} size={20} color={Phase1Colors.orange} /></View><Text style={styles.painText}>{t(item.label)}</Text><Feather name="arrow-right" size={18} color={Phase1Colors.textMuted} /></Pressable>)}</View></Phase1Frame>;
 }
 function DesiredValueScreen() {
   useLocale();
   const Phase1Colors = usePhase1Colors();
   const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
 
-  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.67} progressLabel="Onboarding progress"><Text style={styles.eyebrow}>{t("MAKE IT USEFUL")}</Text><Text style={styles.headline}>{t("What would make Nearr most useful to you?")}</Text><View style={styles.stack}>{DESIRED_VALUES.map((item) => <Pressable key={item.value} onPress={() => { hapticSelection(); void setOnboardingV2DesiredValue(item.value); }} accessibilityRole="button" accessibilityLabel={item.label} style={styles.painCard}><View style={styles.smallIcon}><Feather name={item.icon} size={20} color={Phase1Colors.orange} /></View><Text style={styles.painText}>{item.label}</Text><Feather name="arrow-right" size={18} color={Phase1Colors.textMuted} /></Pressable>)}</View></Phase1Frame>;
+  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.67} progressLabel={t("Onboarding progress")}><Text style={styles.eyebrow}>{t("MAKE IT USEFUL")}</Text><Text style={styles.headline}>{t("What would make Nearr most useful to you?")}</Text><View style={styles.stack}>{DESIRED_VALUES.map((item) => <Pressable key={item.value} onPress={() => { hapticSelection(); void setOnboardingV2DesiredValue(item.value); }} accessibilityRole="button" accessibilityLabel={t(item.label)} style={styles.painCard}><View style={styles.smallIcon}><Feather name={item.icon} size={20} color={Phase1Colors.orange} /></View><Text style={styles.painText}>{t(item.label)}</Text><Feather name="arrow-right" size={18} color={Phase1Colors.textMuted} /></Pressable>)}</View></Phase1Frame>;
 }
 
 export function ChallengeScreen({ state }: { state: OnboardingV2State }) {
@@ -270,7 +270,7 @@ export function ChallengeScreen({ state }: { state: OnboardingV2State }) {
 
   const fixture = state.tutorialFixture!;
   const fixturePlatform = PLATFORM_LABELS[fixture.platform];
-  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.38} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title={t("Practice sharing it")} onPress={() => void beginOnboardingV2SharingRehearsal()} />}><Text style={styles.eyebrow}>{t("A POST WORTH SAVING")}</Text><Text style={styles.headline}>{t("Want to know where this is?")}</Text><Text style={styles.body}>{t("Practice the same sharing steps you will use in ")}{fixturePlatform}{t(". This lesson stays inside Nearr.")}</Text><ChallengeSourcePreview fixture={fixture} preferredPlatform={state.preferredPlatform} /><Text style={styles.microcopy}>{t("Nearr will show you the place after you finish the practice.")}</Text></Phase1Frame>;
+  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.38} progressLabel={t("Onboarding progress")} footer={<Phase1PrimaryButton title={t("Practice sharing it")} onPress={() => void beginOnboardingV2SharingRehearsal()} />}><Text style={styles.eyebrow}>{t("A POST WORTH SAVING")}</Text><Text style={styles.headline}>{t("Want to know where this is?")}</Text><Text style={styles.body}>{t("Practice the same sharing steps you will use in ")}{fixturePlatform}{t(". This lesson stays inside Nearr.")}</Text><ChallengeSourcePreview fixture={fixture} preferredPlatform={state.preferredPlatform} /><Text style={styles.microcopy}>{t("Nearr will show you the place after you finish the practice.")}</Text></Phase1Frame>;
 }
 
 export function ChallengeSourcePreview({ fixture, preferredPlatform: _preferredPlatform }: {
@@ -311,7 +311,7 @@ export function ProcessingScreen({ state }: { state: OnboardingV2State; failed?:
   const practiceSource = onboardingPhase2PracticeForInterest(state.interest);
   if (!fixture) throw new Error(`offline_onboarding_fixture_invariant:${state.tutorialFixture?.id ?? 'missing'}`);
   const steps = ['Post received', 'Scanning video', 'Looking for clues', 'Matching the place'];
-  return <Phase1Frame progress={0.6} progressLabel="Onboarding progress" contentStyle={styles.processingContent}>
+  return <Phase1Frame progress={0.6} progressLabel={t("Onboarding progress")} contentStyle={styles.processingContent}>
     <Text style={styles.processingEyebrow}>{t("PRACTICE SAVE")}</Text>
     <Text style={styles.headline}>{t("From your feed to your world.")}</Text>
     <FieldnotesPracticeScene fixtureId={fixture.id} stage="receipt" />
@@ -338,7 +338,7 @@ function MagicMomentScreen({ state }: { state: OnboardingV2State }) {
   return (
     <Phase1Frame
       progress={0.68}
-      progressLabel="Onboarding progress"
+      progressLabel={t("Onboarding progress")}
       footer={<Phase1PrimaryButton title={t("Find it on my map")} onPress={() => void continueFlow()} />}
     >
       <Text style={styles.eyebrow}>{t("1 PLACE FOUND")}</Text>
@@ -365,7 +365,7 @@ function FixtureMapPayoffScreen({ state }: { state: OnboardingV2State }) {
     hapticSuccess();
     void closeOnboardingV2PlaceTour(savedPlaceId);
   };
-  return <Phase1Frame progress={0.7} progressLabel="Onboarding progress">
+  return <Phase1Frame progress={0.7} progressLabel={t("Onboarding progress")}>
     <Text style={styles.eyebrow}>{t("A PLACE TO REMEMBER")}</Text>
     <Text style={styles.headline}>{t("Saved to your practice map.")}</Text>
     <FieldnotesPracticeScene fixtureId={fixture.id} stage="place" onClose={closeCard} />
@@ -408,7 +408,7 @@ function Phase2IntroScreen({ state }: { state: OnboardingV2State }) {
     }
   };
   return (
-    <Phase1Frame progress={0.74} progressLabel="Onboarding progress" scroll={false} contentStyle={styles.phase2Content} footer={<View style={styles.phase2Actions}><Phase1PrimaryButton title={starting ? t("Connecting…") : t("Try with a real video")} disabled={starting} onPress={() => void tryRealVideo()} /><Pressable onPress={() => void deferOnboardingV2Practice()} accessibilityRole="button" accessibilityLabel={t("I'll try this later")} style={styles.laterButton}><Text style={styles.laterButtonText}>{t("I’ll try this later")}</Text></Pressable></View>}>
+    <Phase1Frame progress={0.74} progressLabel={t("Onboarding progress")} scroll={false} contentStyle={styles.phase2Content} footer={<View style={styles.phase2Actions}><Phase1PrimaryButton title={starting ? t("Connecting…") : t("Try with a real video")} disabled={starting} onPress={() => void tryRealVideo()} /><Pressable onPress={() => void deferOnboardingV2Practice()} accessibilityRole="button" accessibilityLabel={t("I'll try this later")} style={styles.laterButton}><Text style={styles.laterButtonText}>{t("I’ll try this later")}</Text></Pressable></View>}>
       <View style={styles.phase2MapBackdrop}><View style={styles.mapRoadWide} /><View style={styles.mapRoadThin} /><View style={styles.smallPayoffPin}><Feather name="map-pin" size={17} color={Phase1Colors.onOrange} /></View></View>
       <View style={styles.phase2Sheet}>
         <Text style={styles.eyebrow}>{t("OPTIONAL REAL-WORLD PRACTICE")}</Text>
@@ -439,7 +439,7 @@ function OfflinePlaceDetailScreen({ state }: { state: OnboardingV2State }) {
   const savedPlaceId = state.tutorialSave?.savedPlaceId;
   if (!fixture || !savedPlaceId) throw new Error('offline_onboarding_place_detail_invariant');
   useEffect(() => { void recordOnboardingV2PlaceTourOpened(savedPlaceId); }, [savedPlaceId]);
-  return <Phase1Frame progress={0.71} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title={t("Continue")} onPress={() => void closeOnboardingV2PlaceTour(savedPlaceId)} />}>
+  return <Phase1Frame progress={0.71} progressLabel={t("Onboarding progress")} footer={<Phase1PrimaryButton title={t("Continue")} onPress={() => void closeOnboardingV2PlaceTour(savedPlaceId)} />}>
     <Text style={styles.eyebrow}>{t("YOUR SAVED PLACE")}</Text><Text style={styles.revealTitle}>{fixture.place.name}</Text><Text style={styles.revealAddress}>{fixture.place.address}</Text>
     <Image source={offlineOnboardingAsset(fixture.assetKey)} style={[styles.heroPhoto, styles.localHeroPhoto]} resizeMode="cover" accessibilityLabel={`${fixture.place.name} bundled place photo`} />
     <View style={styles.detailNote}><Feather name="star" size={18} color={Phase1Colors.orange} /><View style={styles.flex}><Text style={styles.detailLabel}>{t("NEARR NOTE")}</Text><Text style={styles.detailText}>{fixture.place.aiNote}</Text></View></View>
@@ -465,7 +465,7 @@ function FirstMagicCompleteScreen({ state }: { state: OnboardingV2State }) {
     ?? realSave?.sources?.[0]?.thumbnail_url
     ?? null;
   const placeName = realSave?.place.name ?? practice?.expectedPlaceName ?? 'Your place';
-  return <Phase1Frame progress={0.76} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title={t("Set up Nearr")} onPress={() => void beginOnboardingV2SecondHalf()} />} contentStyle={styles.centered}>
+  return <Phase1Frame progress={0.76} progressLabel={t("Onboarding progress")} footer={<Phase1PrimaryButton title={t("Set up Nearr")} onPress={() => void beginOnboardingV2SecondHalf()} />} contentStyle={styles.centered}>
     <View style={styles.celebrationMark}><NearrSparkleMark size={78} /><View style={styles.checkBadge}><Feather name="check" size={18} color={Phase1Colors.onOrange} /></View></View>
     <Text style={styles.headlineCentered}>{placeName} {t(" is saved.")}</Text>
     <View style={styles.realSaveProof}>
@@ -478,7 +478,7 @@ function LoadingState({ label }: { label: string }) {
   useLocale();
   const Phase1Colors = usePhase1Colors();
   const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
- return <Phase1Frame progress={0.34} progressLabel="Onboarding progress" contentStyle={styles.centered}><NearrSparkleMark size={76} /><Text style={styles.loadingLabel}>{label}</Text><Text style={styles.bodyCentered}>{t("Matching your choices with a real guided example.")}</Text></Phase1Frame>; }
+ return <Phase1Frame progress={0.34} progressLabel={t("Onboarding progress")} contentStyle={styles.centered}><NearrSparkleMark size={76} /><Text style={styles.loadingLabel}>{label}</Text><Text style={styles.bodyCentered}>{t("Matching your choices with a real guided example.")}</Text></Phase1Frame>; }
 function interestLabel(value: OnboardingInterest | null): string { switch (value) { case 'outdoors': case 'beaches': return 'Outdoor spots'; case 'food': return 'Food spots'; case 'cafes': return 'Cafes'; case 'travel': return 'Travel places'; case 'things_to_do': return 'Things to do'; case 'shopping': return 'Shops'; default: return 'Great places'; } }
 
 function createStyles(Phase1Colors: ReturnType<typeof usePhase1Colors>) { return StyleSheet.create({

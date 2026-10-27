@@ -7,6 +7,19 @@ import { LOCALE_STORAGE_KEY, resolveLocale, SUPPORTED_LOCALES } from '../lib/i18
 import { translateNotification } from '../lib/notificationLocalization';
 
 const root = process.cwd();
+const preAuth = readFileSync(join(root, 'components/onboarding/v2/OnboardingV2PreAuth.tsx'), 'utf8');
+for (const marker of ['INTERESTS.map', 'PAIN_POINTS.slice', 'DESIRED_VALUES.map']) {
+  const line = preAuth.split('\n').find(line => line.includes(marker));
+  assert.ok(line, `${marker} is still rendered`);
+  assert.ok(line.includes('accessibilityLabel={t(item.label)}'), `${marker} accessibility follows selected locale`);
+  assert.ok(line.includes('>{t(item.label)}</Text>'), `${marker} visible choices follow selected locale`);
+}
+const choiceKeys = [...preAuth.slice(preAuth.indexOf('const INTERESTS:'), preAuth.indexOf('const PLATFORM_LABELS:')).matchAll(/label: ('([^']*)'|"([^"]*)")/g)].map(match => match[2] ?? match[3]);
+assert.equal(choiceKeys.length, 16, 'all interest, pain-point and desired-value choices are covered');
+for (const locale of SUPPORTED_LOCALES) {
+  const catalog = JSON.parse(readFileSync(join(root, 'locales', `${locale}.json`), 'utf8'));
+  for (const key of choiceKeys) assert.ok(catalog[key], `${locale} translates ${key}`);
+}
 const en: Record<string,string> = JSON.parse(readFileSync(join(root,'locales/en-US.json'),'utf8'));
 const settingsSource = readFileSync(join(root, 'app/(tabs)/settings.tsx'), 'utf8');
 assert.ok(
