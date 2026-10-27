@@ -1,0 +1,19 @@
+{
+  "sourceSha": "d07b5d53ee1232fccbdf549471a1d495f78736a5",
+  "branch": "fix/nearr-17-full-regression-android-qa",
+  "channel": "development",
+  "environment": "development",
+  "publicationOperations": 1,
+  "ios": {
+    "group": "bb441c67-f03d-4999-8778-559b5dd16de5",
+    "update": "01a17f67-a364-7243-b43b-437f1fa694c4",
+    "runtime": "1.7-onboarding-date-v1"
+  },
+  "android": {
+    "group": "1111dd6f-affb-4f7c-8229-d4a53a7afb3b",
+    "update": "01a17f67-a364-7903-834c-df917d973e04",
+    "runtime": "1.7-onboarding-date-android-v2"
+  },
+  "servedManifestsVerified": true,
+  "productionModified": false
+}

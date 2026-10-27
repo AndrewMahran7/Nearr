@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-10-27T23:23:22.639Z",
+  "platform": "android",
+  "channel": "development",
+  "updateId": "01a17f67-a364-7903-834c-df917d973e04",
+  "runtime": "1.7-onboarding-date-android-v2",
+  "appEnv": "development",
+  "backendEnv": "development",
+  "supabaseHost": "qnfxnmvxpjzfydgudtvs.supabase.co",
+  "assetCount": 42,
+  "launchAssetPresent": true
+}
