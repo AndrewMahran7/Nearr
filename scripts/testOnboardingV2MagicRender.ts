@@ -27,6 +27,7 @@ let reduceMotion = false;
 let theme: 'light' | 'dark' = 'light';
 let fontScale = 1;
 let animations = 0;
+let savedPlaces: any[] = [];
 const getColors = () => theme === 'light' ? LightPalette : DarkPalette;
 const getPhaseColors = () => { const c = getColors(); return { background: c.bg, surface: c.surface, surfaceRaised: c.surfaceElevated, border: c.border, text: c.text, textMuted: c.textSecondary, orange: c.accent, onOrange: c.textInverse, success: c.success, successSurface: c.successSurface, danger: c.danger, action: c.primary, onAction: c.textInverse }; };
 const Pressable = ({ children, ...props }: any) => React.createElement(
@@ -43,6 +44,7 @@ const inertAnimation = { start() {}, stop() {} };
 Module._load = function mockedLoad(request, parent, isMain) {
   if (request === '@/lib/i18n') return translations;
   if (request === '@/hooks/useLocale') return { useLocale: () => ({ locale: translations.i18n.language }) };
+  if (request === '@/hooks/useSavedPlaces') return { useSavedPlaces: () => ({ data: savedPlaces }) };
   if (request === 'react-native') return {
     ActivityIndicator: host('ActivityIndicator'),
     Animated: {
@@ -89,7 +91,7 @@ Module._load = function mockedLoad(request, parent, isMain) {
 };
 
 const TestRenderer = require('react-test-renderer') as typeof import('react-test-renderer');
-const { ChallengeSourcePreview, ProcessingScreen } = require('../components/onboarding/v2/OnboardingV2PreAuth.tsx') as typeof import('../components/onboarding/v2/OnboardingV2PreAuth');
+const { ChallengeSourcePreview, ProcessingScreen, FirstMagicCompleteScreen } = require('../components/onboarding/v2/OnboardingV2PreAuth.tsx') as typeof import('../components/onboarding/v2/OnboardingV2PreAuth');
 
 type JsonNode = ReturnType<ReturnType<typeof TestRenderer.create>['toJSON']>;
 function assertNativeTextInvariant(node: JsonNode, insideText = false): void {
@@ -134,6 +136,22 @@ function textContent(node: JsonNode): string {
 }
 
 try {
+  // Skipping/backgrounding real practice must not present a local demo as a
+  // persisted user save, even when a stale saved-place id exists in state.
+  for (const savedPlaceId of [null, 'not-yet-loaded']) {
+    let completion!: ReturnType<typeof TestRenderer.create>;
+    TestRenderer.act(() => { completion = TestRenderer.create(React.createElement(FirstMagicCompleteScreen, { state: { ...state, independentSaves: [], realPracticeSession: { savedPlaceId } } })); });
+    assert.match(textContent(completion.toJSON()), /Saved to your practice map/);
+    assert.doesNotMatch(textContent(completion.toJSON()), /is saved\.|It’s now on your map/);
+    TestRenderer.act(() => completion.unmount());
+  }
+  savedPlaces = [{ id: 'verified-owned-save', place: { name: 'Verified QA place' }, sources: [] }];
+  let verified!: ReturnType<typeof TestRenderer.create>;
+  TestRenderer.act(() => { verified = TestRenderer.create(React.createElement(FirstMagicCompleteScreen, { state: { ...state, independentSaves: [], realPracticeSession: { savedPlaceId: 'verified-owned-save' } } })); });
+  assert.match(textContent(verified.toJSON()), /Verified QA place is saved\./);
+  assert.match(textContent(verified.toJSON()), /It’s now on your map/);
+  TestRenderer.act(() => verified.unmount());
+  savedPlaces = [];
   let processing!: ReturnType<typeof TestRenderer.create>;
   TestRenderer.act(() => {
     processing = TestRenderer.create(React.createElement(ProcessingScreen, { state, failed: false, onRetry() {} }));
