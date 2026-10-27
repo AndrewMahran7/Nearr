@@ -15,6 +15,7 @@ import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
 import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { useTheme } from '@/lib/theme';
 import { hydrateSavedPlace } from '@/lib/savedPlaceHydration';
+import { offlineSavedPlacePhoto } from '@/lib/offlineSavedPlacePhoto';
 import { placeSourceCards } from '@/lib/placeSources';
 import { savedPlacePhotoKind, type SavedPlacePhotoKind } from '@/lib/savedPlaceSnapshot';
 import type { SavedPlaceWithPlace } from '@/types';
@@ -57,6 +58,13 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
 
   useEffect(() => {
     let cancelled = false;
+    const bundledPhoto = offlineSavedPlacePhoto(saved.place.id);
+    if (bundledPhoto) {
+      setSavedImageUri(bundledPhoto);
+      setSavedImageKind('destination');
+      setImageResolution(null);
+      return;
+    }
     setSavedImageUri(null);
     setSavedImageKind('unknown');
     setImageResolution(null);
@@ -73,7 +81,7 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
       }
     });
     return () => { cancelled = true; };
-  }, [saved.id, saved.place.google_place_id, saved.user_id, sourceImageUri]);
+  }, [saved.id, saved.place.id, saved.place.google_place_id, saved.user_id, sourceImageUri]);
   const label = [
     saved.place.name,
     locality,

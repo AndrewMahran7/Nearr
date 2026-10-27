@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import React from 'react';
+import { OFFLINE_ONBOARDING_FIXTURES } from '../onboarding/fixtures/offlineOnboardingFixtures';
 
 // Real Saved components, native host doubles. These assert behavior/layout
 // contracts; they are deliberately not described as screenshots or device QA.
@@ -21,7 +22,10 @@ const FlatList = (props: any) => React.createElement('FlatList', props,
 );
 const Button = ({ title, ...props }: any) => React.createElement('Button', props, title);
 Module._load = function(request: string, parent: unknown, isMain: boolean) {
+  if (request === '@/lib/i18n') return require('../lib/i18nEngine');
+  if (request === '@/hooks/useLocale') return { useLocale: () => ({ locale: require('../lib/i18nEngine').i18n.language }) };
   if (request === 'react-native') return {
+    Image: { resolveAssetSource: (asset: unknown) => asset },
     ActivityIndicator: 'ActivityIndicator', FlatList, Modal: ({ visible, children, ...props }: any) => visible ? React.createElement('Modal', props, children) : null,
     Linking: { openSettings: async () => undefined }, Pressable, ScrollView: 'ScrollView', Text: 'Text', View: 'View',
     StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1, absoluteFill: {} },
@@ -31,6 +35,7 @@ Module._load = function(request: string, parent: unknown, isMain: boolean) {
   if (request === 'react-native-safe-area-context') return { useSafeAreaInsets: () => ({ top: 20, bottom: 0, left: 0, right: 0 }) };
   if (request === '@/lib/theme') return { useTheme: () => ({ colors, typography }) };
   if (request === '@/lib/useReduceMotion') return { useReduceMotion: () => false };
+  if (request.endsWith('/onboarding/assets/offlineOnboardingAssets')) return { offlineOnboardingMedia: () => ({ placePhotoAssets: [{ uri: 'file:///bundled-destination.jpg' }] }) };
   if (request === '@/lib/savedPlaceHydration') return { hydrateSavedPlace: async (args: { trigger: string }) => {
     hydrationRequests.push(args); return { details: { photoUrls: hydratedPhotoUris }, snapshot: { source: 'save_payload', photoProvenance: Object.fromEntries(hydratedPhotoUris.map((uri) => [uri, hydratedPhotoKind])) } };
   } };
@@ -52,6 +57,16 @@ const fixture = (index: number) => ({
 const text = (node: any): string => node == null ? '' : typeof node === 'string' ? node : Array.isArray(node) ? node.map(text).join(' ') : text(node.children);
 async function main() {
   let assertions = 0;
+  const { offlineSavedPlacePhoto } = require('../lib/offlineSavedPlacePhoto');
+  for (const item of OFFLINE_ONBOARDING_FIXTURES) assert.equal(offlineSavedPlacePhoto(item.place.id), 'file:///bundled-destination.jpg');
+  assert.equal(offlineSavedPlacePhoto('real-server-place-id'), null, 'never substitute demo photos for real places');
+  const tutorial = { ...fixture(0), place: { ...fixture(0).place, id: OFFLINE_ONBOARDING_FIXTURES[0].place.id } };
+  let tutorialCard!: ReturnType<typeof TestRenderer.create>;
+  const beforeTutorialHydration = hydrationRequests.length;
+  await TestRenderer.act(async () => { tutorialCard = TestRenderer.create(React.createElement(SavedPlaceBrowseCard, { saved: tutorial, onPress() {} })); });
+  assert.deepEqual(tutorialCard.root.findByType('PlaceImage' as any).props.initialPhotoUrls, ['file:///bundled-destination.jpg']);
+  assert.equal(hydrationRequests.length, beforeTutorialHydration, 'local tutorial image never requests provider hydration');
+  await TestRenderer.act(async () => tutorialCard.unmount());
   for (const count of [0, 1, 3, 5, 20, 50, 51, 125]) {
     let renderer!: ReturnType<typeof TestRenderer.create>;
     const places = Array.from({ length: count }, (_v, index) => fixture(index));

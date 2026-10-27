@@ -22,6 +22,7 @@ Module._load = function(request: string, parent: unknown, isMain: boolean) {
   if (request === 'react-native-safe-area-context') return { useSafeAreaInsets: () => ({ top: 44, bottom: 34, left: 0, right: 0 }) };
   if (request === '@/lib/theme') return { useTheme: () => ({ colors, typography }) };
   if (request === '@/components/PlaceImage') return { PlaceImage: 'PlaceImage' };
+  if (request === '@/lib/offlineSavedPlacePhoto') return { offlineSavedPlacePhoto: (id: string) => id === 'place-a' ? 'file:///bundled-destination.jpg' : null };
   if (request === '@/services/placesService') return { PlacesError, searchPlaces: (query: string) => new Promise((resolve, reject) => pending.push({ query, resolve, reject })) };
   if (request.startsWith('@/')) return originalLoad(path.join(sourceRoot, request.slice(2)), parent, isMain);
   return originalLoad(request, parent, isMain);
@@ -80,6 +81,7 @@ async function main() {
     let closes = 0;
     await TestRenderer.act(async () => { tree = TestRenderer.create(React.createElement(MapPlaceSearchDropdown, { ...props, savedPlaces: [saved], offline: true, onSelectSaved: (place: any) => { selected = place; }, onClose: () => closes++ })); });
     await TestRenderer.act(async () => input().props.onChangeText('harbour'));
+    assert.deepEqual(tree.root.findByType('PlaceImage' as any).props.initialPhotoUrls, ['file:///bundled-destination.jpg'], 'local saved search retains its bundled thumbnail');
     const savedRow = tree.root.findAll((node) => node.type === ('Pressable' as any) && node.props.accessibilityLabel === `Show saved place ${saved.place.name} on map`)[0];
     await TestRenderer.act(async () => savedRow.props.onPress());
     assert.equal(selected, saved, 'saved selection passes exact existing identity to the map');

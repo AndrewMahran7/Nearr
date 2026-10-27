@@ -11,6 +11,7 @@ import { currentSavedPlaces, searchSavedPlaces, savedPlaceNotePreview } from '@/
 import { placeSourceCards } from '@/lib/placeSources';
 import { readSavedPlaceSnapshot } from '@/lib/savedPlaceSnapshot';
 import { isUsableSavedPlaceImage } from '@/lib/savedPlaceImageStore';
+import { offlineSavedPlacePhoto } from '@/lib/offlineSavedPlacePhoto';
 import type { PlaceCandidate } from '@/services/placesService';
 import type { SavedPlaceWithPlace } from '@/types';
 
@@ -23,6 +24,11 @@ function SavedSearchPlaceImage({ saved }: { saved: SavedPlaceWithPlace }) {
   const source = useMemo(() => placeSourceCards(saved)[0], [saved, i18n.language]);
   useEffect(() => {
     let cancelled = false;
+    const bundledPhoto = offlineSavedPlacePhoto(saved.place.id);
+    if (bundledPhoto) {
+      setLocalPhotoUrls([bundledPhoto]);
+      return;
+    }
     setLocalPhotoUrls([]);
     void readSavedPlaceSnapshot({
       userId: saved.user_id,
@@ -41,7 +47,7 @@ function SavedSearchPlaceImage({ saved }: { saved: SavedPlaceWithPlace }) {
       if (!cancelled) setLocalPhotoUrls(checked.filter((item) => item.usable).map((item) => item.uri));
     });
     return () => { cancelled = true; };
-  }, [saved.id, saved.place.google_place_id, saved.user_id]);
+  }, [saved.id, saved.place.id, saved.place.google_place_id, saved.user_id]);
   return <PlaceImage
     googlePlaceId={saved.place.google_place_id}
     sourceUri={source?.thumbnailUrl}
