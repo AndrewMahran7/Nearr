@@ -89,7 +89,7 @@ assert.equal(completePendingSave(base(), { sourceUrl: practice.canonicalUrl, sav
 assert.equal(state.pendingShare?.shareReceivedAt, at(4)); pass('receipt remains distinct from review/resolution');
 assert.match(read('components/onboarding/v2/OnboardingV2MapCoachmark.tsx'), /completionReason/); pass('background, decline, and resolved outcomes remain distinct');
 
-assert.match(read('components/onboarding/v2/OnboardingV2PreAuth.tsx'), /\{placeName\} is saved\./); pass('real-save payoff names the durable result');
+assert.match(read('components/onboarding/v2/OnboardingV2PreAuth.tsx'), /t\("\{\{value0\}\} is saved\.", \{ value0: placeName \}\)/); pass('localized real-save payoff names the durable result');
 assert.match(read('components/onboarding/v2/Phase1Visuals.tsx'), /scrollContentWithFooter/); pass('scroll content reserves space above the fixed CTA');
 assert.doesNotMatch(read('app/(tabs)/settings.tsx'), /if \(loading\) \{[\s\S]{0,180}<Screen>/); pass('settings shell does not wait on the account request');
 assert.doesNotMatch(read('app/_layout.tsx').split('Register this device')[0].slice(-500), /checkProximityOnce\(\)/); pass('account sign-in alone cannot trigger proximity delivery');

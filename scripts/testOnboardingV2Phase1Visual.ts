@@ -64,7 +64,7 @@ assert.match(account, /Continue with Apple|AppleAuthenticationButton/);
 assert.match(account, /GoogleSignInButton/);
 assert.match(authIntent, /Back up your map/);
 assert.match(authIntent, /Sign in to Nearr/);
-assert.match(secondHalf, /Phase1PrimaryButton title="Explore my map"/);
+assert.match(secondHalf, /Phase1PrimaryButton title=\{t\("Explore my map"\)\}/);
 assert.match(secondHalf, /private practice example/);
 assert.match(secondHalf, /real share will use Nearr's live recognition/);
 
@@ -73,8 +73,9 @@ assert.match(index, /stage === 'onboarding_complete'/);
 console.log('PASS final activation clearly hands off from scripted practice to the real app');
 
 assert.match(map, /cleanOnboardingLanding = placeSource === 'onboarding_tutorial'/);
-assert.match(map, /__DEV__ && !cleanOnboardingLanding/);
-assert.match(map, /!searchVisible && !nearbyExplorer/);
+assert.match(map, /__DEV__ && mapPreview && !previewExpanded && !cleanOnboardingLanding && !phase2MapActive && !fieldnotesNativeCapture/);
+assert.match(map, /fieldnotesPresentation\.showActivity/);
+assert.match(map, /fieldnotesPresentation\.showDock/);
 assert.doesNotMatch(map, /!cleanOnboardingLanding && !searchVisible/, 'guided entry no longer suppresses Queue');
 console.log('PASS first map landing suppresses diagnostics while retaining Queue chrome');
 

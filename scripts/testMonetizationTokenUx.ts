@@ -20,7 +20,10 @@ function source(file: string): string {
 }
 
 const settings = source('app/(tabs)/settings.tsx');
-const paywall = source('app/monetization.tsx');
+const paywall = source('app/plus.tsx');
+const plusClient = source('lib/plusClient.ts');
+const plusHook = source('hooks/usePlus.ts');
+const premiumAvailability = source('lib/premiumRequests.ts');
 const balance = source('components/PlaceFindBalance.tsx');
 const tokenSymbol = source('components/TokenSymbol.tsx');
 const map = source('app/(tabs)/map.tsx');
@@ -35,15 +38,14 @@ const packMigration = source('supabase/migrations/20260903000004_dev_token_pack_
 const premiumMigration = source('supabase/migrations/20260904000001_premium_request_monetization.sql');
 const userFacingMonetization = [settings, paywall, balance, extension, handoff, queue, jobDetailState].join('\n');
 
-test('Settings displays token terminology', () => {
-  assert.match(settings, />Tokens</);
-  assert.match(settings, />Token balance</);
-  assert.match(settings, /Used for Premium Requests/);
+test('Settings does not advertise the retired token storefront', () => {
+  assert.equal(fs.existsSync('app/monetization.tsx'), false);
+  assert.doesNotMatch(settings, /Open token store|Token balance|Used for Premium Requests/);
   assert.doesNotMatch(settings, /per shared video/i);
 });
 
-test('Settings displays a numeric balance with the token symbol', () => {
-  assert.match(settings, /<PlaceFindBalance/);
+test('legacy balance remains intact but is absent from Settings', () => {
+  assert.doesNotMatch(settings, /<PlaceFindBalance/);
   assert.match(balance, /<Text[\s\S]*styles\.number/);
   assert.match(balance, /<TokenSymbol size=\{16\}/);
   assert.match(tokenSymbol, /styles\.diamond/);
@@ -78,11 +80,10 @@ test('Treasure Pack is 75 tokens at the existing Dev price', () => {
   assert.deepEqual([tokenPackPresentation(pack.uses).name, pack.uses, pack.mockDisplayPrice], ['Treasure Pack', 75, '$44.99']);
 });
 
-test('Explorer is the default recommended pack with BEST VALUE treatment', () => {
+test('legacy Explorer recommendation is preserved but not offered in Plus', () => {
   assert.equal(tokenPackPresentation(30).recommended, true);
-  assert.match(paywall, /recommendedProduct/);
-  assert.match(paywall, />BEST VALUE</);
-  assert.match(paywall, /packSelected[\s\S]*borderColor: ORANGE/);
+  assert.doesNotMatch(paywall, /recommendedProduct|BEST VALUE|packSelected/);
+  assert.match(paywall, /plus\.canOffer && plus\.offer/);
 });
 
 test('Dev mock price mapping matches Premium Request V2', () => {
@@ -92,10 +93,10 @@ test('Dev mock price mapping matches Premium Request V2', () => {
   );
 });
 
-test('pack selection drives the explicit token CTA', () => {
-  assert.match(paywall, /setSelectedProductId\(pack\.productId\)/);
-  assert.match(paywall, /Get \{selectedPack\.uses\} tokens/);
-  assert.match(paywall, /accessibilityState=\{\{ disabled, selected \}\}/);
+test('Plus CTA requires a qualified offer and uses its localized store price', () => {
+  assert.doesNotMatch(paywall, /setSelectedProductId|selectedPack/);
+  assert.match(paywall, /t\('Subscribe for \{\{price\}\} \/ month', \{ price: plus\.offer\.price \}\)/);
+  assert.match(paywall, /disabled=\{busy \|\| plus\.loading\}/);
 });
 
 test('mock purchases credit the configured quantity exactly once', () => {
@@ -108,54 +109,52 @@ test('mock purchases credit the configured quantity exactly once', () => {
   assert.match(packMigration, /set use_count = 75/);
 });
 
-test('success shows tokens added and a numeric balance with the symbol', () => {
-  assert.match(paywall, /tokens added/);
-  assert.match(paywall, /styles\.successBalanceNumber/);
-  assert.match(paywall, /<TokenSymbol size=\{26\}/);
-  assert.match(paywall, />Your new balance</);
+test('Plus success requires verification, never a local token increment', () => {
+  assert.match(paywall, /result\.outcome === 'verified'/);
+  assert.match(paywall, /Your subscription is verified\./);
+  assert.match(plusClient, /hasVerifiedPlusAccess\(verified\.entitlement\) \? 'verified' : 'pending'/);
+  assert.doesNotMatch(paywall, /tokens added|successBalanceNumber|TokenSymbol/);
   assert.doesNotMatch(paywall, /new balance[\s\S]{0,80}left/i);
 });
 
-test('a purchase resumes the exact pending Premium Request without reshare', () => {
-  assert.match(paywall, /premiumJobId: pendingPremiumRequestJobId/);
+test('legacy exact-job resume is retained server-side but unavailable in Plus', () => {
+  assert.doesNotMatch(paywall, /pendingPremiumRequestJobId|premiumJobId/);
   assert.match(monetizationEdge, /premium_resume_after_purchase_failed/);
   assert.match(monetizationEdge, /request_premium_recognition/);
-  assert.match(paywall, /resumed automatically on the original post/);
+  assert.match(monetizationClient, /if \(!premiumRequestsEnabled\(\)\) throw new Error\(PREMIUM_REQUESTS_SUSPENDED_REASON\)/);
 });
 
-test('zero balance preserves and continues only the pending Premium Request', () => {
-  assert.match(paywall, /pendingNeedsTokens/);
-  assert.match(paywall, /original post is safe/);
-  assert.match(paywall, /resume this Premium Request automatically/);
+test('zero balance cannot trigger a storefront and existing saves stay accessible', () => {
+  assert.match(premiumAvailability, /export function premiumRequestsEnabled\(\): boolean \{\s*return false;/);
+  assert.match(paywall, /Your saved places stay yours, with or without a subscription\./);
+  assert.doesNotMatch(paywall, /pendingNeedsTokens|resume this Premium Request/);
   assert.doesNotMatch(extension, /out of tokens|purchase_required|monetization\?jobId/i);
 });
 
 test('server balance remains authoritative', () => {
   assert.match(monetizationClient, /supabase\.functions\.invoke<BalanceResponse>\('monetization'/);
   assert.match(monetizationClient, /available: safeCount\(data\.balance\.available\)/);
-  assert.match(paywall, /available: result\.available/);
+  assert.match(plusClient, /const verified = await fetchPlusStatus\(userId, 'sync'\)/);
   assert.doesNotMatch(monetizationClient, /available\s*\+\s*args|available\s*\+\s*uses/);
 });
 
-test('token balance and every pack have complete accessibility labels', () => {
-  assert.match(settings, /Open token store/);
-  assert.match(paywall, /presentation\.name,[\s\S]*`\$\{pack\.uses\} tokens`[\s\S]*pack\.displayPrice/);
-  assert.match(paywall, /presentation\.recommended \? 'best value'/);
-  assert.match(paywall, /accessibilityRole="radio"/);
-  assert.match(paywall, /minHeight: 44/);
+test('Plus has localized loading, restore, alerts and accessible shared buttons', () => {
+  assert.match(paywall, /accessibilityLabel=\{t\('Loading subscription'\)\}/);
+  assert.match(paywall, /title=\{t\('Restore Purchases'\)\}/);
+  assert.match(paywall, /accessibilityRole="alert" accessibilityLiveRegion="polite"/);
+  assert.match(source('components/Button.tsx'), /accessibilityRole="button"/);
 });
 
-test('Dev pricing badge is gated away from Production mode', () => {
-  assert.match(paywall, /snapshot\?\.mode === 'dev_mock' \? \(/);
-  assert.match(paywall, /Dev pricing preview/);
+test('Plus never exposes mock pricing; legacy mock mode remains Development-only', () => {
+  assert.doesNotMatch(paywall, /dev_mock|Dev pricing preview/);
+  assert.match(plusHook, /canOffer: !!offer && status\?\.salesEnabled === true/);
   assert.match(monetizationClient, /areDeveloperToolsVisible\(\) \? 'dev_mock' : 'disabled'/);
 });
 
-test('responsive paywall uses scrolling and flexible non-overlapping pack copy', () => {
+test('responsive Plus uses scrolling without retired fixed pack rows', () => {
   assert.match(paywall, /<ScrollView/);
-  assert.match(paywall, /packCopy: \{ flex: 1, minWidth: 0/);
-  assert.match(paywall, /packName:[\s\S]*flexShrink: 1/);
-  assert.match(paywall, /content: \{ paddingHorizontal: 18/);
+  assert.match(paywall, /contentContainerStyle=\{\{ gap: 20, paddingBottom: 36 \}\}/);
+  assert.doesNotMatch(paywall, /packCopy|packName/);
 });
 
 test('monetization surfaces contain no user-facing Vayrin branding', () => {

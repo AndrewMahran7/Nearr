@@ -114,13 +114,13 @@ assert.match(detail, /width: REMINDER_SWITCH_SLOT_WIDTH/);
 assert.match(detail, /paddingHorizontal: REMINDER_SWITCH_TRAILING_CLEARANCE/);
 assert.match(detail, /onLayout=\{verifyReminderSwitchBounds\}/);
 assert.match(detail, /transitionHeroUri/);
-assert.match(detail, />Mark visited<\/Text>/);
-assert.match(detail, />Not yet<\/Text>/);
-assert.match(detail, /title="Near this place"/);
+assert.match(detail, />\{t\("Mark visited"\)\}<\/Text>/);
+assert.match(detail, />\{t\("Not yet"\)\}<\/Text>/);
+assert.match(detail, /title=\{t\("Near this place"\)\}/);
 assert.match(detail, /animationType="none" statusBarTranslucent/);
 
-assert.match(search, />Saving…<\/Text>/);
-assert.match(search, />Try again<\/Text>/);
+assert.match(search, />\{t\("Saving…"\)\}<\/Text>/);
+assert.match(search, />\{t\("Try again"\)\}<\/Text>/);
 assert.match(search, /readSavedPlaceSnapshot/);
 assert.match(search, /hydrationPolicy="saved_snapshot"/);
 const savedImageBlock = search.slice(search.indexOf('function SavedSearchPlaceImage'), search.indexOf('/** Local memory search'));
@@ -128,7 +128,7 @@ assert.ok(!/getSavedPlaceGoogleDisplayDetails|hydrateSavedPlace/.test(savedImage
 
 assert.match(activity, /function returnToNormalMap\(\)/);
 assert.match(activity, /mapResetId: `activity-/);
-assert.match(activity, /title="Back to your map" onPress=\{returnToNormalMap\}/);
+assert.match(activity, /title=\{t\("Back to your map"\)\} onPress=\{returnToNormalMap\}/);
 assert.equal((layout.match(/animation: 'fade'/g) ?? []).length >= 2, true);
 
 console.log('PASS Fieldnotes physical UI QA: ownership, switch bounds, filters, navigation, search, camera, imagery, status bar');

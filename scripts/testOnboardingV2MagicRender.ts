@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import React from 'react';
+import * as translations from '../lib/i18nEngine';
 import { LightPalette, DarkPalette } from '../constants/colors';
 
 import {
@@ -40,6 +41,8 @@ class AnimatedValue {
 const inertAnimation = { start() {}, stop() {} };
 
 Module._load = function mockedLoad(request, parent, isMain) {
+  if (request === '@/lib/i18n') return translations;
+  if (request === '@/hooks/useLocale') return { useLocale: () => ({ locale: translations.i18n.language }) };
   if (request === 'react-native') return {
     ActivityIndicator: host('ActivityIndicator'),
     Animated: {

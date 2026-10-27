@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import React from 'react';
+import * as translations from '../lib/i18nEngine';
 
 import {
   buildSavedPlaceResultViewModel,
@@ -104,6 +105,8 @@ const FlatList = ({ data, renderItem, ItemSeparatorComponent, ...props }: any) =
   ]),
 );
 Module._load = function mockedLoad(request, parent, isMain) {
+  if (request === '@/lib/i18n') return translations;
+  if (request === '@/hooks/useLocale') return { useLocale: () => ({ locale: translations.i18n.language }) };
   if (request === 'react-native') return {
     ActivityIndicator: host('ActivityIndicator'), FlatList, Pressable,
     ScrollView: host('ScrollView'), Text: host('Text'), View: host('View'),
@@ -210,7 +213,7 @@ function render(alternatives: any[] = [], pendingByResultId: Record<string, any>
 }
 
 const routeSource = readFileSync(join(process.cwd(), 'app/share-jobs/[jobId].tsx'), 'utf8');
-assert.match(routeSource, /if \(detail\.kind === 'completed'\)[\s\S]*?<ShareJobsHeader title="Saved place"/);
+assert.match(routeSource, /if \(detail\.kind === 'completed'\)[\s\S]*?<ShareJobsHeader title=\{t\("Saved place"\)\}/);
 const completedBranch = routeSource.slice(routeSource.indexOf("if (detail.kind === 'completed')"), routeSource.indexOf("if (detail.kind === 'dismissed')"));
 assert.doesNotMatch(completedBranch, /<VayrinPresentationHeader|title="Not it"|Place found|Keep \/ Save|Make primary/);
 assert.match(completedBranch, /savedPlaceId: resultModel\.savedPlaceId[\s\S]*source: 'share_job_completed'/, 'map action follows the current rendered primary');
@@ -220,4 +223,21 @@ const alternativeHandler = routeSource.slice(routeSource.indexOf('const actOnSof
 assert.match(alternativeHandler, /promoteShareJobSoftAlternative\(alternative\.resultId, action === 'promote'\)/, 'Save too maps to the existing non-primary RPC mode');
 assert.doesNotMatch(alternativeHandler, /rejectSavedPlaceRecognition|invalidateRecognition|user_rejected_recognition/, 'Save too cannot emit identity feedback or cache invalidation');
 
-console.log('PASS saved-place result view model, rendered hierarchy, actions, carousel, and route wiring');
+// Exercise actual catalog output, not an identity t() stub. Locale persistence
+// remains covered by the native-boundary localization suite and emulator QA.
+for (const locale of ['en-US', 'es-MX', 'es-ES', 'pt-BR', 'fr', 'de', 'it', 'ja', 'ko', 'zh-Hans']) {
+  void translations.i18n.changeLanguage(locale);
+  const { renderer, root, calls } = render([alternative('alternative-2')]);
+  const tree = JSON.stringify(renderer.toJSON());
+  assert.ok(tree.includes(translations.t('Similar results')), `${locale}: section is translated`);
+  assert.ok(tree.includes(translations.t('Save too')), `${locale}: alternative action is translated`);
+  assert.ok(tree.includes(saved.place.name), `${locale}: destination identity is never translated`);
+  const mapButton = root.findAllByType('Button' as any).find(node => node.props.title === translations.t('View on map'));
+  assert.ok(mapButton, `${locale}: localized map CTA is present`);
+  mapButton.props.onPress();
+  assert.deepEqual(calls, ['map'], `${locale}: translated CTA keeps navigation callback`);
+  renderer.unmount();
+}
+void translations.i18n.changeLanguage('en-US');
+Module._load = originalLoad;
+console.log('PASS saved-place result view model, rendered hierarchy, actions, carousel, route wiring, and ten real locale catalogs');

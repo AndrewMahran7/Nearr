@@ -117,7 +117,7 @@ const sheet = readFileSync(
 assert.match(sheet, /whySavedDisplay\(/, 'the sheet derives its notes from the shared helper');
 assert.match(sheet, /hasReason = !!whySaved\.text/, 'the surface is gated on the helper');
 assert.match(sheet, /WHY YOU SAVED IT/, 'one explicit reason heading');
-assert.match(sheet, /whySaved.origin === 'user' \? 'Your note' : 'From the post'/, 'visible origin is accurate');
+assert.match(sheet, /whySaved.origin === 'user' \? t\("Your note"\) : t\("From the post"\)/, 'localized visible origin is accurate');
 assert.match(sheet, /<SourceRibbon[\s\S]*platform=\{sourceAttribution.platformName\}/, 'source is independently labeled');
 // The label must never expose how the cue was produced.
 assert.doesNotMatch(
@@ -134,6 +134,6 @@ assert.match(
 );
 assert.match(sheet, /minHeight: 44/, 'management actions keep an accessible target');
 assert.match(sheet, /<Modal visible=\{moreOpen\}/, 'management is in More');
-assert.match(sheet, /title="Remove saved place"[\s\S]*confirmDelete\(\)/, 'removal retains confirmation');
+assert.match(sheet, /title=\{t\("Remove saved place"\)\}[\s\S]*confirmDelete\(\)/, 'localized removal retains confirmation');
 
 console.log('PASS saved-place detail notes, reminder status, and sheet contracts');

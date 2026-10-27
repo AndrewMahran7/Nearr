@@ -205,7 +205,7 @@ const activation = readFileSync(
   'utf8',
 );
 assert.match(activation, /<ImmersiveGuidedSave/);
-assert.match(activation, /title="Save to my map"/);
+assert.match(activation, /title=\{t\("Save to my map"\)\}/);
 assert.match(activation, /<StartupSurface/);
 assert.match(activation, /useStartupWatchdog/);
 

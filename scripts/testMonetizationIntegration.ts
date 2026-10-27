@@ -98,7 +98,8 @@ const tokenPackConfig = source('supabase/migrations/20260903000004_dev_token_pac
 const premiumMigration = source('supabase/migrations/20260904000001_premium_request_monetization.sql');
 const monetizationEdge = source('supabase/functions/monetization/index.ts');
 const processor = source('supabase/functions/process-share-jobs/index.ts');
-const paywall = source('app/monetization.tsx');
+const paywall = source('app/plus.tsx');
+const plusClient = source('lib/plusClient.ts');
 const extension = source('ShareExtension.tsx');
 const environment = source('lib/appEnvironmentCore.ts');
 const deletion = source('supabase/functions/delete-account/index.ts');
@@ -143,11 +144,12 @@ test('clients cannot mutate balances or mint purchase grants', () => {
   assert.match(migration, /revoke all on public\.place_find_products,public\.place_find_wallets/);
   assert.match(migration, /apply_dev_mock_place_find_purchase[\s\S]*to service_role/);
 });
-test('paywall uses server product metadata and labels Dev pricing honestly', () => {
-  assert.match(paywall, /snapshot\?\.products\.map/);
-  assert.match(paywall, /snapshot\?\.mode === 'dev_mock'/);
-  assert.match(paywall, /Dev pricing preview/);
-  assert.match(paywall, /Apple purchases are not available in this build/);
+test('Plus uses verified server product metadata; retired token paywall stays absent', () => {
+  assert.equal(fs.existsSync('app/monetization.tsx'), false);
+  assert.match(plusClient, /item\.product\.identifier === status\.productId/);
+  assert.match(plusClient, /price: matches\[0\]\.product\.priceString/);
+  assert.match(plusClient, /!status\.salesEnabled \|\| !status\.purchaseEligible/);
+  assert.match(paywall, /Plus is not available for purchase on this account right now\./);
 });
 test('normal share surfaces never enter the token store', () => {
   assert.doesNotMatch(extension, /result\.requiresPurchase|purchase_required|monetization\?jobId=/);
@@ -159,7 +161,9 @@ test('account deletion closes the wallet while retaining replay ledgers', () => 
 });
 test('analytics cover the canonical Premium and purchase funnels', () => {
   for (const event of ['premium_request_reserved', 'premium_request_started', 'premium_request_useful_result', 'premium_request_no_useful_result', 'premium_request_token_consumed', 'premium_request_token_released']) assert.match(premiumMigration, new RegExp(event));
-  for (const event of ['paywall_shown', 'pack_viewed', 'purchase_started', 'purchase_succeeded', 'purchase_failed']) assert.match(paywall, new RegExp(event));
+  for (const event of ['offering_seen', 'product_displayed']) assert.match(paywall, new RegExp(event));
+  for (const event of ['purchase_initiated', 'purchase_cancelled', 'restore_completed']) assert.match(plusClient, new RegExp(event));
+  assert.doesNotMatch(paywall, /paywall_shown|pack_viewed|purchase_succeeded/);
 });
 test('structured eligibility and chargeability fail closed', () => {
   assert.equal(premiumEligibilityForResult({ status: 'needs_help', analysis_attempted: true, failure_category: 'analysis_insufficient', candidate_payload: {} }).eligible, true);

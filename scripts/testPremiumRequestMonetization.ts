@@ -163,7 +163,8 @@ const workerIndex = source('services/media-worker/src/index.ts');
 const workerPipeline = source('services/media-worker/src/pipeline/runMediaTask.ts');
 const workerPremium = source('services/media-worker/src/premium/premiumRecognitionAdapter.ts');
 const detail = source('app/share-jobs/[jobId].tsx');
-const store = source('app/monetization.tsx');
+const store = source('app/plus.tsx');
+const premiumAvailability = source('lib/premiumRequests.ts');
 const settings = source('app/(tabs)/settings.tsx');
 const map = source('app/(tabs)/map.tsx');
 const extension = source('ShareExtension.tsx');
@@ -184,8 +185,15 @@ const sourceTests: Array<[string, () => void]> = [
   ['premium task has unique job obligation', () => assert.match(migration, /share_media_tasks_premium_job_uidx/)],
   ['zero balance persists awaiting_token', () => assert.match(migration, /premium_state='awaiting_token'/)],
   ['purchase resumes exact premium request', () => assert.match(monetizationEdge, /premiumJobId[\s\S]*request_premium_recognition/)],
-  ['client stores pending premium job identity', () => assert.match(detail, /setPendingPremiumRequestJobId\(job\.id\)/)],
-  ['store auto-resumes without a second request tap', () => assert.match(store, /resumed automatically on the original post/)],
+  ['suspended client cannot initiate or store pending premium purchases', () => {
+    assert.doesNotMatch(detail, /setPendingPremiumRequestJobId|requestPremiumRecognition\(/);
+    assert.match(premiumAvailability, /export function premiumRequestsEnabled\(\): boolean \{\s*return false;/);
+  }],
+  ['Plus cannot auto-resume a retired token purchase', () => {
+    assert.equal(fs.existsSync('app/monetization.tsx'), false);
+    assert.doesNotMatch(store, /resumed automatically on the original post|premiumJobId/);
+    assert.match(monetizationClient, /premiumJobId: args\.premiumJobId/);
+  }],
   ['normal worker model omits Premium Sol', () => assert.doesNotMatch(workerModel.match(/export function selectModelProvider[\s\S]*?\n\}/)?.[0] ?? '', /PremiumRecognition|premiumRequest/)],
   ['worker wires distinct premium model', () => assert.match(workerIndex, /premiumModel: createPremiumRecognitionModel\(cfg\)/)],
   ['premium task selects premium model', () => assert.match(workerPipeline, /task\.task_kind === 'premium_recognition'[\s\S]*deps\.premiumModel/)],
@@ -197,16 +205,17 @@ const sourceTests: Array<[string, () => void]> = [
   ['Premium acquisition failures reach settlement without a Sol payload', () => assert.match(processor, /pre\.action !== 'manual_fallback'/)],
   ['Premium no-result remains analysis-insufficient and releases', () => assert.match(source('lib/shareFailurePresentation.ts'), /INSUFFICIENT_CODES[\s\S]*premium_no_useful_result/)],
   ['normal settlement is unmetered', () => assert.match(processor, /billing_outcome = 'unmetered:normal_free'/)],
-  ['offer copy states normal recognition was free', () => assert.match(detail, /Normal recognition was free/)],
-  ['offer displays one-token price', () => assert.match(detail, /Try Premium Request · 1 token/)],
-  ['failure explicitly says token returned', () => assert.match(detail, /Your token was returned\./)],
-  ['failure offers manual search and Done', () => {
-    assert.match(detail, /title="Find the right place"/);
-    assert.match(detail, /title="Done"/);
+  ['retired normal recognition upsell is absent', () => assert.doesNotMatch(detail, /Normal recognition was free/)],
+  ['retired one-token offer is absent', () => assert.doesNotMatch(detail, /Try Premium Request · 1 token/)],
+  ['unmetered failure never claims a token was returned', () => assert.doesNotMatch(detail, /Your token was returned\./)],
+  ['failure offers manual search and shared navigation instead of retired Done CTA', () => {
+    assert.match(detail, /onPress=\{revealSearch\}[\s\S]{0,150}accessibilityLabel=\{t\("Find the right place"\)\}/);
+    assert.match(detail, /<ShareJobsHeader title=\{t\("Quick Check"\)\} onBack=\{backToQueue\}/);
+    assert.match(detail, /function renderJobFooter\(\)[\s\S]*onPress=\{confirmRemove\}/);
   }],
-  ['Premium offer uses the token mark', () => assert.match(detail, /<TokenSymbol size=\{26\}/)],
-  ['store is positioned around Premium Requests', () => assert.match(store, /PREMIUM REQUESTS|Premium Request/)],
-  ['settings has compact Premium copy', () => assert.match(settings, /Used for Premium Requests/)],
+  ['suspended Premium offer has no token purchase control', () => assert.doesNotMatch(detail, /<TokenSymbol|<PlaceFindBalance/)],
+  ['current store is Plus, not retired Premium Requests', () => { assert.match(store, /Nearr Plus/); assert.doesNotMatch(store, /PREMIUM REQUESTS|Premium Request/); }],
+  ['settings does not advertise retired Premium purchases', () => assert.doesNotMatch(settings, /Used for Premium Requests|Open token store/)],
   ['settings has no per-share charge copy', () => assert.doesNotMatch(settings, /token per shared video/i)],
   ['map has no balance surface', () => assert.doesNotMatch(map, /PlaceFindBalance|usePlaceFindBalance|token balance/i)],
   ['share extension has no token gate', () => assert.doesNotMatch(extension, /purchase_required|out of tokens|monetization\?jobId/i)],
