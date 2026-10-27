@@ -1,4 +1,9 @@
 {
+  "Sign in to Nearr": "Nearrにログイン",
+  "Use the sign-in method connected to your existing Nearr account.": "既存のNearrアカウントに紐づいたログイン方法を使用してください。",
+  "Add a sign-in so you can recover your places and use your map on another device.": "ログイン方法を追加すると、保存した場所を復元したり、別の端末でマップを使ったりできます。",
+  "Sign in or create an account to start saving the places you find online.": "ログインするかアカウントを作成して、オンラインで見つけた場所を保存しましょう。",
+  "Bundled {{value0}} practice post": "同梱の{{value0}}練習用投稿",
   "Outdoor spots": "アウトドアスポット",
   "Food spots": "グルメスポット",
   "Travel places": "旅先",

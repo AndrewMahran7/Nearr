@@ -22,6 +22,20 @@ for (const locale of SUPPORTED_LOCALES) {
   for (const key of choiceKeys) assert.ok(catalog[key], `${locale} translates ${key}`);
 }
 const en: Record<string,string> = JSON.parse(readFileSync(join(root,'locales/en-US.json'),'utf8'));
+// Every literal t() key in the integrated onboarding must exist, including
+// complete interpolated sentences (not untranslated fragments).
+for (const file of ['OnboardingV2PreAuth.tsx', 'OnboardingV2Activation.tsx', 'OnboardingV2SecondHalf.tsx', 'ImmersiveGuidedSave.tsx', 'OnboardingVisualLanguage.tsx']) {
+  const source = ts.createSourceFile(file, readFileSync(join(root, 'components/onboarding/v2', file), 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const visit = (node: ts.Node) => {
+    if (ts.isCallExpression(node) && node.expression.getText(source) === 't' && node.arguments[0] && ts.isStringLiteral(node.arguments[0])) assert.ok(en[node.arguments[0].text], `${file}: unknown translation key ${node.arguments[0].text}`);
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+}
+const accountUi = readFileSync(join(root, 'app/(onboarding)/account.tsx'), 'utf8');
+assert.ok(accountUi.includes('t(authCopy.headline)') && accountUi.includes('t(authCopy.subtext)'), 'entry-intent account copy follows selected locale');
+const authCopySource = readFileSync(join(root, 'lib/onboardingAuthIntentCore.ts'), 'utf8');
+for (const match of authCopySource.matchAll(/(?:headline|subtext): '([^']+)'/g)) assert.ok(en[match[1]], `account translation: ${match[1]}`);
 const settingsSource = readFileSync(join(root, 'app/(tabs)/settings.tsx'), 'utf8');
 assert.ok(
   settingsSource.includes("import { LanguageSelector }") && settingsSource.includes('<LanguageSelector />'),

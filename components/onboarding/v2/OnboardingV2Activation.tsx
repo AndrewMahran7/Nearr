@@ -133,7 +133,7 @@ export function OnboardingV2Activation() {
             <View style={styles.addressCopy}><Text style={styles.addressText}>{streetAddress}</Text><Text style={styles.addressLocality}>{locality}</Text></View>
           </View>
         </View>
-        {saveError ? <Text style={styles.error}>{saveError} {t(" Try again.")}</Text> : null}
+        {saveError ? <Text style={styles.error}>{saveError} {t("Try again")}</Text> : null}
       </Phase1Frame>
     );
   }

@@ -1,4 +1,9 @@
 {
+  "Sign in to Nearr": "登录 Nearr",
+  "Use the sign-in method connected to your existing Nearr account.": "使用与你现有 Nearr 账户关联的登录方式。",
+  "Add a sign-in so you can recover your places and use your map on another device.": "添加登录方式，即可恢复你的地点并在其他设备上使用地图。",
+  "Sign in or create an account to start saving the places you find online.": "登录或创建账户，开始保存你在网上发现的地点。",
+  "Bundled {{value0}} practice post": "内置的 {{value0}} 练习帖子",
   "Outdoor spots": "户外景点",
   "Food spots": "美食地点",
   "Travel places": "旅行目的地",

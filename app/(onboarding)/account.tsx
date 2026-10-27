@@ -769,14 +769,14 @@ export default function AccountAuthScreen() {
             ? signedIn
               ? `Continue to save ${sharedPlaceIntent.placeName || 'this place'}`
               : `Save ${sharedPlaceIntent.placeName || 'this place'}`
-            : authCopy.headline}
+            : t(authCopy.headline)}
         </Text>
         <Text style={styles.subtext}>
           {sharedPlaceIntent
             ? signedIn
               ? t("Your account is connected. Continue and Nearr will save it to your map.")
               : t("Sign in or create an account, then Nearr will bring you back here and save it to your map.")
-            : authCopy.subtext}
+            : t(authCopy.subtext)}
         </Text>
 
         {signedIn ? (

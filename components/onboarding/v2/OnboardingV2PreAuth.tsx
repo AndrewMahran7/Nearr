@@ -270,7 +270,7 @@ export function ChallengeScreen({ state }: { state: OnboardingV2State }) {
 
   const fixture = state.tutorialFixture!;
   const fixturePlatform = PLATFORM_LABELS[fixture.platform];
-  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.38} progressLabel={t("Onboarding progress")} footer={<Phase1PrimaryButton title={t("Practice sharing it")} onPress={() => void beginOnboardingV2SharingRehearsal()} />}><Text style={styles.eyebrow}>{t("A POST WORTH SAVING")}</Text><Text style={styles.headline}>{t("Want to know where this is?")}</Text><Text style={styles.body}>{t("Practice the same sharing steps you will use in ")}{fixturePlatform}{t(". This lesson stays inside Nearr.")}</Text><ChallengeSourcePreview fixture={fixture} preferredPlatform={state.preferredPlatform} /><Text style={styles.microcopy}>{t("Nearr will show you the place after you finish the practice.")}</Text></Phase1Frame>;
+  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.38} progressLabel={t("Onboarding progress")} footer={<Phase1PrimaryButton title={t("Practice sharing it")} onPress={() => void beginOnboardingV2SharingRehearsal()} />}><Text style={styles.eyebrow}>{t("A POST WORTH SAVING")}</Text><Text style={styles.headline}>{t("Want to know where this is?")}</Text><Text style={styles.body}>{t("Practice the same sharing steps you will use in {{value0}}. This lesson stays inside Nearr.", { value0: fixturePlatform })}</Text><ChallengeSourcePreview fixture={fixture} preferredPlatform={state.preferredPlatform} /><Text style={styles.microcopy}>{t("Nearr will show you the place after you finish the practice.")}</Text></Phase1Frame>;
 }
 
 export function ChallengeSourcePreview({ fixture, preferredPlatform: _preferredPlatform }: {
@@ -467,7 +467,7 @@ function FirstMagicCompleteScreen({ state }: { state: OnboardingV2State }) {
   const placeName = realSave?.place.name ?? practice?.expectedPlaceName ?? 'Your place';
   return <Phase1Frame progress={0.76} progressLabel={t("Onboarding progress")} footer={<Phase1PrimaryButton title={t("Set up Nearr")} onPress={() => void beginOnboardingV2SecondHalf()} />} contentStyle={styles.centered}>
     <View style={styles.celebrationMark}><NearrSparkleMark size={78} /><View style={styles.checkBadge}><Feather name="check" size={18} color={Phase1Colors.onOrange} /></View></View>
-    <Text style={styles.headlineCentered}>{placeName} {t(" is saved.")}</Text>
+    <Text style={styles.headlineCentered}>{t("{{value0}} is saved.", { value0: placeName })}</Text>
     <View style={styles.realSaveProof}>
       {sourceThumbnail ? <Image source={{ uri: sourceThumbnail }} style={styles.realSaveFallback} resizeMode="cover" accessibilityLabel={`${placeName} saved-place photo`} /> : <View style={styles.realSaveNeutral} accessibilityLabel={t("Saved place image unavailable")}><Feather name="map-pin" size={30} color={Phase1Colors.orange} /><Text style={styles.realSaveNeutralText}>{placeName}</Text></View>}
     </View>

@@ -1,4 +1,9 @@
 {
+  "Sign in to Nearr": "Connectez-vous à Nearr",
+  "Use the sign-in method connected to your existing Nearr account.": "Utilisez la méthode de connexion associée à votre compte Nearr existant.",
+  "Add a sign-in so you can recover your places and use your map on another device.": "Ajoutez une connexion pour retrouver vos lieux et utiliser votre carte sur un autre appareil.",
+  "Sign in or create an account to start saving the places you find online.": "Connectez-vous ou créez un compte pour enregistrer les lieux que vous trouvez en ligne.",
+  "Bundled {{value0}} practice post": "Publication d’entraînement {{value0}} incluse",
   "Outdoor spots": "Lieux en plein air",
   "Food spots": "Adresses gourmandes",
   "Travel places": "Destinations de voyage",
