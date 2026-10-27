@@ -15,6 +15,9 @@ import { mapUsableViewport, planSavedPinsCamera } from '../lib/mapViewportGeomet
 import { reminderDistanceLabel } from '../lib/placeDetailUi';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
+const saves = read('services/savedPlacesService.ts');
+const newSavePayload = saves.slice(saves.indexOf('const savedPayload = {'), saves.indexOf("console.debug('[savedPlacesService] saving user place'"));
+assert.match(newSavePayload, /notifications_enabled: false/, 'new manual save cannot inherit an enabled reminder before permission checks');
 const base = {
   searchVisible: false,
   nearbyExplorerActive: false,

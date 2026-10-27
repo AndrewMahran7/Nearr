@@ -509,6 +509,10 @@ export async function saveSavedPlace(
   const savedPayload = {
     user_id: userId,
     place_id: placeRow.id,
+    // A new save is not permission to enable reminders. The explicit reminder
+    // action verifies notification/background-location access before enabling.
+    // Existing saves keep their preference through the separate merge path.
+    notifications_enabled: false,
     radius_value: radiusValue,
     radius_unit: radiusUnit,
     source_type: input.sourceType ?? 'manual',
