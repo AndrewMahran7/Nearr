@@ -1,0 +1,44 @@
+diff --git a/node_modules/expo-splash-screen/build/index.native.js b/node_modules/expo-splash-screen/build/index.native.js
+index 643ff83..f51a941 100644
+--- a/node_modules/expo-splash-screen/build/index.native.js
++++ b/node_modules/expo-splash-screen/build/index.native.js
+@@ -24,7 +24,7 @@ export async function _internal_preventAutoHideAsync() {
+     if (ErrorUtils?.getGlobalHandler) {
+         const originalHandler = ErrorUtils.getGlobalHandler();
+         ErrorUtils.setGlobalHandler((error, isFatal) => {
+-            hideAsync();
++            void hideAsync().catch(() => undefined);
+             originalHandler(error, isFatal);
+         });
+     }
+@@ -49,7 +49,7 @@ export function hideAsync() {
+     if (!SplashModule) {
+         return Promise.resolve(false);
+     }
+-    return SplashModule.hideAsync().catch((error) => {
++    return Promise.resolve().then(() => SplashModule.hideAsync()).catch((error) => {
+         // Hide this very unfortunate error.
+         if (
+         // Only throw the error is something unexpected happened.
+diff --git a/node_modules/expo-splash-screen/src/index.native.ts b/node_modules/expo-splash-screen/src/index.native.ts
+index 7f5f953..11d75a8 100644
+--- a/node_modules/expo-splash-screen/src/index.native.ts
++++ b/node_modules/expo-splash-screen/src/index.native.ts
+@@ -32,7 +32,7 @@ export async function _internal_preventAutoHideAsync(): Promise<boolean> {
+   if (ErrorUtils?.getGlobalHandler) {
+     const originalHandler = ErrorUtils.getGlobalHandler();
+     ErrorUtils.setGlobalHandler((error, isFatal) => {
+-      hideAsync();
++      void hideAsync().catch(() => undefined);
+       originalHandler(error, isFatal);
+     });
+   }
+@@ -61,7 +61,7 @@ export function hideAsync() {
+     return Promise.resolve(false);
+   }
+ 
+-  return SplashModule.hideAsync().catch((error: any) => {
++  return Promise.resolve().then(() => SplashModule.hideAsync()).catch((error: any) => {
+     // Hide this very unfortunate error.
+     if (
+       // Only throw the error is something unexpected happened.
