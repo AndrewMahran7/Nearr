@@ -16,6 +16,7 @@ for (const marker of ['INTERESTS.map', 'PAIN_POINTS.slice', 'DESIRED_VALUES.map'
 }
 const choiceKeys = [...preAuth.slice(preAuth.indexOf('const INTERESTS:'), preAuth.indexOf('const PLATFORM_LABELS:')).matchAll(/label: ('([^']*)'|"([^"]*)")/g)].map(match => match[2] ?? match[3]);
 assert.equal(choiceKeys.length, 16, 'all interest, pain-point and desired-value choices are covered');
+choiceKeys.push('Outdoor spots', 'Food spots', 'Travel places', 'Great places', 'Outdoor places', 'Places you love');
 for (const locale of SUPPORTED_LOCALES) {
   const catalog = JSON.parse(readFileSync(join(root, 'locales', `${locale}.json`), 'utf8'));
   for (const key of choiceKeys) assert.ok(catalog[key], `${locale} translates ${key}`);

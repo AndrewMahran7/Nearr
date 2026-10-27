@@ -122,13 +122,13 @@ function platformLabel(platform: OnboardingPlatform): string {
 }
 
 function interestLabel(interest: OnboardingInterest | null): string {
-  if (interest === 'outdoors' || interest === 'beaches') return 'Outdoor places';
-  if (interest === 'food') return 'Food spots';
-  if (interest === 'cafes') return 'Cafes';
-  if (interest === 'travel') return 'Travel places';
-  if (interest === 'things_to_do') return 'Things to do';
-  if (interest === 'shopping') return 'Shops';
-  return 'Places you love';
+  if (interest === 'outdoors' || interest === 'beaches') return t('Outdoor places');
+  if (interest === 'food') return t('Food spots');
+  if (interest === 'cafes') return t('Cafes');
+  if (interest === 'travel') return t('Travel places');
+  if (interest === 'things_to_do') return t('Things to do');
+  if (interest === 'shopping') return t('Shops');
+  return t('Places you love');
 }
 
 function createStyles(Phase1Colors: ReturnType<typeof usePhase1Colors>) { return StyleSheet.create({

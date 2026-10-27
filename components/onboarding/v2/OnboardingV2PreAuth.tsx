@@ -479,7 +479,7 @@ function LoadingState({ label }: { label: string }) {
   const Phase1Colors = usePhase1Colors();
   const styles = useMemo(() => createStyles(Phase1Colors), [Phase1Colors, i18n.language]);
  return <Phase1Frame progress={0.34} progressLabel={t("Onboarding progress")} contentStyle={styles.centered}><NearrSparkleMark size={76} /><Text style={styles.loadingLabel}>{label}</Text><Text style={styles.bodyCentered}>{t("Matching your choices with a real guided example.")}</Text></Phase1Frame>; }
-function interestLabel(value: OnboardingInterest | null): string { switch (value) { case 'outdoors': case 'beaches': return 'Outdoor spots'; case 'food': return 'Food spots'; case 'cafes': return 'Cafes'; case 'travel': return 'Travel places'; case 'things_to_do': return 'Things to do'; case 'shopping': return 'Shops'; default: return 'Great places'; } }
+function interestLabel(value: OnboardingInterest | null): string { switch (value) { case 'outdoors': case 'beaches': return t('Outdoor spots'); case 'food': return t('Food spots'); case 'cafes': return t('Cafes'); case 'travel': return t('Travel places'); case 'things_to_do': return t('Things to do'); case 'shopping': return t('Shops'); default: return t('Great places'); } }
 
 function createStyles(Phase1Colors: ReturnType<typeof usePhase1Colors>) { return StyleSheet.create({
   flex: { flex: 1 }, centered: { justifyContent: 'center', paddingBottom: 52 }, eyebrow: { color: Phase1Colors.orange, fontSize: 11, fontWeight: '600', letterSpacing: 1.7, marginBottom: 10 },
