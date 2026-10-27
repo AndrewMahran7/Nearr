@@ -1,0 +1,65 @@
+{
+  "baselineSha": "6e4096a34bb4a09b66227474659d753670d3764f",
+  "results": [
+    {
+      "name": "test:onboarding-v2-phase2",
+      "baselineExit": 1,
+      "integrationExit": 1,
+      "firstError": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /title=\"Save to my map\"/. Input:"
+    },
+    {
+      "name": "test:onboarding-v2-visual",
+      "baselineExit": 1,
+      "integrationExit": 1,
+      "firstError": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Phase1PrimaryButton title=\"Explore my map\"/. Input:"
+    },
+    {
+      "name": "test:onboarding-v2-physical-runtime",
+      "baselineExit": 1,
+      "integrationExit": 1,
+      "firstError": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+    },
+    {
+      "name": "test:onboarding-1259-regressions",
+      "baselineExit": 1,
+      "integrationExit": 1,
+      "firstError": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\\{placeName\\} is saved\\./. Input:"
+    },
+    {
+      "name": "test:fieldnotes-physical-ui",
+      "baselineExit": 1,
+      "integrationExit": 1,
+      "firstError": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression />Mark visited<\\/Text>/. Input:"
+    },
+    {
+      "name": "test:place-detail-ui",
+      "baselineExit": 1,
+      "integrationExit": 1,
+      "firstError": "AssertionError [ERR_ASSERTION]: visible origin is accurate"
+    },
+    {
+      "name": "test:saved-place-result-ui",
+      "baselineExit": 1,
+      "integrationExit": 1,
+      "firstError": "Error: Cannot find module '@/lib/i18n'"
+    },
+    {
+      "name": "test:monetization-token-ux",
+      "baselineExit": 1,
+      "integrationExit": 1,
+      "firstError": "Error: ENOENT: no such file or directory, open 'C:\\Users\\andre\\Desktop\\Nearr\\.tmp\\nearr-global-integration-recovered\\app\\monetization.tsx'"
+    },
+    {
+      "name": "test:monetization-integration",
+      "baselineExit": 1,
+      "integrationExit": 1,
+      "firstError": "Error: ENOENT: no such file or directory, open 'C:\\Users\\andre\\Desktop\\Nearr\\.tmp\\nearr-global-integration-recovered\\app\\monetization.tsx'"
+    },
+    {
+      "name": "test:premium-request-monetization",
+      "baselineExit": 1,
+      "integrationExit": 1,
+      "firstError": "Error: ENOENT: no such file or directory, open 'C:\\Users\\andre\\Desktop\\Nearr\\.tmp\\nearr-global-integration-recovered\\app\\monetization.tsx'"
+    }
+  ]
+}

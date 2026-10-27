@@ -1,0 +1,29 @@
+{
+  "testedAt": "2026-10-27T18:28:46.839Z",
+  "passed": 21,
+  "failed": 0,
+  "tests": [
+    "valid Apple subscription verifies as active",
+    "trial and introductory periods remain distinct",
+    "cancelled renewal retains access until expiry",
+    "refund revokes immediately",
+    "verified grace extends access",
+    "expired subscription has no access",
+    "missing entitlement becomes verified free",
+    "wrong product fails closed",
+    "foreign store and family sharing fail closed",
+    "sandbox mismatch fails closed",
+    "stale and future provider timestamps fail closed",
+    "mismatched expiry and grace fail closed",
+    "freshness is required on every access check",
+    "opaque webhook identities are bounded, validated, deduplicated and sorted",
+    "transfer identities include both owners without trusting arbitrary IDs",
+    "webhook app and environment must match configuration",
+    "purchase errors separate cancellation and pending states",
+    "client uses StoreKit display price and server sync after purchase or restore",
+    "Edge endpoints authenticate server-side and re-read RevenueCat",
+    "release and allowance defaults are closed",
+    "optional funnel endpoint remains disabled without separate consent"
+  ],
+  "scope": "Pure verification and source contracts only; no Apple purchase, RevenueCat mutation, or network call."
+}

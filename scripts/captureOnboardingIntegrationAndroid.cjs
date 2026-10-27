@@ -1,0 +1,11 @@
+const { execFileSync } = require('node:child_process');
+const { mkdirSync, writeFileSync } = require('node:fs');
+const path = require('node:path');
+const name = process.argv[2];
+if (!/^[\w-]+$/.test(name ?? '')) throw new Error('Pass a screenshot name');
+const adb = path.join(process.env.ANDROID_HOME || 'C:/Users/andre/AppData/Local/Android/Sdk', 'platform-tools/adb.exe');
+const directory = 'artifacts/global-release/onboarding-integration/screenshots';
+mkdirSync(directory, { recursive: true });
+const destination = path.join(directory, name + '.png');
+writeFileSync(destination, execFileSync(adb, ['-s', 'emulator-5554', 'exec-out', 'screencap', '-p'], { timeout: 60000, maxBuffer: 12 * 1024 * 1024, windowsHide: true }));
+console.log(path.resolve(destination));
