@@ -60,6 +60,7 @@ Additional fixture screenshots are explicitly labeled `fixture`: the real UI mou
 - `35-fixture-native-picker.png`: Android's system-themed date dialog over the dark app (the device was in light mode).
 - `36-fixture-empty-after-native-done.png`: untouched native seed cannot populate the empty birthday.
 - `39-fixture-retry-retains-input.png`: failed local callback preserves synthetic date/residence and displays readable retry messaging.
+- `40-final-main-app.png`: normal app entry restored and successfully relaunched after fixture removal, with the persisted English preference and an empty birthday. Final Metro bundle returned HTTP 200; startup confirmed Development backend and no authenticated session.
 
 The emulator was restored to its original 1080×2400 resolution, density 420, 100% font scale, light appearance and enabled Wi-Fi/mobile data. Non-selected intermediate captures (loading, animations and pre-refinement screenshots) are excluded from the committed evidence.
 
@@ -83,7 +84,7 @@ iOS Development build number 70 and the distinct runtime are configured, but no 
 
 ## L. Git
 
-Branch: `feat/nearr-17-onboarding-birthday-language`. Implementation checkpoint: `acfc464`. Final QA/evidence commit follows it on the same pushed branch. Integration and the primary checkout remain untouched. See the final chat handoff for the final commit SHA and verified clean state.
+Branch: `feat/nearr-17-onboarding-birthday-language`. Implementation checkpoint: `acfc464`. Responsive/native QA and 144-suite evidence: `9ae72e9`. The final restoration screenshot/documentation commit follows those on the same pushed branch. Integration and the primary checkout remain untouched. See the final chat handoff for the final commit SHA and verified clean state.
 
 ## M. Production unchanged
 
