@@ -3,7 +3,7 @@
 import { spawn, execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync, createWriteStream } from 'node:fs';
 import path from 'node:path';
-const scripts = [
+const fullMatrix = [
   'test:prebuild', 'test:safe-development', 'test:birthday-onboarding',
   'test:onboarding-native-contract', 'test:localization', 'test:native-localization',
   'test:global-eligibility-db', 'test:global-monetization', 'test:global-monetization-db',
@@ -17,9 +17,14 @@ const scripts = [
   'test:monetization-token-ux', 'test:monetization-integration',
   'test:monetization-suspension-contract', 'test:premium-request-monetization',
 ];
+const phase = process.argv[2] ?? 'full';
+if (!['full', 'ten'].includes(phase)) throw new Error('Expected full or ten');
+const original = JSON.parse(readFileSync('artifacts/global-release/onboarding-integration/tests/results.json', 'utf8'));
+const scripts = phase === 'ten' ? original.results.filter(r => r.exit !== 0).map(r => r.name) : fullMatrix;
+if (scripts.length !== (phase === 'ten' ? 10 : 30)) throw new Error('Original matrix count changed');
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 for (const name of scripts) if (!pkg.scripts[name]) throw new Error(`Unknown script: ${name}`);
-const output = 'artifacts/global-release/onboarding-integration/tests';
+const output = `artifacts/global-release/android-qualification/${phase}`;
 mkdirSync(output, { recursive: true });
 const results = [], startedAt = new Date().toISOString();
 const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
@@ -40,6 +45,7 @@ async function worker() {
     console.log(`${exit === 0 ? 'PASS' : 'FAIL'} ${name} (${results.length}/${scripts.length})`);
   }
 }
-await Promise.all([worker(), worker()]);
+// The ten original failures run in isolation, never sharing a process or output.
+await Promise.all(phase === 'ten' ? [worker()] : [worker(), worker()]);
 writeFileSync(path.join(output, 'results.json'), JSON.stringify({ sourceSha, startedAt, finishedAt: new Date().toISOString(), total: scripts.length, passed: results.filter(r => r.exit === 0).length, failed: results.filter(r => r.exit !== 0).length, results }, null, 2) + '\n');
 process.exitCode = results.some(result => result.exit !== 0) ? 1 : 0;
