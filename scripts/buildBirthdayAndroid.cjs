@@ -9,8 +9,7 @@ const output = 'artifacts/onboarding-birthday-language';
 mkdirSync(output, { recursive: true });
 mkdirSync('android/.gradle-java-tmp', { recursive: true });
 const stream = createWriteStream(path.join(output, 'android-build.log'));
-const temp = path.resolve('android/.gradle-java-tmp').replaceAll('\\', '/');
-const child = spawn('cmd.exe', ['/d', '/c', 'gradlew.bat :app:assembleDebug -PreactNativeArchitectures=x86_64 --max-workers=2 --console=plain'], { cwd: path.resolve('android'), windowsHide: true, env: { ...process.env, EXPO_PUBLIC_APP_ENV: 'development', NODE_ENV: 'development', JAVA_TOOL_OPTIONS: `-Djava.io.tmpdir=${temp} -Dorg.sqlite.tmpdir=${temp}` }, stdio: ['ignore', 'pipe', 'pipe'] });
+const child = spawn('cmd.exe', ['/d', '/c', 'gradlew.bat :app:assembleDebug -PreactNativeArchitectures=x86_64 --max-workers=2 --console=plain'], { cwd: path.resolve('android'), windowsHide: true, env: { ...process.env, EXPO_PUBLIC_APP_ENV: 'development', NODE_ENV: 'development' }, stdio: ['ignore', 'pipe', 'pipe'] });
 child.stdout.pipe(stream, { end: false }); child.stderr.pipe(stream, { end: false });
 const timer = setTimeout(() => child.kill(), 20 * 60_000);
 child.on('close', code => {

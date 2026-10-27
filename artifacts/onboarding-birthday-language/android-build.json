@@ -1,0 +1,9 @@
+{
+  "builtAt": "2026-10-26T20:30:47.733Z",
+  "platform": "Android",
+  "environment": "Development",
+  "runtime": "1.7-onboarding-date-v1",
+  "abi": "x86_64",
+  "apk": "C:\\Users\\andre\\.codex\\worktrees\\nearr-onboarding-birthday-language\\Nearr\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+  "sha256": "d88dcfa493ecef93ffdc23d0adf9a330653547e43d18632462bb48be5022700e"
+}

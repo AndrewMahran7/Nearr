@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
@@ -10,6 +10,7 @@ export function EligibilityFrame({ title, subtitle, children, footer, onBack }: 
   title: string; subtitle: string; children?: ReactNode; footer?: ReactNode; onBack?: () => void;
 }) {
   const { colors, resolvedTheme } = useTheme();
+  const { height, fontScale } = useWindowDimensions();
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'bottom', 'left', 'right']}>
     <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
     <View style={styles.brand}>
@@ -18,7 +19,7 @@ export function EligibilityFrame({ title, subtitle, children, footer, onBack }: 
     </View>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.heading}>
-        <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>{title}</Text>
+        <Text accessibilityRole="header" style={[styles.title, (height < 700 || fontScale > 1.3) && styles.compactTitle, { color: colors.text }]}>{title}</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
       </View>
       {children}
@@ -40,6 +41,7 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 22, paddingBottom: 28, gap: 28 },
   heading: { gap: 14 },
   title: { fontSize: 36, lineHeight: 42, fontWeight: '700', letterSpacing: -1.2 },
+  compactTitle: { fontSize: 30, lineHeight: 36, letterSpacing: -0.8 },
   subtitle: { fontSize: 17, lineHeight: 25 },
   footer: { paddingHorizontal: 24, paddingTop: 14, paddingBottom: 12, borderTopWidth: StyleSheet.hairlineWidth, gap: 8 },
   continue: { minHeight: 56, borderRadius: 18, padding: 16, alignItems: 'center', justifyContent: 'center' },
