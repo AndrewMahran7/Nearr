@@ -34,6 +34,7 @@ import { getResolvedEnvironment } from '@/lib/appEnvironment';
 import { canRunOnboardingV2SecondHalf, isSignedInOnboardingV2Continuation } from '@/lib/onboardingV2SecondHalfCore';
 import {
   expectedOnboardingV2Route,
+  signedOutOnboardingV2Route,
   onboardingRouteKey,
   shouldNavigateOnboarding,
   shouldPreserveCompletedOnboardingTab,
@@ -504,8 +505,11 @@ function AuthGate({
       // Canonical shared places are public. Authentication is requested only
       // if the recipient chooses Save to my map.
       if (inSharedPlace) return;
-      if (expectedV2Route === '/(onboarding)/account' && !inAuth) {
-        replaceOnce(expectedV2Route);
+      const signedOutRoute = isOnboardingV2Enabled()
+        ? signedOutOnboardingV2Route(onboardingV2?.stage)
+        : '/(onboarding)';
+      if (signedOutRoute === '/(onboarding)/account' && !inAuth) {
+        replaceOnce(signedOutRoute);
         return;
       }
       if (!inAuth && !inOnboarding) {

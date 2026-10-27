@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { signedOutOnboardingV2Route } from '../lib/onboardingV2RoutingCore';
 
 import {
   decideAuthResolutionRoute,
@@ -14,6 +16,16 @@ import {
  * be forced back through account creation.
  */
 function run() {
+  for (const stage of ['onboarding_complete', 'graduated', 'account_required'] as const) {
+    assert.equal(signedOutOnboardingV2Route(stage), '/(onboarding)/account');
+  }
+  for (const stage of [null, undefined, 'overview', 'platform', 'tutorial_ready', 'place_tour', 'phase2_intro'] as const) {
+    assert.equal(signedOutOnboardingV2Route(stage), '/(onboarding)', 'unfinished public practice remains available');
+  }
+  for (const file of ['app/index.tsx', 'app/_layout.tsx']) {
+    assert.match(readFileSync(file, 'utf8'), /signedOutOnboardingV2Route\(onboardingV2\?\.stage\)/,
+      `${file} must send a completed checkpoint with a revoked session to the account gateway`);
+  }
   assert.equal(
     routeAfterAuthenticatedUser('required'),
     '/activate',

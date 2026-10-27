@@ -11,6 +11,17 @@ export type PendingOnboardingNavigation = {
   to: OnboardingV2Route;
 } | null;
 
+/** A completed checkpoint cannot be rendered by the public tutorial after
+ * logout/session revocation. Recover through auth without resetting progress
+ * or treating the old account's checkpoint as authorization. */
+export function signedOutOnboardingV2Route(
+  stage: OnboardingV2Stage | null | undefined,
+): OnboardingV2Route {
+  return stage === 'account_required' || stage === 'onboarding_complete' || stage === 'graduated'
+    ? '/(onboarding)/account'
+    : '/(onboarding)';
+}
+
 /** Turn Expo Router's segment array into a stable, group-aware route key. */
 export function onboardingRouteKey(segments: readonly string[]): string {
   if (segments.length === 0) return '/';

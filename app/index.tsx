@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { isOnboardingV2Enabled } from '@/lib/featureFlags';
 import { StartupSurface } from '@/components/StartupSurface';
+import { signedOutOnboardingV2Route } from '@/lib/onboardingV2RoutingCore';
 
 export default function Index() {
   // Initial-entry decision. Onboarding is now the PUBLIC pre-auth landing:
@@ -16,7 +17,9 @@ export default function Index() {
   if (loading || (isOnboardingV2Enabled() && onboardingV2Loading)) {
     return <StartupSurface owner="AUTH" />;
   }
-  if (!session) return <Redirect href="/(onboarding)" />;
+  if (!session) return <Redirect href={isOnboardingV2Enabled()
+    ? signedOutOnboardingV2Route(onboardingV2?.stage)
+    : '/(onboarding)'} />;
   if (isOnboardingV2Enabled() && session.user.is_anonymous === true) {
     if (onboardingV2?.stage === 'onboarding_complete') {
       return <Redirect href="/(tabs)/map" />;
