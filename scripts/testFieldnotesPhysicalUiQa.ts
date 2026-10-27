@@ -121,6 +121,11 @@ assert.match(detail, />\{t\("Mark visited"\)\}<\/Text>/);
 assert.match(detail, />\{t\("Not yet"\)\}<\/Text>/);
 assert.match(detail, /title=\{t\("Near this place"\)\}/);
 assert.match(detail, /animationType="none" statusBarTranslucent/);
+// A 900x1600/375dpi emulator at 160% font exposed the answers stealing
+// almost all of the visit prompt's width. Keep readable copy and wrap actions.
+assert.match(detail, /visitCopy: \{ flex: 1, minWidth: 140, gap: 1 \}/);
+assert.match(detail, /visitActions: \{[^\n]*width: '100%'[^\n]*flexWrap: 'wrap'/);
+assert.match(detail, /visitStateButtonText: \{[^\n]*flexShrink: 1/);
 
 assert.match(search, />\{t\("Saving…"\)\}<\/Text>/);
 assert.match(search, />\{t\("Try again"\)\}<\/Text>/);

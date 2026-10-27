@@ -1961,8 +1961,8 @@ function createStyles(
     sourceCardCreator: { ...typography.caption, color: colors.text, fontWeight: '700' },
     sourceCardCaption: { ...typography.caption, color: colors.textSecondary, lineHeight: 16 },
     // ----- did you go yet? -------------------------------------------------
-    // One horizontal band: icon, copy, both answers. Previously a stacked card
-    // roughly twice this tall.
+    // Keep readable copy beside the icon. Answers get a separate wrapping row
+    // so narrow screens and large text cannot squeeze the prompt into letters.
     visitCard: {
       flexDirection: 'row',
       flexWrap: 'wrap',
@@ -1983,7 +1983,7 @@ function createStyles(
       justifyContent: 'center',
       backgroundColor: colors.accentSoft,
     },
-    visitCopy: { flex: 1, minWidth: 0, gap: 1 },
+    visitCopy: { flex: 1, minWidth: 140, gap: 1 },
     visitTitle: { ...typography.bodyStrong, fontSize: 14, color: colors.text },
     visitSupport: {
       ...typography.caption,
@@ -1991,9 +1991,10 @@ function createStyles(
       color: colors.textSecondary,
       lineHeight: 15,
     },
-    visitActions: { flexDirection: 'row', gap: 6 },
+    visitActions: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     visitStateButton: {
       minHeight: 44,
+      maxWidth: '100%',
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
@@ -2004,7 +2005,7 @@ function createStyles(
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
-    visitStateButtonText: { ...typography.caption, color: colors.text, fontWeight: '700' },
+    visitStateButtonText: { ...typography.caption, flexShrink: 1, color: colors.text, fontWeight: '700' },
     visitStateButtonSelected: {
       backgroundColor: colors.accentSoft,
       borderColor: colors.accentBorder,
