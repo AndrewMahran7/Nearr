@@ -46,6 +46,7 @@ Module._load = function(request: string, parent: unknown, isMain: boolean) {
   if (request === 'react-native') return {
     View: 'View', Text: 'Text', Pressable: 'Pressable', ScrollView: 'ScrollView', Modal: ({ visible, children }: any) => visible ? React.createElement('Modal', {}, children) : null,
     ActivityIndicator: 'ActivityIndicator', Platform: { OS: 'android' }, Linking: { openURL() {} },
+    useWindowDimensions: () => ({ height: 640, fontScale: 1.6 }),
     StyleSheet: { create: (value: unknown) => value, hairlineWidth: 1 },
     BackHandler: { addEventListener: (_name: string, callback: () => boolean) => { back = callback; return { remove: () => { back = null; } }; } },
     AppState: { addEventListener: () => ({ remove() {} }) },
@@ -89,6 +90,8 @@ async function main() {
   assert.equal(screen.root.findByType(BirthdayPicker).props.value, null, 'no arbitrary birthday');
   await act(async () => { press('birthday-picker'); });
   assert.equal(picker.mode, 'date'); assert.equal(picker.display, 'spinner'); assert.ok(picker.maximumDate <= new Date());
+  await act(async () => { picker.onChange({ type: 'set' }, picker.value); });
+  assert.equal(screen.root.findByType(BirthdayPicker).props.value, null, 'unmodified native seed cannot be accidentally submitted');
   await act(async () => { picker.onChange({ type: 'dismissed' }, new Date(2000, 1, 29, 12)); });
   assert.equal(screen.root.findByType(BirthdayPicker).props.value, null, 'cancel is not a declaration');
   await act(async () => { picker.onChange({ type: 'set' }, new Date(2000, 1, 29, 12)); press('residence-picker'); });

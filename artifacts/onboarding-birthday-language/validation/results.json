@@ -1,0 +1,873 @@
+{
+  "startedAt": "2026-10-26T20:40:29.103Z",
+  "finishedAt": "2026-10-26T20:43:37.293Z",
+  "total": 144,
+  "passed": 144,
+  "failed": 0,
+  "results": [
+    {
+      "name": "test:startup-smoke",
+      "exit": 0,
+      "durationMs": 1483,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-startup-smoke.log"
+    },
+    {
+      "name": "test:no-user-facing-vayrin",
+      "exit": 0,
+      "durationMs": 2322,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-no-user-facing-vayrin.log"
+    },
+    {
+      "name": "test:release-gate",
+      "exit": 0,
+      "durationMs": 841,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-release-gate.log"
+    },
+    {
+      "name": "test:failure-messaging",
+      "exit": 0,
+      "durationMs": 1132,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-failure-messaging.log"
+    },
+    {
+      "name": "test:result-notifications",
+      "exit": 0,
+      "durationMs": 1278,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-result-notifications.log"
+    },
+    {
+      "name": "test:share-failure-presentation",
+      "exit": 0,
+      "durationMs": 1256,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-failure-presentation.log"
+    },
+    {
+      "name": "test:map-atomic-representation-stability",
+      "exit": 0,
+      "durationMs": 1671,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-map-atomic-representation-stability.log"
+    },
+    {
+      "name": "test:map-conservation",
+      "exit": 0,
+      "durationMs": 2689,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-map-conservation.log"
+    },
+    {
+      "name": "test:map-camera-transaction-hotfix",
+      "exit": 0,
+      "durationMs": 6031,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-map-camera-transaction-hotfix.log"
+    },
+    {
+      "name": "test:map-cluster-expansion",
+      "exit": 0,
+      "durationMs": 1168,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-map-cluster-expansion.log"
+    },
+    {
+      "name": "test:multi-save-tray-dismiss",
+      "exit": 0,
+      "durationMs": 1112,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-multi-save-tray-dismiss.log"
+    },
+    {
+      "name": "test:nearby-map-explorer",
+      "exit": 0,
+      "durationMs": 1241,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-nearby-map-explorer.log"
+    },
+    {
+      "name": "test:vayrin-candidate-confirmation-v2",
+      "exit": 0,
+      "durationMs": 1308,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-vayrin-candidate-confirmation-v2.log"
+    },
+    {
+      "name": "test:vayrin-multi-place-review-redesign",
+      "exit": 0,
+      "durationMs": 1393,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-vayrin-multi-place-review-redesign.log"
+    },
+    {
+      "name": "test:canonical-save-return-contract",
+      "exit": 0,
+      "durationMs": 974,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-canonical-save-return-contract.log"
+    },
+    {
+      "name": "test:multi-place-review-interactions",
+      "exit": 0,
+      "durationMs": 1426,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-multi-place-review-interactions.log"
+    },
+    {
+      "name": "test:quick-check-density",
+      "exit": 0,
+      "durationMs": 1435,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-quick-check-density.log"
+    },
+    {
+      "name": "test:quick-check-rolodex-ux",
+      "exit": 0,
+      "durationMs": 1575,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-quick-check-rolodex-ux.log"
+    },
+    {
+      "name": "test:vayrin-quick-check-evidence-ui",
+      "exit": 0,
+      "durationMs": 3013,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-vayrin-quick-check-evidence-ui.log"
+    },
+    {
+      "name": "test:e2e:harness",
+      "exit": 0,
+      "durationMs": 1392,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-e2e-harness.log"
+    },
+    {
+      "name": "test:app-environment",
+      "exit": 0,
+      "durationMs": 901,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-app-environment.log"
+    },
+    {
+      "name": "test:google-places-config",
+      "exit": 0,
+      "durationMs": 877,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-google-places-config.log"
+    },
+    {
+      "name": "test:dev-db-guard",
+      "exit": 0,
+      "durationMs": 1760,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-dev-db-guard.log"
+    },
+    {
+      "name": "test:root-layout-loop",
+      "exit": 0,
+      "durationMs": 912,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-root-layout-loop.log"
+    },
+    {
+      "name": "test:notification-tap-routing",
+      "exit": 0,
+      "durationMs": 996,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-notification-tap-routing.log"
+    },
+    {
+      "name": "test:update-args",
+      "exit": 0,
+      "durationMs": 1235,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-update-args.log"
+    },
+    {
+      "name": "test:share-extension-env",
+      "exit": 0,
+      "durationMs": 1019,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-extension-env.log"
+    },
+    {
+      "name": "test:dev-login-gating",
+      "exit": 0,
+      "durationMs": 906,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-dev-login-gating.log"
+    },
+    {
+      "name": "test:saved-place-edits",
+      "exit": 0,
+      "durationMs": 715,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-saved-place-edits.log"
+    },
+    {
+      "name": "test:place-note",
+      "exit": 0,
+      "durationMs": 750,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-place-note.log"
+    },
+    {
+      "name": "test:place-category",
+      "exit": 0,
+      "durationMs": 857,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-place-category.log"
+    },
+    {
+      "name": "test:category-pipeline",
+      "exit": 0,
+      "durationMs": 868,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-category-pipeline.log"
+    },
+    {
+      "name": "test:place-category-migration",
+      "exit": 0,
+      "durationMs": 750,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-place-category-migration.log"
+    },
+    {
+      "name": "test:google-places-fields",
+      "exit": 0,
+      "durationMs": 1316,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-google-places-fields.log"
+    },
+    {
+      "name": "test:auto-save-undo",
+      "exit": 0,
+      "durationMs": 908,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-auto-save-undo.log"
+    },
+    {
+      "name": "test:share-extension-compact",
+      "exit": 0,
+      "durationMs": 982,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-extension-compact.log"
+    },
+    {
+      "name": "test:share-completion",
+      "exit": 0,
+      "durationMs": 886,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-completion.log"
+    },
+    {
+      "name": "test:queue-inbox",
+      "exit": 0,
+      "durationMs": 1084,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-queue-inbox.log"
+    },
+    {
+      "name": "test:source-enrichment",
+      "exit": 0,
+      "durationMs": 1522,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-source-enrichment.log"
+    },
+    {
+      "name": "test:source-thumbnails",
+      "exit": 0,
+      "durationMs": 1161,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-source-thumbnails.log"
+    },
+    {
+      "name": "typecheck",
+      "exit": 0,
+      "durationMs": 30327,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\typecheck.log"
+    },
+    {
+      "name": "test:share-worker-boot",
+      "exit": 0,
+      "durationMs": 7931,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-worker-boot.log"
+    },
+    {
+      "name": "test:share-job-result",
+      "exit": 0,
+      "durationMs": 1052,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-job-result.log"
+    },
+    {
+      "name": "test:save-navigation",
+      "exit": 0,
+      "durationMs": 867,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-save-navigation.log"
+    },
+    {
+      "name": "test:map-group-focus",
+      "exit": 0,
+      "durationMs": 1085,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-map-group-focus.log"
+    },
+    {
+      "name": "test:phase2-ui-render",
+      "exit": 0,
+      "durationMs": 750,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-phase2-ui-render.log"
+    },
+    {
+      "name": "test:address-first",
+      "exit": 0,
+      "durationMs": 1339,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-address-first.log"
+    },
+    {
+      "name": "test:address-match",
+      "exit": 0,
+      "durationMs": 1121,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-address-match.log"
+    },
+    {
+      "name": "test:multi-address",
+      "exit": 0,
+      "durationMs": 891,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-multi-address.log"
+    },
+    {
+      "name": "test:multi-place-batch",
+      "exit": 0,
+      "durationMs": 892,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-multi-place-batch.log"
+    },
+    {
+      "name": "test:place-recommendations",
+      "exit": 0,
+      "durationMs": 987,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-place-recommendations.log"
+    },
+    {
+      "name": "test:multi-select-places",
+      "exit": 0,
+      "durationMs": 1376,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-multi-select-places.log"
+    },
+    {
+      "name": "test:safety-description-only",
+      "exit": 0,
+      "durationMs": 878,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-safety-description-only.log"
+    },
+    {
+      "name": "test:recovery-hints",
+      "exit": 0,
+      "durationMs": 908,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-recovery-hints.log"
+    },
+    {
+      "name": "test:generic-caption-guard",
+      "exit": 0,
+      "durationMs": 865,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-generic-caption-guard.log"
+    },
+    {
+      "name": "test:platform-noise",
+      "exit": 0,
+      "durationMs": 898,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-platform-noise.log"
+    },
+    {
+      "name": "test:manual-fallback",
+      "exit": 0,
+      "durationMs": 664,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-manual-fallback.log"
+    },
+    {
+      "name": "test:tiktok-url",
+      "exit": 0,
+      "durationMs": 776,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-tiktok-url.log"
+    },
+    {
+      "name": "test:evidence-provenance",
+      "exit": 0,
+      "durationMs": 1537,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-evidence-provenance.log"
+    },
+    {
+      "name": "test:notification-dedupe",
+      "exit": 0,
+      "durationMs": 812,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-notification-dedupe.log"
+    },
+    {
+      "name": "test:platform-url-classification",
+      "exit": 0,
+      "durationMs": 4390,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-platform-url-classification.log"
+    },
+    {
+      "name": "test:share-job-mapping",
+      "exit": 0,
+      "durationMs": 798,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-job-mapping.log"
+    },
+    {
+      "name": "test:share-job-routing",
+      "exit": 0,
+      "durationMs": 948,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-job-routing.log"
+    },
+    {
+      "name": "test:account",
+      "exit": 0,
+      "durationMs": 3813,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-account.log"
+    },
+    {
+      "name": "test:share-url-validation",
+      "exit": 0,
+      "durationMs": 914,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-url-validation.log"
+    },
+    {
+      "name": "test:feature-flags",
+      "exit": 0,
+      "durationMs": 877,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-feature-flags.log"
+    },
+    {
+      "name": "test:vayrin-ui",
+      "exit": 0,
+      "durationMs": 851,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-vayrin-ui.log"
+    },
+    {
+      "name": "test:vayrin-presentation",
+      "exit": 0,
+      "durationMs": 1394,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-vayrin-presentation.log"
+    },
+    {
+      "name": "test:shared-auth-session",
+      "exit": 0,
+      "durationMs": 900,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-shared-auth-session.log"
+    },
+    {
+      "name": "test:share-routes",
+      "exit": 0,
+      "durationMs": 1002,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-routes.log"
+    },
+    {
+      "name": "test:sanitize-error",
+      "exit": 0,
+      "durationMs": 1005,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-sanitize-error.log"
+    },
+    {
+      "name": "test:breadcrumbs",
+      "exit": 0,
+      "durationMs": 970,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-breadcrumbs.log"
+    },
+    {
+      "name": "test:once-latch",
+      "exit": 0,
+      "durationMs": 844,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-once-latch.log"
+    },
+    {
+      "name": "test:open-saved-place",
+      "exit": 0,
+      "durationMs": 1053,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-open-saved-place.log"
+    },
+    {
+      "name": "test:shared-auth-sync",
+      "exit": 0,
+      "durationMs": 1002,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-shared-auth-sync.log"
+    },
+    {
+      "name": "test:share-submission",
+      "exit": 0,
+      "durationMs": 987,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-submission.log"
+    },
+    {
+      "name": "test:share-job-client",
+      "exit": 0,
+      "durationMs": 1146,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-job-client.log"
+    },
+    {
+      "name": "test:share-jobs-dedupe",
+      "exit": 0,
+      "durationMs": 1001,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-jobs-dedupe.log"
+    },
+    {
+      "name": "test:share-jobs-realtime",
+      "exit": 0,
+      "durationMs": 1175,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-jobs-realtime.log"
+    },
+    {
+      "name": "test:live-location",
+      "exit": 0,
+      "durationMs": 848,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-live-location.log"
+    },
+    {
+      "name": "test:place-share",
+      "exit": 0,
+      "durationMs": 948,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-place-share.log"
+    },
+    {
+      "name": "test:place-share-source",
+      "exit": 0,
+      "durationMs": 939,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-place-share-source.log"
+    },
+    {
+      "name": "test:wrong-place",
+      "exit": 0,
+      "durationMs": 786,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-wrong-place.log"
+    },
+    {
+      "name": "test:ai-place-note",
+      "exit": 0,
+      "durationMs": 820,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-ai-place-note.log"
+    },
+    {
+      "name": "test:note-editor",
+      "exit": 0,
+      "durationMs": 764,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-note-editor.log"
+    },
+    {
+      "name": "test:ai-note-integration",
+      "exit": 0,
+      "durationMs": 1332,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-ai-note-integration.log"
+    },
+    {
+      "name": "test:saved-browse",
+      "exit": 0,
+      "durationMs": 1186,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-saved-browse.log"
+    },
+    {
+      "name": "test:place-image",
+      "exit": 0,
+      "durationMs": 828,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-place-image.log"
+    },
+    {
+      "name": "test:video-ai-note-guarantee",
+      "exit": 0,
+      "durationMs": 3039,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-video-ai-note-guarantee.log"
+    },
+    {
+      "name": "test:open-original-post",
+      "exit": 0,
+      "durationMs": 734,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-open-original-post.log"
+    },
+    {
+      "name": "test:share-jobs-ui",
+      "exit": 0,
+      "durationMs": 787,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-jobs-ui.log"
+    },
+    {
+      "name": "test:quick-check",
+      "exit": 0,
+      "durationMs": 763,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-quick-check.log"
+    },
+    {
+      "name": "test:share-phase1-ui",
+      "exit": 0,
+      "durationMs": 776,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-phase1-ui.log"
+    },
+    {
+      "name": "test:media-fallback",
+      "exit": 0,
+      "durationMs": 891,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-media-fallback.log"
+    },
+    {
+      "name": "test:share-phase1-render",
+      "exit": 0,
+      "durationMs": 1375,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-share-phase1-render.log"
+    },
+    {
+      "name": "test:media-finalize",
+      "exit": 0,
+      "durationMs": 914,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-media-finalize.log"
+    },
+    {
+      "name": "test:media-evidence",
+      "exit": 0,
+      "durationMs": 1134,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-media-evidence.log"
+    },
+    {
+      "name": "test:post-save-enrichment",
+      "exit": 0,
+      "durationMs": 821,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-post-save-enrichment.log"
+    },
+    {
+      "name": "test:media-reliability",
+      "exit": 0,
+      "durationMs": 869,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-media-reliability.log"
+    },
+    {
+      "name": "test:media-adversarial",
+      "exit": 0,
+      "durationMs": 1009,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-media-adversarial.log"
+    },
+    {
+      "name": "test:media-mentions",
+      "exit": 0,
+      "durationMs": 1387,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-media-mentions.log"
+    },
+    {
+      "name": "test:media-autosave",
+      "exit": 0,
+      "durationMs": 1579,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-media-autosave.log"
+    },
+    {
+      "name": "test:geographic-context",
+      "exit": 0,
+      "durationMs": 1470,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-geographic-context.log"
+    },
+    {
+      "name": "test:media-run-diagnostics",
+      "exit": 0,
+      "durationMs": 1231,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-media-run-diagnostics.log"
+    },
+    {
+      "name": "test:geographic-context-source",
+      "exit": 0,
+      "durationMs": 1873,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-geographic-context-source.log"
+    },
+    {
+      "name": "test:shared-geo-context",
+      "exit": 0,
+      "durationMs": 1928,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-shared-geo-context.log"
+    },
+    {
+      "name": "test:shared-city-context",
+      "exit": 0,
+      "durationMs": 1991,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-shared-city-context.log"
+    },
+    {
+      "name": "test:geographic-destinations",
+      "exit": 0,
+      "durationMs": 2008,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-geographic-destinations.log"
+    },
+    {
+      "name": "test:source-location-tag",
+      "exit": 0,
+      "durationMs": 1894,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-source-location-tag.log"
+    },
+    {
+      "name": "test:no-match-diagnostics",
+      "exit": 0,
+      "durationMs": 1576,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-no-match-diagnostics.log"
+    },
+    {
+      "name": "test:provider-api-path",
+      "exit": 0,
+      "durationMs": 1620,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-provider-api-path.log"
+    },
+    {
+      "name": "test:onboarding-routing",
+      "exit": 0,
+      "durationMs": 749,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-onboarding-routing.log"
+    },
+    {
+      "name": "test:name-driven",
+      "exit": 0,
+      "durationMs": 1638,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-name-driven.log"
+    },
+    {
+      "name": "test:onboarding-demo",
+      "exit": 0,
+      "durationMs": 967,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-onboarding-demo.log"
+    },
+    {
+      "name": "test:onboarding-anonymous",
+      "exit": 0,
+      "durationMs": 833,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-onboarding-anonymous.log"
+    },
+    {
+      "name": "test:auth-deeplink",
+      "exit": 0,
+      "durationMs": 849,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-auth-deeplink.log"
+    },
+    {
+      "name": "test:auth-account-state",
+      "exit": 0,
+      "durationMs": 926,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-auth-account-state.log"
+    },
+    {
+      "name": "test:auth-errors",
+      "exit": 0,
+      "durationMs": 697,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-auth-errors.log"
+    },
+    {
+      "name": "test:auth-recovery",
+      "exit": 0,
+      "durationMs": 1009,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-auth-recovery.log"
+    },
+    {
+      "name": "test:auth-screen-contracts",
+      "exit": 0,
+      "durationMs": 766,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-auth-screen-contracts.log"
+    },
+    {
+      "name": "test:nearby-eligibility",
+      "exit": 0,
+      "durationMs": 1001,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-nearby-eligibility.log"
+    },
+    {
+      "name": "test:onboarding-v2",
+      "exit": 0,
+      "durationMs": 7123,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-onboarding-v2.log"
+    },
+    {
+      "name": "test:nearby-arbitration",
+      "exit": 0,
+      "durationMs": 1004,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-nearby-arbitration.log"
+    },
+    {
+      "name": "test:reminder-distance-cleanup",
+      "exit": 0,
+      "durationMs": 850,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-reminder-distance-cleanup.log"
+    },
+    {
+      "name": "test:offline-mode",
+      "exit": 0,
+      "durationMs": 889,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-offline-mode.log"
+    },
+    {
+      "name": "test:offline-reminders",
+      "exit": 0,
+      "durationMs": 1128,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-offline-reminders.log"
+    },
+    {
+      "name": "test:saved-place-snapshots",
+      "exit": 0,
+      "durationMs": 1075,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-saved-place-snapshots.log"
+    },
+    {
+      "name": "test:onboarding-google-integration",
+      "exit": 0,
+      "durationMs": 1081,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-onboarding-google-integration.log"
+    },
+    {
+      "name": "test:onboarding-fully-offline",
+      "exit": 0,
+      "durationMs": 1267,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-onboarding-fully-offline.log"
+    },
+    {
+      "name": "test:onboarding-no-live-services",
+      "exit": 0,
+      "durationMs": 848,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-onboarding-no-live-services.log"
+    },
+    {
+      "name": "test:onboarding-authentic-phase2-auth",
+      "exit": 0,
+      "durationMs": 1081,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-onboarding-authentic-phase2-auth.log"
+    },
+    {
+      "name": "test:onboarding-install-lifecycle",
+      "exit": 0,
+      "durationMs": 1244,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-onboarding-install-lifecycle.log"
+    },
+    {
+      "name": "test:worktree-workflow",
+      "exit": 0,
+      "durationMs": 812,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-worktree-workflow.log"
+    },
+    {
+      "name": "test:deployment-guards",
+      "exit": 0,
+      "durationMs": 2324,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-deployment-guards.log"
+    },
+    {
+      "name": "test:birthday-onboarding",
+      "exit": 0,
+      "durationMs": 1069,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-birthday-onboarding.log"
+    },
+    {
+      "name": "test:localization",
+      "exit": 0,
+      "durationMs": 2826,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-localization.log"
+    },
+    {
+      "name": "test:native-localization",
+      "exit": 0,
+      "durationMs": 1379,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-native-localization.log"
+    },
+    {
+      "name": "test:consent-identity",
+      "exit": 0,
+      "durationMs": 1136,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-consent-identity.log"
+    },
+    {
+      "name": "test:recognition-consent",
+      "exit": 0,
+      "durationMs": 1088,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-recognition-consent.log"
+    },
+    {
+      "name": "test:privacy-policy",
+      "exit": 0,
+      "durationMs": 1806,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-privacy-policy.log"
+    },
+    {
+      "name": "test:onboarding-account-transition",
+      "exit": 0,
+      "durationMs": 798,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-onboarding-account-transition.log"
+    },
+    {
+      "name": "test:create-map-navigation",
+      "exit": 0,
+      "durationMs": 1011,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-create-map-navigation.log"
+    },
+    {
+      "name": "test:create-map-continue-runtime",
+      "exit": 0,
+      "durationMs": 1058,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-create-map-continue-runtime.log"
+    },
+    {
+      "name": "test:global-eligibility-db",
+      "exit": 0,
+      "durationMs": 84452,
+      "logfile": "artifacts\\onboarding-birthday-language\\validation\\test-global-eligibility-db.log"
+    }
+  ]
+}
