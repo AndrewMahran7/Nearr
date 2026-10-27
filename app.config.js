@@ -172,8 +172,8 @@ module.exports = ({ config }) => {
 
   return {
     ...config,
-    // Shared Development native contract on both platforms; EAS Updates also
-    // partitions updates by platform. Never target the older 1.7.0 Dev clients.
+    // iOS retains the signed build 72 contract. Android overrides it below for
+    // the native AV reload-crash backport; OTA cannot repair an older binary.
     // Production keeps its existing policy; no Production update is authorized.
     runtimeVersion: IS_DEVELOPMENT_APP ? '1.7-onboarding-date-v1' : config.runtimeVersion,
     name: variant.name,
@@ -188,6 +188,7 @@ module.exports = ({ config }) => {
     },
     android: {
       ...config.android,
+      ...(IS_DEVELOPMENT_APP ? { runtimeVersion: '1.7-onboarding-date-android-v2' } : {}),
       package: variant.androidPackage,
       config: {
         ...(config.android && config.android.config),

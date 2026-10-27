@@ -18,6 +18,14 @@ function config(lane) {
 const dev = config('development');
 const prod = config('production');
 assert.equal(dev.runtimeVersion, '1.7-onboarding-date-v1');
+assert.equal(dev.android.runtimeVersion, '1.7-onboarding-date-android-v2');
+assert.equal(prod.android.runtimeVersion, base.android.runtimeVersion);
+const avJava = readFileSync('node_modules/expo-av/android/src/main/java/expo/modules/av/AVManager.java', 'utf8');
+assert.match(avJava, /if \(jsContextRef == 0\) return;/, 'missing runtime must not install bindings');
+assert.match(avJava, /if \(callInvokerHolder == null\) return;/, 'reload can remove the Java invoker');
+assert.match(avJava, /catch \(Exception error\)/, 'native teardown exception cannot crash JS queue');
+assert.match(readFileSync('node_modules/expo-av/android/src/main/cpp/JAVManager.cpp', 'utf8'), /if \(callInvokerHolder == nullptr\)/, 'invalid native hybrid must not be dereferenced');
+assert.ok(readFileSync('patches/expo-av+14.0.7.patch', 'utf8').includes('CallInvokerHolder is null'), 'clean installs retain native repair');
 assert.deepEqual(prod.runtimeVersion, { policy: 'appVersion' });
 assert.equal(dev.ios.buildNumber, base.ios.buildNumber);
 assert.equal(prod.ios.buildNumber, base.ios.buildNumber);

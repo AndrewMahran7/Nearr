@@ -1,0 +1,55 @@
+diff --git a/node_modules/expo-av/android/src/main/cpp/JAVManager.cpp b/node_modules/expo-av/android/src/main/cpp/JAVManager.cpp
+index 7c7221c..c9b142f 100644
+--- a/node_modules/expo-av/android/src/main/cpp/JAVManager.cpp
++++ b/node_modules/expo-av/android/src/main/cpp/JAVManager.cpp
+@@ -43,7 +43,11 @@ namespace expo {
+     void JAVManager::installJSIBindings(jlong jsRuntimePointer,
+                                         jni::alias_ref<facebook::react::CallInvokerHolder::javaobject> jsCallInvokerHolder) {
+       auto &runtime = *reinterpret_cast<jsi::Runtime *>(jsRuntimePointer);
+-      auto callInvoker = jsCallInvokerHolder->cthis()->getCallInvoker();
++      auto callInvokerHolder = jsCallInvokerHolder->cthis();
++      if (callInvokerHolder == nullptr) {
++        jni::throwNewJavaException("java/lang/IllegalStateException", "CallInvokerHolder is null");
++      }
++      auto callInvoker = callInvokerHolder->getCallInvoker();
+ 
+       auto function = [this, callInvoker](jsi::Runtime &runtime,
+                                           const jsi::Value &thisValue,
+diff --git a/node_modules/expo-av/android/src/main/java/expo/modules/av/AVManager.java b/node_modules/expo-av/android/src/main/java/expo/modules/av/AVManager.java
+index 1d39b23..3be4d90 100644
+--- a/node_modules/expo-av/android/src/main/java/expo/modules/av/AVManager.java
++++ b/node_modules/expo-av/android/src/main/java/expo/modules/av/AVManager.java
+@@ -14,6 +14,7 @@ import android.net.Uri;
+ import android.os.Build;
+ import android.os.Bundle;
+ import android.os.SystemClock;
++import android.util.Log;
+ 
+ import com.facebook.jni.HybridData;
+ 
+@@ -180,10 +181,21 @@ public class AVManager implements LifecycleEventListener, AudioManager.OnAudioFo
+ 
+       uiManager.registerLifecycleEventListener(this);
+       uiManager.runOnClientCodeQueueThread(() -> {
+-        final JavaScriptContextProvider jsContextProvider = mModuleRegistry.getModule(JavaScriptContextProvider.class);
+-        final long jsContextRef = jsContextProvider.getJavaScriptContextRef();
+-        if (jsContextRef != 0) {
+-          installJSIBindings(jsContextRef, jsContextProvider.getJSCallInvokerHolder());
++        // Backport Expo #31464: reload can invalidate the native call invoker.
++        // Keep SDK 51's nonzero-runtime condition (the original upstream PR
++        // accidentally inverted it); never install against a missing context.
++        try {
++          final ModuleRegistry registry = mModuleRegistry;
++          if (registry == null) return;
++          final JavaScriptContextProvider jsContextProvider = registry.getModule(JavaScriptContextProvider.class);
++          if (jsContextProvider == null) return;
++          final long jsContextRef = jsContextProvider.getJavaScriptContextRef();
++          if (jsContextRef == 0) return;
++          final CallInvokerHolderImpl callInvokerHolder = jsContextProvider.getJSCallInvokerHolder();
++          if (callInvokerHolder == null) return;
++          installJSIBindings(jsContextRef, callInvokerHolder);
++        } catch (Exception error) {
++          Log.w("AVManager", "Cannot install AV JSI bindings during runtime teardown", error);
+         }
+       });
+     }
