@@ -23,7 +23,7 @@
     "dev mock grant is triple-gated and real verification fails closed",
     "production configuration blocks dev mock monetization",
     "clients cannot mutate balances or mint purchase grants",
-    "paywall uses server product metadata and labels Dev pricing honestly",
+    "Plus uses verified server product metadata; retired token paywall stays absent",
     "normal share surfaces never enter the token store",
     "account deletion closes the wallet while retaining replay ledgers",
     "analytics cover the canonical Premium and purchase funnels",

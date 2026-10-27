@@ -1,0 +1,25 @@
+{
+  "source": "4c424d9",
+  "syntheticDevelopmentOnly": true,
+  "jobs": [
+    {
+      "status": "failed",
+      "saved_place_id": null
+    },
+    {
+      "status": "cancelled",
+      "saved_place_id": null
+    },
+    {
+      "status": "completed",
+      "saved_place_id": "8ceaa387-539f-456a-b952-8a677850d251"
+    }
+  ],
+  "mediaTasks": 0,
+  "liveRecognition": false,
+  "existingPlaceAttach": true,
+  "duplicateSaveCreated": false,
+  "cancelledSafe": true,
+  "offlineRetryError": true,
+  "onlineRetryEligibilityBlocked": true
+}

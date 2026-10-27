@@ -1,0 +1,76 @@
+{
+  "sourceSha": "c3317f01fa5205ae9bfa6702e11780ba113e4efe",
+  "finishedAt": "2026-10-27T19:50:53.6356002Z",
+  "results": [
+    {
+      "name": "test:onboarding-v2-phase2",
+      "command": "npm run test:onboarding-v2-phase2",
+      "exit": 1,
+      "durationMs": 1656,
+      "logfile": "artifacts\\global-release\\android-qualification\\baseline\\test-onboarding-v2-phase2.log"
+    },
+    {
+      "name": "test:onboarding-v2-physical-runtime",
+      "command": "npm run test:onboarding-v2-physical-runtime",
+      "exit": 1,
+      "durationMs": 3219,
+      "logfile": "artifacts\\global-release\\android-qualification\\baseline\\test-onboarding-v2-physical-runtime.log"
+    },
+    {
+      "name": "test:onboarding-v2-visual",
+      "command": "npm run test:onboarding-v2-visual",
+      "exit": 1,
+      "durationMs": 1370,
+      "logfile": "artifacts\\global-release\\android-qualification\\baseline\\test-onboarding-v2-visual.log"
+    },
+    {
+      "name": "test:onboarding-1259-regressions",
+      "command": "npm run test:onboarding-1259-regressions",
+      "exit": 1,
+      "durationMs": 2023,
+      "logfile": "artifacts\\global-release\\android-qualification\\baseline\\test-onboarding-1259-regressions.log"
+    },
+    {
+      "name": "test:fieldnotes-physical-ui",
+      "command": "npm run test:fieldnotes-physical-ui",
+      "exit": 1,
+      "durationMs": 1354,
+      "logfile": "artifacts\\global-release\\android-qualification\\baseline\\test-fieldnotes-physical-ui.log"
+    },
+    {
+      "name": "test:place-detail-ui",
+      "command": "npm run test:place-detail-ui",
+      "exit": 1,
+      "durationMs": 1093,
+      "logfile": "artifacts\\global-release\\android-qualification\\baseline\\test-place-detail-ui.log"
+    },
+    {
+      "name": "test:saved-place-result-ui",
+      "command": "npm run test:saved-place-result-ui",
+      "exit": 1,
+      "durationMs": 2491,
+      "logfile": "artifacts\\global-release\\android-qualification\\baseline\\test-saved-place-result-ui.log"
+    },
+    {
+      "name": "test:monetization-token-ux",
+      "command": "npm run test:monetization-token-ux",
+      "exit": 1,
+      "durationMs": 1337,
+      "logfile": "artifacts\\global-release\\android-qualification\\baseline\\test-monetization-token-ux.log"
+    },
+    {
+      "name": "test:monetization-integration",
+      "command": "npm run test:monetization-integration",
+      "exit": 1,
+      "durationMs": 1307,
+      "logfile": "artifacts\\global-release\\android-qualification\\baseline\\test-monetization-integration.log"
+    },
+    {
+      "name": "test:premium-request-monetization",
+      "command": "npm run test:premium-request-monetization",
+      "exit": 1,
+      "durationMs": 1062,
+      "logfile": "artifacts\\global-release\\android-qualification\\baseline\\test-premium-request-monetization.log"
+    }
+  ]
+}

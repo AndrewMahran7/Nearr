@@ -1,0 +1,23 @@
+{
+  "source": "359c805",
+  "revokedSessionRecovered": true,
+  "explicitLogout": true,
+  "uiRelogin": true,
+  "birthdayRepeated": false,
+  "saves": [
+    {
+      "notifications_enabled": false,
+      "visited_at": "2026-10-27T20:46:08.507+00:00",
+      "places": {
+        "name": "Golden Gate Bridge"
+      }
+    },
+    {
+      "notifications_enabled": false,
+      "visited_at": null,
+      "places": {
+        "name": "Eiffel Tower"
+      }
+    }
+  ]
+}

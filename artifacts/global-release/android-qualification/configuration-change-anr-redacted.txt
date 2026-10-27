@@ -1,0 +1,53 @@
+--------- beginning of system
+10-27 14:27:09.809   752 28283 E ActivityManager: ANR in com.nearr.app
+10-27 14:27:09.809   752 28283 E ActivityManager: PID: 27487
+10-27 14:27:09.809   752 28283 E ActivityManager: Reason: Broadcast of Intent { act=expo.modules.notifications.NOTIFICATION_EVENT dat=expo-notifications://notifications/... flg=0x10 xflg=0x4 cmp=com.nearr.app/expo.modules.notifications.service.NotificationsService (has extras) }
+10-27 14:27:09.809   752 28283 E ActivityManager: ErrorId: 59b34b9f-d08b-4e4b-8095-385aeb637733
+10-27 14:27:09.809   752 28283 E ActivityManager: Frozen: false
+10-27 14:27:09.809   752 28283 E ActivityManager: Load: 6.04 / 3.58 / 2.57
+10-27 14:27:09.809   752 28283 E ActivityManager: ----- Output from /proc/pressure/memory -----
+10-27 14:27:09.809   752 28283 E ActivityManager: some avg10=0.00 avg60=0.88 avg300=1.24 total=51373495
+10-27 14:27:09.809   752 28283 E ActivityManager: full avg10=0.00 avg60=0.42 avg300=0.63 total=31213191
+10-27 14:27:09.809   752 28283 E ActivityManager: ----- End output from /proc/pressure/memory -----
+10-27 14:27:09.809   752 28283 E ActivityManager: ----- Output from /proc/pressure/cpu -----
+10-27 14:27:09.809   752 28283 E ActivityManager: some avg10=51.34 avg60=46.18 avg300=25.91 total=801476919
+10-27 14:27:09.809   752 28283 E ActivityManager: full avg10=0.00 avg60=0.00 avg300=0.00 total=0
+10-27 14:27:09.809   752 28283 E ActivityManager: ----- End output from /proc/pressure/cpu -----
+10-27 14:27:09.809   752 28283 E ActivityManager: ----- Output from /proc/pressure/io -----
+10-27 14:27:09.809   752 28283 E ActivityManager: some avg10=0.09 avg60=1.21 avg300=1.99 total=125037449
+10-27 14:27:09.809   752 28283 E ActivityManager: full avg10=0.00 avg60=0.30 avg300=0.65 total=51098568
+10-27 14:27:09.809   752 28283 E ActivityManager: ----- End output from /proc/pressure/io -----
+10-27 14:27:09.809   752 28283 E ActivityManager: 
+10-27 14:27:09.809   752 28283 E ActivityManager: CPU usage from 1ms to 14149ms later (2026-10-27 14:26:55.632 to 2026-10-27 14:27:09.779):
+10-27 14:27:09.809   752 28283 E ActivityManager:   108% 27487/com.nearr.app: 1.2% user + 107% kernel / faults: 8936 minor 4096 major
+10-27 14:27:09.809   752 28283 E ActivityManager:   97% 556/android.hardware.graphics.composer3-service.ranchu: 0% user + 97% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:   58% 1001/com.android.systemui: 0% user + 57% kernel / faults: 1866 minor 699 major
+10-27 14:27:09.809   752 28283 E ActivityManager:   54% 4010/com.google.android.apps.nexuslauncher: 0.2% user + 54% kernel / faults: 1637 minor 380 major
+10-27 14:27:09.809   752 28283 E ActivityManager:   14% 752/system_server: 2.5% user + 11% kernel / faults: 5630 minor 723 major
+10-27 14:27:09.809   752 28283 E ActivityManager:   2.9% 72/kswapd0: 0% user + 2.9% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:   1.6% 1589/com.google.android.inputmethod.latin: 0.9% user + 0.6% kernel / faults: 2516 minor 1427 major
+10-27 14:27:09.809   752 28283 E ActivityManager:   0% 1122/com.android.se: 0% user + 0% kernel / faults: 1424 minor 522 major
+10-27 14:27:09.809   752 28283 E ActivityManager:   0.1% 1646/com.android.emulator.multidisplay: 0% user + 0.1% kernel / faults: 1380 minor 396 major
+10-27 14:27:09.809   752 28283 E ActivityManager:   0.6% 609/surfaceflinger: 0% user + 0.5% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager: 90% TOTAL: 1.6% user + 83% kernel + 1% iowait + 4.3% irq + 0% softirq
+10-27 14:27:09.809   752 28283 E ActivityManager: CPU usage from 93ms to 988ms later (2026-10-27 14:26:55.723 to 2026-10-27 14:26:56.619):
+10-27 14:27:09.809   752 28283 E ActivityManager:   97% 556/android.hardware.graphics.composer3-service.ranchu: 0% user + 97% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:     97% 556/binder:556_2: 0% user + 97% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:     1.5% 698/_thread: 0% user + 1.5% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:   88% 27487/com.nearr.app: 29% user + 59% kernel / faults: 6996 minor 3627 major
+10-27 14:27:09.809   752 28283 E ActivityManager:     50% 27488/Signal Catcher: 29% user + 21% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:     29% 27523/RenderThread: 0% user + 29% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:     4.2% 28000/GL-Map: 0% user + 4.2% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:   19% 72/kswapd0: 0% user + 19% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:   38% 752/system_server: 12% user + 25% kernel / faults: 534 minor 58 major
+10-27 14:27:09.809   752 28283 E ActivityManager:     23% 28284/AnrAuxiliaryTas: 2.5% user + 20% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:     2.5% 28282/AnrMainProcessD: 0% user + 2.5% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:   42% 1001/com.android.systemui: 0% user + 42% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:     42% 1236/RenderThread: 0% user + 42% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:   47% 4010/com.google.android.apps.nexuslauncher: 0% user + 47% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:     43% 4036/RenderThread: 0% user + 43% kernel
+10-27 14:27:09.809   752 28283 E ActivityManager:   1.1% 305/tombstoned: 0% user + 1.1% kernel / faults: 3 minor 46 major
+10-27 14:27:09.809   752 28283 E ActivityManager: 98% TOTAL: 3.7% user + 88% kernel + 5.7% irq
+--------- beginning of crash
+10-27 14:27:35.168   265   265 F libc    : Unwind request: crash_dump helper failed to exec, or was killed
+10-27 14:27:37.037   275   275 F libc    : Unwind request: crash_dump helper failed to exec, or was killed

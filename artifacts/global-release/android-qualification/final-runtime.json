@@ -1,0 +1,44 @@
+{
+  "source": "4c424d9",
+  "coldLaunchMs": [
+    22952,
+    24371,
+    19588
+  ],
+  "scope": "Development Metro + ADB UI observation; not production performance",
+  "configurationChanges": [
+    {
+      "change": "font 1.6",
+      "mapRecovered": true,
+      "observedWaitMs": 24863
+    },
+    {
+      "change": "font 1.0",
+      "mapRecovered": true,
+      "observedWaitMs": 25151
+    },
+    {
+      "change": "size 900x1600",
+      "mapRecovered": true,
+      "observedWaitMs": 6687
+    },
+    {
+      "change": "size reset",
+      "mapRecovered": true,
+      "observedWaitMs": 23698
+    },
+    {
+      "change": "density 375",
+      "mapRecovered": true,
+      "observedWaitMs": 22682
+    },
+    {
+      "change": "density reset",
+      "mapRecovered": true,
+      "observedWaitMs": 14830
+    }
+  ],
+  "postFixRelevantErrors": [],
+  "earlierAnr": "notification broadcast under host pressure; not reproduced in six isolated display changes; retained for release follow-up",
+  "splashGuard": "three consecutive cold launches passed"
+}

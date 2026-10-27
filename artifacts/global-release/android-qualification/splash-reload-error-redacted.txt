@@ -1,0 +1,40 @@
+10-27 14:47:10.669 32416 32453 W HWUI    : Failed to initialize 101010-2 format, error = EGL_SUCCESS
+10-27 14:47:23.986 32416 32527 E unknown:ReactNative: Exception in native call from JS
+10-27 14:47:23.986 32416 32527 E unknown:ReactNative: com.facebook.react.common.JavascriptException: Cannot read property 'catch' of undefined, stack:
+10-27 14:47:23.986 32416 32527 E unknown:ReactNative: TypeError: Cannot read property 'catch' of undefined
+10-27 14:47:23.986 32416 32527 E unknown:ReactNative:     at hideAsync ([url]
+10-27 14:47:23.986 32416 32527 E unknown:ReactNative:     at reportFatalError ([url]
+10-27 14:47:23.987 32416 32527 E DevLauncher: java.lang.RuntimeException: Attempting to call JS function on a bad application bundle: HMRClient.setup()
+10-27 14:47:24.037 32416 32527 E DevLauncher: java.lang.RuntimeException: Attempting to call JS function on a bad application bundle: AppRegistry.runApplication()
+10-27 14:47:24.085 32416 32527 W AVManager: Cannot install AV JSI bindings during runtime teardown
+10-27 14:47:24.085 32416 32527 W AVManager: java.lang.NullPointerException: java.lang.NullPointerException
+10-27 14:47:24.085 32416 32527 W AVManager: 	at expo.modules.av.AVManager.installJSIBindings(Native Method)
+10-27 14:47:24.085 32416 32527 W AVManager: 	at expo.modules.av.AVManager.lambda$onCreate$0(AVManager.java:196)
+10-27 14:47:24.085 32416 32527 W AVManager: 	at expo.modules.av.AVManager.$r8$lambda$MqNG0t3r5Ij3DfZ3pXPMUPGLAIk(Unknown Source:0)
+10-27 14:47:24.085 32416 32527 W AVManager: 	at expo.modules.av.AVManager$$ExternalSyntheticLambda3.run(Unknown Source:2)
+10-27 14:47:24.085 32416 32527 W AVManager: 	at android.os.Handler.handleCallback(Handler.java:1070)
+10-27 14:47:24.085 32416 32527 W AVManager: 	at android.os.Handler.dispatchMessage(Handler.java:125)
+10-27 14:47:24.085 32416 32527 W AVManager: 	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(MessageQueueThreadHandler.java:27)
+10-27 14:47:24.085 32416 32527 W AVManager: 	at android.os.Looper.dispatchMessage(Looper.java:333)
+10-27 14:47:24.085 32416 32527 W AVManager: 	at android.os.Looper.loopOnce(Looper.java:263)
+10-27 14:47:24.085 32416 32527 W AVManager: 	at android.os.Looper.loop(Looper.java:367)
+10-27 14:47:24.085 32416 32527 W AVManager: 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$4.run(MessageQueueThreadImpl.java:233)
+10-27 14:47:24.085 32416 32527 W AVManager: 	at java.lang.Thread.run(Thread.java:1563)
+10-27 14:47:24.086 32416 32527 E DevLauncher: java.lang.RuntimeException: Attempting to invoke JS callback on a bad application bundle.
+10-27 14:47:24.169 32416 32527 E DevLauncher: java.lang.RuntimeException: Attempting to call JS function on a bad application bundle: RCTDeviceEventEmitter.emit()
+10-27 14:47:24.290 32416 32527 E DevLauncher: java.lang.RuntimeException: Attempting to call JS function on a bad application bundle: RCTDeviceEventEmitter.emit()
+10-27 14:47:24.378 32416 32527 E DevLauncher: java.lang.RuntimeException: Attempting to call JS function on a bad application bundle: AppRegistry.unmountApplicationComponentAtRootTag()
+10-27 14:47:25.983 32416 32416 D VRI[DevLauncherErrorActivity]: WindowInsets changed: 1080x2400 statusBars:[0,121,0,0] navigationBars:[0,0,0,63] mandatorySystemGestures:[0,153,0,84] 
+10-27 14:47:27.019 32416 32490 E SurfaceSyncGroup: Failed to receive transaction ready in 1000ms. Marking SurfaceSyncGroup(wmsSync-VRI[DevLauncherErrorActivity]#12) as ready
+10-27 14:47:27.022 32416 32490 E SurfaceSyncGroup: Failed to receive transaction ready in 1000ms. Marking SurfaceSyncGroup(VRI[DevLauncherErrorActivity]#13) as ready
+10-27 14:47:33.634 32416 32653 E GoogleApiManager: java.lang.SecurityException: Unknown calling package name 'com.google.android.gms'.
+10-27 14:47:33.634 32416 32653 E GoogleApiManager: 	at android.os.Parcel.createExceptionOrNull(Parcel.java:3373)
+10-27 14:47:33.634 32416 32653 E GoogleApiManager: 	at android.os.Parcel.createException(Parcel.java:3357)
+10-27 14:47:33.634 32416 32653 E GoogleApiManager: 	at android.os.Parcel.readException(Parcel.java:3340)
+10-27 14:47:33.634 32416 32653 E GoogleApiManager: 	at android.os.Parcel.readException(Parcel.java:3282)
+10-27 14:47:33.671 32416 32654 W FlagStore: java.util.concurrent.ExecutionException: m140.gar: 17: 17: API: Phenotype.API is not available on this device. Connection failed with: cma{statusCode=DEVELOPER_ERROR, resolution=null, message=null, clientMethodKey=null}
+10-27 14:47:43.588 32416 32653 E GoogleApiManager: java.lang.SecurityException: Unknown calling package name 'com.google.android.gms'.
+10-27 14:47:43.588 32416 32653 E GoogleApiManager: 	at android.os.Parcel.createExceptionOrNull(Parcel.java:3373)
+10-27 14:47:43.588 32416 32653 E GoogleApiManager: 	at android.os.Parcel.createException(Parcel.java:3357)
+10-27 14:47:43.588 32416 32653 E GoogleApiManager: 	at android.os.Parcel.readException(Parcel.java:3340)
+10-27 14:47:43.588 32416 32653 E GoogleApiManager: 	at android.os.Parcel.readException(Parcel.java:3282)

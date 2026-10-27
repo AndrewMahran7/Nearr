@@ -1,0 +1,220 @@
+{
+  "sourceSha": "44c58209ba93ff1a49d3e8c96b4bc2430db96145",
+  "startedAt": "2026-10-27T21:57:50.379Z",
+  "finishedAt": "2026-10-27T22:01:48.757Z",
+  "total": 30,
+  "passed": 30,
+  "failed": 0,
+  "results": [
+    {
+      "name": "test:safe-development",
+      "command": "npm run test:safe-development",
+      "exit": 0,
+      "durationMs": 42845,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-safe-development.log"
+    },
+    {
+      "name": "test:birthday-onboarding",
+      "command": "npm run test:birthday-onboarding",
+      "exit": 0,
+      "durationMs": 1211,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-birthday-onboarding.log"
+    },
+    {
+      "name": "test:onboarding-native-contract",
+      "command": "npm run test:onboarding-native-contract",
+      "exit": 0,
+      "durationMs": 524,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-onboarding-native-contract.log"
+    },
+    {
+      "name": "test:localization",
+      "command": "npm run test:localization",
+      "exit": 0,
+      "durationMs": 2882,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-localization.log"
+    },
+    {
+      "name": "test:native-localization",
+      "command": "npm run test:native-localization",
+      "exit": 0,
+      "durationMs": 993,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-native-localization.log"
+    },
+    {
+      "name": "test:global-eligibility-db",
+      "command": "npm run test:global-eligibility-db",
+      "exit": 0,
+      "durationMs": 86199,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-global-eligibility-db.log"
+    },
+    {
+      "name": "test:global-monetization",
+      "command": "npm run test:global-monetization",
+      "exit": 0,
+      "durationMs": 837,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-global-monetization.log"
+    },
+    {
+      "name": "test:prebuild",
+      "command": "npm run test:prebuild",
+      "exit": 0,
+      "durationMs": 200625,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-prebuild.log"
+    },
+    {
+      "name": "test:consent-identity",
+      "command": "npm run test:consent-identity",
+      "exit": 0,
+      "durationMs": 808,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-consent-identity.log"
+    },
+    {
+      "name": "test:recognition-consent",
+      "command": "npm run test:recognition-consent",
+      "exit": 0,
+      "durationMs": 907,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-recognition-consent.log"
+    },
+    {
+      "name": "test:privacy-policy",
+      "command": "npm run test:privacy-policy",
+      "exit": 0,
+      "durationMs": 1865,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-privacy-policy.log"
+    },
+    {
+      "name": "test:onboarding-account-transition",
+      "command": "npm run test:onboarding-account-transition",
+      "exit": 0,
+      "durationMs": 718,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-onboarding-account-transition.log"
+    },
+    {
+      "name": "test:create-map-navigation",
+      "command": "npm run test:create-map-navigation",
+      "exit": 0,
+      "durationMs": 1025,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-create-map-navigation.log"
+    },
+    {
+      "name": "test:create-map-continue-runtime",
+      "command": "npm run test:create-map-continue-runtime",
+      "exit": 0,
+      "durationMs": 1067,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-create-map-continue-runtime.log"
+    },
+    {
+      "name": "test:onboarding-phase2-auth-map-hardening",
+      "command": "npm run test:onboarding-phase2-auth-map-hardening",
+      "exit": 0,
+      "durationMs": 1166,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-onboarding-phase2-auth-map-hardening.log"
+    },
+    {
+      "name": "test:onboarding-v2-phase2",
+      "command": "npm run test:onboarding-v2-phase2",
+      "exit": 0,
+      "durationMs": 4682,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-onboarding-v2-phase2.log"
+    },
+    {
+      "name": "test:onboarding-v2-physical-runtime",
+      "command": "npm run test:onboarding-v2-physical-runtime",
+      "exit": 0,
+      "durationMs": 3108,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-onboarding-v2-physical-runtime.log"
+    },
+    {
+      "name": "test:onboarding-v2-hands-on-activation",
+      "command": "npm run test:onboarding-v2-hands-on-activation",
+      "exit": 0,
+      "durationMs": 962,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-onboarding-v2-hands-on-activation.log"
+    },
+    {
+      "name": "test:onboarding-v2-visual",
+      "command": "npm run test:onboarding-v2-visual",
+      "exit": 0,
+      "durationMs": 1689,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-onboarding-v2-visual.log"
+    },
+    {
+      "name": "test:onboarding-1259-regressions",
+      "command": "npm run test:onboarding-1259-regressions",
+      "exit": 0,
+      "durationMs": 1138,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-onboarding-1259-regressions.log"
+    },
+    {
+      "name": "test:global-monetization-db",
+      "command": "npm run test:global-monetization-db",
+      "exit": 0,
+      "durationMs": 87852,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-global-monetization-db.log"
+    },
+    {
+      "name": "test:fieldnotes-oct18",
+      "command": "npm run test:fieldnotes-oct18",
+      "exit": 0,
+      "durationMs": 5170,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-fieldnotes-oct18.log"
+    },
+    {
+      "name": "test:fieldnotes-physical-ui",
+      "command": "npm run test:fieldnotes-physical-ui",
+      "exit": 0,
+      "durationMs": 2591,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-fieldnotes-physical-ui.log"
+    },
+    {
+      "name": "test:place-detail-ui",
+      "command": "npm run test:place-detail-ui",
+      "exit": 0,
+      "durationMs": 687,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-place-detail-ui.log"
+    },
+    {
+      "name": "test:saved-place-result-ui",
+      "command": "npm run test:saved-place-result-ui",
+      "exit": 0,
+      "durationMs": 1032,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-saved-place-result-ui.log"
+    },
+    {
+      "name": "test:monetization-token-ux",
+      "command": "npm run test:monetization-token-ux",
+      "exit": 0,
+      "durationMs": 1351,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-monetization-token-ux.log"
+    },
+    {
+      "name": "test:monetization-integration",
+      "command": "npm run test:monetization-integration",
+      "exit": 0,
+      "durationMs": 847,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-monetization-integration.log"
+    },
+    {
+      "name": "test:monetization-suspension-contract",
+      "command": "npm run test:monetization-suspension-contract",
+      "exit": 0,
+      "durationMs": 626,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-monetization-suspension-contract.log"
+    },
+    {
+      "name": "test:premium-request-monetization",
+      "command": "npm run test:premium-request-monetization",
+      "exit": 0,
+      "durationMs": 792,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-premium-request-monetization.log"
+    },
+    {
+      "name": "test:fieldnotes-oct15",
+      "command": "npm run test:fieldnotes-oct15",
+      "exit": 0,
+      "durationMs": 18539,
+      "logfile": "artifacts\\global-release\\android-qualification\\full\\test-fieldnotes-oct15.log"
+    }
+  ]
+}

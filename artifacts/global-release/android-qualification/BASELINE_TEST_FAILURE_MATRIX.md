@@ -1,0 +1,23 @@
+# Original ten failures — reproduced before edits
+
+Starting local and remote integration: `c3317f01fa5205ae9bfa6702e11780ba113e4efe`.
+New branch: `fix/nearr-17-full-regression-android-qa`. All ten npm entrypoints were run sequentially in fresh processes before any source/test edits; **10 exited 1**. See `baseline/results.json` and matching local `.log` files for complete output. No dependency upgrade: `npm ci` used the existing lockfile.
+
+The previous original-unified reproduction at `6e4096a34bb4a09b66227474659d753670d3764f` is recorded in `../onboarding-integration/tests/baseline-comparison.json`: all ten failed with the same initial causes. It was not necessary to mutate or rerun that unchanged worktree.
+
+| npm run entrypoint | Initial assertion / error and stack location (scripts/) | Expected → actual | Root cause / source owner | Correction implemented |
+| --- | --- | --- | --- | --- |
+| test:onboarding-v2-phase2 | AssertionError, testOnboardingV2Phase2Practice.ts:208 | literal `title="Save to my map"` → translated title | Localized Activation; chained P0 map test also predates shared visibility owner | Require exact `t(...)` call; verify shared Activity visibility and pointer-event owner, retain Phase 2 state tests |
+| test:onboarding-v2-physical-runtime | AssertionError strictEqual, testOnboardingFinalJourney.ts:203 | 1.6.59 → 1.7.0 | Release version expectation | Assert 1.7.0; retain exact icon checksum, dimensions, auth and native contracts |
+| test:onboarding-v2-visual | AssertionError, testOnboardingV2Phase1Visual.ts:67 | literal Explore my map → translated title | Localized SecondHalf; later diagnostic/map ownership assertions stale; renderer's blanket alias mock discarded translations | Require localized title and exact preview safeguards/current visibility owner; render with real bundled translation engine |
+| test:onboarding-1259-regressions | AssertionError, testOnboarding1259Regressions.ts:92 | raw `{placeName} is saved.` → complete translated interpolation | PreAuth full-sentence localization | Assert exact translation key AND placeName binding; all 31 regression cases retained |
+| test:fieldnotes-physical-ui | AssertionError, testFieldnotesPhysicalUiQa.ts:117 | raw Mark visited → translated Text | SelectedPlaceDetails, search and Activity localization | Assert exact translated labels; retain geometry, overlap, camera, switch and routing checks |
+| test:place-detail-ui | AssertionError `visible origin is accurate`, testSavedPlaceDetailUi.ts:120 | raw Your note/From the post ternary → localized ternary | SelectedPlaceDetails attribution localization | Require exact localized origin and remove-confirmation call; retain all note/reminder logic |
+| test:saved-place-result-ui | MODULE_NOT_FOUND `@/lib/i18n`, testSavedPlaceResultUi.ts:137 loader | native alias resolution unavailable in Node harness | SavedPlaceResult translation/locale imports | Use real bundled engine, host locale boundary; retain rendered action, carousel and persisted-result checks; translated route title assertion |
+| test:monetization-token-ux | ENOENT `app/monetization.tsx`, source():19, call:23 | retired token store file → intentionally absent | Current Plus surface / suspended Premium initiation | Replace obsolete storefront presentation expectations with explicit absence/suspension and current Plus localized/gated presentation checks; preserve pack economics, replay, ledger/schema and server-authority assertions |
+| test:monetization-integration | ENOENT `app/monetization.tsx`, source():26, call:101 | retired file → intentionally absent | Plus client replaces token product UI | Verify exact server product ID/localized Store price and sales gates; current event names; all legacy ledger/security/settlement cases retained |
+| test:premium-request-monetization | ENOENT `app/monetization.tsx`, source():20, call:166 | retired file → intentionally absent | Suspended Premium UI; Quick Check now owns manual-search/back affordances | Assert no token upsell/initiation; exact manual search/back wiring; preserve all eligibility, atomic settlement, ownership, replay, model separation and migration tests |
+
+Error type is AssertionError (ERR_ASSERTION) except the explicit missing-module/file errors. Reproduction command for each row is `npm run <entrypoint>`. Full baseline stack traces remain in each correspondingly named local log; no keys or user data are included in these source-test logs.
+
+Passing-after: `ten/results.json`, **10/10 exit 0**. Chained tests execute normally; no npm entrypoint was skipped, no storefront/provider flag was enabled, and no application behavior was changed to satisfy obsolete source text.

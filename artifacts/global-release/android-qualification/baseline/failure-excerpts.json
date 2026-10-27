@@ -1,0 +1,190 @@
+[
+  {
+    "command": "npm run test:onboarding-v2-phase2",
+    "exit": 1,
+    "evidence": [
+      "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /title=\"Save to my map\"/. Input:",
+      "    at Object.<anonymous> (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\scripts\\testOnboardingV2Phase2Practice.ts:208:8)",
+      "    at Module._compile (node:internal/modules/cjs/loader:1761:14)",
+      "    at Module.m._compile (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1618:23)",
+      "    at node:internal/modules/cjs/loader:1893:10",
+      "    at Object.require.extensions.<computed> [as .ts] (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1621:12)",
+      "    at Module.load (node:internal/modules/cjs/loader:1481:32)",
+      "    at Module._load (node:internal/modules/cjs/loader:1300:12)",
+      "    at TracingChannel.traceSync (node:diagnostics_channel:328:14)",
+      "    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)",
+      "    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {",
+      "  actual: \"import { i18n, t } from '@/lib/i18n';\\r\\n\" +",
+      "  expected: /title=\"Save to my map\"/,",
+      "  operator: 'match',"
+    ]
+  },
+  {
+    "command": "npm run test:onboarding-v2-physical-runtime",
+    "exit": 1,
+    "evidence": [
+      "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:",
+      "    at Object.<anonymous> (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\scripts\\testOnboardingFinalJourney.ts:203:8)",
+      "    at Module._compile (node:internal/modules/cjs/loader:1761:14)",
+      "    at Module.m._compile (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1618:23)",
+      "    at node:internal/modules/cjs/loader:1893:10",
+      "    at Object.require.extensions.<computed> [as .ts] (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1621:12)",
+      "    at Module.load (node:internal/modules/cjs/loader:1481:32)",
+      "    at Module._load (node:internal/modules/cjs/loader:1300:12)",
+      "    at TracingChannel.traceSync (node:diagnostics_channel:328:14)",
+      "    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)",
+      "    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {",
+      "  actual: '1.7.0',",
+      "  expected: '1.6.59',",
+      "  operator: 'strictEqual',"
+    ]
+  },
+  {
+    "command": "npm run test:onboarding-v2-visual",
+    "exit": 1,
+    "evidence": [
+      "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Phase1PrimaryButton title=\"Explore my map\"/. Input:",
+      "    at Object.<anonymous> (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\scripts\\testOnboardingV2Phase1Visual.ts:67:8)",
+      "    at Module._compile (node:internal/modules/cjs/loader:1761:14)",
+      "    at Module.m._compile (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1618:23)",
+      "    at node:internal/modules/cjs/loader:1893:10",
+      "    at Object.require.extensions.<computed> [as .ts] (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1621:12)",
+      "    at Module.load (node:internal/modules/cjs/loader:1481:32)",
+      "    at Module._load (node:internal/modules/cjs/loader:1300:12)",
+      "    at TracingChannel.traceSync (node:diagnostics_channel:328:14)",
+      "    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)",
+      "    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {",
+      "  actual: \"import { i18n, t } from '@/lib/i18n';\\r\\n\" +",
+      "  expected: /Phase1PrimaryButton title=\"Explore my map\"/,",
+      "  operator: 'match',"
+    ]
+  },
+  {
+    "command": "npm run test:onboarding-1259-regressions",
+    "exit": 1,
+    "evidence": [
+      "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\\{placeName\\} is saved\\./. Input:",
+      "    at Object.<anonymous> (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\scripts\\testOnboarding1259Regressions.ts:92:8)",
+      "    at Module._compile (node:internal/modules/cjs/loader:1761:14)",
+      "    at Module.m._compile (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1618:23)",
+      "    at node:internal/modules/cjs/loader:1893:10",
+      "    at Object.require.extensions.<computed> [as .ts] (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1621:12)",
+      "    at Module.load (node:internal/modules/cjs/loader:1481:32)",
+      "    at Module._load (node:internal/modules/cjs/loader:1300:12)",
+      "    at TracingChannel.traceSync (node:diagnostics_channel:328:14)",
+      "    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)",
+      "    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {",
+      "  actual: \"import { i18n, t } from '@/lib/i18n';\\r\\n\" +",
+      "  expected: /\\{placeName\\} is saved\\./,",
+      "  operator: 'match',"
+    ]
+  },
+  {
+    "command": "npm run test:fieldnotes-physical-ui",
+    "exit": 1,
+    "evidence": [
+      "AssertionError [ERR_ASSERTION]: The input did not match the regular expression />Mark visited<\\/Text>/. Input:",
+      "    at Object.<anonymous> (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\scripts\\testFieldnotesPhysicalUiQa.ts:117:8)",
+      "    at Module._compile (node:internal/modules/cjs/loader:1761:14)",
+      "    at Module.m._compile (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1618:23)",
+      "    at node:internal/modules/cjs/loader:1893:10",
+      "    at Object.require.extensions.<computed> [as .ts] (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1621:12)",
+      "    at Module.load (node:internal/modules/cjs/loader:1481:32)",
+      "    at Module._load (node:internal/modules/cjs/loader:1300:12)",
+      "    at TracingChannel.traceSync (node:diagnostics_channel:328:14)",
+      "    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)",
+      "    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {",
+      "  actual: \"import { i18n, t } from '@/lib/i18n';\\r\\n\" +",
+      "  expected: />Mark visited<\\/Text>/,",
+      "  operator: 'match',"
+    ]
+  },
+  {
+    "command": "npm run test:place-detail-ui",
+    "exit": 1,
+    "evidence": [
+      "AssertionError [ERR_ASSERTION]: visible origin is accurate",
+      "    at Object.<anonymous> (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\scripts\\testSavedPlaceDetailUi.ts:120:8)",
+      "    at Module._compile (node:internal/modules/cjs/loader:1761:14)",
+      "    at Module.m._compile (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1618:23)",
+      "    at node:internal/modules/cjs/loader:1893:10",
+      "    at Object.require.extensions.<computed> [as .ts] (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1621:12)",
+      "    at Module.load (node:internal/modules/cjs/loader:1481:32)",
+      "    at Module._load (node:internal/modules/cjs/loader:1300:12)",
+      "    at TracingChannel.traceSync (node:diagnostics_channel:328:14)",
+      "    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)",
+      "    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5) {",
+      "  actual: \"import { i18n, t } from '@/lib/i18n';\\r\\n\" +",
+      "  expected: /whySaved.origin === 'user' \\? 'Your note' : 'From the post'/,",
+      "  operator: 'match',"
+    ]
+  },
+  {
+    "command": "npm run test:saved-place-result-ui",
+    "exit": 1,
+    "evidence": [
+      "Error: Cannot find module '@/lib/i18n'",
+      "    at Module.<anonymous> (node:internal/modules/cjs/loader:1421:15)",
+      "    at Module._resolveFilename.sharedData.moduleResolveFilenameHook.installedValue [as _resolveFilename] (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\@cspotcode\\source-map-support\\source-map-support.js:811:30)",
+      "    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)",
+      "    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)",
+      "    at node:internal/modules/cjs/loader:1227:37",
+      "    at Module.mockedLoad [as _load] (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\scripts\\testSavedPlaceResultUi.ts:137:10)",
+      "    at TracingChannel.traceSync (node:diagnostics_channel:328:14)",
+      "    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)",
+      "    at Module.require (node:internal/modules/cjs/loader:1504:12)",
+      "    at require (node:internal/modules/helpers:152:16) {"
+    ]
+  },
+  {
+    "command": "npm run test:monetization-token-ux",
+    "exit": 1,
+    "evidence": [
+      "Error: ENOENT: no such file or directory, open 'C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\app\\monetization.tsx'",
+      "    at Object.readFileSync (node:fs:439:20)",
+      "    at source (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\scripts\\testMonetizationTokenUx.ts:19:13)",
+      "    at Object.<anonymous> (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\scripts\\testMonetizationTokenUx.ts:23:17)",
+      "    at Module._compile (node:internal/modules/cjs/loader:1761:14)",
+      "    at Module.m._compile (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1618:23)",
+      "    at node:internal/modules/cjs/loader:1893:10",
+      "    at Object.require.extensions.<computed> [as .ts] (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1621:12)",
+      "    at Module.load (node:internal/modules/cjs/loader:1481:32)",
+      "    at Module._load (node:internal/modules/cjs/loader:1300:12)",
+      "    at TracingChannel.traceSync (node:diagnostics_channel:328:14) {"
+    ]
+  },
+  {
+    "command": "npm run test:monetization-integration",
+    "exit": 1,
+    "evidence": [
+      "Error: ENOENT: no such file or directory, open 'C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\app\\monetization.tsx'",
+      "    at Object.readFileSync (node:fs:439:20)",
+      "    at source (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\scripts\\testMonetizationIntegration.ts:26:13)",
+      "    at Object.<anonymous> (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\scripts\\testMonetizationIntegration.ts:101:17)",
+      "    at Module._compile (node:internal/modules/cjs/loader:1761:14)",
+      "    at Module.m._compile (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1618:23)",
+      "    at node:internal/modules/cjs/loader:1893:10",
+      "    at Object.require.extensions.<computed> [as .ts] (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1621:12)",
+      "    at Module.load (node:internal/modules/cjs/loader:1481:32)",
+      "    at Module._load (node:internal/modules/cjs/loader:1300:12)",
+      "    at TracingChannel.traceSync (node:diagnostics_channel:328:14) {"
+    ]
+  },
+  {
+    "command": "npm run test:premium-request-monetization",
+    "exit": 1,
+    "evidence": [
+      "Error: ENOENT: no such file or directory, open 'C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\app\\monetization.tsx'",
+      "    at Object.readFileSync (node:fs:439:20)",
+      "    at source (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\scripts\\testPremiumRequestMonetization.ts:20:13)",
+      "    at Object.<anonymous> (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\scripts\\testPremiumRequestMonetization.ts:166:15)",
+      "    at Module._compile (node:internal/modules/cjs/loader:1761:14)",
+      "    at Module.m._compile (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1618:23)",
+      "    at node:internal/modules/cjs/loader:1893:10",
+      "    at Object.require.extensions.<computed> [as .ts] (C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\node_modules\\ts-node\\src\\index.ts:1621:12)",
+      "    at Module.load (node:internal/modules/cjs/loader:1481:32)",
+      "    at Module._load (node:internal/modules/cjs/loader:1300:12)",
+      "    at TracingChannel.traceSync (node:diagnostics_channel:328:14) {"
+    ]
+  }
+]

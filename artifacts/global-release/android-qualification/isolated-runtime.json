@@ -1,0 +1,38 @@
+{
+  "source": "359c805",
+  "configurationChanges": [
+    {
+      "change": "font 1.6",
+      "mapRecovered": true,
+      "observedWaitMs": 24863
+    },
+    {
+      "change": "font 1.0",
+      "mapRecovered": true,
+      "observedWaitMs": 25151
+    },
+    {
+      "change": "size 900x1600",
+      "mapRecovered": true,
+      "observedWaitMs": 6687
+    },
+    {
+      "change": "size reset",
+      "mapRecovered": true,
+      "observedWaitMs": 23698
+    },
+    {
+      "change": "density 375",
+      "mapRecovered": true,
+      "observedWaitMs": 22682
+    },
+    {
+      "change": "density reset",
+      "mapRecovered": true,
+      "observedWaitMs": 14830
+    }
+  ],
+  "anrDuringIsolatedChanges": false,
+  "earlierAnrRetained": true,
+  "finalColdStart": "failed: splash error handler masked original error"
+}

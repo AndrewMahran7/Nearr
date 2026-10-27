@@ -1,0 +1,17 @@
+10-27 13:16:56.470 10574 10665 I ReactNativeJS: [APP_START] _layout module loaded
+10-27 13:16:56.510 10574 10665 I ReactNativeJS: [share-mobile-debug] backend_configured=yes source=process_env url_host=qnfxnmvxpjzfydgudtvs.supabase.co
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: FATAL EXCEPTION: mqt_js
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: Process: com.nearr.app, PID: 10574
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: java.lang.NullPointerException: java.lang.NullPointerException
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: 	at expo.modules.av.AVManager.installJSIBindings(Native Method)
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: 	at expo.modules.av.AVManager.lambda$onCreate$0(AVManager.java:186)
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: 	at expo.modules.av.AVManager.$r8$lambda$MqNG0t3r5Ij3DfZ3pXPMUPGLAIk(Unknown Source:0)
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: 	at expo.modules.av.AVManager$$ExternalSyntheticLambda3.run(Unknown Source:2)
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: 	at android.os.Handler.handleCallback(Handler.java:1070)
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:125)
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: 	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(MessageQueueThreadHandler.java:27)
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: 	at android.os.Looper.dispatchMessage(Looper.java:333)
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: 	at android.os.Looper.loopOnce(Looper.java:263)
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:367)
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$4.run(MessageQueueThreadImpl.java:233)
+10-27 13:16:56.655 10574 10665 E AndroidRuntime: 	at java.lang.Thread.run(Thread.java:1563)

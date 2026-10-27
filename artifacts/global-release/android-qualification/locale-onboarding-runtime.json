@@ -1,0 +1,82 @@
+[
+  {
+    "locale": "es-MX",
+    "immediateMs": 2324,
+    "birthdayTranslated": true,
+    "emptyCtaDisabled": true,
+    "persistedAfterRestart": true,
+    "offline": true
+  },
+  {
+    "locale": "es-ES",
+    "immediateMs": 2536,
+    "birthdayTranslated": true,
+    "emptyCtaDisabled": true,
+    "persistedAfterRestart": true,
+    "offline": true
+  },
+  {
+    "locale": "pt-BR",
+    "immediateMs": 2350,
+    "birthdayTranslated": true,
+    "emptyCtaDisabled": true,
+    "persistedAfterRestart": true,
+    "offline": true
+  },
+  {
+    "locale": "fr",
+    "immediateMs": 2298,
+    "birthdayTranslated": true,
+    "emptyCtaDisabled": true,
+    "persistedAfterRestart": true,
+    "offline": true
+  },
+  {
+    "locale": "de",
+    "immediateMs": 2278,
+    "birthdayTranslated": true,
+    "emptyCtaDisabled": true,
+    "persistedAfterRestart": true,
+    "offline": true
+  },
+  {
+    "locale": "it",
+    "immediateMs": 2249,
+    "birthdayTranslated": true,
+    "emptyCtaDisabled": true,
+    "persistedAfterRestart": true,
+    "offline": true
+  },
+  {
+    "locale": "ja",
+    "immediateMs": 2509,
+    "birthdayTranslated": true,
+    "emptyCtaDisabled": true,
+    "persistedAfterRestart": true,
+    "offline": true
+  },
+  {
+    "locale": "ko",
+    "immediateMs": 2343,
+    "birthdayTranslated": true,
+    "emptyCtaDisabled": true,
+    "persistedAfterRestart": true,
+    "offline": true
+  },
+  {
+    "locale": "zh-Hans",
+    "immediateMs": 2252,
+    "birthdayTranslated": true,
+    "emptyCtaDisabled": true,
+    "persistedAfterRestart": true,
+    "offline": true
+  },
+  {
+    "locale": "en-US",
+    "immediateMs": 2397,
+    "birthdayTranslated": true,
+    "emptyCtaDisabled": true,
+    "persistedAfterRestart": true,
+    "offline": true
+  }
+]

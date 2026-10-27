@@ -1,0 +1,172 @@
+[
+  {
+    "locale": "de",
+    "settings": true,
+    "relaunch": true,
+    "coldLaunchUntilUiMs": 14083,
+    "source": "1f58789",
+    "plusDisabled": true,
+    "surfaces": [
+      "settings",
+      "map",
+      "plus-disabled",
+      "saved",
+      "place-detail",
+      "activity-empty",
+      "search"
+    ]
+  },
+  {
+    "locale": "es-MX",
+    "settings": true,
+    "relaunch": true,
+    "coldLaunchUntilUiMs": 13656,
+    "source": "1f58789",
+    "plusDisabled": true,
+    "surfaces": [
+      "settings",
+      "map",
+      "plus-disabled",
+      "saved",
+      "place-detail",
+      "activity-empty",
+      "search"
+    ]
+  },
+  {
+    "locale": "es-ES",
+    "settings": true,
+    "relaunch": true,
+    "coldLaunchUntilUiMs": 15771,
+    "source": "1f58789",
+    "plusDisabled": true,
+    "surfaces": [
+      "settings",
+      "map",
+      "plus-disabled",
+      "saved",
+      "place-detail",
+      "activity-empty",
+      "search"
+    ]
+  },
+  {
+    "locale": "pt-BR",
+    "settings": true,
+    "relaunch": true,
+    "coldLaunchUntilUiMs": 17331,
+    "source": "1f58789",
+    "plusDisabled": true,
+    "surfaces": [
+      "settings",
+      "map",
+      "plus-disabled",
+      "saved",
+      "place-detail",
+      "activity-empty",
+      "search"
+    ]
+  },
+  {
+    "locale": "fr",
+    "settings": true,
+    "relaunch": true,
+    "coldLaunchUntilUiMs": 16803,
+    "source": "1f58789",
+    "plusDisabled": true,
+    "surfaces": [
+      "settings",
+      "map",
+      "plus-disabled",
+      "saved",
+      "place-detail",
+      "activity-empty",
+      "search"
+    ]
+  },
+  {
+    "locale": "it",
+    "settings": true,
+    "relaunch": true,
+    "coldLaunchUntilUiMs": 13620,
+    "source": "1f58789",
+    "plusDisabled": true,
+    "surfaces": [
+      "settings",
+      "map",
+      "plus-disabled",
+      "saved",
+      "place-detail",
+      "activity-empty",
+      "search"
+    ]
+  },
+  {
+    "locale": "ja",
+    "settings": true,
+    "relaunch": true,
+    "coldLaunchUntilUiMs": 18060,
+    "source": "1f58789",
+    "plusDisabled": true,
+    "surfaces": [
+      "settings",
+      "map",
+      "plus-disabled",
+      "saved",
+      "place-detail",
+      "activity-empty",
+      "search"
+    ]
+  },
+  {
+    "locale": "ko",
+    "settings": true,
+    "relaunch": true,
+    "coldLaunchUntilUiMs": 15960,
+    "source": "1f58789",
+    "plusDisabled": true,
+    "surfaces": [
+      "settings",
+      "map",
+      "plus-disabled",
+      "saved",
+      "place-detail",
+      "activity-empty",
+      "search"
+    ]
+  },
+  {
+    "locale": "zh-Hans",
+    "settings": true,
+    "relaunch": true,
+    "coldLaunchUntilUiMs": 16524,
+    "source": "1f58789",
+    "plusDisabled": true,
+    "surfaces": [
+      "settings",
+      "map",
+      "plus-disabled",
+      "saved",
+      "place-detail",
+      "activity-empty",
+      "search"
+    ]
+  },
+  {
+    "locale": "en-US",
+    "settings": true,
+    "relaunch": true,
+    "coldLaunchUntilUiMs": 13919,
+    "source": "1f58789",
+    "plusDisabled": true,
+    "surfaces": [
+      "settings",
+      "map",
+      "plus-disabled",
+      "saved",
+      "place-detail",
+      "activity-empty",
+      "search"
+    ]
+  }
+]

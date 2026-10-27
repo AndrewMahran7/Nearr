@@ -1,0 +1,13 @@
+{
+  "builtAt": "2026-10-27T22:03:49.823Z",
+  "sourceSha": "44c58209ba93ff1a49d3e8c96b4bc2430db96145",
+  "buildType": "debug-development-client",
+  "version": "1.7.0",
+  "versionCode": 1,
+  "platform": "Android",
+  "environment": "Development",
+  "runtime": "1.7-onboarding-date-android-v2",
+  "abi": "x86_64",
+  "apk": "C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+  "sha256": "f08ca746117688cd142cc6a2eca9e2bf0ed260792c0580813dfad5f772c084e4"
+}
