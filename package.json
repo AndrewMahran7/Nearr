@@ -157,7 +157,7 @@
     "test:quick-check": "ts-node -P scripts/tsconfig.json scripts/testQuickCheckResolution.ts",
     "test:oct18-quick-check": "ts-node -P scripts/tsconfig.json scripts/testOct18QuickCheckCompletion.ts",
     "test:fieldnotes-oct18": "npm run test:place-detail && npm run test:oct18-quick-check && npm run test:map-visibility && npm run test:save-navigation && npm run test:onboarding-physical-qa-regressions",
-    "test:fieldnotes-physical-ui": "ts-node -P scripts/tsconfig.json scripts/testFieldnotesPhysicalUiQa.ts",
+    "test:fieldnotes-physical-ui": "ts-node -P scripts/tsconfig.json scripts/testFieldnotesPhysicalUiQa.ts && ts-node -P scripts/tsconfig.json scripts/testAndroidPermissionRecovery.ts",
     "test:context-aware-places-resolution": "ts-node -P scripts/tsconfig.json scripts/testContextAwarePlacesResolution.ts --write-artifact",
     "test:context-aware-cache-reranking": "ts-node -P scripts/tsconfig.json scripts/testContextAwareCacheReranking.ts",
     "test:share-completion": "ts-node -P scripts/tsconfig.json scripts/testShareCompletionUi.ts",

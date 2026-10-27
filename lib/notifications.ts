@@ -97,7 +97,7 @@ export const PERMISSION_REQUEST_TIMEOUT_MS = 10_000;
 
 async function waitForPermissionResult<T>(
   label: string,
-  request: Promise<T>,
+  request: () => Promise<T>,
 ): Promise<T | null> {
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const timedOut = new Promise<null>((resolve) => {
@@ -108,7 +108,10 @@ async function waitForPermissionResult<T>(
   });
 
   try {
-    return await Promise.race([request, timedOut]);
+    // Invoke inside the guarded promise: missing/unavailable native bridges can
+    // throw synchronously before returning a promise. Late native rejection is
+    // still observed by race, and cannot change an already timed-out result.
+    return await Promise.race([Promise.resolve().then(request), timedOut]);
   } catch (error) {
     console.warn(`[notifications] ${label} failed`, error);
     return null;
@@ -432,13 +435,13 @@ try {
 export async function ensureNotificationPermission(): Promise<boolean> {
   const cur = await waitForPermissionResult(
     'notification permission status request',
-    Notifications.getPermissionsAsync(),
+    () => Notifications.getPermissionsAsync(),
   );
   if (!cur) return false;
   if (cur.status === 'granted') return true;
   const req = await waitForPermissionResult(
     'notification permission request',
-    Notifications.requestPermissionsAsync({
+    () => Notifications.requestPermissionsAsync({
       ios: {
         allowAlert: true,
         allowBadge: false,
@@ -467,14 +470,14 @@ export async function getNotificationPermissionState(): Promise<NotificationPerm
 export async function ensureForegroundLocationPermission(): Promise<boolean> {
   const current = await waitForPermissionResult(
     'foreground location permission status request',
-    Location.getForegroundPermissionsAsync(),
+    () => Location.getForegroundPermissionsAsync(),
   );
   if (!current) return false;
   const fg = current.status === 'granted'
     ? current
     : await waitForPermissionResult(
         'foreground location permission request',
-        Location.requestForegroundPermissionsAsync(),
+        () => Location.requestForegroundPermissionsAsync(),
       );
   if (!fg) return false;
   return fg.status === 'granted';
@@ -491,28 +494,28 @@ export async function ensureForegroundLocationPermission(): Promise<boolean> {
 export async function ensureBackgroundLocationPermission(): Promise<boolean> {
   const currentFg = await waitForPermissionResult(
     'foreground location permission status request',
-    Location.getForegroundPermissionsAsync(),
+    () => Location.getForegroundPermissionsAsync(),
   );
   if (!currentFg) return false;
   const fg = currentFg.status === 'granted'
     ? currentFg
     : await waitForPermissionResult(
         'foreground location permission request',
-        Location.requestForegroundPermissionsAsync(),
+        () => Location.requestForegroundPermissionsAsync(),
       );
   if (!fg) return false;
   if (fg.status !== 'granted') return false;
 
   const currentBg = await waitForPermissionResult(
     'background location permission status request',
-    Location.getBackgroundPermissionsAsync(),
+    () => Location.getBackgroundPermissionsAsync(),
   );
   if (!currentBg) return false;
   const bg = currentBg.status === 'granted'
     ? currentBg
     : await waitForPermissionResult(
         'background location permission request',
-        Location.requestBackgroundPermissionsAsync(),
+        () => Location.requestBackgroundPermissionsAsync(),
       );
   if (!bg) return false;
   return bg.status === 'granted';
