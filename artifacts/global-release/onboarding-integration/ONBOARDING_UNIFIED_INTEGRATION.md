@@ -10,7 +10,7 @@ Integration branch: `codex/nearr-17-onboarding-ios-integration`, worktree `C:\Us
 
 The three approved feature commits were cherry-picked onto the verified unified baseline as `07ee936`, `eb855ca`, `5c83851`. The resulting tree was identical to feature HEAD. No feature was reimplemented. The primary dirty checkout and both original reference worktrees were preserved; neither original branch was moved. No merge to main.
 
-Native reconciliation: `fcf2c78`. Android regression exposed inherited untranslated dynamic tutorial/account copy; presentation-only fixes are `0a937ab`, `5539bc3`, `4346840`. The final application/native-build source is `4346840b69749b4ff54a7c9bd2e0abb0e67c8b12`. Later commits contain qualification tools and evidence only; final handoff SHA is recorded in the delivery receipt.
+Native reconciliation: `fcf2c78`. Android regression exposed inherited untranslated dynamic tutorial/account copy; presentation-only fixes are `0a937ab`, `5539bc3`, `4346840`. The final application/native-build source is `4346840b69749b4ff54a7c9bd2e0abb0e67c8b12`. Later commits contain qualification tools and evidence only; the final pushed qualification HEAD is reported in the final chat handoff. `DELIVERY_RECEIPT.json` records the immutable source/build/update checkpoints.
 
 ## Integrated behavior
 

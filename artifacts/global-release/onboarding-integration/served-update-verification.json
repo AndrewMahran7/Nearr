@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-10-27T18:41:11.300Z",
+  "updateId": "01a17eaa-1a89-700c-a350-7f5542e5bab9",
+  "runtimeVersion": "1.7-onboarding-date-v1",
+  "platform": "ios",
+  "channel": "development",
+  "appEnv": "development",
+  "backendEnv": "development",
+  "supabaseHost": "qnfxnmvxpjzfydgudtvs.supabase.co",
+  "assetCount": 42,
+  "launchAssetPresent": true
+}

@@ -35,7 +35,16 @@ EAS used the existing remote distribution certificate and separate profiles. Non
 
 ## Development update / launching
 
-The new native client must be installed first. Compatible iOS-only Development update publication is performed only after the above IPA/runtime verification, using the repository's guarded `dev:update` wrapper. Its final group/update identifier and result are recorded in the update receipt alongside this document. Until that receipt confirms publication, use the explicit Metro instructions in the founder checklist.
+The new native client must be installed first. After the above IPA/runtime verification, the guarded command `npm run dev:update -- -m "Nearr 1.7 onboarding build 72 founder QA" --platform ios --non-interactive` successfully published an **iOS-only Development update**:
+
+- [Update dashboard / preview](https://expo.dev/accounts/andrewmahran/projects/nearr/updates/9b1887fc-7ba8-4a08-8893-e0c67420f3b7).
+- Group `9b1887fc-7ba8-4a08-8893-e0c67420f3b7`; iOS update `01a17eaa-1a89-700c-a350-7f5542e5bab9`.
+- Published 2026-10-27 18:40:39 UTC; branch/channel/environment Development; runtime `1.7-onboarding-date-v1`.
+- Update source checkpoint `edb6cac9edd523b8b715797db73c12c8a4796225`. Application/native files are byte-identical in Git to native build source `4346840`; only QA tools/evidence differ.
+- EAS displayed a dirty marker because the manifest-verification helper was created while export was running. That untracked QA script was the only change; no runtime/application source changed. It is committed with the final evidence.
+- `node scripts/verifyOnboardingDevelopmentUpdate.mjs 01a17eaa-1a89-700c-a350-7f5542e5bab9` fetched the **actually served manifest** with iOS + exact runtime + Development channel headers. It confirmed the exact update ID, Development app/backend, Nearr-Dev host, launch asset and 42 bundled assets. See `served-update-verification.json`.
+
+Open this update through the Development client's update browser/preview after installing build 72, or use the Metro fallback in the founder checklist. A hosted compatible update removes the local-server requirement; physical launch is still untested here.
 
 The update uses the final application source; qualification-only commits after native source do not alter app/native/config/dependency files. Older runtime 1.7.0 and 1.6.59 clients are not targeted. No Production update or Store submission occurred.
 
