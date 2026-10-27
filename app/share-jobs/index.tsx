@@ -830,7 +830,7 @@ function ShareJobsQueueScreen({ previewData }: { previewData?: ActivityPreviewDa
     <ShareJobsHeader
       title={t("Activity")}
       onBack={goBack}
-      backLabel="Close Activity"
+      backLabel={t('Close Activity')}
       icon="close"
       rightAction={hasContent && !previewActive ? {
         accessibilityLabel: 'Activity actions',

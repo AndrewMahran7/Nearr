@@ -1,6 +1,8 @@
 /** Compact search entry; local saved search remains available offline. */
 
 import { useMemo } from 'react';
+import { t } from '@/lib/i18n';
+import { useLocale } from '@/hooks/useLocale';
 import { Pressable, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
@@ -22,9 +24,10 @@ export function MapTopSearchBar({
   placeholder = 'Search for a place',
   offline = false,
 }: Props) {
+  useLocale();
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
-  const label = offline ? OFFLINE_SEARCH_PLACEHOLDER : placeholder;
+  const label = t(offline ? OFFLINE_SEARCH_PLACEHOLDER : placeholder);
 
   return (
     <Pressable

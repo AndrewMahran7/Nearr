@@ -29,7 +29,7 @@ type Props = {
 function savedDate(value: string): string | null {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: Props) {
@@ -38,7 +38,7 @@ export function SavedPlaceBrowseCardView({ saved, onPress, featured = false }: P
   const { width, fontScale } = useWindowDimensions();
   const largeText = fontScale >= 1.5;
   const styles = useMemo(() => createStyles(colors), [colors, i18n.language]);
-  const category = CATEGORY_LABELS[savedPlaceCategory(saved)];
+  const category = t(CATEGORY_LABELS[savedPlaceCategory(saved)]);
   const locality = splitPlaceAddress(saved.place.formatted_address).locality;
   const distance = formatBrowseDistance(saved.distanceMeters);
   const note = savedPlaceNotePreview(saved);

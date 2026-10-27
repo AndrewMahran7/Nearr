@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import React from 'react';
 import { OFFLINE_ONBOARDING_FIXTURES } from '../onboarding/fixtures/offlineOnboardingFixtures';
+import { SUPPORTED_LOCALES } from '../lib/i18nCore';
+import { i18n, t } from '../lib/i18nEngine';
 
 // Real Saved components, native host doubles. These assert behavior/layout
 // contracts; they are deliberately not described as screenshots or device QA.
@@ -67,6 +69,17 @@ async function main() {
   assert.deepEqual(tutorialCard.root.findByType('PlaceImage' as any).props.initialPhotoUrls, ['file:///bundled-destination.jpg']);
   assert.equal(hydrationRequests.length, beforeTutorialHydration, 'local tutorial image never requests provider hydration');
   await TestRenderer.act(async () => tutorialCard.unmount());
+  for (const locale of SUPPORTED_LOCALES) {
+    await i18n.changeLanguage(locale);
+    const saved = { ...fixture(0), category: 'restaurant' };
+    let localized!: ReturnType<typeof TestRenderer.create>;
+    await TestRenderer.act(async () => { localized = TestRenderer.create(React.createElement(SavedPlaceBrowseCard, { saved, featured: true, onPress() {} })); });
+    assert.ok(text(localized.toJSON()).includes(t('Restaurant')), `${locale}: category is interface text`);
+    assert.ok(text(localized.toJSON()).includes(new Date(saved.created_at).toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })), `${locale}: saved date follows app language`);
+    assert.ok(text(localized.toJSON()).includes(saved.place.name), `${locale}: destination name is unchanged`);
+    await TestRenderer.act(async () => localized.unmount());
+  }
+  await i18n.changeLanguage('en-US');
   for (const count of [0, 1, 3, 5, 20, 50, 51, 125]) {
     let renderer!: ReturnType<typeof TestRenderer.create>;
     const places = Array.from({ length: count }, (_v, index) => fixture(index));

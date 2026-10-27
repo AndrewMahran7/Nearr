@@ -79,7 +79,7 @@ export function MapBottomSheet({ mode, loading, nearbyPlaces, locationState, sav
       </View> : null}
     </View>
     {expanded ? <MemoizedSavedPlacesLibrary savedPlaces={savedPlaces} nearbyPlaces={nearbyPlaces} locationState={locationState} loading={loading} requestLocationPermission={requestLocationPermission} onSelectPlace={onSelectPlace} onSaveFromLink={onSaveFromLink} onSearchManually={onSearchManually} /> :
-      <Pressable onPress={openSaved} accessibilityRole="button" accessibilityLabel={`Open Saved, ${savedPlaces.length} places`} style={styles.peek}>
+      <Pressable onPress={openSaved} accessibilityRole="button" accessibilityLabel={t('Open Saved, {{value0}} places', { value0: savedPlaces.length })} style={styles.peek}>
         {minimized ? <Text style={typography.label}>{savedPlaces.length} {t(" saved ")}{savedPlaces.length === 1 ? t("place") : t("places")} {t(" · Open Saved")}</Text> : <>
         <Text style={[styles.eyebrow, { color: colors.accent }]}>{offline ? t("SAVED ON THIS PHONE") : t("SAVED FOR SOMEDAY")}</Text>
         <View style={styles.peekTitle}><Text style={[typography.heading, styles.flex]}>{savedPlaces.length ? `${savedPlaces.length} ${savedPlaces.length === 1 ? 'place. A new possibility.' : 'places. So many possibilities.'}` : loading ? t("Your world is coming into view") : t("Your next memory starts here.")}</Text><Feather name="arrow-up-right" size={22} color={colors.text} /></View>

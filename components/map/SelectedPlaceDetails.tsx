@@ -621,7 +621,7 @@ export function SelectedPlaceDetails({
   // A city / island / beach frequently has no street address at all, in which
   // case `locality` is null and the hero simply shows one less line.
   const categoryKey = savedPlaceCategory(saved);
-  const categoryLabel = CATEGORY_LABELS[categoryKey];
+  const categoryLabel = t(CATEGORY_LABELS[categoryKey]);
   // Persisted source cue (saved_places.ai_note) + the user's own note, kept
   // strictly separate. Read from the live row every render (not captured into
   // state) because enrichment can land well after the initial save — map.tsx
@@ -739,7 +739,7 @@ export function SelectedPlaceDetails({
     () =>
       recommendations.map((entry, index) => {
         const distance = formatNearbyDistance(entry.distanceMeters);
-        const category = CATEGORY_LABELS[entry.nearrCategory];
+        const category = t(CATEGORY_LABELS[entry.nearrCategory]);
         return {
           key: entry.googlePlaceId,
           name: entry.name,

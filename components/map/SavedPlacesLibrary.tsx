@@ -160,7 +160,7 @@ export function SavedPlacesLibrary({
         <Pressable
           onPress={() => setSortOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel={`Sort saved places. Current sort: ${sort === 'nearby' ? 'Nearby' : 'Recently saved'}`}
+          accessibilityLabel={t('Sort saved places. Current sort: {{value0}}', { value0: t(sort === 'nearby' ? 'Nearby' : 'Recently saved') })}
           style={({ pressed }) => [
             styles.controlButton,
             sort === 'nearby' && styles.controlButtonActive,
@@ -176,7 +176,7 @@ export function SavedPlacesLibrary({
         <Pressable
           onPress={openFilters}
           accessibilityRole="button"
-          accessibilityLabel={`Filter saved places${filterCount ? `, ${filterCount} active` : ''}`}
+          accessibilityLabel={filterCount ? t('Filter saved places, {{count}} active', { count: filterCount }) : t('Filter saved places')}
           style={({ pressed }) => [
             styles.controlButton,
             filterCount > 0 && styles.controlButtonActive,
@@ -321,11 +321,11 @@ export function SavedPlacesLibrary({
                         onPress={() => toggleDraftCategory(category)}
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: selected }}
-                        accessibilityLabel={CATEGORY_LABELS[category]}
+                        accessibilityLabel={t(CATEGORY_LABELS[category])}
                         style={[styles.categoryOption, selected && styles.categoryOptionSelected]}
                       >
                         <Text style={[typography.caption, styles.categoryOptionText, selected && styles.categoryOptionTextSelected]}>
-                          {CATEGORY_LABELS[category]}
+                          {t(CATEGORY_LABELS[category])}
                         </Text>
                       </Pressable>
                     );
