@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "main": "./index.js",
   "scripts": {
+    "test:onboarding-native-contract": "node scripts/testOnboardingNativeContract.cjs",
     "test:birthday-onboarding": "ts-node -P scripts/tsconfig.json scripts/testBirthdayOnboarding.ts",
     "start": "expo start",
     "android": "expo run:android",

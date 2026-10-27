@@ -172,13 +172,14 @@ module.exports = ({ config }) => {
 
   return {
     ...config,
-    // The birthday picker adds native code. Never target the older 1.7 Dev runtime.
+    // Shared Development native contract on both platforms; EAS Updates also
+    // partitions updates by platform. Never target the older 1.7.0 Dev clients.
+    // Production keeps its existing policy; no Production update is authorized.
     runtimeVersion: IS_DEVELOPMENT_APP ? '1.7-onboarding-date-v1' : config.runtimeVersion,
     name: variant.name,
     scheme: variant.scheme,
     ios: {
       ...config.ios,
-      ...(IS_DEVELOPMENT_APP ? { buildNumber: '70' } : {}),
       bundleIdentifier: variant.iosBundleIdentifier,
       config: {
         ...(config.ios && config.ios.config),

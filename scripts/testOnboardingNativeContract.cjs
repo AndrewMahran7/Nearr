@@ -1,0 +1,41 @@
+const assert = require('node:assert/strict');
+const { readFileSync } = require('node:fs');
+const base = JSON.parse(readFileSync('app.json', 'utf8')).expo;
+const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+const eas = JSON.parse(readFileSync('eas.json', 'utf8'));
+const dynamic = readFileSync('app.config.js', 'utf8');
+function config(lane) {
+  process.env.EXPO_PUBLIC_APP_ENV = lane;
+  process.env.EXPO_PUBLIC_BACKEND_ENV = lane;
+  process.env.EXPO_PUBLIC_SUPABASE_URL = lane === 'development'
+    ? 'https://qnfxnmvxpjzfydgudtvs.supabase.co' : 'https://rlqvxdwtetxsqxhqztkw.supabase.co';
+  delete process.env.APP_VARIANT;
+  delete process.env.EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND;
+  delete process.env.EXPO_PUBLIC_MONETIZATION_MODE;
+  delete require.cache[require.resolve('../app.config.js')];
+  return require('../app.config.js')({ config: base });
+}
+const dev = config('development');
+const prod = config('production');
+assert.equal(dev.runtimeVersion, '1.7-onboarding-date-v1');
+assert.deepEqual(prod.runtimeVersion, { policy: 'appVersion' });
+assert.equal(dev.ios.buildNumber, base.ios.buildNumber);
+assert.equal(prod.ios.buildNumber, base.ios.buildNumber);
+assert.doesNotMatch(dynamic, /buildNumber\s*:/, 'app.json is the one native build-number source');
+assert.equal(eas.cli.appVersionSource, 'local');
+assert.equal(eas.build.development.autoIncrement, false);
+assert.equal(eas.build.development.developmentClient, true);
+assert.equal(eas.build.development.distribution, 'internal');
+assert.equal(eas.build.development.environment, 'development');
+assert.equal(eas.build.development.channel, 'development');
+assert.equal(dev.ios.bundleIdentifier, 'com.nearr.ios');
+assert.equal(dev.android.package, 'com.nearr.app');
+assert.equal(dev.extra.eas.projectId, '2ec7a08a-2078-4232-a244-c9d16fb75ffe');
+assert.equal(pkg.dependencies['@react-native-community/datetimepicker'], '8.0.1');
+assert.equal(base.icon, './assets/icon.png');
+assert.ok(base.plugins.some(plugin => Array.isArray(plugin) && plugin[0] === 'expo-share-extension'));
+assert.ok(base.plugins.includes('./plugins/withNearrLocalization'));
+assert.match(readFileSync('plugins/withNearrLocalization.js', 'utf8'), /info\.CFBundleVersion = String\(buildNumber\)/);
+assert.match(readFileSync('plugins/withNearrLocalization.js', 'utf8'), /buildNumber: mod\.ios\?\.buildNumber/);
+assert.doesNotMatch(readFileSync('index.js', 'utf8'), /birthdayOnboardingVisual/);
+console.log('PASS unified native contract: local single-source host/extension version, Development-only runtime, unchanged Production runtime policy, native date picker, project, bundles, icon and locale plugins');
