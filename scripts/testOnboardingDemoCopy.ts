@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { signedOutOnboardingV2Route } from '../lib/onboardingV2RoutingCore';
 
 /**
  * Source contracts for what the pre-auth onboarding TEACHES.
@@ -386,7 +387,10 @@ function completionAndReturningUsers() {
     /if \(\(inAuth \|\| inOnboarding\) && !previewingOnboarding && !isPostAuthRoutingPending\(\)\)/,
     'AuthGate still routes signed-in users out of onboarding',
   );
-  assert.match(read('app/index.tsx'), /if \(!session\) return <Redirect href="\/\(onboarding\)" \/>/);
+  assert.match(read('app/index.tsx'), /if \(!session\) return <Redirect href=\{isOnboardingV2Enabled\(\)[\s\S]{0,120}signedOutOnboardingV2Route\(onboardingV2\?\.stage\)[\s\S]{0,50}'\/\(onboarding\)'/);
+  assert.equal(signedOutOnboardingV2Route('overview'), '/(onboarding)', 'fresh users keep the public tutorial');
+  assert.equal(signedOutOnboardingV2Route('onboarding_complete'), '/(onboarding)/account', 'revoked returning sessions must not enter an unrenderable tutorial stage');
+  assert.equal(signedOutOnboardingV2Route('graduated'), '/(onboarding)/account');
 }
 
 function run() {
