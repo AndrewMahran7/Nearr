@@ -24,7 +24,10 @@ const scripts = phase === 'ten' ? original.results.filter(r => r.exit !== 0).map
 if (scripts.length !== (phase === 'ten' ? 10 : 30)) throw new Error('Original matrix count changed');
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 for (const name of scripts) if (!pkg.scripts[name]) throw new Error(`Unknown script: ${name}`);
-const output = `artifacts/global-release/android-qualification/${phase}`;
+// A later qualification keeps its receipts separate from the accepted baseline.
+const output = process.env.NEARR_VALIDATION_OUTPUT || `artifacts/global-release/android-qualification/${phase}`;
+const artifactsRoot = path.resolve('artifacts/global-release');
+if (!path.resolve(output).startsWith(artifactsRoot + path.sep)) throw new Error('Validation output must stay below artifacts/global-release');
 mkdirSync(output, { recursive: true });
 const results = [], startedAt = new Date().toISOString();
 const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
@@ -46,6 +49,6 @@ async function worker() {
   }
 }
 // The ten original failures run in isolation, never sharing a process or output.
-await Promise.all(phase === 'ten' ? [worker()] : [worker(), worker()]);
+await Promise.all(phase === 'ten' || process.env.NEARR_VALIDATION_WORKERS === '1' ? [worker()] : [worker(), worker()]);
 writeFileSync(path.join(output, 'results.json'), JSON.stringify({ sourceSha, startedAt, finishedAt: new Date().toISOString(), total: scripts.length, passed: results.filter(r => r.exit === 0).length, failed: results.filter(r => r.exit !== 0).length, results }, null, 2) + '\n');
 process.exitCode = results.some(result => result.exit !== 0) ? 1 : 0;
