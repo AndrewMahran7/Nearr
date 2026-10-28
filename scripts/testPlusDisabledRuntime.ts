@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import React from 'react';
 import * as translations from '../lib/i18nEngine';
+import { isFreeOnlyPlusStatus } from '../lib/plusReleasePolicy';
 
 // Real Plus client and screen, mocked native/network boundaries; never purchases.
 const Module = require('node:module');
@@ -42,30 +43,47 @@ async function main() {
     await assert.rejects(client.fetchPlusStatus('owned-qa'), /plus_unavailable/);
     assert.equal((await client.purchasePlus('owned-qa', { productId: status.productId, price: '$fixture', package: {} })).outcome, 'error');
     assert.equal(sdkLoads, 0, 'offline cannot activate purchases'); networkError = false;
+    // A contradictory response must still never load StoreKit on a free route.
+    status.releaseMode='free_only'; status.salesEnabled=true; status.purchaseEligible=true;
+    status.restoreAvailable=true; status.appUserId='malicious-fixture';
+    assert.equal(await client.loadPlusOffer('owned-qa',status),null);
+    assert.equal((await client.purchasePlus('owned-qa',{productId:status.productId,price:'$fixture',package:{}})).outcome,'error');
+    await assert.rejects(client.restorePlus('owned-qa'),/plus_store_unavailable/);
+    status.salesEnabled=false; status.purchaseEligible=false; status.restoreAvailable=false; status.appUserId=null;
+    delete status.releaseMode;
     const Renderer = require('react-test-renderer') as typeof import('react-test-renderer');
     const Plus = require('../app/plus').default;
     let renders = 0;
     for (const locale of ['en-US','es-MX','es-ES','pt-BR','fr','de','it','ja','ko','zh-Hans']) {
       await translations.i18n.changeLanguage(locale);
-      for (const mode of ['disabled', 'offline', 'loading']) {
-        plusState = { userId: 'owned-qa', status: mode === 'disabled' ? status : null, loading: mode === 'loading',
+      for (const mode of ['disabled', 'offline', 'loading', 'free_only']) {
+        const currentStatus=mode==='free_only' ? {...status,releaseMode:'free_only',usage:{...status.usage,enforced:true}} : status;
+        plusState = { userId: 'owned-qa', status: ['disabled','free_only'].includes(mode) ? currentStatus : null, loading: mode === 'loading',
+          freeOnly: mode==='free_only' && isFreeOnlyPlusStatus(currentStatus),
           offer: null, canOffer: false, hasPlus: false, canManage: false, refresh: async () => {} };
         let renderer!: ReturnType<typeof Renderer.create>;
         Renderer.act(() => { renderer = Renderer.create(React.createElement(Plus)); });
         const tree = JSON.stringify(renderer.toJSON());
-        assert.ok(tree.includes(translations.t('Your saved places stay yours, with or without a subscription.')));
+        if(mode!=='free_only') assert.ok(tree.includes(translations.t('Your saved places stay yours, with or without a subscription.')));
         assert.equal(renderer.root.findAllByType('Button' as any).filter(n => String(n.props.title).includes('$fixture')).length, 0);
         if (mode === 'disabled') {
           assert.ok(tree.includes(translations.t('Plus is not available for purchase on this account right now.')));
           const restore = renderer.root.findAllByType('Button' as any).find(n => n.props.title === translations.t('Restore Purchases'));
           assert.equal(restore?.props.disabled, true);
+        } else if(mode==='free_only') {
+          assert.ok(tree.includes(translations.t('Free includes {{count}} successful video finds each calendar month.',{count:3})));
+          assert.ok(tree.includes('UTC'));
+          for(const key of ['Nearr Plus','Plus includes {{count}} successful video finds per billing month, including your free allowance.',
+            'Restore Purchases','Manage Subscription','Plus is not available for purchase on this account right now.']) {
+            assert.ok(!tree.includes(translations.t(key,{count:10})),`${locale} free-only must hide ${key}`);
+          }
         } else if (mode === 'offline') assert.ok(tree.includes(translations.t('Purchases are unavailable right now. Your saved places are still available.')));
         else assert.equal(renderer.root.findAllByType('ActivityIndicator' as any).length, 1);
         Renderer.act(() => renderer.unmount()); renders++;
       }
     }
     assert.equal(sdkLoads, 0);
-    console.log(`PASS Plus disabled/offline/restore client gates and ${renders} real-screen locale/state renders; zero native purchases`);
+    console.log(`PASS Plus disabled/offline/free-only/restore client gates and ${renders} real-screen locale/state renders; zero native purchases`);
   } finally { Module._load = originalLoad; await translations.i18n.changeLanguage('en-US'); }
 }
 void main().catch(error => { console.error(error); process.exitCode = 1; });

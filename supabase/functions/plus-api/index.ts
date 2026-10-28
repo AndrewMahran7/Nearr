@@ -4,6 +4,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
 import { verifyPlusSubscriber } from '../../../lib/plusEntitlements.ts';
+import { plusReleasePolicy } from '../../../lib/plusReleasePolicy.ts';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -53,8 +54,10 @@ serve(async req => {
   if (configError || !config) return json({ ok: false, error: 'plus_unavailable' }, 503);
   const { data: eligible, error: eligibilityError } = await admin.rpc('is_account_eligible_for_purchase', { p_user_id: auth.user.id });
   if (eligibilityError || typeof eligible !== 'boolean') return json({ ok: false, error: 'eligibility_unavailable' }, 503);
-  const qualified = config.release_qualified === true && config.catalog_verified === true && !!config.revenuecat_app_id;
-  const purchaseEligible = eligible === true && qualified;
+  const release = plusReleasePolicy(config);
+  const purchaseEligible = eligible === true && release.paidQualified;
+  if (config.release_mode === 'free_only' && !release.freeOnly) return json({ ok: false, error: 'plus_unavailable' }, 503);
+  if (release.freeOnly && (action === 'sync' || action === 'restore')) return json({ ok: false, error: 'purchases_deferred' }, 409);
 
   // Optional analytics remain disabled until a separately reviewed consent exists.
   if (action === 'event') return json({ ok: true, recorded: false, reason: 'optional_analytics_disabled' });
@@ -90,6 +93,7 @@ serve(async req => {
   const paidEnd = entitlement?.access_until;
   return json({
     ok: true,
+    releaseMode: release.mode,
     salesEnabled: config.sales_enabled === true && purchaseEligible,
     purchaseEligible,
     restoreAvailable: purchaseEligible,
@@ -98,8 +102,8 @@ serve(async req => {
     productId: config.product_id,
     freeFinds: config.free_finds,
     plusFinds: config.plus_finds,
-    usage: { used: usage.used, reserved: usage.reserved, limit: usage.limit, remaining: usage.remaining, periodStart, periodEnd: usage.paid && paidEnd ? paidEnd : nextUtcMonth() },
-    entitlement: entitlement ? {
+    usage: { used: usage.used, reserved: usage.reserved, limit: usage.limit, remaining: usage.remaining, enforced: usage.enforced === true, periodStart, periodEnd: usage.paid && paidEnd ? paidEnd : nextUtcMonth() },
+    entitlement: !release.freeOnly && entitlement ? {
       state: entitlement.state, productId: entitlement.product_id, periodStart: entitlement.period_start,
       expiresAt: entitlement.expires_at, accessUntil: entitlement.access_until, verifiedAt: entitlement.verified_at,
       environment: entitlement.environment, periodKey: entitlement.period_key,

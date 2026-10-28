@@ -48,6 +48,9 @@ serve(async req => {
   if (!supabaseUrl || !serviceKey || !revenueCatSecret) return json({ ok: false, error: 'server_misconfigured' }, 500);
   const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: config, error: configError } = await admin.from('nearr_plus_config').select('*').eq('id', true).single();
+  // Free-only is an explicit release decision, not a temporary store outage.
+  // Never contact RevenueCat or apply paid grants while this mode is selected.
+  if (!configError && config?.release_mode === 'free_only') return json({ ok: false, error: 'purchases_deferred' }, 409);
   if (configError || !config || !plusWebhookMatchesConfiguration(event, config.revenuecat_app_id, config.environment)) return json({ ok: false, error: 'configuration_mismatch' }, 400);
   let identities: string[]; try { identities = plusWebhookIdentities(event); } catch { return json({ ok: false, error: 'invalid_identities' }, 400); }
   if (!identities.length) return json({ ok: false, error: 'unknown_customer' }, 400);

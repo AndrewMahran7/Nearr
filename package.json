@@ -372,7 +372,7 @@
     "test:vayrin-multi-place-review-redesign": "ts-node -P scripts/tsconfig.json scripts/testVayrinMultiPlaceReviewRedesign.ts",
     "test:vayrin-product-ui": "npm run test:vayrin-presentation && npm run test:vayrin-ui && npm run test:vayrin-candidate-confirmation",
     "test:no-user-facing-vayrin": "ts-node -P scripts/tsconfig.json scripts/testNoUserFacingVayrin.ts",
-    "test:global-monetization": "ts-node -P scripts/tsconfig.json scripts/testGlobalMonetization.ts",
+    "test:global-monetization": "ts-node -P scripts/tsconfig.json scripts/testGlobalMonetization.ts && ts-node -P scripts/tsconfig.json scripts/testFreeOnlyPlusApi.ts",
     "test:global-monetization-db": "ts-node -P scripts/tsconfig.json scripts/testGlobalMonetizationDatabase.ts",
     "eas-build-pre-install": "node scripts/checkPrivacyPolicyRelease.cjs --eas-build",
     "test:privacy-policy": "ts-node -P scripts/tsconfig.json scripts/testPrivacyPolicy.ts",

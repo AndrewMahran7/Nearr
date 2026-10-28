@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import { useAuth } from './useAuth';
 import { fetchPlusStatus, loadPlusOffer, type PlusOffer, type PlusStatus } from '../lib/plusClient';
 import { hasVerifiedPlusAccess } from '../lib/plusEntitlements';
+import { isFreeOnlyPlusStatus } from '../lib/plusReleasePolicy';
 
 /** No persisted paid boolean or offline authorization. Offline maps and saves
  * remain available; only new online recognition work is gated. */
@@ -25,5 +26,10 @@ export function usePlus() {
     const subscription = AppState.addEventListener('change', next => { if (next === 'active') void refresh(); });
     return () => { generation.current++; subscription.remove(); };
   }, [refresh]);
-  return { userId, status, offer, loading, refresh, canOffer: !!offer && status?.salesEnabled === true, hasPlus: hasVerifiedPlusAccess(status?.entitlement ?? null), canManage: status?.restoreAvailable === true };
+  const freeOnly = isFreeOnlyPlusStatus(status);
+  const paidMode = status?.releaseMode !== 'free_only';
+  return { userId, status, offer, loading, refresh, freeOnly,
+    canOffer: paidMode && !!offer && status?.salesEnabled === true,
+    hasPlus: paidMode && hasVerifiedPlusAccess(status?.entitlement ?? null),
+    canManage: paidMode && status?.restoreAvailable === true };
 }

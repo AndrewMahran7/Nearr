@@ -4,6 +4,7 @@ import {
   PLUS_ENTITLEMENT_ID, PLUS_PRODUCT_ID, classifyPlusPurchaseError, hasVerifiedPlusAccess,
   plusWebhookIdentities, plusWebhookMatchesConfiguration, verifyPlusSubscriber,
 } from '../lib/plusEntitlements';
+import { isFreeOnlyPlusStatus, plusReleasePolicy } from '../lib/plusReleasePolicy';
 
 const now = Date.parse('2026-10-20T12:00:00.000Z');
 const config = { entitlementId: PLUS_ENTITLEMENT_ID, productId: PLUS_PRODUCT_ID, environment: 'SANDBOX' as const };
@@ -101,6 +102,8 @@ test('Edge endpoints authenticate server-side and re-read RevenueCat', () => {
   assert.match(api, /auth\.getUser\(accessToken\)/); assert.match(api, /is_account_eligible_for_purchase/);
   assert.match(api, /api\.revenuecat\.com\/v1\/subscribers/); assert.match(hook, /api\.revenuecat\.com\/v1\/subscribers/);
   assert.match(hook, /equalSecret/); assert.match(hook, /apply_nearr_plus_webhook/);
+  assert.match(hook,/config\?\.release_mode === 'free_only'/);
+  assert.ok(hook.indexOf("config?.release_mode === 'free_only'") < hook.indexOf('const payload = await subscriber('));
 });
 test('release and allowance defaults are closed', () => {
   const migration = readFileSync('supabase/migrations/20261021000002_nearr_plus_verified_entitlements.sql', 'utf8');
@@ -111,6 +114,28 @@ test('release and allowance defaults are closed', () => {
 });
 test('optional funnel endpoint remains disabled without separate consent', () => {
   assert.match(readFileSync('supabase/functions/plus-api/index.ts', 'utf8'), /optional_analytics_disabled/);
+});
+
+test('free-only release is explicit, qualified, enforced and independent of a paid catalog', () => {
+  const free = { release_mode:'free_only', release_qualified:true, enforce_allowance:true, sales_enabled:false, free_finds:3,
+    catalog_verified:false, revenuecat_app_id:null };
+  assert.deepEqual(plusReleasePolicy(free), { mode:'free_only', freeOnly:true, paidQualified:false });
+  for (const change of [{release_mode:undefined},{release_mode:'FREE_ONLY'},{release_mode:'unknown'},
+    {release_qualified:false},{enforce_allowance:false},{sales_enabled:true},{free_finds:10}]) {
+    const result=plusReleasePolicy({...free,...change}); assert.equal(result.freeOnly,false); assert.equal(result.paidQualified,false);
+  }
+  const paid={...free,release_mode:'paid',catalog_verified:true,revenuecat_app_id:'app_fixture'};
+  assert.equal(plusReleasePolicy(paid).paidQualified,true);
+  assert.equal(plusReleasePolicy({...paid,release_mode:undefined}).mode,'paid','older server config is not free-only');
+  assert.equal(plusReleasePolicy({...paid,revenuecat_app_id:' '}).paidQualified,false);
+});
+test('client never mistakes missing or contradictory server fields for free-only', () => {
+  const free={releaseMode:'free_only',salesEnabled:false,purchaseEligible:false,restoreAvailable:false,
+    appUserId:null,entitlement:null,freeFinds:3,usage:{limit:3,enforced:true}};
+  assert.equal(isFreeOnlyPlusStatus(free),true);
+  for(const change of [{releaseMode:undefined},{releaseMode:'paid'},{salesEnabled:true},{purchaseEligible:true},
+    {restoreAvailable:true},{appUserId:'unexpected'},{entitlement:{state:'active'}},{freeFinds:10},
+    {usage:{limit:3}},{usage:{limit:10,enforced:true}}]) assert.equal(isFreeOnlyPlusStatus({...free,...change}),false);
 });
 
 mkdirSync('artifacts/global-release', { recursive: true });

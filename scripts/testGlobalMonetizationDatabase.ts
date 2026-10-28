@@ -74,9 +74,10 @@ async function main() {
     insert into saved_places values('${foreignSave}','${u2}');`);
   const migrations = ['20261018000001_adult_age_eligibility.sql','20261018000002_adult_dispatch_transition_guard.sql',
     '20261021000001_global_eligibility_and_consent.sql','20261021000002_nearr_plus_verified_entitlements.sql',
-    '20261021000003_global_share_ingress.sql','20261021000004_account_ui_locale.sql','20261021000005_global_claim_eligibility.sql'];
+    '20261021000003_global_share_ingress.sql','20261021000004_account_ui_locale.sql','20261021000005_global_claim_eligibility.sql',
+    '20261028000001_nearr_free_only_release.sql'];
   for (const migration of migrations) sql(readFileSync(path.resolve('supabase/migrations',migration),'utf8'));
-  test('all seven migrations coexist with every live qualification disabled', () => {
+  test('all eight migrations coexist with every live qualification disabled', () => {
     fails(job(1),/global_eligibility_required/);
     assert.equal(sql(`select is_account_eligible_for_ai('${u1}'),is_account_eligible_for_purchase('${u1}');`),'f|f');
   });
@@ -247,8 +248,58 @@ async function main() {
   assert.ok(ingressRace.every(code=>code===0)); assert.equal(count(),1);
   assert.equal(sql('select count(*) from share_jobs;'),'1');
   results.push('eight concurrent unified ingress retries create one job and one reservation');
+  reset();
+  test('free-only activation refuses existing paid access without modifying saves', () => {
+    const before=sql('select count(*) from saved_places;');
+    sql(`select apply_nearr_plus_snapshot('${u1}',test_snapshot());`);
+    fails("update nearr_plus_config set release_mode='free_only',sales_enabled=false,catalog_verified=false,revenuecat_app_id=null;",/free_only_existing_paid_access/);
+    assert.equal(sql('select count(*) from saved_places;'),before);
+    assert.equal(sql('select release_mode from nearr_plus_config;'),'paid');
+  });
+  reset();
+  test('free-only requires release qualification enforced three finds and no sales', () => {
+    for(const change of ["release_qualified=false","enforce_allowance=false","free_finds=4","sales_enabled=true"]) {
+      fails(`update nearr_plus_config set release_mode='free_only',${change};`,/check constraint/);
+    }
+    fails("update nearr_plus_config set release_mode='forged';",/check constraint/);
+    sql("update nearr_plus_config set release_mode='free_only',sales_enabled=false,catalog_verified=false,revenuecat_app_id=null;");
+    assert.equal(sql(`select nearr_plus_usage('${u1}')->>'limit',nearr_plus_usage('${u1}')->>'enforced';`),'3|true');
+    fails('set role authenticated; update nearr_plus_config set enforce_allowance=false;',/permission denied/);
+  });
+  test('free-only keeps consent and provider release checks before queue work', () => {
+    permission(u1,false); fails(job(80),/global_eligibility_required/); permission(u1,true);
+    sql('update global_release_policy set recognition_qualified=false;');
+    fails(job(80),/global_eligibility_required/);
+    sql('update global_release_policy set recognition_qualified=true;');
+    for(const user of [teen,blocked]) fails(job(80,user),/global_eligibility_required/);
+    assert.equal(count(),0);
+  });
+  test('free-only uses UTC calendar boundary and preserves completed saved places', () => {
+    sql(job(80));
+    sql(`insert into saved_places values('${id(180)}','${u1}'); update share_jobs set status='completed',saved_place_id='${id(180)}' where id='${id(80)}';`);
+    assert.equal(sql(`select nearr_plus_usage('${u1}')->>'used';`),'1');
+    sql(`update nearr_plus_recognitions set reserved_at=(date_trunc('month',now() at time zone 'UTC') at time zone 'UTC')-interval '1 second';`);
+    assert.equal(sql(`set timezone='Pacific/Honolulu'; select (nearr_plus_usage('${u1}')->>'periodStart')::timestamptz = (date_trunc('month',now() at time zone 'UTC') at time zone 'UTC'),nearr_plus_usage('${u1}')->>'remaining';`),'t|3');
+    assert.equal(sql(`select count(*) from saved_places where id='${id(180)}';`),'1');
+  });
+  reset();
+  test('free-only releases failed work retries once and consumes multi-place only once', () => {
+    sql(job(81)); sql(`update share_jobs set status='failed' where id='${id(81)}';`);
+    assert.equal(sql(`select nearr_plus_usage('${u1}')->>'remaining';`),'3');
+    sql(`update share_jobs set status='queued' where id='${id(81)}';`);
+    assert.equal(count(),1);
+    sql(`update share_jobs set status='needs_help',decision='candidate_picker' where id='${id(81)}';
+      insert into share_job_place_results(share_job_id,user_id,saved_place_id,outcome) values
+      ('${id(81)}','${u1}','${id(100)}','auto_saved'),('${id(81)}','${u1}','${id(101)}','already_saved');`);
+    assert.equal(sql(`select nearr_plus_usage('${u1}')->>'used',nearr_plus_usage('${u1}')->>'remaining';`),'1|2');
+  });
+  reset();
+  const freeConcurrent=await Promise.all(Array.from({length:6},(_,i)=>parallelSql(job(90+i))));
+  assert.equal(freeConcurrent.filter(code=>code===0).length,3); assert.equal(count(),3);
+  assert.equal(sql('select catalog_verified,revenuecat_app_id is null,sales_enabled from nearr_plus_config;'),'f|t|f');
+  results.push('free-only six concurrent enqueues allow exactly three without paid catalog or RevenueCat');
   mkdirSync('artifacts/global-release',{recursive:true});
-  writeFileSync('artifacts/global-release/monetization-database-tests.json',JSON.stringify({testedAt:new Date().toISOString(),engine:sql('select version();'),scope:'disposable local PostgreSQL; fixture base schema, actual legacy age and all five global migrations; synthetic local qualification only; full media-claim regression separately tested against restored Development schema',migrations,passed:results.length,failed:0,tests:results},null,2)+'\n');
+  writeFileSync('artifacts/global-release/monetization-database-tests.json',JSON.stringify({testedAt:new Date().toISOString(),engine:sql('select version();'),scope:'disposable local PostgreSQL; fixture base schema, actual legacy age/global/free-only migrations; synthetic local qualification only; full media-claim regression separately tested against restored Development schema',migrations,passed:results.length,failed:0,tests:results},null,2)+'\n');
   console.log(`PASS: ${results.length} real PostgreSQL entitlement, quota, isolation and concurrent-enqueue cases`);
 }
 main().catch(error => { console.error(error.message); process.exitCode=1; }).finally(() => {
