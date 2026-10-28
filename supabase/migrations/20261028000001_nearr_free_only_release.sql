@@ -25,19 +25,96 @@ alter table public.nearr_plus_config
   add constraint nearr_free_only_qualified check (release_mode<>'free_only' or
     (release_qualified and enforce_allowance and not sales_enabled and free_finds=3));
 
--- Never silently discard existing subscribers' remaining paid access. A later
--- paid-to-free cutover must settle that obligation separately, not flip a flag.
+-- Initial free launch only, never a generic paid-to-free downgrade. Even an
+-- expired/free receipt or a customer awaiting checkout can represent obligations
+-- not yet reflected by an active local entitlement. All related writes share
+-- this transaction lock, so an in-flight identity/grant cannot race activation.
+-- Legacy Pro/billing data outside these tables still needs release reconciliation.
+-- Advisory locks need a fresh READ COMMITTED snapshot after waiting. Reject
+-- stronger/fixed-snapshot write transactions instead of trusting stale reads.
 create function public.guard_nearr_free_only_activation()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin
-  if new.release_mode='free_only' and old.release_mode<>'free_only' and exists(
-    select 1 from public.nearr_plus_entitlements where state in ('active','trial','intro','grace','cancelled')
-      and access_until>now()) then raise exception 'free_only_existing_paid_access'; end if;
+  if current_setting('transaction_isolation')<>'read committed' then
+    raise exception 'plus_release_requires_read_committed'; end if;
+  perform pg_advisory_xact_lock(hashtextextended('nearr_plus_release_policy',0));
+  if new.release_mode='free_only' and (tg_op='INSERT' or old.release_mode<>'free_only') and (
+    exists(select 1 from public.nearr_plus_customers) or exists(select 1 from public.nearr_plus_entitlements)
+  ) then raise exception 'free_only_existing_paid_history'; end if;
   return new;
 end $$;
 revoke all on function public.guard_nearr_free_only_activation() from public,anon,authenticated;
-create trigger nearr_free_only_activation before update on public.nearr_plus_config
+create trigger nearr_free_only_activation before insert or update on public.nearr_plus_config
 for each row execute function public.guard_nearr_free_only_activation();
+
+create function public.guard_nearr_paid_customer_write()
+returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
+begin
+  if current_setting('transaction_isolation')<>'read committed' then
+    raise exception 'plus_release_requires_read_committed'; end if;
+  perform pg_advisory_xact_lock(hashtextextended('nearr_plus_release_policy',0));
+  if exists(select 1 from public.nearr_plus_config where id and release_mode='free_only') then
+    raise exception 'plus_free_only_customer_blocked'; end if;
+  return new;
+end $$;
+revoke all on function public.guard_nearr_paid_customer_write() from public,anon,authenticated;
+create trigger nearr_paid_customer_write before insert or update on public.nearr_plus_customers
+for each row execute function public.guard_nearr_paid_customer_write();
+
+create function public.guard_nearr_paid_entitlement_write()
+returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
+begin
+  if current_setting('transaction_isolation')<>'read committed' then
+    raise exception 'plus_release_requires_read_committed'; end if;
+  perform pg_advisory_xact_lock(hashtextextended('nearr_plus_release_policy',0));
+  if new.state in ('active','trial','intro','grace','cancelled') and new.access_until>now()
+    and exists(select 1 from public.nearr_plus_config where id and release_mode='free_only') then
+    raise exception 'plus_free_only_paid_grant_blocked'; end if;
+  return new;
+end $$;
+revoke all on function public.guard_nearr_paid_entitlement_write() from public,anon,authenticated;
+create trigger nearr_paid_entitlement_write before insert or update on public.nearr_plus_entitlements
+for each row execute function public.guard_nearr_paid_entitlement_write();
+
+-- Acquire release policy before any per-user/period locks. A multi-identity
+-- webhook must not hold the release lock while waiting for a single-user sync
+-- that has already taken its user lock and is itself waiting for release policy.
+-- Keep the original snapshot validation, freshness and usage-transfer contract.
+create or replace function public.apply_nearr_plus_snapshot(p_user_id uuid,p_snapshot jsonb)
+returns void language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_cfg public.nearr_plus_config%rowtype; v_verified timestamptz; v_written integer;
+begin
+  perform pg_advisory_xact_lock(hashtextextended('nearr_plus_release_policy',0));
+  perform pg_advisory_xact_lock(hashtextextended('nearr_plus:'||p_user_id::text,0));
+  select * into strict v_cfg from public.nearr_plus_config where id;
+  if not exists(select 1 from public.nearr_plus_customers where user_id=p_user_id) then
+    raise exception 'plus_customer_not_found'; end if;
+  v_verified := (p_snapshot->>'verifiedAt')::timestamptz;
+  if v_verified is null or v_verified > now()+interval '1 minute' or v_verified < now()-interval '15 minutes'
+     or p_snapshot->>'environment' is distinct from v_cfg.environment
+     or ((p_snapshot->>'state') <> 'free' and p_snapshot->>'productId' is distinct from v_cfg.product_id)
+     or ((p_snapshot->>'state') in ('active','trial','intro','grace','cancelled') and
+       ((p_snapshot->>'periodStart') is null or (p_snapshot->>'expiresAt') is null or (p_snapshot->>'accessUntil') is null
+         or (p_snapshot->>'periodKey') is null)) then
+    raise exception 'plus_snapshot_invalid'; end if;
+  insert into public.nearr_plus_entitlements(user_id,state,product_id,period_start,expires_at,access_until,verified_at,environment,period_key)
+  values(p_user_id,p_snapshot->>'state',p_snapshot->>'productId',(p_snapshot->>'periodStart')::timestamptz,
+    (p_snapshot->>'expiresAt')::timestamptz,(p_snapshot->>'accessUntil')::timestamptz,v_verified,v_cfg.environment,p_snapshot->>'periodKey')
+  on conflict(user_id) do update set state=excluded.state,product_id=excluded.product_id,
+    period_start=excluded.period_start,expires_at=excluded.expires_at,access_until=excluded.access_until,
+    verified_at=excluded.verified_at,environment=excluded.environment,period_key=excluded.period_key,updated_at=now()
+  where public.nearr_plus_entitlements.verified_at < excluded.verified_at
+    or (public.nearr_plus_entitlements.verified_at = excluded.verified_at
+      and excluded.state in ('free','expired','revoked')
+      and public.nearr_plus_entitlements.state <> 'revoked');
+  get diagnostics v_written = row_count;
+  if v_written>0 and p_snapshot->>'state' in ('active','trial','intro','grace','cancelled') then
+    perform pg_advisory_xact_lock(hashtextextended('nearr_plus_period:'||(p_snapshot->>'periodKey'),0));
+    update public.nearr_plus_recognitions set period_key=p_snapshot->>'periodKey'
+      where user_id=p_user_id and period_key is null
+        and reserved_at >= date_trunc('month',now() at time zone 'UTC') at time zone 'UTC';
+  end if;
+end $$;
 
 create or replace function public.nearr_plus_usage(p_user_id uuid)
 returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$

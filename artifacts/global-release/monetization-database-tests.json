@@ -1,7 +1,7 @@
 {
-  "testedAt": "2026-10-27T22:01:33.535Z",
+  "testedAt": "2026-10-28T00:36:30.113Z",
   "engine": "PostgreSQL 18.3 on x86_64-windows, compiled by msvc-19.44.35223, 64-bit",
-  "scope": "disposable local PostgreSQL; fixture base schema, actual legacy age and all five global migrations; synthetic local qualification only; full media-claim regression separately tested against restored Development schema",
+  "scope": "disposable local PostgreSQL; fixture base schema, actual legacy age/global/free-only migrations; synthetic local qualification only; full media-claim regression separately tested against restored Development schema",
   "migrations": [
     "20261018000001_adult_age_eligibility.sql",
     "20261018000002_adult_dispatch_transition_guard.sql",
@@ -9,12 +9,14 @@
     "20261021000002_nearr_plus_verified_entitlements.sql",
     "20261021000003_global_share_ingress.sql",
     "20261021000004_account_ui_locale.sql",
-    "20261021000005_global_claim_eligibility.sql"
+    "20261021000005_global_claim_eligibility.sql",
+    "20261028000001_nearr_free_only_release.sql"
   ],
-  "passed": 28,
+  "passed": 43,
   "failed": 0,
   "tests": [
-    "all seven migrations coexist with every live qualification disabled",
+    "all eight migrations coexist with every live qualification disabled",
+    "protected writes reject repeatable-read and serializable snapshots before mutation",
     "migration defaults keep existing free queue unchanged",
     "allowance cannot activate without product and release qualification",
     "client roles cannot read billing tables or mint snapshots",
@@ -41,6 +43,20 @@
     "private queue claim functions reject both client roles",
     "six concurrent enqueues cannot exceed the three-find free quota",
     "concurrent restored identities share one ten-find renewal allowance",
-    "eight concurrent unified ingress retries create one job and one reservation"
+    "eight concurrent unified ingress retries create one job and one reservation",
+    "free-only activation refuses any paid history without modifying saves",
+    "even a paid identity without an active receipt prevents free-only downgrade",
+    "inactive entitlement-only history also prevents free-only downgrade",
+    "free-only requires release qualification enforced three finds and no sales",
+    "free-only keeps consent and provider release checks before queue work",
+    "free-only uses UTC calendar boundary and preserves completed saved places",
+    "free-only releases failed work retries once and consumes multi-place only once",
+    "free-only six concurrent enqueues allow exactly three without paid catalog or RevenueCat",
+    "concurrent customer-first write prevents free-only activation and preserves checkout identity",
+    "concurrent release-first transition blocks late paid customer creation",
+    "concurrent direct-grant-first write without customer row prevents free-only activation",
+    "concurrent snapshot-first grant remains paid and prevents release downgrade",
+    "concurrent release-first transition blocks late active receipt writes atomically",
+    "multi-identity webhook and simultaneous single-user sync obey release-before-user lock ordering without deadlock"
   ]
 }

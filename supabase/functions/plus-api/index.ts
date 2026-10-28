@@ -65,6 +65,7 @@ serve(async req => {
   let { data: customer } = await admin.from('nearr_plus_customers').select('app_user_id').eq('user_id', auth.user.id).maybeSingle();
   if (!customer && purchaseEligible) {
     const inserted = await admin.from('nearr_plus_customers').insert({ user_id: auth.user.id }).select('app_user_id').single();
+    if (inserted.error?.message?.includes('plus_free_only_customer_blocked')) return json({ ok: false, error: 'release_mode_changed' }, 409);
     if (inserted.error && inserted.error.code !== '23505') return json({ ok: false, error: 'plus_identity_unavailable' }, 503);
     customer = inserted.data ?? (await admin.from('nearr_plus_customers').select('app_user_id').eq('user_id', auth.user.id).single()).data;
   }
@@ -77,6 +78,7 @@ serve(async req => {
         entitlementId: config.entitlement_id, productId: config.product_id, environment: config.environment,
       });
       const applied = await admin.rpc('apply_nearr_plus_snapshot', { p_user_id: auth.user.id, p_snapshot: snapshot });
+      if (applied.error?.message?.includes('plus_free_only_paid_grant_blocked')) return json({ ok: false, error: 'release_mode_changed' }, 409);
       if (applied.error) return json({ ok: false, error: 'entitlement_write_failed' }, 503);
     } catch (error) {
       console.warn(`[plus-api] receipt verification failed: ${error instanceof Error ? error.message : 'unknown'}`);

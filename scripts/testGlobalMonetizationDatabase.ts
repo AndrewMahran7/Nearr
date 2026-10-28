@@ -40,10 +40,22 @@ function permission(user: string, allowed: boolean) {
 }
 function parallelSql(query: string): Promise<number> {
   return new Promise((resolve,reject) => {
-    const child = spawn(pg('psql'),sqlArgs(),{ windowsHide:true,stdio:['pipe','pipe','pipe'] });
+    const child = spawn(pg('psql'),sqlArgs(),{ windowsHide:true,stdio:['pipe','pipe','pipe'],timeout:30_000 });
     child.on('error',reject); child.stdout.resume(); child.stderr.resume();
-    child.on('close',(code) => resolve(code ?? -1)); child.stdin.end(query);
+    child.on('close',(code,signal) => {
+      if(child.killed || signal) reject(new Error(`parallel_sql_terminated:${signal ?? 'timeout'}`));
+      else resolve(code ?? -1);
+    });
+    child.stdin.end("set statement_timeout='10s'; "+query);
   });
+}
+async function waitForTransactionPause(application: string) {
+  const deadline=Date.now()+5_000;
+  while(Date.now()<deadline) {
+    if(sql(`select count(*) from pg_stat_activity where application_name='${application}' and wait_event='PgSleep';`)==='1') return;
+    await new Promise(resolve=>setTimeout(resolve,25));
+  }
+  throw new Error(`transaction_barrier_timeout:${application}`);
 }
 const count = (where = '') => Number(sql(`select count(*) from nearr_plus_recognitions ${where};`));
 const job = (id: number, user = u1) => `insert into share_jobs(id,user_id,status) values('00000000-0000-0000-0000-${String(id).padStart(12,'0')}','${user}','queued');`;
@@ -80,6 +92,18 @@ async function main() {
   test('all eight migrations coexist with every live qualification disabled', () => {
     fails(job(1),/global_eligibility_required/);
     assert.equal(sql(`select is_account_eligible_for_ai('${u1}'),is_account_eligible_for_purchase('${u1}');`),'f|f');
+  });
+  test('protected writes reject repeatable-read and serializable snapshots before mutation', () => {
+    for(const isolation of ['repeatable read','serializable']) {
+      for(const write of [
+        'update nearr_plus_config set sales_enabled=false;',
+        `insert into nearr_plus_customers(user_id) values('${u1}');`,
+        `insert into nearr_plus_entitlements(user_id,state,verified_at,environment) values('${u1}','expired',now(),'SANDBOX');`,
+      ]) fails(`begin isolation level ${isolation}; select count(*) from nearr_plus_config; ${write}`,/plus_release_requires_read_committed/);
+    }
+    assert.equal(sql('select count(*) from nearr_plus_customers;'),'0');
+    assert.equal(sql('select count(*) from nearr_plus_entitlements;'),'0');
+    assert.equal(sql('select release_mode from nearr_plus_config;'),'paid');
   });
   sql(`update global_release_policy set legal_approved=true,recognition_qualified=true,purchase_qualified=true,provider_route='openai_only',evidence_reference='LOCAL_TEST_ONLY';
     update eligibility_region_policy set market_qualified=true,evidence_reference='LOCAL_TEST_ONLY';`);
@@ -249,14 +273,24 @@ async function main() {
   assert.equal(sql('select count(*) from share_jobs;'),'1');
   results.push('eight concurrent unified ingress retries create one job and one reservation');
   reset();
-  test('free-only activation refuses existing paid access without modifying saves', () => {
+  test('free-only activation refuses any paid history without modifying saves', () => {
     const before=sql('select count(*) from saved_places;');
     sql(`select apply_nearr_plus_snapshot('${u1}',test_snapshot());`);
-    fails("update nearr_plus_config set release_mode='free_only',sales_enabled=false,catalog_verified=false,revenuecat_app_id=null;",/free_only_existing_paid_access/);
+    fails("update nearr_plus_config set release_mode='free_only',sales_enabled=false,catalog_verified=false,revenuecat_app_id=null;",/free_only_existing_paid_history/);
     assert.equal(sql('select count(*) from saved_places;'),before);
     assert.equal(sql('select release_mode from nearr_plus_config;'),'paid');
   });
   reset();
+  test('even a paid identity without an active receipt prevents free-only downgrade', () => {
+    fails("update nearr_plus_config set release_mode='free_only',sales_enabled=false,catalog_verified=false,revenuecat_app_id=null;",/free_only_existing_paid_history/);
+    sql('delete from nearr_plus_customers;'); // This disposable test cluster owns every identity.
+  });
+  test('inactive entitlement-only history also prevents free-only downgrade', () => {
+    sql(`insert into nearr_plus_entitlements(user_id,state,verified_at,environment) values('${u1}','expired',now(),'SANDBOX');`);
+    fails("update nearr_plus_config set release_mode='free_only',sales_enabled=false,catalog_verified=false,revenuecat_app_id=null;",/free_only_existing_paid_history/);
+    assert.equal(sql("select state from nearr_plus_entitlements;"),'expired');
+    reset(); // Only this disposable cluster owns the synthetic billing history.
+  });
   test('free-only requires release qualification enforced three finds and no sales', () => {
     for(const change of ["release_qualified=false","enforce_allowance=false","free_finds=4","sales_enabled=true"]) {
       fails(`update nearr_plus_config set release_mode='free_only',${change};`,/check constraint/);
@@ -298,6 +332,63 @@ async function main() {
   assert.equal(freeConcurrent.filter(code=>code===0).length,3); assert.equal(count(),3);
   assert.equal(sql('select catalog_verified,revenuecat_app_id is null,sales_enabled from nearr_plus_config;'),'f|t|f');
   results.push('free-only six concurrent enqueues allow exactly three without paid catalog or RevenueCat');
+  reset();
+  const paidMode="update nearr_plus_config set release_mode='paid',release_qualified=true,enforce_allowance=true,sales_enabled=false,catalog_verified=true,revenuecat_app_id='app_test';";
+  const freeMode="update nearr_plus_config set release_mode='free_only',sales_enabled=false,catalog_verified=false,revenuecat_app_id=null;";
+  sql(paidMode);
+  const customerFirst=parallelSql(`set application_name='nearr_customer_first'; begin; insert into nearr_plus_customers(user_id) values('${u1}'); select pg_sleep(1); commit;`);
+  await waitForTransactionPause('nearr_customer_first');
+  fails(freeMode,/free_only_existing_paid_history/);
+  assert.equal(await customerFirst,0);assert.equal(sql('select release_mode from nearr_plus_config;'),'paid');
+  results.push('concurrent customer-first write prevents free-only activation and preserves checkout identity');
+  sql('delete from nearr_plus_customers;');
+  const releaseFirst=parallelSql(`set application_name='nearr_release_first'; begin; ${freeMode} select pg_sleep(1); commit;`);
+  await waitForTransactionPause('nearr_release_first');
+  fails(`insert into nearr_plus_customers(user_id) values('${u1}');`,/plus_free_only_customer_blocked/);
+  assert.equal(await releaseFirst,0);assert.equal(sql('select count(*) from nearr_plus_customers;'),'0');
+  results.push('concurrent release-first transition blocks late paid customer creation');
+  sql(paidMode);
+  const directGrantFirst=parallelSql(`set application_name='nearr_direct_grant_first'; begin;
+    insert into nearr_plus_entitlements(user_id,state,product_id,period_start,expires_at,access_until,verified_at,environment,period_key)
+    values('${u1}','active','nearr_plus_monthly_v1',now(),now()+interval '29 days',now()+interval '29 days',now(),'SANDBOX','direct-grant');
+    select pg_sleep(1); commit;`);
+  await waitForTransactionPause('nearr_direct_grant_first');
+  fails(freeMode,/free_only_existing_paid_history/);
+  assert.equal(await directGrantFirst,0);assert.equal(sql(`select nearr_plus_usage('${u1}')->>'limit';`),'10');
+  results.push('concurrent direct-grant-first write without customer row prevents free-only activation');
+  reset();
+  sql(paidMode+`insert into nearr_plus_customers(user_id) values('${u1}');`);
+  const grantFirst=parallelSql(`set application_name='nearr_grant_first'; begin; select apply_nearr_plus_snapshot('${u1}',test_snapshot()); select pg_sleep(1); commit;`);
+  await waitForTransactionPause('nearr_grant_first');
+  fails(freeMode,/free_only_existing_paid_history/);
+  assert.equal(await grantFirst,0);assert.equal(sql(`select nearr_plus_usage('${u1}')->>'limit';`),'10');
+  results.push('concurrent snapshot-first grant remains paid and prevents release downgrade');
+  reset();sql('delete from nearr_plus_customers;');
+  const grantReleaseFirst=parallelSql(`set application_name='nearr_grant_release_first'; begin; ${freeMode} select pg_sleep(1); commit;`);
+  await waitForTransactionPause('nearr_grant_release_first');
+  // This models a late service-role receipt write independently of its transport.
+  fails(`insert into nearr_plus_entitlements(user_id,state,product_id,period_start,expires_at,access_until,verified_at,environment,period_key)
+    values('${u1}','active','nearr_plus_monthly_v1',now(),now()+interval '29 days',now()+interval '29 days',now(),'SANDBOX','late-grant');`,/plus_free_only_paid_grant_blocked/);
+  assert.equal(await grantReleaseFirst,0);assert.equal(sql('select count(*) from nearr_plus_entitlements;'),'0');
+  assert.equal(sql(`select nearr_plus_usage('${u1}')->>'limit';`),'3');
+  results.push('concurrent release-first transition blocks late active receipt writes atomically');
+  sql(paidMode+`insert into nearr_plus_customers(user_id) values('${u1}'),('${u2}');
+    create function test_pause_multi_identity_grant() returns trigger language plpgsql as $$
+    begin
+      if new.user_id='${u1}' and current_setting('application_name')='nearr_multi_identity_grant' then perform pg_sleep(1); end if;
+      return new;
+    end $$;
+    create trigger test_pause_multi_identity_grant after insert on nearr_plus_entitlements
+      for each row execute function test_pause_multi_identity_grant();`);
+  const multiIdentity=parallelSql(`set statement_timeout='10s'; set application_name='nearr_multi_identity_grant';
+    select apply_nearr_plus_webhook('lock-order-transfer','TRANSFER',repeat('d',64),jsonb_build_array(
+      jsonb_build_object('userId','${u1}','snapshot',test_snapshot()),
+      jsonb_build_object('userId','${u2}','snapshot',test_snapshot())));`);
+  await waitForTransactionPause('nearr_multi_identity_grant');
+  const singleIdentity=parallelSql(`set statement_timeout='10s'; select apply_nearr_plus_snapshot('${u2}',test_snapshot());`);
+  assert.deepEqual(await Promise.all([multiIdentity,singleIdentity]),[0,0]);
+  assert.equal(sql("select count(*) from nearr_plus_entitlements where state='active';"),'2');
+  results.push('multi-identity webhook and simultaneous single-user sync obey release-before-user lock ordering without deadlock');
   mkdirSync('artifacts/global-release',{recursive:true});
   writeFileSync('artifacts/global-release/monetization-database-tests.json',JSON.stringify({testedAt:new Date().toISOString(),engine:sql('select version();'),scope:'disposable local PostgreSQL; fixture base schema, actual legacy age/global/free-only migrations; synthetic local qualification only; full media-claim regression separately tested against restored Development schema',migrations,passed:results.length,failed:0,tests:results},null,2)+'\n');
   console.log(`PASS: ${results.length} real PostgreSQL entitlement, quota, isolation and concurrent-enqueue cases`);

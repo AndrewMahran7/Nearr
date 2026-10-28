@@ -75,6 +75,7 @@ serve(async req => {
   const applied = await admin.rpc('apply_nearr_plus_webhook', {
     p_event_id: event.id, p_event_type: event.type, p_payload_sha256: await sha256(raw), p_snapshots: snapshots,
   });
+  if (applied.error?.message?.includes('plus_free_only_paid_grant_blocked')) return json({ ok: false, error: 'release_mode_changed' }, 409);
   if (applied.error) return json({ ok: false, error: 'webhook_apply_failed' }, 503);
   return json({ ok: true, applied: applied.data === true });
 });

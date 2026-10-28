@@ -147,7 +147,8 @@ test('Plus has localized loading, restore, alerts and accessible shared buttons'
 
 test('Plus never exposes mock pricing; legacy mock mode remains Development-only', () => {
   assert.doesNotMatch(paywall, /dev_mock|Dev pricing preview/);
-  assert.match(plusHook, /canOffer: !!offer && status\?\.salesEnabled === true/);
+  assert.match(plusHook, /const paidMode = status\?\.releaseMode !== 'free_only'/);
+  assert.match(plusHook, /canOffer: paidMode && !!offer && status\?\.salesEnabled === true/);
   assert.match(monetizationClient, /areDeveloperToolsVisible\(\) \? 'dev_mock' : 'disabled'/);
 });
 

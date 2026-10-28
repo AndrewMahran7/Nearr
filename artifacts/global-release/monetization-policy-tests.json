@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-27T22:00:05.927Z",
-  "passed": 21,
+  "testedAt": "2026-10-28T00:34:41.371Z",
+  "passed": 23,
   "failed": 0,
   "tests": [
     "valid Apple subscription verifies as active",
@@ -23,7 +23,9 @@
     "client uses StoreKit display price and server sync after purchase or restore",
     "Edge endpoints authenticate server-side and re-read RevenueCat",
     "release and allowance defaults are closed",
-    "optional funnel endpoint remains disabled without separate consent"
+    "optional funnel endpoint remains disabled without separate consent",
+    "free-only release is explicit, qualified, enforced and independent of a paid catalog",
+    "client never mistakes missing or contradictory server fields for free-only"
   ],
   "scope": "Pure verification and source contracts only; no Apple purchase, RevenueCat mutation, or network call."
 }
