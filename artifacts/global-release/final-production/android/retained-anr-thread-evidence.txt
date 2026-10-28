@@ -1,0 +1,174 @@
+2026-10-27 14:27:09 data_app_anr (compressed text, 19267 bytes)
+SystemUptimeMs: 10599856
+Process: com.nearr.app
+PID: 27487
+UID: 10228
+Frozen: false
+Timestamp: 2026-10-27 14:26:55.618-0700
+Flags: 0x28a9be46
+Package: com.nearr.app v1 (1.7.0)
+Foreground: Yes
+Process-Runtime: 185699
+ErrorId: 59b34b9f-d08b-4e4b-8095-385aeb637733
+Build: google/sdk_gphone64_x86_64/emu64xa:16/BE4B.251210.005/14574095:user/release-keys
+Loading-Progress: 1.0
+Dropped-Count: 0
+
+----- Output from /proc/pressure/memory -----
+some avg10=0.00 avg60=0.88 avg300=1.24 total=51373495
+full avg10=0.00 avg60=0.42 avg300=0.63 total=31213191
+----- End output from /proc/pressure/memory -----
+----- Output from /proc/pressure/cpu -----
+some avg10=51.34 avg60=46.18 avg300=25.91 total=801476919
+full avg10=0.00 avg60=0.00 avg300=0.00 total=0
+----- End output from /proc/pressure/cpu -----
+----- Output from /proc/pressure/io -----
+some avg10=0.09 avg60=1.21 avg300=1.99 total=125037449
+full avg10=0.00 avg60=0.30 avg300=0.65 total=51098568
+----- End output from /proc/pressure/io -----
+
+CPU usage from 1ms to 14149ms later (2026-10-27 14:26:55.632 to 2026-10-27 14:27:09.779):
+  108% 27487/com.nearr.app: 1.2% user + 107% kernel / faults: 8936 minor 4096 major
+  97% 556/android.hardware.graphics.composer3-service.ranchu: 0% user + 97% kernel
+  58% 1001/com.android.systemui: 0% user + 57% kernel / faults: 1866 minor 699 major
+  54% 4010/com.google.android.apps.nexuslauncher: 0.2% user + 54% kernel / faults: 1637 minor 380 major
+  14% 752/system_server: 2.5% user + 11% kernel / faults: 5630 minor 723 major
+  2.9% 72/kswapd0: 0% user + 2.9% kernel
+  1.6% 1589/com.google.android.inputmethod.latin: 0.9% user + 0.6% kernel / faults: 2516 minor 1427 major
+  0% 1122/com.android.se: 0% user + 0% kernel / faults: 1424 minor 522 major
+  0.1% 1646/com.android.emulator.multidisplay: 0% user + 0.1% kernel / faults: 1380 minor 396 major
+  0.6% 609/surfaceflinger: 0% user + 0.5% kernel
+90% TOTAL: 1.6% user + 83% kernel + 1% iowait + 4.3% irq + 0% softirq
+Data File: /data/anr/anr_2026-10-27-14-26-55-714
+Subject: Broadcast of Intent { act=expo.modules.notifications.NOTIFICATION_EVENT dat=expo-notifications://notifications/... flg=0x10 xflg=0x4 cmp=com.nearr.app/expo.modules.notifications.service.NotificationsService (has extras) }
+Timeout: 60004
+TimeoutStart: 10525572
+RssHwmKb: 513840
+RssKb: 396344
+RssAnonKb: 258324
+RssShmemKb: 30880
+VmSwapKb: 170740
+
+
+--- CriticalEventLog ---
+capacity: 20
+timestamp_ms: 1793136415665
+window_ms: 300000
+
+----- dumping pid: 27487 at 10585616
+
+----- pid 27487 at 2026-10-27 14:26:56.370686199-0700 -----
+Cmd line: com.nearr.app
+Build fingerprint: 'google/sdk_gphone64_x86_64/emu64xa:16/BE4B.251210.005/14574095:user/release-keys'
+ABI: 'x86_64'
+Build type: optimized
+Debug Store: 3,32,10586350::ID:0,C:P,T:10525577,N:SchRcv,D:tname=binder:27487_1;tid=42;act=expo.modules.notifications.NOTIFICATION_EVENT;cmp=com.nearr.app/expo.modules.notifications.service.NotificationsService;prid=87d756f||ID:0,C:P,T:10481351,N:Finish,D:tname=Thread-15;tid=222;prid=2325d4e||ID:11,C:E,T:10481331||ID:0,C:P,T:10481330,N:GoAsync,D:tname=main;tid=2;prid=2325d4e||ID:11,C:S,T:10481330,N:Rcv,D:tname=main;tid=2;cls=NotificationsService;prid=2325d4e||ID:0,C:P,T:10480343,N:SchRcv,D:tname=binder:27487_6;tid=98;act=expo.modules.notifications.NOTIFICATION_EVENT;cmp=com.nearr.app/expo.modules.notifications.service.NotificationsService;prid=2325d4e||ID:0,C:P,T:10480090,N:Finish,D:tname=Thread-14;tid=221;prid=9daa5be||ID:10,C:E,T:10480018||ID:0,C:P,T:10480001,N:GoAsync,D:tname=main;tid=2;prid=9daa5be||ID:10,C:S,T:10480001,N:Rcv,D:tname=main;tid=2;cls=NotificationsService;prid=9daa5be||ID:0,C:P,T:10479887,N:SchRcv,D:tname=binder:27487_6;tid=98;act=expo.modules.notifications.NOTIFICATION_EVENT;cmp=com.nearr.app/expo.modules.notifications.service.NotificationsService;prid=9daa5be||ID:0,C:P,T:10438025,N:Finish,D:tname=Thread-13;tid=146;prid=253e8af||ID:9,C:E,T:10438019||ID:0,C:P,T:10438018,N:GoAsync,D:tname=main;tid=2;prid=253e8af||ID:9,C:S,T:10438018,N:Rcv,D:tname=main;tid=2;cls=NotificationsService;prid=253e8af||ID:0,C:P,T:10437019,N:SchRcv,D:tname=binder:27487_5;tid=72;act=expo.modules.notifications.NOTIFICATION_EVENT;cmp=com.nearr.app/expo.modules.notifications.service.NotificationsService;prid=253e8af||ID:0,C:P,T:10436387,N:Finish,D:tname=Thread-12;tid=144;prid=a225f05||ID:8,C:E,T:10436257||ID:0,C:P,T:10436257,N:GoAsync,D:tname=main;tid=2;prid=a225f05||ID:8,C:S,T:10436257,N:Rcv,D:tname=main;tid=2;cls=NotificationsService;prid=a225f05||ID:0,C:P,T:10436147,N:SchRcv,D:tname=binder:27487_1;tid=42;act=expo.modules.notifications.NOTIFICATION_EVENT;cmp=com.nearr.app/expo.modules.notifications.service.NotificationsService;prid=a225f05||ID:7,C:E,T:10430795||ID:7,C:S,T:10430792,N:JobStart,D:mid=5dfee08||ID:6,C:E,T:10430635||ID:0,C:P,T:10430634,N:SchJobStart,D:tname=binder:27487_3;tid=44;jobid=0;jobns=null;mid=5dfee08||ID:6,C:S,T:10430633,N:SvcBind,D:mid=559e669||ID:5,C:E,T:10430633||ID:5,C:S,T:10430631,N:SvcCreate,D:mid=f52f0f0||ID:0,C:P,T:10430497,N:Finish,D:tname=main;tid=2;prid=8cd0533||ID:4,C:E,T:10430497||ID:0,C:P,T:10430495,N:SchSvcBind,D:tname=binder:27487_3;tid=44;act=null;cmp=com.nearr.app/expo.modules.taskManager.TaskJobService;mid=559e669||ID:0,C:P,T:10430494,N:SchSvcCreate,D:tname=binder:27487_1;tid=42;name=expo.modules.taskManager.TaskJobService;mid=f52f0f0;;
+suspend all histogram:	Sum: 73.378ms 99% C.I. 0.002ms-15.898ms Avg: 1.497ms Max: 15.898ms
+
+"main" prio=7 tid=1 Native
+  | group="main" sCount=1 ucsCount=0 flags=1 obj=0x72952ea0 self=0x732ad0a0d7b0
+  | sysTid=27487 nice=-4 cgrp=top-app sched=0/0 handle=0x732ba2c8d050
+  | state=S schedstat=( 6205928599 7190106364 13628 ) utm=347 stm=273 core=1 HZ=100
+  | stack=0x7ffef4e67000-0x7ffef4e69000 stackSize=8188KB
+  | held mutexes=
+  native: #00 pc 00096476  /apex/com.android.runtime/lib64/bionic/libc.so (syscall+22) (BuildId: 3f8afd2a8485f380e843af6d787a9af4)
+  native: #01 pc 0007227b  /apex/com.android.runtime/lib64/bionic/libc.so (__futex_wait_ex+155) (BuildId: 3f8afd2a8485f380e843af6d787a9af4)
+  native: #02 pc 0007ffd8  /apex/com.android.runtime/lib64/bionic/libc.so (pthread_cond_wait+56) (BuildId: 3f8afd2a8485f380e843af6d787a9af4)
+  native: #03 pc 0036701b  /system/lib64/libhwui.so (android::uirenderer::renderthread::DrawFrameTask::drawFrame+379) (BuildId: 3f4944b886c7833ad02a2df6f48c6fde)
+  native: #04 pc 005c1eae  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (art_jni_trampoline+174)
+  native: #05 pc 00486e98  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.graphics.HardwareRenderer.syncAndDrawFrame+168)
+  native: #06 pc 00474e25  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.view.ThreadedRenderer.draw+421)
+  native: #07 pc 0046fd01  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.view.ViewRootImpl.draw+3201)
+  native: #08 pc 0046e727  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.view.ViewRootImpl.performDraw+791)
+  native: #09 pc 0041338b  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.view.ViewRootImpl.performTraversals+17659)
+  native: #10 pc 0040e92d  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.view.ViewRootImpl.doTraversal+205)
+  native: #11 pc 0040e796  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.view.ViewRootImpl$TraversalRunnable.run+150)
+  native: #12 pc 0040e4f0  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.view.Choreographer$CallbackRecord.run+288)
+  native: #13 pc 0040dbde  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.view.Choreographer$CallbackRecord.run+286)
+  native: #14 pc 0040d117  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.view.Choreographer.doCallbacks+903)
+  native: #15 pc 0040ad1b  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.view.Choreographer.doFrame+3563)
+  native: #16 pc 00409e64  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.view.Choreographer$FrameDisplayEventReceiver.run+180)
+  native: #17 pc 004073ac  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.os.Handler.handleCallback+156)
+  native: #18 pc 00067f5f  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.os.Handler.dispatchMessage+159)
+  native: #19 pc 00067df9  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.os.Looper.dispatchMessage+153)
+  native: #20 pc 000661ff  [anon_shmem:dalvik-jit-code-cache] (offset 2000000) (android.os.Looper.loopOnce+1535)
+  native: #21 pc 00212516  /apex/com.android.art/lib64/libart.so (art_quick_invoke_static_stub+806) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #22 pc 00466505  /apex/com.android.art/lib64/libart.so (art::ArtMethod::Invoke+261) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #23 pc 0060e00c  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>+2396) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #24 pc 0023506f  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>+16383) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #25 pc 00210c35  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+5) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #26 pc 00287780  /system/framework/framework.jar (offset 12c2000) (android.os.Looper.loop)
+  native: #27 pc 0060520e  /apex/com.android.art/lib64/libart.so (art::interpreter::Execute +478) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #28 pc 0060d276  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge+102) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #29 pc 0060dff1  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>+2369) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #30 pc 0023506f  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>+16383) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #31 pc 00210c35  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+5) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #32 pc 001f60ac  /system/framework/framework.jar (offset 6000) (android.app.ActivityThread.main)
+  native: #33 pc 0060520e  /apex/com.android.art/lib64/libart.so (art::interpreter::Execute +478) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #34 pc 009d1834  /apex/com.android.art/lib64/libart.so (artQuickToInterpreterBridge+772) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #35 pc 0022cd7c  /apex/com.android.art/lib64/libart.so (art_quick_to_interpreter_bridge+140) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #36 pc 00212516  /apex/com.android.art/lib64/libart.so (art_quick_invoke_static_stub+806) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #37 pc 00466505  /apex/com.android.art/lib64/libart.so (art::ArtMethod::Invoke+261) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #38 pc 008bbaf9  /apex/com.android.art/lib64/libart.so (_jobject* art::InvokeMethod<8>+2121) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #39 pc 0080631a  /apex/com.android.art/lib64/libart.so (art::Method_invoke +42) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #40 pc 0022cbeb  /apex/com.android.art/lib64/libart.so (art_quick_generic_jni_trampoline+219) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #41 pc 002121b4  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+756) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #42 pc 004664be  /apex/com.android.art/lib64/libart.so (art::ArtMethod::Invoke+190) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #43 pc 0060e00c  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>+2396) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #44 pc 00233b49  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>+10969) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #45 pc 00210c35  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+5) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #46 pc 002f9734  /system/framework/framework.jar (offset 24a9000) (com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run)
+  native: #47 pc 0060520e  /apex/com.android.art/lib64/libart.so (art::interpreter::Execute +478) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #48 pc 009d1834  /apex/com.android.art/lib64/libart.so (artQuickToInterpreterBridge+772) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  native: #49 pc 0022cd7c  /apex/com.android.art/lib64/libart.so (art_quick_to_interpreter_bridge+140) (BuildId: 443d8619760adcc9570ec4eb148f8292)
+  at android.graphics.HardwareRenderer.nSyncAndDrawFrame(Native method)
+  at android.graphics.HardwareRenderer.syncAndDrawFrame(HardwareRenderer.java:555)
+  at android.view.ThreadedRenderer.draw(ThreadedRenderer.java:849)
+  at android.view.ViewRootImpl.draw(ViewRootImpl.java:5927)
+  at android.view.ViewRootImpl.performDraw(ViewRootImpl.java:5578)
+  at android.view.ViewRootImpl.performTraversals(ViewRootImpl.java:4557)
+  at android.view.ViewRootImpl.doTraversal(ViewRootImpl.java:3127)
+  at android.view.ViewRootImpl$TraversalRunnable.run(ViewRootImpl.java:10807)
+  at android.view.Choreographer$CallbackRecord.run(Choreographer.java:1630)
+  at android.view.Choreographer$CallbackRecord.run(Choreographer.java:1639)
+  at android.view.Choreographer.doCallbacks(Choreographer.java:1235)
+  at android.view.Choreographer.doFrame(Choreographer.java:1164)
+  at android.view.Choreographer$FrameDisplayEventReceiver.run(Choreographer.java:1613)
+  at android.os.Handler.handleCallback(Handler.java:1070)
+  at android.os.Handler.dispatchMessage(Handler.java:125)
+  at android.os.Looper.dispatchMessage(Looper.java:333)
+  at android.os.Looper.loopOnce(Looper.java:263)
+  at android.os.Looper.loop(Looper.java:367)
+  at android.app.ActivityThread.main(ActivityThread.java:9287)
+  at java.lang.reflect.Method.invoke(Native method)
+  at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:566)
+  at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:929)
+DumpLatencyMs: 8.05055
+
+"RenderThread" daemon prio=7 tid=21 Native
+  | group="main" sCount=1 ucsCount=0 flags=1 obj=0x20ffda8 self=0x732ad0a4dcc0
+  | sysTid=27523 nice=-10 cgrp=top-app sched=0/0 handle=0x7328c87fd420
+  | state=R schedstat=( 101037310079 10722731034 12686 ) utm=16 stm=10087 core=3 HZ=100
+  | stack=0x7328c8706000-0x7328c8708000 stackSize=989KB
+  | held mutexes=
+  native: #00 pc 000df397  /apex/com.android.runtime/lib64/bionic/libc.so (read+7) (BuildId: 3f8afd2a8485f380e843af6d787a9af4)
+  native: #01 pc 0001f4e2  /vendor/lib64/egl/libEGL_emulation.so (qemu_pipe_read+18) (BuildId: 42b8df70a73827be0c0a98bd5637ea76)
+  native: #02 pc 000123b2  /vendor/lib64/libOpenglSystemCommon.so (QemuPipeStream::commitBufferAndReadFully+418) (BuildId: c2889c13114534eff057f0f10246e4b6)
+  native: #03 pc 0000fc91  /vendor/lib64/lib_renderControl_enc.so ((anonymous namespace)::rcCreateSyncKHR_enc+353) (BuildId: b5a4a9cd076ead6fb6ed7f675168587f)
+  native: #04 pc 00019a98  /vendor/lib64/egl/libEGL_emulation.so (createNativeSync+120) (BuildId: 42b8df70a73827be0c0a98bd5637ea76)
+  native: #05 pc 00013458  /vendor/lib64/egl/libEGL_emulation.so (egl_window_surface_t::swapBuffers+232) (BuildId: 42b8df70a73827be0c0a98bd5637ea76)
+  native: #06 pc 00018bae  /vendor/lib64/egl/libEGL_emulation.so (eglSwapBuffers+542) (BuildId: 42b8df70a73827be0c0a98bd5637ea76)
+  native: #07 pc 000235c5  /system/lib64/libEGL.so (android::eglSwapBuffersWithDamageKHRImpl+1077) (BuildId: 2f23aaf12d50cac43e8f245aea71ad98)
+  native: #08 pc 0001f404  /system/lib64/libEGL.so (eglSwapBuffersWithDamageKHR+52) (BuildId: 2f23aaf12d50cac43e8f245aea71ad98)
+  native: #09 pc 003bc6aa  /system/lib64/libhwui.so (android::uirenderer::renderthread::EglManager::swapBuffers+106) (BuildId: 3f4944b886c7833ad02a2df6f48c6fde)
+  native: #10 pc 003b867c  /system/lib64/libhwui.so (android::uirenderer::skiapipeline::SkiaOpenGLPipeline::swapBuffers+124) (BuildId: 3f4944b886c7833ad02a2df6f48c6fde)
+  native: #11 pc 0036432d  /system/lib64/libhwui.so (android::uirenderer::renderthread::CanvasContext::draw+1421) (BuildId: 3f4944b886c7833ad02a2df6f48c6fde)
+  native: #12 pc 003679ad  /system/lib64/libhwui.so (std::__1::__function::__func<android::uirenderer::renderthread::DrawFrameTask::postAndWait::$_0, std::__1::allocator<android::uirenderer::renderthread::DrawFrameTask::postAndWait::$_0>, void >::operator +1485) (BuildId: 3f4944b886c7833ad02a2df6f48c6fde)
+  native: #13 pc 003738ae  /system/lib64/libhwui.so (android::uirenderer::WorkQueue::process+670) (BuildId: 3f4944b886c7833ad02a2df6f48c6fde)
+  native: #14 pc 003c39fb  /system/lib64/libhwui.so (android::uirenderer::renderthread::RenderThread::threadLoop+459) (BuildId: 3f4944b886c7833ad02a2df6f48c6fde)
+  native: #15 pc 0001825e  /system/lib64/libutils.so (android::Thread::_threadLoop+558) (BuildId: b2be58561f9e57987c9cc36d40a54c15)
+  native: #16 pc 0001a1ff  /system/lib64/libutils.so (libutil_thread_trampoline +15) (BuildId: b2be58561f9e57987c9cc36d40a54c15)
+  native: #17 pc 00080daf  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start +63) (BuildId: 3f8afd2a8485f380e843af6d787a9af4)
+  native: #18 pc 000734fd  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+61) (BuildId: 3f8afd2a8485f380e843af6d787a9af4)
+  (no managed stack frames)
+DumpLatencyMs: 635.176

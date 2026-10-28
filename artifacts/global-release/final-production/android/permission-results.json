@@ -1,0 +1,13 @@
+{
+  "observedAt": "2026-10-28T00:43:39.391Z",
+  "actualLocationPrompt": "Only this time selected in Android runtime prompt",
+  "actualNotificationGrant": "Enabled in Android App Info > Notifications; prior OS denial persisted, so not a new runtime notification prompt",
+  "fixtureGrants": [
+    "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.ACCESS_BACKGROUND_LOCATION"
+  ],
+  "fixtureGrantMechanism": "adb pm grant after actual prompt path, solely to exercise receiver without recurring optional modal",
+  "backgroundLocationFullUiFlowQualified": false,
+  "cleanup": "pm clear com.nearr.app; exact task-owned application data only"
+}

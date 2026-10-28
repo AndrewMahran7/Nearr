@@ -1,0 +1,10 @@
+{
+  "createdAt": "2026-10-28T00:08:05.181Z",
+  "environment": "Development",
+  "purpose": "Disposable Android stability identity; no provider dispatch",
+  "identityCreated": true,
+  "testUserId": "cc80f974-fbde-4b47-9961-a8aeefd219d5",
+  "cleanupRequired": false,
+  "cleanupCompletedAt": "2026-10-28T00:42:27.946Z",
+  "cleanupReceipt": "qa-cleanup.json"
+}

@@ -1,0 +1,37 @@
+{
+  "durationLimitMs": 45000,
+  "workerCount": 2,
+  "dutyCycle": 0.6,
+  "allocatedMiB": 128,
+  "initialFreeMiB": 4229,
+  "minimumFreeMiB": 3409,
+  "workerExitCodes": [
+    0,
+    0
+  ],
+  "steps": [
+    {
+      "step": "real app test notification under contention",
+      "at": "2026-10-28T00:33:30.754Z"
+    },
+    {
+      "step": "COMPLETE trim rejected by Android while app retained foreground importance",
+      "expectedToolConstraint": true
+    },
+    {
+      "step": "RUNNING_CRITICAL memory trim accepted",
+      "at": "2026-10-28T00:33:40.572Z"
+    },
+    {
+      "step": "foreground restored",
+      "settingsVisible": true,
+      "at": "2026-10-28T00:33:46.669Z"
+    },
+    {
+      "step": "system notification readback",
+      "nearrNotifications": 2,
+      "testReminderPresent": true,
+      "at": "2026-10-28T00:33:46.786Z"
+    }
+  ]
+}

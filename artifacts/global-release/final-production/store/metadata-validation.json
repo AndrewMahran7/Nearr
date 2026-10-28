@@ -1,0 +1,30 @@
+{
+  "testedAt": "2026-10-28T00:17:30.257Z",
+  "status": "STRING_LIMITS_PASS_NOT_RELEASE_READY",
+  "source": "metadata-candidates.json",
+  "localeCount": 10,
+  "limits": {"nameCharacters":30,"subtitleCharacters":30,"keywordsUtf8Bytes":100,"promotionalTextCharacters":170,"descriptionCharacters":4000,"whatsNewCharacters":4000},
+  "method": "Parsed actual JSON with Node; Unicode code-point counts for text, Buffer.byteLength for keywords; every comma-separated keyword >2 characters; no Nearr Plus or $1.99 in candidate text.",
+  "primaryReferences": [
+    "https://developer.apple.com/help/app-store-connect/reference/app-information/app-information/",
+    "https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information/"
+  ],
+  "rows": [
+    {"locale":"en-US","name":5,"subtitle":25,"keywordsBytes":41,"promotionalText":64,"description":744,"whatsNew":171,"pass":true},
+    {"locale":"es-MX","name":5,"subtitle":28,"keywordsBytes":49,"promotionalText":58,"description":846,"whatsNew":168,"pass":true},
+    {"locale":"es-ES","name":5,"subtitle":27,"keywordsBytes":48,"promotionalText":57,"description":842,"whatsNew":168,"pass":true},
+    {"locale":"pt-BR","name":5,"subtitle":29,"keywordsBytes":47,"promotionalText":54,"description":804,"whatsNew":164,"pass":true},
+    {"locale":"fr-FR","name":5,"subtitle":24,"keywordsBytes":47,"promotionalText":59,"description":903,"whatsNew":175,"pass":true},
+    {"locale":"de-DE","name":5,"subtitle":27,"keywordsBytes":45,"promotionalText":64,"description":891,"whatsNew":173,"pass":true},
+    {"locale":"it","name":5,"subtitle":22,"keywordsBytes":46,"promotionalText":56,"description":812,"whatsNew":185,"pass":true},
+    {"locale":"ja","name":5,"subtitle":14,"keywordsBytes":70,"promotionalText":24,"description":361,"whatsNew":64,"pass":true},
+    {"locale":"ko","name":5,"subtitle":16,"keywordsBytes":61,"promotionalText":25,"description":417,"whatsNew":72,"pass":true},
+    {"locale":"zh-Hans","name":5,"subtitle":12,"keywordsBytes":64,"promotionalText":17,"description":243,"whatsNew":56,"pass":true}
+  ],
+  "releaseBlockers": [
+    "Recognition/provider/guardian/processor qualification and live end-to-end results absent; do not submit a manual-only replacement product.",
+    "Explicit free-only backend mode prepared locally, not deployed or activated.",
+    "Final approved legal publication, qualified regions and signed iOS candidate pending. Support URL matches ASC and its public HTTPS response/contact were verified by the parent task; see public-url-readback.json.",
+    "No native-speaker approval, App Store locale save/readback or screenshot attachment verification performed by this subtask."
+  ]
+}

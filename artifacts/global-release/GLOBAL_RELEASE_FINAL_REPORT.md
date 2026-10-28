@@ -1,5 +1,7 @@
 # Nearr 1.7 final release execution report
 
+**Current qualification, 27 October 2026 PT / 28 October UTC:** See [the final Production/App Store handoff](./final-production/FINAL_RELEASE_HANDOFF.md). Submission remains **BLOCKED**. Railway authentication works and Development is intentionally disabled, but **Production's older Gemini/OpenAI recognition is enabled and lacks the 1.7 consent schema**. Apple now shows Paid Apps Agreement Active (New Agreement Available); monetization can be deferred. A private database backup/isolated restore passed. The older observations below are historical, not current release authorization.
+
 **Later qualification update, 26 October 2026:** Railway OAuth and unified disabled-worker deployment are now complete; the earlier Railway blocker below is historical. A pre-acquisition consent-recheck regression was fixed and pushed. Recognition remains unqualified. See [the current qualification handoff](./recognition-qualification/RECOGNITION_QUALIFICATION_FINAL_HANDOFF.md) and its deployment/live-denial receipts for current state; no public release or Production mutation occurred.
 
 Verified on 2026-10-26 against `integration/nearr-global-fieldnotes-monetization`, starting from `d1c500593f1e4c38fe69c287ae6c75141c0eed3a`.
@@ -15,7 +17,7 @@ Recovery addendum: [`SESSION_RECOVERY_20261026.md`](./SESSION_RECOVERY_20261026.
 3. App Store Connect currently declares “Data Not Collected,” which conflicts with accounts, saved places, location/reminder data, language preference, diagnostics, and future purchase records.
 4. The unified Railway Development worker cannot be deployed until a human completes Railway OAuth. Two device-login attempts expired without authorization.
 
-Production, public distribution, recognition, and purchases remain unchanged and disabled.
+Correction from the 27 October live readback: the prior run left Production unchanged, but Production recognition was **not disabled**. Only the qualified Development route is confirmed disabled. Public distribution and new Plus activation were not changed by that run.
 
 ## B. Account access
 

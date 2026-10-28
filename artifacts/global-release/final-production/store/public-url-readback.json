@@ -1,0 +1,11 @@
+{
+  "checkedDateUtc": "2026-10-28",
+  "method": "Read-only Node fetch, parallel public HTTPS GETs, AbortSignal.timeout(15000) per URL; HTML text inspected without executing page scripts",
+  "externalMutation": false,
+  "checks": [
+    {"url":"https://nearrapp.com/support","status":200,"redirected":false,"title":"Support — Nearr","expectedContactPresent":true,"contact":"andrew.mahran@icloud.com"},
+    {"url":"https://nearrapp.com/terms","status":200,"redirected":false,"title":"Terms of Service — Nearr","displayedEffectiveDate":"August 19, 2026","approved17Publication":false},
+    {"url":"https://andrewmahran7.github.io/nearr-legal/privacy","status":200,"redirected":false,"title":"Nearr Privacy Policy | nearr-legal","displayedEffectiveDate":"August 19, 2026","approved17Publication":false}
+  ],
+  "note": "Direct HTTPS resolved earlier web-tool retrieval errors. Availability is not legal approval, exact provider qualification, or permission to submit."
+}

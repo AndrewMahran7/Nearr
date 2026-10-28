@@ -1,0 +1,35 @@
+{
+  "actualEmulatorCaptures": true,
+  "visualInspection": [
+    "02-delivered-test-notification.png",
+    "04-offline-restoration.png",
+    "06-network-recovered-map.png"
+  ],
+  "captures": [
+    {
+      "file": "01-offline-standalone-language.png",
+      "bytes": 133772,
+      "sha256": "af2dde2a8723eb5375d9dc0710b276a031c29c6ea883eb085ca315bc6345ea18"
+    },
+    {
+      "file": "02-delivered-test-notification.png",
+      "bytes": 274618,
+      "sha256": "43a0afbc6eff84baa151af9eac0ced6264d515a1f485a078502f903a47075c49"
+    },
+    {
+      "file": "04-offline-restoration.png",
+      "bytes": 121935,
+      "sha256": "de1f37f2cd88cdcf73c60c0c546f0561aca114d073aa460547093798dfe6f105"
+    },
+    {
+      "file": "05-offline-saved-data.png",
+      "bytes": 362235,
+      "sha256": "264039b400c79119a8978773a13148b7ba907690e4fe933ad46275500208c6b2"
+    },
+    {
+      "file": "06-network-recovered-map.png",
+      "bytes": 341387,
+      "sha256": "0a6906b04d5b73a19bd363fb05e8a15ba48bbe604880aaa3526fe541e9d1a4f6"
+    }
+  ]
+}

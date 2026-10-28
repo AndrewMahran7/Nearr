@@ -1,0 +1,16 @@
+{
+  "errorId": "59b34b9f-d08b-4e4b-8095-385aeb637733",
+  "source": "Android DropBox data_app_anr",
+  "traceFileDirectRead": "permission denied",
+  "mainThread": "HardwareRenderer.syncAndDrawFrame / libhwui DrawFrameTask::drawFrame waiting on pthread condition",
+  "broadcast": "NOTIFICATION_EVENT scheduled at10525577, no matching Rcv/GoAsync before snapshot10586350",
+  "previousReceiverDurationsMs": [
+    21,
+    89,
+    7,
+    130
+  ],
+  "hostContention": "90-98% total CPU, mostly kernel; graphics composer97%; CPU pressure avg10=51.34",
+  "conclusion": "Evidence supports dispatch delayed by graphics/system scheduling, not an observed notification delegate deadlock. Controlled release-like reproduction still required.",
+  "renderThread": "libEGL_emulation.so qemu_pipe_read -> QemuPipeStream::commitBufferAndReadFully -> rcCreateSyncKHR_enc -> eglSwapBuffers"
+}

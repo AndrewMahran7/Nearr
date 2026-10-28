@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "preparedAt": "2026-10-28T00:16:55Z",
+  "status": "DRAFT_PREVIEW_ONLY_NOT_RELEASE_METADATA",
+  "readyToUpload": false,
+  "releaseModeCandidate": "free_only",
+  "notes": [
+    "Reuses the conservative Fieldnotes and language-selector copy in artifacts/global-release/aso/unified-copy-drafts.json. Older full name/keyword package was not recoverable at its cited Git path; names/subtitles/keyword themes here are fresh conservative candidates, not measured ASO research.",
+    "No native-speaker certification. Re-review against the final signed iOS build, actual supported markets, approved legal URLs and actual screenshot rights before upload.",
+    "Recognition remains disabled. Consumer descriptions below explicitly disclose that current limitation. These are preview drafts, not authorization to ship a materially different manual-only product or conceal its missing core feature.",
+    "pendingQualifiedRecognitionCopy is not Store copy to upload now. It may replace the disabled-recognition paragraph only after provider/guardian/processor qualification, actual live end-to-end testing and activation of the explicit free-only allowance.",
+    "No Plus or paid subscription marketing, prices, unlimited finds, guaranteed recognition, search-demand volumes or rankings are asserted.",
+    "The privacy URL is the existing app/ASC canonical address and the Terms URL is the existing app address; approval and live publication of the final 1.7 texts remain pending. The support URL matches ASC and returned HTTP 200 with the expected contact during the parent task's public HTTPS check; see public-url-readback.json. No candidate metadata save/upload/readback has occurred."
+  ],
+  "urls": {
+    "privacyPolicy": "https://andrewmahran7.github.io/nearr-legal/privacy",
+    "terms": "https://nearrapp.com/terms",
+    "support": "https://nearrapp.com/support",
+    "marketing": "https://nearrapp.com/",
+    "finalLegalPublicationVerified": false
+  },
+  "locales": {
+    "en-US": {
+      "name": "Nearr",
+      "subtitle": "Keep your favorite places",
+      "keywords": "places,map,notes,travel,restaurants,hikes",
+      "promotionalText": "Keep the places you want to visit together on your personal map.",
+      "description": "Keep the places you want to visit on your personal Nearr map. Search for a place, save it, add your own note and explore your saved-place library. Fieldnotes brings a warm map, photos and access to the original post associated with a saved place. Nearby reminders require the relevant permissions.\n\nChoose your interface language in Settings. Place names, personal notes and source posts stay in their original language.\n\nVideo recognition is currently unavailable. This draft does not offer automatic place recognition from shared videos.\n\nNearr requires an eligible account aged 13 or older; some countries require a higher age. Availability depends on the supported region. Nearr is independent of the social platforms whose posts you share.",
+      "whatsNew": "Fieldnotes map and saved-place details, language selection, clearer account eligibility and AI-sharing permissions, and improvements to app recovery and reminder controls.",
+      "pendingQualifiedRecognitionCopy": "For eligible accounts in supported regions, share a supported video to find places. Review uncertain matches in Quick Check and choose which places to save. Recognition can make mistakes. Free includes 3 successful video finds per UTC calendar month. One video counts once even if it contains several places; failed searches do not use a find. Quick Check reserves one find until you save or the reservation expires after 7 days. Unused finds do not roll over. AI sharing requires permission; minors also require the approved parent or guardian authorization."
+    },
+    "es-MX": {
+      "name": "Nearr",
+      "subtitle": "Guarda tus lugares favoritos",
+      "keywords": "lugares,mapa,notas,viajes,restaurantes,senderismo",
+      "promotionalText": "Reúne los lugares que quieres visitar en tu mapa personal.",
+      "description": "Guarda los lugares que quieres visitar en tu mapa personal de Nearr. Busca un lugar, guárdalo, añade tu nota y explora tus lugares guardados. Fieldnotes reúne un mapa cálido, fotos y acceso a la publicación original asociada con un lugar guardado. Los recordatorios de cercanía requieren los permisos correspondientes.\n\nElige el idioma de la interfaz en Ajustes. Los nombres de lugares, tus notas y las publicaciones conservan su idioma original.\n\nEl reconocimiento de videos no está disponible actualmente. Este borrador no ofrece identificación automática de lugares a partir de videos compartidos.\n\nNearr requiere una cuenta elegible de una persona de al menos 13 años; algunos países exigen una edad mayor. La disponibilidad depende de la región admitida. Nearr es independiente de las plataformas sociales de las que compartes publicaciones.",
+      "whatsNew": "Mapa y detalles de lugares Fieldnotes, selección de idioma, permisos más claros de elegibilidad y de envío a IA, y mejoras de recuperación y controles de recordatorios.",
+      "pendingQualifiedRecognitionCopy": "Las cuentas elegibles en regiones admitidas pueden compartir un video compatible para buscar lugares. Revisa las coincidencias dudosas en Quick Check y elige qué guardar. El reconocimiento puede equivocarse. La versión gratuita incluye 3 búsquedas de video exitosas por mes calendario UTC. Cada video cuenta una vez, aunque tenga varios lugares; las búsquedas fallidas no consumen una búsqueda. Quick Check reserva una hasta que guardes o la reserva venza a los 7 días. Las búsquedas no usadas no se acumulan. Se requiere permiso para compartir con IA y, para menores, autorización aprobada de un padre, madre o tutor."
+    },
+    "es-ES": {
+      "name": "Nearr",
+      "subtitle": "Guarda tus sitios favoritos",
+      "keywords": "sitios,mapa,notas,viajes,restaurantes,senderismo",
+      "promotionalText": "Reúne los sitios que quieres visitar en tu mapa personal.",
+      "description": "Guarda los sitios que quieres visitar en tu mapa personal de Nearr. Busca un lugar, guárdalo, añade tu nota y explora tus sitios guardados. Fieldnotes reúne un mapa cálido, fotos y acceso a la publicación original asociada a un lugar guardado. Los recordatorios de cercanía requieren los permisos correspondientes.\n\nElige el idioma de la interfaz en Ajustes. Los nombres de lugares, tus notas y las publicaciones conservan su idioma original.\n\nEl reconocimiento de vídeos no está disponible actualmente. Este borrador no ofrece identificación automática de lugares a partir de vídeos compartidos.\n\nNearr requiere una cuenta elegible de una persona de al menos 13 años; algunos países exigen una edad mayor. La disponibilidad depende de la región admitida. Nearr es independiente de las plataformas sociales de las que compartes publicaciones.",
+      "whatsNew": "Mapa y detalles de lugares Fieldnotes, selección de idioma, permisos más claros de elegibilidad y de envío a IA, y mejoras de recuperación y controles de recordatorios.",
+      "pendingQualifiedRecognitionCopy": "Las cuentas elegibles en regiones admitidas pueden compartir un vídeo compatible para buscar lugares. Revisa las coincidencias dudosas en Quick Check y elige qué guardar. El reconocimiento puede equivocarse. La versión gratuita incluye 3 búsquedas de vídeo con éxito por mes natural UTC. Cada vídeo cuenta una vez, aunque tenga varios lugares; las búsquedas fallidas no consumen una búsqueda. Quick Check reserva una hasta que guardes o la reserva caduque a los 7 días. Las búsquedas no usadas no se acumulan. Se requiere permiso para compartir con IA y, para menores, autorización aprobada de un progenitor o tutor."
+    },
+    "pt-BR": {
+      "name": "Nearr",
+      "subtitle": "Guarde seus lugares favoritos",
+      "keywords": "lugares,mapa,notas,viagens,restaurantes,trilhas",
+      "promotionalText": "Reúna os lugares que quer visitar no seu mapa pessoal.",
+      "description": "Guarde os lugares que quer visitar no seu mapa pessoal do Nearr. Busque um lugar, salve, adicione sua nota e explore sua biblioteca de lugares. Fieldnotes reúne um mapa acolhedor, fotos e acesso à publicação original associada a um lugar salvo. Os lembretes de proximidade exigem as permissões correspondentes.\n\nEscolha o idioma da interface nos Ajustes. Nomes de lugares, notas pessoais e publicações mantêm o idioma original.\n\nO reconhecimento de vídeos está indisponível no momento. Este rascunho não oferece identificação automática de lugares em vídeos compartilhados.\n\nO Nearr exige uma conta elegível de uma pessoa com pelo menos 13 anos; alguns países exigem idade maior. A disponibilidade depende da região atendida. O Nearr é independente das plataformas sociais das publicações compartilhadas.",
+      "whatsNew": "Mapa e detalhes de lugares Fieldnotes, seleção de idioma, permissões mais claras de elegibilidade e envio à IA, e melhorias de recuperação e controles de lembretes.",
+      "pendingQualifiedRecognitionCopy": "Contas elegíveis em regiões atendidas podem compartilhar um vídeo compatível para encontrar lugares. Confira resultados incertos no Quick Check e escolha o que salvar. O reconhecimento pode errar. O plano gratuito inclui 3 buscas de vídeo bem-sucedidas por mês do calendário UTC. Cada vídeo conta uma vez, mesmo com vários lugares; buscas que falham não consomem uma busca. O Quick Check reserva uma até você salvar ou a reserva expirar após 7 dias. Buscas não usadas não se acumulam. O compartilhamento com IA exige permissão e, para menores, autorização aprovada de um dos pais ou responsável."
+    },
+    "fr-FR": {
+      "name": "Nearr",
+      "subtitle": "Gardez vos lieux favoris",
+      "keywords": "lieux,carte,notes,voyage,restaurants,randonnée",
+      "promotionalText": "Rassemblez les lieux à visiter sur votre carte personnelle.",
+      "description": "Gardez les lieux que vous souhaitez visiter sur votre carte personnelle Nearr. Recherchez un lieu, enregistrez-le, ajoutez une note et explorez vos lieux enregistrés. Fieldnotes réunit une carte chaleureuse, des photos et un accès à la publication d’origine associée à un lieu enregistré. Les rappels de proximité nécessitent les autorisations correspondantes.\n\nChoisissez la langue de l’interface dans les réglages. Les noms de lieux, vos notes et les publications conservent leur langue d’origine.\n\nLa reconnaissance vidéo est actuellement indisponible. Ce brouillon ne propose pas l’identification automatique des lieux dans les vidéos partagées.\n\nNearr nécessite un compte éligible d’une personne âgée d’au moins 13 ans ; certains pays exigent un âge supérieur. La disponibilité dépend de la région prise en charge. Nearr est indépendant des plateformes sociales dont vous partagez les publications.",
+      "whatsNew": "Carte et fiches de lieux Fieldnotes, choix de langue, autorisations d’éligibilité et de partage avec l’IA plus claires, et améliorations de la reprise de l’app et des rappels.",
+      "pendingQualifiedRecognitionCopy": "Les comptes éligibles des régions prises en charge peuvent partager une vidéo compatible pour trouver des lieux. Vérifiez les résultats incertains dans Quick Check et choisissez quoi enregistrer. La reconnaissance peut se tromper. La formule gratuite comprend 3 recherches vidéo réussies par mois civil UTC. Une vidéo compte une seule fois, même avec plusieurs lieux ; les recherches échouées ne sont pas décomptées. Quick Check réserve une recherche jusqu’à l’enregistrement ou l’expiration après 7 jours. Les recherches inutilisées ne sont pas reportées. Le partage avec l’IA exige une autorisation et, pour les mineurs, l’autorisation approuvée d’un parent ou tuteur."
+    },
+    "de-DE": {
+      "name": "Nearr",
+      "subtitle": "Deine Lieblingsorte sammeln",
+      "keywords": "Orte,Karte,Notizen,Reisen,Restaurants,Wandern",
+      "promotionalText": "Sammle Orte, die du besuchen möchtest, auf deiner eigenen Karte.",
+      "description": "Sammle Orte, die du besuchen möchtest, auf deiner persönlichen Nearr-Karte. Suche einen Ort, speichere ihn, ergänze eine Notiz und entdecke deine gespeicherten Orte. Fieldnotes vereint eine warme Kartengestaltung, Fotos und den mit einem gespeicherten Ort verknüpften ursprünglichen Beitrag. Erinnerungen in der Nähe benötigen die entsprechenden Berechtigungen.\n\nWähle die Sprache der Oberfläche in den Einstellungen. Ortsnamen, eigene Notizen und Beiträge bleiben in ihrer ursprünglichen Sprache.\n\nVideoerkennung ist derzeit nicht verfügbar. Dieser Entwurf bietet keine automatische Erkennung von Orten in geteilten Videos.\n\nNearr setzt ein berechtigtes Konto einer mindestens 13 Jahre alten Person voraus; in einigen Ländern gilt ein höheres Mindestalter. Die Verfügbarkeit hängt von der unterstützten Region ab. Nearr ist unabhängig von den sozialen Plattformen, deren Beiträge du teilst.",
+      "whatsNew": "Fieldnotes-Karte und Ortsdetails, Sprachauswahl, klarere Berechtigungen für Teilnahme und KI-Datenweitergabe sowie Verbesserungen bei App-Wiederherstellung und Erinnerungen.",
+      "pendingQualifiedRecognitionCopy": "Berechtigte Konten in unterstützten Regionen können ein unterstütztes Video teilen, um Orte zu finden. Prüfe unsichere Treffer in Quick Check und wähle, was du speicherst. Die Erkennung kann Fehler machen. Kostenlos sind 3 erfolgreiche Videosuchen pro UTC-Kalendermonat enthalten. Ein Video zählt einmal, auch bei mehreren Orten; fehlgeschlagene Suchen zählen nicht. Quick Check reserviert eine Suche bis zum Speichern oder bis die Reservierung nach 7 Tagen abläuft. Ungenutzte Suchen werden nicht übertragen. KI-Datenweitergabe erfordert eine Einwilligung; bei Minderjährigen ist zusätzlich die genehmigte Zustimmung eines Elternteils oder Erziehungsberechtigten erforderlich."
+    },
+    "it": {
+      "name": "Nearr",
+      "subtitle": "Conserva i tuoi luoghi",
+      "keywords": "luoghi,mappa,note,viaggi,ristoranti,escursioni",
+      "promotionalText": "Riunisci i luoghi da visitare sulla tua mappa personale.",
+      "description": "Conserva i luoghi che vuoi visitare sulla tua mappa personale Nearr. Cerca un luogo, salvalo, aggiungi una nota ed esplora i luoghi salvati. Fieldnotes riunisce una mappa dai toni caldi, foto e accesso al post originale associato a un luogo salvato. I promemoria di vicinanza richiedono le autorizzazioni corrispondenti.\n\nScegli la lingua dell’interfaccia nelle impostazioni. Nomi dei luoghi, note personali e post restano nella lingua originale.\n\nIl riconoscimento video non è attualmente disponibile. Questa bozza non offre l’identificazione automatica dei luoghi nei video condivisi.\n\nNearr richiede un account idoneo di una persona di almeno 13 anni; alcuni paesi richiedono un’età maggiore. La disponibilità dipende dalla regione supportata. Nearr è indipendente dalle piattaforme social dei post condivisi.",
+      "whatsNew": "Mappa e dettagli dei luoghi Fieldnotes, selezione della lingua, autorizzazioni più chiare per idoneità e condivisione con l’IA, e miglioramenti del ripristino dell’app e dei promemoria.",
+      "pendingQualifiedRecognitionCopy": "Gli account idonei nelle regioni supportate possono condividere un video compatibile per trovare luoghi. Controlla i risultati incerti in Quick Check e scegli cosa salvare. Il riconoscimento può sbagliare. Il piano gratuito include 3 ricerche video riuscite per mese di calendario UTC. Un video conta una sola volta anche se contiene più luoghi; le ricerche fallite non consumano una ricerca. Quick Check ne riserva una finché salvi o la prenotazione scade dopo 7 giorni. Le ricerche inutilizzate non si accumulano. La condivisione con l’IA richiede il consenso e, per i minori, l’autorizzazione approvata di un genitore o tutore."
+    },
+    "ja": {
+      "name": "Nearr",
+      "subtitle": "お気に入りの場所を地図に保存",
+      "keywords": "場所保存,旅行計画,レストラン,ハイキング,個人メモ",
+      "promotionalText": "行きたい場所を、自分だけの地図にまとめましょう。",
+      "description": "行きたい場所をNearrの自分だけの地図に保存。場所を検索して保存し、自分のメモを添えて、保存した場所を見返せます。Fieldnotesでは、温かみのある地図、写真、保存した場所に関連付けられた元の投稿を確認できます。近くの場所のリマインダーには必要な権限の許可が必要です。\n\n設定で画面の言語を選べます。場所の名前、自分のメモ、元の投稿の言語は変わりません。\n\n動画認識は現在利用できません。この草案では、共有した動画から場所を自動で認識する機能は提供していません。\n\nNearrの利用には、13歳以上で利用条件を満たすアカウントが必要です。一部の国では、さらに高い最低年齢が適用されます。利用できるかどうかは対応地域によって異なります。Nearrは、投稿の共有元となるソーシャルプラットフォームとは独立したアプリです。",
+      "whatsNew": "Fieldnotesの地図と場所の詳細、言語選択、より明確な利用条件とAI共有の許可、アプリの復帰処理とリマインダー操作の改善。",
+      "pendingQualifiedRecognitionCopy": "対応地域の利用条件を満たすアカウントは、対応する動画を共有して場所を検索できます。不確かな候補はQuick Checkで確認し、保存する場所を選べます。認識結果は誤る場合があります。無料枠はUTC基準の暦月ごとに成功した動画検索3回です。複数の場所が含まれても1動画は1回と数え、失敗した検索は消費しません。Quick Checkは保存するか7日後に期限切れになるまで1回分を確保します。未使用分の繰り越しはありません。AIへの共有には許可が必要で、未成年者には承認された保護者の同意も必要です。"
+    },
+    "ko": {
+      "name": "Nearr",
+      "subtitle": "좋아하는 장소를 나만의 지도에",
+      "keywords": "장소저장,여행계획,맛집지도,하이킹,개인메모",
+      "promotionalText": "가고 싶은 장소를 나만의 지도에 모아 보세요.",
+      "description": "가고 싶은 장소를 나만의 Nearr 지도에 모아 보세요. 장소를 검색해 저장하고 메모를 더한 뒤 저장한 장소를 살펴보세요. Fieldnotes에서 따뜻한 색감의 지도, 사진과 저장한 장소에 연결된 원본 게시물을 볼 수 있습니다. 근처 알림을 받으려면 관련 권한이 필요합니다.\n\n설정에서 화면 언어를 선택하세요. 장소 이름, 개인 메모와 원본 게시물의 언어는 바뀌지 않습니다.\n\n영상 인식은 현재 사용할 수 없습니다. 이 초안에서는 공유한 영상에서 장소를 자동으로 식별하는 기능을 제공하지 않습니다.\n\nNearr를 이용하려면 만 13세 이상이며 이용 조건을 충족하는 계정이 필요합니다. 일부 국가에서는 더 높은 최소 연령이 적용됩니다. 이용 가능 여부는 지원 지역에 따라 달라집니다. Nearr는 게시물을 공유하는 소셜 플랫폼과 독립적인 앱입니다.",
+      "whatsNew": "Fieldnotes 지도와 장소 상세 화면, 언어 선택, 더 명확한 이용 자격 및 AI 공유 권한, 앱 복귀 및 알림 제어 개선.",
+      "pendingQualifiedRecognitionCopy": "지원 지역의 이용 자격을 갖춘 계정은 지원되는 영상을 공유해 장소를 찾을 수 있습니다. 불확실한 결과는 Quick Check에서 확인하고 저장할 장소를 선택하세요. 인식 결과는 틀릴 수 있습니다. 무료로 UTC 달력 기준 매월 성공한 영상 검색 3회가 제공됩니다. 여러 장소가 있어도 영상 하나는 한 번만 계산하며 실패한 검색은 차감하지 않습니다. Quick Check는 저장하거나 7일 후 예약이 만료될 때까지 1회를 예약합니다. 남은 횟수는 이월되지 않습니다. AI 공유에는 동의가 필요하며 미성년자는 승인된 부모 또는 보호자 동의도 필요합니다."
+    },
+    "zh-Hans": {
+      "name": "Nearr",
+      "subtitle": "在个人地图上收藏心仪地点",
+      "keywords": "地点收藏,旅行计划,餐厅地图,徒步旅行,个人笔记",
+      "promotionalText": "把想去的地点汇集在你的个人地图上。",
+      "description": "把想去的地点保存在你的 Nearr 个人地图上。搜索地点、保存、添加笔记，浏览已保存的地点。Fieldnotes 将温暖色调的地图、照片和已保存地点关联的原始帖文汇集在一起。附近提醒需要相应权限。\n\n在设置中选择界面语言。地点名称、个人笔记和原始帖文保留原来的语言。\n\n视频识别目前不可用。本草案不提供从分享的视频中自动识别地点的功能。\n\n使用 Nearr 需要年满 13 岁并符合资格的账户；部分国家要求更高年龄。可用性取决于支持的地区。Nearr 独立于你分享帖文所来自的社交平台。",
+      "whatsNew": "Fieldnotes 地图和地点详情、语言选择、更清晰的资格检查与 AI 分享许可，以及应用恢复和提醒控制改进。",
+      "pendingQualifiedRecognitionCopy": "支持地区内符合资格的账户可分享支持的视频来查找地点。在 Quick Check 中核对不确定的匹配，并选择要保存的地点。识别结果可能有误。免费额度为每个 UTC 日历月 3 次成功的视频查找。一个视频即使包含多个地点也只计一次；失败的查找不消耗次数。Quick Check 会预留一次，直到你保存结果或预留在 7 天后到期。未用次数不结转。AI 分享需要许可，未成年人还需通过批准流程取得家长或监护人的授权。"
+    }
+  }
+}

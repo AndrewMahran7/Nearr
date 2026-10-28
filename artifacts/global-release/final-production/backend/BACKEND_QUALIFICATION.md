@@ -21,6 +21,8 @@
 
 Project ID is `4037a3b5-d66f-409e-b734-56c22c244e3e` for both Railway environments. Production's newer historical `fee82c18…` is SKIPPED, not the active runtime. Full versions, hashes, migration names and configuration booleans are in `live-readiness.json`.
 
+The 23-missing count is relative to the starting 89-migration source. The subsequently prepared `20261028000001_nearr_free_only_release.sql` is also unapplied to both backends; the final local set therefore has 24 IDs absent from Production. This additional migration does not resolve any of the six Production-only preservation requirements.
+
 Development's active worker image digest remains `sha256:0ca141b72cd33c64cfaaa58014db13d0be9df91f82223534c9362e28c110737f`. Its Git tree `4f8f50dc7253a1b4451b4f960ff9d144a965c040` exactly matches the starting final-release branch. No worker redeployment is needed merely to catch up source. The linked Development GitHub branch is older; the active deployment was an exact-source upload. Future automatic deploy/source configuration must be reconciled before an approved cutover.
 
 The disabled readiness response's `checks.supabase=false` is not proof of a Supabase outage: processing initialization is withheld while configuration is closed. Independent authenticated database reads passed.

@@ -1,0 +1,19 @@
+{
+  "startedAt": "2026-10-28T00:05:27.327Z",
+  "finishedAt": "2026-10-28T00:25:02.548Z",
+  "sourceSha": "3dbf10278368c2074afa095627b71be21f24aaa3",
+  "exitCode": 0,
+  "buildRoot": "C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr",
+  "buildType": "release-variant-debug-signed",
+  "environment": "Development",
+  "runtime": "1.7-onboarding-date-android-v2",
+  "version": "1.7.0",
+  "versionCode": 1,
+  "abi": "x86_64",
+  "metroRequired": false,
+  "storeSigned": false,
+  "minification": false,
+  "command": "gradlew.bat :app:assembleRelease -PreactNativeArchitectures=x86_64 --max-workers=1 --no-daemon --console=plain",
+  "apk": "C:\\Users\\andre\\.codex\\worktrees\\nearr-android-qualification\\Nearr\\android\\app\\build\\outputs\\apk\\release\\app-release.apk",
+  "sha256": "dcff8cece1f8ba50ec4bacc96c862d152ccc43d85b2678545acbe86cff75d226"
+}

@@ -1,0 +1,123 @@
+{
+  "notificationTap": {
+    "result": "INCONCLUSIVE_ROUTE_OBSERVATION",
+    "note": "Real delivered notification tapped; combined follow-up helper exceeded its 60-second tool deadline. Subsequent fresh dump showed Nearr Map, but intervening cold launches prevent attributing its exact route to the tap. Delivery and receiver completion are independently supported by system notification readback and no ANR."
+  },
+  "coldLaunches": [
+    {
+      "observedAt": "2026-10-28T00:39:15.423Z",
+      "observedReadyMs": 15246,
+      "launch": "Starting: Intent { cmp=com.nearr.app/.MainActivity }\r\nStatus: ok\r\nLaunchState: COLD\r\nActivity: com.nearr.app/.MainActivity\r\nTotalTime: 4268\r\nWaitTime: 4270\r\nComplete",
+      "pid": "10721"
+    },
+    {
+      "observedAt": "2026-10-28T00:39:31.321Z",
+      "observedReadyMs": 12036,
+      "launch": "Starting: Intent { cmp=com.nearr.app/.MainActivity }\r\nStatus: ok\r\nLaunchState: COLD\r\nActivity: com.nearr.app/.MainActivity\r\nTotalTime: 4011\r\nWaitTime: 4029\r\nComplete",
+      "pid": "10933"
+    },
+    {
+      "observedAt": "2026-10-28T00:39:51.688Z",
+      "observedReadyMs": 12852,
+      "launch": "Starting: Intent { cmp=com.nearr.app/.MainActivity }\r\nStatus: ok\r\nLaunchState: COLD\r\nActivity: com.nearr.app/.MainActivity\r\nTotalTime: 2711\r\nWaitTime: 3444\r\nComplete",
+      "pid": "11109"
+    }
+  ],
+  "transitions": [
+    {
+      "cycle": 1,
+      "launch": "Starting: Intent { cmp=com.nearr.app/.MainActivity }\r\nWarning: Activity not started, its current task has been brought to the front\r\nStatus: ok\r\nLaunchState: UNKNOWN (0)\r\nActivity: com.nearr.app/.MainActivity\r\nWaitTime: 552\r\nComplete"
+    },
+    {
+      "cycle": 2,
+      "launch": "Starting: Intent { cmp=com.nearr.app/.MainActivity }\r\nWarning: Activity not started, its current task has been brought to the front\r\nStatus: ok\r\nLaunchState: UNKNOWN (0)\r\nActivity: com.nearr.app/.MainActivity\r\nWaitTime: 349\r\nComplete"
+    },
+    {
+      "cycle": 3,
+      "launch": "Starting: Intent { cmp=com.nearr.app/.MainActivity }\r\nWarning: Activity not started, its current task has been brought to the front\r\nStatus: ok\r\nLaunchState: UNKNOWN (0)\r\nActivity: com.nearr.app/.MainActivity\r\nWaitTime: 246\r\nComplete"
+    },
+    {
+      "cycle": 4,
+      "launch": "Starting: Intent { cmp=com.nearr.app/.MainActivity }\r\nWarning: Activity not started, its current task has been brought to the front\r\nStatus: ok\r\nLaunchState: UNKNOWN (0)\r\nActivity: com.nearr.app/.MainActivity\r\nWaitTime: 465\r\nComplete"
+    }
+  ],
+  "configurationChanges": [
+    {
+      "fontScale": "1.3",
+      "accepted": true
+    },
+    {
+      "fontScale": "1.0",
+      "accepted": true
+    },
+    {
+      "displaySize": "900x1600",
+      "accepted": true
+    },
+    {
+      "displaySize": "reset",
+      "accepted": true
+    }
+  ],
+  "transitionsRestoredMap": true,
+  "transitionObservationNote": "15-second UI-idle observation window expired; next fresh dump confirmed Map, no ANR. Not a responsiveness benchmark.",
+  "network": {
+    "disabled": true,
+    "disabledAt": "2026-10-28T00:40:32.001Z",
+    "offlineLaunch": "Starting: Intent { cmp=com.nearr.app/.MainActivity }\r\nStatus: ok\r\nLaunchState: COLD\r\nActivity: com.nearr.app/.MainActivity\r\nTotalTime: 3425\r\nWaitTime: 3431\r\nComplete",
+    "offlineObservedLabels": [
+      "nearr",
+      "Let’s try that again",
+      "We couldn’t reach the eligibility service. Your entries are still here. Connect and try again.",
+      "View my saved data",
+      "View my saved data",
+      "Contact support or request your data",
+      "Contact support or request your data",
+      "Privacy Policy",
+      "Privacy Policy",
+      "Sign out",
+      "Sign out",
+      "Continue",
+      "Continue"
+    ],
+    "savedDataSurface": [
+      "Google Map",
+      "Open saved places",
+      "Open Saved, 0 places",
+      "SAVED FOR SOMEDAY",
+      "Your next memory starts here.",
+      "",
+      "Share a post or find a place to save.",
+      "Nearr",
+      "nearr",
+      "Search for a place",
+      "",
+      "Show all saved pins",
+      "",
+      "Show all pins",
+      "Filter map, All places",
+      "",
+      "All places",
+      "Activity",
+      "",
+      "No saved places yet",
+      "Recenter on my location",
+      "",
+      "Map",
+      "",
+      "Map",
+      "Saved",
+      "",
+      "Saved"
+    ],
+    "restoredAt": "2026-10-28T00:41:04.815Z",
+    "onlineRelaunch": {
+      "observedAt": "2026-10-28T00:41:31.473Z",
+      "observedReadyMs": 19034,
+      "launch": "Starting: Intent { cmp=com.nearr.app/.MainActivity }\r\nStatus: ok\r\nLaunchState: COLD\r\nActivity: com.nearr.app/.MainActivity\r\nTotalTime: 3113\r\nWaitTime: 3134\r\nComplete",
+      "pid": "11968"
+    },
+    "recoveredMap": true
+  },
+  "configurationObservationNote": "Four rapid configuration changes accepted; font-scale 1.3 persisted across an immediate reset race. Offline Map rendered at enlarged font; final explicit reset read back 1.0. This is lifecycle stress, not a full responsive-layout audit."
+}

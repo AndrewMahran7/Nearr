@@ -1,5 +1,5 @@
 {
-  "testedAt": "2026-10-28T00:36:30.113Z",
+  "testedAt": "2026-10-28T00:44:32.062Z",
   "engine": "PostgreSQL 18.3 on x86_64-windows, compiled by msvc-19.44.35223, 64-bit",
   "scope": "disposable local PostgreSQL; fixture base schema, actual legacy age/global/free-only migrations; synthetic local qualification only; full media-claim regression separately tested against restored Development schema",
   "migrations": [

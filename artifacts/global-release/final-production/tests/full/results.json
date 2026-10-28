@@ -1,0 +1,220 @@
+{
+  "sourceSha": "44fff542f300aad952b758dd05d931f96881165b",
+  "startedAt": "2026-10-28T00:18:27.352Z",
+  "finishedAt": "2026-10-28T00:26:14.277Z",
+  "total": 30,
+  "passed": 28,
+  "failed": 2,
+  "results": [
+    {
+      "name": "test:prebuild",
+      "command": "npm run test:prebuild",
+      "exit": 1,
+      "durationMs": 175529,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-prebuild.log"
+    },
+    {
+      "name": "test:safe-development",
+      "command": "npm run test:safe-development",
+      "exit": 0,
+      "durationMs": 43406,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-safe-development.log"
+    },
+    {
+      "name": "test:birthday-onboarding",
+      "command": "npm run test:birthday-onboarding",
+      "exit": 0,
+      "durationMs": 1444,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-birthday-onboarding.log"
+    },
+    {
+      "name": "test:onboarding-native-contract",
+      "command": "npm run test:onboarding-native-contract",
+      "exit": 0,
+      "durationMs": 938,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-onboarding-native-contract.log"
+    },
+    {
+      "name": "test:localization",
+      "command": "npm run test:localization",
+      "exit": 0,
+      "durationMs": 3485,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-localization.log"
+    },
+    {
+      "name": "test:native-localization",
+      "command": "npm run test:native-localization",
+      "exit": 0,
+      "durationMs": 1301,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-native-localization.log"
+    },
+    {
+      "name": "test:global-eligibility-db",
+      "command": "npm run test:global-eligibility-db",
+      "exit": 0,
+      "durationMs": 91230,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-global-eligibility-db.log"
+    },
+    {
+      "name": "test:global-monetization",
+      "command": "npm run test:global-monetization",
+      "exit": 0,
+      "durationMs": 1558,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-global-monetization.log"
+    },
+    {
+      "name": "test:global-monetization-db",
+      "command": "npm run test:global-monetization-db",
+      "exit": 0,
+      "durationMs": 95822,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-global-monetization-db.log"
+    },
+    {
+      "name": "test:consent-identity",
+      "command": "npm run test:consent-identity",
+      "exit": 0,
+      "durationMs": 1140,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-consent-identity.log"
+    },
+    {
+      "name": "test:recognition-consent",
+      "command": "npm run test:recognition-consent",
+      "exit": 0,
+      "durationMs": 1021,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-recognition-consent.log"
+    },
+    {
+      "name": "test:privacy-policy",
+      "command": "npm run test:privacy-policy",
+      "exit": 0,
+      "durationMs": 1586,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-privacy-policy.log"
+    },
+    {
+      "name": "test:onboarding-account-transition",
+      "command": "npm run test:onboarding-account-transition",
+      "exit": 0,
+      "durationMs": 684,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-onboarding-account-transition.log"
+    },
+    {
+      "name": "test:create-map-navigation",
+      "command": "npm run test:create-map-navigation",
+      "exit": 0,
+      "durationMs": 1152,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-create-map-navigation.log"
+    },
+    {
+      "name": "test:create-map-continue-runtime",
+      "command": "npm run test:create-map-continue-runtime",
+      "exit": 0,
+      "durationMs": 970,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-create-map-continue-runtime.log"
+    },
+    {
+      "name": "test:onboarding-phase2-auth-map-hardening",
+      "command": "npm run test:onboarding-phase2-auth-map-hardening",
+      "exit": 0,
+      "durationMs": 1119,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-onboarding-phase2-auth-map-hardening.log"
+    },
+    {
+      "name": "test:onboarding-v2-phase2",
+      "command": "npm run test:onboarding-v2-phase2",
+      "exit": 0,
+      "durationMs": 4811,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-onboarding-v2-phase2.log"
+    },
+    {
+      "name": "test:onboarding-v2-physical-runtime",
+      "command": "npm run test:onboarding-v2-physical-runtime",
+      "exit": 0,
+      "durationMs": 3313,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-onboarding-v2-physical-runtime.log"
+    },
+    {
+      "name": "test:onboarding-v2-hands-on-activation",
+      "command": "npm run test:onboarding-v2-hands-on-activation",
+      "exit": 0,
+      "durationMs": 937,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-onboarding-v2-hands-on-activation.log"
+    },
+    {
+      "name": "test:onboarding-v2-visual",
+      "command": "npm run test:onboarding-v2-visual",
+      "exit": 0,
+      "durationMs": 1526,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-onboarding-v2-visual.log"
+    },
+    {
+      "name": "test:onboarding-1259-regressions",
+      "command": "npm run test:onboarding-1259-regressions",
+      "exit": 0,
+      "durationMs": 1002,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-onboarding-1259-regressions.log"
+    },
+    {
+      "name": "test:fieldnotes-oct15",
+      "command": "npm run test:fieldnotes-oct15",
+      "exit": 0,
+      "durationMs": 19219,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-fieldnotes-oct15.log"
+    },
+    {
+      "name": "test:fieldnotes-oct18",
+      "command": "npm run test:fieldnotes-oct18",
+      "exit": 0,
+      "durationMs": 5658,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-fieldnotes-oct18.log"
+    },
+    {
+      "name": "test:fieldnotes-physical-ui",
+      "command": "npm run test:fieldnotes-physical-ui",
+      "exit": 0,
+      "durationMs": 2627,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-fieldnotes-physical-ui.log"
+    },
+    {
+      "name": "test:place-detail-ui",
+      "command": "npm run test:place-detail-ui",
+      "exit": 0,
+      "durationMs": 697,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-place-detail-ui.log"
+    },
+    {
+      "name": "test:saved-place-result-ui",
+      "command": "npm run test:saved-place-result-ui",
+      "exit": 0,
+      "durationMs": 1034,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-saved-place-result-ui.log"
+    },
+    {
+      "name": "test:monetization-token-ux",
+      "command": "npm run test:monetization-token-ux",
+      "exit": 1,
+      "durationMs": 879,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-monetization-token-ux.log"
+    },
+    {
+      "name": "test:monetization-integration",
+      "command": "npm run test:monetization-integration",
+      "exit": 0,
+      "durationMs": 1057,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-monetization-integration.log"
+    },
+    {
+      "name": "test:monetization-suspension-contract",
+      "command": "npm run test:monetization-suspension-contract",
+      "exit": 0,
+      "durationMs": 736,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-monetization-suspension-contract.log"
+    },
+    {
+      "name": "test:premium-request-monetization",
+      "command": "npm run test:premium-request-monetization",
+      "exit": 0,
+      "durationMs": 899,
+      "logfile": "artifacts\\global-release\\final-production\\tests\\full\\test-premium-request-monetization.log"
+    }
+  ]
+}

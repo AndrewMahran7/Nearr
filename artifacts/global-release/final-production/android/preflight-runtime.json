@@ -1,0 +1,11 @@
+{
+  "observedAt": "2026-10-28T00:06:56.823Z",
+  "lastAnr": "ACTIVITY MANAGER LAST ANR (dumpsys activity lastanr)\r\n  <no ANR has occurred since boot>",
+  "hostFreeMiB": 1789,
+  "guestMemoryPressure": "Not accessible to shell on this Google Play image",
+  "guestCpuPressure": "Not accessible to shell on this Google Play image",
+  "appMemory": "No process found for: com.nearr.app",
+  "threads": [
+    "PID   TID NAME                        STAT \r"
+  ]
+}

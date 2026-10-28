@@ -1,0 +1,18 @@
+{
+  "observedAt": "2026-10-28T00:42:27.946Z",
+  "backendEnvironment": "development",
+  "projectRef": "qnfxnmvxpjzfydgudtvs",
+  "testUserId": "cc80f974-fbde-4b47-9961-a8aeefd219d5",
+  "deleted": true,
+  "authReadbackUserMissing": true,
+  "ownedSavedPlacesRemaining": 0,
+  "ownedQueryError": null,
+  "productionMutation": false,
+  "emulatorAppDataClear": "Success",
+  "appStopped": true,
+  "displaySize": "Physical size: 1080x2400",
+  "displayDensity": "Physical density: 420",
+  "fontScale": "1.0",
+  "wifiEnabled": true,
+  "mobileDataEnabled": true
+}
