@@ -1,0 +1,22 @@
+{
+  "capturedAt": "2026-10-28T00:11:22.001Z",
+  "target": "rlqvxdwtetxsqxhqztkw",
+  "privateDirectory": "C:\\Users\\andre\\.codex\\worktrees\\nearr-app-store-final\\Nearr\\artifacts\\global-release\\final-production\\backend\\.tmp\\private-production-backup",
+  "aclRestricted": true,
+  "connectionVariableNames": [
+    "PGHOST",
+    "PGPORT",
+    "PGUSER",
+    "PGPASSWORD",
+    "PGDATABASE"
+  ],
+  "scriptBytes": 3305,
+  "scriptSha256": "51440a08efbef0ff30fa442c625f624d07c5f6b3eec90906fd265d99150417e5",
+  "dumpFlags": [
+    "    --schema-only \\",
+    "    --quote-all-identifier \\",
+    "    --role \"postgres\" \\",
+    "    --exclude-schema \"information_schema|pg_*|_analytics|_realtime|_supavisor|auth|etl|extensions|pgbouncer|realtime|storage|supabase_functions|supabase_migrations|cron|dbdev|graphql|graphql_public|net|pgmq|pgsodium|pgsodium_masks|pgtle|repack|tiger|tiger_data|timescaledb_*|_timescaledb_*|topology|vault\" \\"
+  ],
+  "remoteMutation": false
+}

@@ -1,0 +1,63 @@
+{
+  "checkedAt": "2026-10-28T00:14:18.643Z",
+  "readOnly": true,
+  "exitCode": 0,
+  "timedOut": false,
+  "builds": [
+    {
+      "id": "3d96cf71-c507-449e-af77-3bfd7fd57f38",
+      "status": "FINISHED",
+      "distribution": "INTERNAL",
+      "buildProfile": "development",
+      "appVersion": "1.7.0",
+      "appBuildVersion": "72",
+      "runtimeVersion": "1.7-onboarding-date-v1",
+      "gitCommitHash": "4346840b69749b4ff54a7c9bd2e0abb0e67c8b12",
+      "createdAt": "2026-10-27T18:28:25.306Z"
+    },
+    {
+      "id": "6afca96b-3902-48b5-82ff-e19a2d72b36e",
+      "status": "FINISHED",
+      "distribution": "INTERNAL",
+      "buildProfile": "development",
+      "appVersion": "1.7.0",
+      "appBuildVersion": "71",
+      "runtimeVersion": "1.7-onboarding-date-v1",
+      "gitCommitHash": "5539bc329c1c1f860a9f8fbbe512f90c2746cb9e",
+      "createdAt": "2026-10-27T18:24:27.720Z"
+    },
+    {
+      "id": "b9999bdf-a1bc-4b96-bec4-912375379f61",
+      "status": "FINISHED",
+      "distribution": "INTERNAL",
+      "buildProfile": "development",
+      "appVersion": "1.7.0",
+      "appBuildVersion": "70",
+      "runtimeVersion": "1.7-onboarding-date-v1",
+      "gitCommitHash": "fcf2c78646975347206b44bdea0f9c31b9c643d1",
+      "createdAt": "2026-10-27T18:11:51.400Z"
+    },
+    {
+      "id": "af64b897-32a0-40f7-a690-c802c1920e39",
+      "status": "FINISHED",
+      "distribution": "INTERNAL",
+      "buildProfile": "development",
+      "appVersion": "1.7.0",
+      "appBuildVersion": "69",
+      "runtimeVersion": "1.7.0",
+      "gitCommitHash": "d4138146459f880950dc794d4d983ee70107f769",
+      "createdAt": "2026-10-26T04:23:20.423Z"
+    },
+    {
+      "id": "8afee662-ca59-4483-a2ee-232b68f6e952",
+      "status": "FINISHED",
+      "distribution": "INTERNAL",
+      "buildProfile": "development",
+      "appVersion": "1.7.0",
+      "appBuildVersion": "68",
+      "runtimeVersion": "1.7.0",
+      "gitCommitHash": "15ced3c91af68f987fef3c27258486cb9b67de2a",
+      "createdAt": "2026-10-26T04:13:36.224Z"
+    }
+  ]
+}

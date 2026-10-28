@@ -1,0 +1,350 @@
+{
+  "capturedAt": "2026-10-28T00:08:20.076Z",
+  "kind": "read-only-migration-and-ownership-reconciliation",
+  "productionOnlyMigrations": [
+    {
+      "version": "20261008000001",
+      "name": "nearr_15_provider_names",
+      "statementCount": 1,
+      "sha256": "f26617d856eed1a7c80535c7f36608a71e6e421c0685818a5849db23f07ffc06",
+      "recoveredLocalPath": "artifacts/global-release/final-production/backend/.tmp/production-extra-migrations/20261008000001_nearr_15_provider_names.sql",
+      "objects": [
+        "public.profiles"
+      ]
+    },
+    {
+      "version": "20261009000002",
+      "name": "safe_onboarding_account_transfer_v2",
+      "statementCount": 9,
+      "sha256": "80b30b316ed4f068d8231d5ca1a7e90cde5fc36877e18135cb5e973e4ded657c",
+      "recoveredLocalPath": "artifacts/global-release/final-production/backend/.tmp/production-extra-migrations/20261009000002_safe_onboarding_account_transfer_v2.sql",
+      "objects": [
+        "public.begin_onboarding_account_transfer_v2",
+        "public.complete_onboarding_account_transfer_v2",
+        "public.list_anonymous_onboarding_cleanup_candidates"
+      ]
+    },
+    {
+      "version": "20261009000003",
+      "name": "legacy_transfer_source_preservation",
+      "statementCount": 3,
+      "sha256": "35cfe8fdedbc663fb8c5de888707e2813fde30d3c6aedeca14908e1ae7d909d3",
+      "recoveredLocalPath": "artifacts/global-release/final-production/backend/.tmp/production-extra-migrations/20261009000003_legacy_transfer_source_preservation.sql",
+      "objects": [
+        "public.complete_onboarding_account_transfer"
+      ]
+    },
+    {
+      "version": "20261009000004",
+      "name": "converted_source_write_guard",
+      "statementCount": 3,
+      "sha256": "3c13c0838e72775191d6d66a0ff12da31d2a90bd60442c5bf7fd79c0964d7957",
+      "recoveredLocalPath": "artifacts/global-release/final-production/backend/.tmp/production-extra-migrations/20261009000004_converted_source_write_guard.sql",
+      "objects": [
+        "public.saved_place_sources_enforce_owner"
+      ]
+    },
+    {
+      "version": "20261009000005",
+      "name": "converted_anonymous_save_write_guard",
+      "statementCount": 2,
+      "sha256": "f61002f0b176a74e978be2185d5f27713bb8809be9da3c584bd0b9fcd66c12a7",
+      "recoveredLocalPath": "artifacts/global-release/final-production/backend/.tmp/production-extra-migrations/20261009000005_converted_anonymous_save_write_guard.sql",
+      "objects": [
+        "public.saved_places_reject_converted_anonymous_insert"
+      ]
+    },
+    {
+      "version": "20261009000006",
+      "name": "share_job_notification_at_most_once",
+      "statementCount": 15,
+      "sha256": "f14dd670318d9641dc190e3cebfde0093a03c24a24bc06443cd5e609d81f5960",
+      "recoveredLocalPath": "artifacts/global-release/final-production/backend/.tmp/production-extra-migrations/20261009000006_share_job_notification_at_most_once.sql",
+      "objects": [
+        "public.share_jobs",
+        "public.claim_share_job_notifications",
+        "public.begin_share_job_notification_provider_attempt",
+        "public.finish_share_job_notification_provider_attempt",
+        "public.claim_share_job_receipts"
+      ]
+    }
+  ],
+  "ownership": {
+    "development": [
+      {
+        "ownership_md5": "c3fc0449b430df097ec11b40fde64ad0",
+        "relation": "saved_places",
+        "row_count": 20
+      },
+      {
+        "ownership_md5": "89808da7eefa481f57a9dadeaf2b7c06",
+        "relation": "saved_place_sources",
+        "row_count": 13
+      }
+    ],
+    "production": [
+      {
+        "ownership_md5": "58619de9e935cc1d925a0b11c08d4502",
+        "relation": "saved_places",
+        "row_count": 642
+      },
+      {
+        "ownership_md5": "6c3ce5865f547976378043d5b9ceecd4",
+        "relation": "saved_place_sources",
+        "row_count": 558
+      }
+    ]
+  },
+  "preservationGuards": {
+    "development": [
+      {
+        "definition": "CREATE TRIGGER saved_place_sources_capture_v2_note AFTER INSERT OR UPDATE ON saved_place_sources FOR EACH ROW EXECUTE FUNCTION capture_recognition_source_ai_note_v2()",
+        "relname": "saved_place_sources",
+        "tgname": "saved_place_sources_capture_v2_note"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_place_sources_owner_guard BEFORE INSERT OR UPDATE OF saved_place_id, user_id ON saved_place_sources FOR EACH ROW EXECUTE FUNCTION saved_place_sources_enforce_owner()",
+        "relname": "saved_place_sources",
+        "tgname": "saved_place_sources_owner_guard"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_place_sources_set_updated_at BEFORE UPDATE ON saved_place_sources FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+        "relname": "saved_place_sources",
+        "tgname": "saved_place_sources_set_updated_at"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_place_sources_video_media_sync AFTER INSERT OR UPDATE OF saved_place_id, identity_key, last_seen_at ON saved_place_sources FOR EACH ROW EXECUTE FUNCTION sync_saved_place_source_video_media()",
+        "relname": "saved_place_sources",
+        "tgname": "saved_place_sources_video_media_sync"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_places_capture_manual_token_activity AFTER INSERT ON saved_places FOR EACH ROW EXECUTE FUNCTION capture_manual_save_activity()",
+        "relname": "saved_places",
+        "tgname": "saved_places_capture_manual_token_activity"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_places_dispute_recognition AFTER UPDATE OF place_id ON saved_places FOR EACH ROW EXECUTE FUNCTION dispute_recognition_after_place_correction()",
+        "relname": "saved_places",
+        "tgname": "saved_places_dispute_recognition"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_places_ensure_video_ai_note AFTER INSERT OR UPDATE OF place_id, source_url, source_type, ai_note ON saved_places FOR EACH ROW EXECUTE FUNCTION ensure_video_ai_note_task()",
+        "relname": "saved_places",
+        "tgname": "saved_places_ensure_video_ai_note"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_places_invalidate_ai_note_on_place_change BEFORE UPDATE OF place_id ON saved_places FOR EACH ROW EXECUTE FUNCTION invalidate_video_ai_note_on_place_change()",
+        "relname": "saved_places",
+        "tgname": "saved_places_invalidate_ai_note_on_place_change"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_places_set_updated_at BEFORE UPDATE ON saved_places FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+        "relname": "saved_places",
+        "tgname": "saved_places_set_updated_at"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_places_video_media_place_sync AFTER UPDATE OF place_id ON saved_places FOR EACH ROW EXECUTE FUNCTION sync_saved_place_video_media_after_place_change()",
+        "relname": "saved_places",
+        "tgname": "saved_places_video_media_place_sync"
+      },
+      {
+        "definition": "CREATE TRIGGER nearr_plus_reserve_job AFTER INSERT OR UPDATE OF status ON share_jobs FOR EACH ROW EXECUTE FUNCTION nearr_plus_reserve_job_trigger()",
+        "relname": "share_jobs",
+        "tgname": "nearr_plus_reserve_job"
+      },
+      {
+        "definition": "CREATE TRIGGER nearr_plus_settle_job AFTER UPDATE OF status, saved_place_id, decision ON share_jobs FOR EACH ROW EXECUTE FUNCTION nearr_plus_settle_job_trigger()",
+        "relname": "share_jobs",
+        "tgname": "nearr_plus_settle_job"
+      },
+      {
+        "definition": "CREATE TRIGGER settle_onboarding_practice_entitlement AFTER UPDATE OF status ON share_jobs FOR EACH ROW WHEN (old.status IS DISTINCT FROM new.status) EXECUTE FUNCTION settle_onboarding_practice_entitlement()",
+        "relname": "share_jobs",
+        "tgname": "settle_onboarding_practice_entitlement"
+      },
+      {
+        "definition": "CREATE TRIGGER share_jobs_age_eligibility_guard BEFORE INSERT OR UPDATE ON share_jobs FOR EACH ROW EXECUTE FUNCTION guard_share_job_age_eligibility()",
+        "relname": "share_jobs",
+        "tgname": "share_jobs_age_eligibility_guard"
+      },
+      {
+        "definition": "CREATE TRIGGER share_jobs_cancel_cascade_media AFTER UPDATE OF status ON share_jobs FOR EACH ROW EXECUTE FUNCTION share_jobs_cascade_cancel_media()",
+        "relname": "share_jobs",
+        "tgname": "share_jobs_cancel_cascade_media"
+      },
+      {
+        "definition": "CREATE TRIGGER share_jobs_kick_worker AFTER INSERT ON share_jobs FOR EACH STATEMENT EXECUTE FUNCTION share_jobs_after_insert_kick()",
+        "relname": "share_jobs",
+        "tgname": "share_jobs_kick_worker"
+      },
+      {
+        "definition": "CREATE TRIGGER share_jobs_set_updated_at BEFORE UPDATE ON share_jobs FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+        "relname": "share_jobs",
+        "tgname": "share_jobs_set_updated_at"
+      },
+      {
+        "definition": "CREATE TRIGGER share_jobs_settle_monetized_access AFTER UPDATE OF status, saved_place_id ON share_jobs FOR EACH ROW WHEN ((new.billing_mode = ANY (ARRAY['metered'::text, 'pro'::text])) AND (old.status IS DISTINCT FROM new.status OR old.saved_place_id IS DISTINCT FROM new.saved_place_id)) EXECUTE FUNCTION settle_monetized_share_job_transition()",
+        "relname": "share_jobs",
+        "tgname": "share_jobs_settle_monetized_access"
+      },
+      {
+        "definition": "CREATE TRIGGER share_media_tasks_admit_recognition_v2 AFTER UPDATE OF status ON share_media_tasks FOR EACH ROW EXECUTE FUNCTION admit_recognition_after_media_completion_v2()",
+        "relname": "share_media_tasks",
+        "tgname": "share_media_tasks_admit_recognition_v2"
+      },
+      {
+        "definition": "CREATE TRIGGER share_media_tasks_age_eligibility_guard BEFORE INSERT OR UPDATE ON share_media_tasks FOR EACH ROW EXECUTE FUNCTION guard_share_media_task_age_eligibility()",
+        "relname": "share_media_tasks",
+        "tgname": "share_media_tasks_age_eligibility_guard"
+      },
+      {
+        "definition": "CREATE TRIGGER share_media_tasks_kick_worker AFTER INSERT ON share_media_tasks FOR EACH STATEMENT EXECUTE FUNCTION share_media_tasks_after_insert_kick()",
+        "relname": "share_media_tasks",
+        "tgname": "share_media_tasks_kick_worker"
+      },
+      {
+        "definition": "CREATE TRIGGER share_media_tasks_owner_guard BEFORE INSERT OR UPDATE OF user_id, share_job_id, saved_place_id, target_place_id, task_kind, recognition_revalidation_task_id ON share_media_tasks FOR EACH ROW EXECUTE FUNCTION share_media_tasks_enforce_owner()",
+        "relname": "share_media_tasks",
+        "tgname": "share_media_tasks_owner_guard"
+      },
+      {
+        "definition": "CREATE TRIGGER share_media_tasks_revalidation_processing AFTER UPDATE OF status ON share_media_tasks FOR EACH ROW EXECUTE FUNCTION mark_recognition_revalidation_processing_v2()",
+        "relname": "share_media_tasks",
+        "tgname": "share_media_tasks_revalidation_processing"
+      },
+      {
+        "definition": "CREATE TRIGGER share_media_tasks_set_updated_at BEFORE UPDATE ON share_media_tasks FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+        "relname": "share_media_tasks",
+        "tgname": "share_media_tasks_set_updated_at"
+      },
+      {
+        "definition": "CREATE TRIGGER share_media_tasks_sync_premium_state AFTER UPDATE OF status ON share_media_tasks FOR EACH ROW EXECUTE FUNCTION sync_premium_media_task_state()",
+        "relname": "share_media_tasks",
+        "tgname": "share_media_tasks_sync_premium_state"
+      }
+    ],
+    "production": [
+      {
+        "definition": "CREATE TRIGGER saved_place_sources_capture_v2_note AFTER INSERT OR UPDATE ON saved_place_sources FOR EACH ROW EXECUTE FUNCTION capture_recognition_source_ai_note_v2()",
+        "relname": "saved_place_sources",
+        "tgname": "saved_place_sources_capture_v2_note"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_place_sources_owner_guard BEFORE INSERT OR UPDATE OF saved_place_id, user_id, identity_key ON saved_place_sources FOR EACH ROW EXECUTE FUNCTION saved_place_sources_enforce_owner()",
+        "relname": "saved_place_sources",
+        "tgname": "saved_place_sources_owner_guard"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_place_sources_set_updated_at BEFORE UPDATE ON saved_place_sources FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+        "relname": "saved_place_sources",
+        "tgname": "saved_place_sources_set_updated_at"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_place_sources_video_media_sync AFTER INSERT OR UPDATE OF saved_place_id, identity_key, last_seen_at ON saved_place_sources FOR EACH ROW EXECUTE FUNCTION sync_saved_place_source_video_media()",
+        "relname": "saved_place_sources",
+        "tgname": "saved_place_sources_video_media_sync"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_places_converted_anonymous_insert_guard BEFORE INSERT ON saved_places FOR EACH ROW EXECUTE FUNCTION saved_places_reject_converted_anonymous_insert()",
+        "relname": "saved_places",
+        "tgname": "saved_places_converted_anonymous_insert_guard"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_places_dispute_recognition AFTER UPDATE OF place_id ON saved_places FOR EACH ROW EXECUTE FUNCTION dispute_recognition_after_place_correction()",
+        "relname": "saved_places",
+        "tgname": "saved_places_dispute_recognition"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_places_ensure_video_ai_note AFTER INSERT OR UPDATE OF place_id, source_url, source_type, ai_note ON saved_places FOR EACH ROW EXECUTE FUNCTION ensure_video_ai_note_task()",
+        "relname": "saved_places",
+        "tgname": "saved_places_ensure_video_ai_note"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_places_invalidate_ai_note_on_place_change BEFORE UPDATE OF place_id ON saved_places FOR EACH ROW EXECUTE FUNCTION invalidate_video_ai_note_on_place_change()",
+        "relname": "saved_places",
+        "tgname": "saved_places_invalidate_ai_note_on_place_change"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_places_set_updated_at BEFORE UPDATE ON saved_places FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+        "relname": "saved_places",
+        "tgname": "saved_places_set_updated_at"
+      },
+      {
+        "definition": "CREATE TRIGGER saved_places_video_media_place_sync AFTER UPDATE OF place_id ON saved_places FOR EACH ROW EXECUTE FUNCTION sync_saved_place_video_media_after_place_change()",
+        "relname": "saved_places",
+        "tgname": "saved_places_video_media_place_sync"
+      },
+      {
+        "definition": "CREATE TRIGGER share_jobs_cancel_cascade_media AFTER UPDATE OF status ON share_jobs FOR EACH ROW EXECUTE FUNCTION share_jobs_cascade_cancel_media()",
+        "relname": "share_jobs",
+        "tgname": "share_jobs_cancel_cascade_media"
+      },
+      {
+        "definition": "CREATE TRIGGER share_jobs_kick_worker AFTER INSERT ON share_jobs FOR EACH STATEMENT EXECUTE FUNCTION share_jobs_after_insert_kick()",
+        "relname": "share_jobs",
+        "tgname": "share_jobs_kick_worker"
+      },
+      {
+        "definition": "CREATE TRIGGER share_jobs_set_updated_at BEFORE UPDATE ON share_jobs FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+        "relname": "share_jobs",
+        "tgname": "share_jobs_set_updated_at"
+      },
+      {
+        "definition": "CREATE TRIGGER share_media_tasks_admit_recognition_v2 AFTER UPDATE OF status ON share_media_tasks FOR EACH ROW EXECUTE FUNCTION admit_recognition_after_media_completion_v2()",
+        "relname": "share_media_tasks",
+        "tgname": "share_media_tasks_admit_recognition_v2"
+      },
+      {
+        "definition": "CREATE TRIGGER share_media_tasks_kick_worker AFTER INSERT ON share_media_tasks FOR EACH STATEMENT EXECUTE FUNCTION share_media_tasks_after_insert_kick()",
+        "relname": "share_media_tasks",
+        "tgname": "share_media_tasks_kick_worker"
+      },
+      {
+        "definition": "CREATE TRIGGER share_media_tasks_owner_guard BEFORE INSERT OR UPDATE OF user_id, share_job_id, saved_place_id, target_place_id, task_kind, recognition_revalidation_task_id ON share_media_tasks FOR EACH ROW EXECUTE FUNCTION share_media_tasks_enforce_owner()",
+        "relname": "share_media_tasks",
+        "tgname": "share_media_tasks_owner_guard"
+      },
+      {
+        "definition": "CREATE TRIGGER share_media_tasks_revalidation_processing AFTER UPDATE OF status ON share_media_tasks FOR EACH ROW EXECUTE FUNCTION mark_recognition_revalidation_processing_v2()",
+        "relname": "share_media_tasks",
+        "tgname": "share_media_tasks_revalidation_processing"
+      },
+      {
+        "definition": "CREATE TRIGGER share_media_tasks_set_updated_at BEFORE UPDATE ON share_media_tasks FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+        "relname": "share_media_tasks",
+        "tgname": "share_media_tasks_set_updated_at"
+      },
+      {
+        "definition": "CREATE TRIGGER share_media_tasks_sync_premium_state AFTER UPDATE OF status ON share_media_tasks FOR EACH ROW EXECUTE FUNCTION sync_premium_media_task_state()",
+        "relname": "share_media_tasks",
+        "tgname": "share_media_tasks_sync_premium_state"
+      }
+    ]
+  },
+  "workerSource": {
+    "productionSource": "e9daf499cfb276ea7072b651642a04218b90ccf9",
+    "productionTree": "5457e19a8965bfa882e0ce35e510296667ec0359",
+    "qualifiedDevelopmentSource": "9f2b1299824b2f7102fd3443da7d3a888f4d8c94",
+    "qualifiedDevelopmentTree": "4f8f50dc7253a1b4451b4f960ff9d144a965c040",
+    "currentTree": "4f8f50dc7253a1b4451b4f960ff9d144a965c040",
+    "changedFiles": [
+      "services/media-worker/src/automaticDeep/automaticDeepRecognitionProvider.ts",
+      "services/media-worker/src/config/env.ts",
+      "services/media-worker/src/pipeline/runMediaTask.ts",
+      "services/media-worker/src/providers/model.ts",
+      "services/media-worker/src/providers/openaiRecognition.ts",
+      "services/media-worker/src/types/media.ts",
+      "services/media-worker/tests/adultEligibilityDispatch.test.ts",
+      "services/media-worker/tests/globalProviderAudience.test.ts",
+      "services/media-worker/tests/integration/pipeline.test.ts",
+      "services/media-worker/tests/openaiRecognition.test.ts",
+      "services/media-worker/tests/providers.test.ts",
+      "services/media-worker/tests/readiness.test.ts",
+      "services/media-worker/tests/resolverEvidenceContract.test.ts",
+      "services/media-worker/tests/scrapeCreatorsFacebookFallback.test.ts",
+      "services/media-worker/tests/targetedNoteContext.test.ts",
+      "services/media-worker/tests/transcriptHierarchy.test.ts"
+    ]
+  },
+  "finishedAt": "2026-10-28T00:08:30.032Z"
+}

@@ -1,6 +1,6 @@
 # Unified Privacy Policy and Terms — final review drafts
 
-Prepared **2026-10-20**. **UNPUBLISHED / UNAPPROVED.** These are proposed consumer texts for the unified release. They are not legal approval, publication evidence, or proof that every described control has passed qualification.
+Prepared **2026-10-20**, technically revised **2026-10-27 America/Los_Angeles**. **UNPUBLISHED / UNAPPROVED.** These are proposed consumer texts for the unified release. They are not legal approval, publication evidence, or proof that every described control has passed qualification. The revision corrects Birthday onboarding, distinguishes disabled optional app analytics from necessary diagnostics, and restores the existing website-attribution disclosure. The final provider/guardian design and free-only versus paid launch choice must be resolved before one consolidated approval and publication. No effective date has been invented.
 
 Before publication, confirm the operator details, approve an effective date, validate the final binary and service configuration against these statements, complete required translations and regional review, and publish the approved text at the canonical URLs. The release gates remain closed while those steps are incomplete.
 
@@ -16,7 +16,7 @@ Nearr helps you save places from selected links and searches, organize them on a
 
 ### Age and eligibility
 
-Nearr's minimum age is 13. A higher age or additional restrictions apply in some regions. We ask for your country and an age range or threshold declaration, and retain the eligibility result, relevant policy version and time with your account. The eligibility screen does not request a full birthdate, government ID or facial scan. A declaration is not proof that a parent or guardian has authorized processing.
+Nearr's minimum age is 13. A higher age or additional restrictions apply in some regions. The onboarding screen asks for your birthday and country. Your birthday is used on that screen to calculate an age range; the full date is not saved to device storage, sent to Nearr's server, or included in analytics by this flow. We retain only the age range and country, together with the eligibility result, relevant policy version and time. The screen clears the birthday after a successful declaration or when it is closed. We do not request a government ID or facial scan in this flow. An age declaration is not proof that a parent or guardian has authorized processing.
 
 This release does not offer an under-13 account or parental-consent program. AI recognition and purchases can remain unavailable even when the basic age threshold is met. We do not send a restricted account's new recognition content to AI or acquisition providers. Existing accounts may need to complete eligibility and permission steps before using new processing features. Restriction does not silently delete existing saves or remove access to privacy assistance.
 
@@ -43,6 +43,12 @@ You can withdraw AI-sharing permission in Settings. Withdrawal stops future auth
 Place searches go to our search provider to retrieve results. Nearr can retain search terms, source links and account-linked actions associated with searches, saves, corrections and source openings. Nearr does not read your general browser history.
 
 We use necessary service records for account security, eligibility and permission enforcement, recognition processing, delivery, entitlement accounting, support and reliability. These records can contain account, job, source, installation and notification identifiers, timestamps, app or runtime version, provider outcomes, errors and processing durations.
+
+Optional behavioral analytics in the 1.7 app is disabled. This does not disable necessary operational records, diagnostics, or the website attribution described below.
+
+### Website attribution
+
+The Nearr website may record referral information supplied in a link, including campaign parameters, creator identifiers and video or campaign identifiers. It may store this information in a first-party browser cookie for up to 90 days to measure how people reach the website and later actions such as opening the App Store link. This website attribution is separate from the app's account and product records. The cookie does not by itself establish that app data is combined with third-party data for advertising; any such use must be separately verified and disclosed.
 
 ### Location and reminders
 

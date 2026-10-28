@@ -1,0 +1,58 @@
+{
+  "startedAt": "2026-10-28T00:20:03.177Z",
+  "kind": "isolated-local-production-restore-rehearsal",
+  "image": "public.ecr.aws/supabase/postgres:17.6.1.111",
+  "containerName": "nearr-final-restore-b29ae912",
+  "network": "none",
+  "cpuLimit": 1,
+  "memoryLimitMiB": 640,
+  "archiveSha256": "6bfee2f9351c66a11d75febb4a62cd56ca0b0b8a48e73dae426c60c9fea415b7",
+  "remoteMutation": false,
+  "passed": true,
+  "containerId": "d670c53e6acfea3a7c1ef704ac0c62a3fa5a9ccab014126403a3babb13993e7c",
+  "roleBootstrapCount": 15,
+  "rolePasswordsRestored": false,
+  "restoreExit": 0,
+  "counts": {
+    "auth_users": 112,
+    "saved_places": 642,
+    "saved_place_sources": 558,
+    "share_jobs": 915,
+    "share_media_tasks": 1000,
+    "migrations": 72
+  },
+  "ownership": [
+    {
+      "relation": "saved_places",
+      "row_count": 642,
+      "ownership_md5": "58619de9e935cc1d925a0b11c08d4502"
+    },
+    {
+      "relation": "saved_place_sources",
+      "row_count": 558,
+      "ownership_md5": "6c3ce5865f547976378043d5b9ceecd4"
+    }
+  ],
+  "ownershipMatches": true,
+  "rls": [
+    {
+      "table_name": "saved_place_sources",
+      "rls": true
+    },
+    {
+      "table_name": "saved_places",
+      "rls": true
+    },
+    {
+      "table_name": "share_jobs",
+      "rls": true
+    },
+    {
+      "table_name": "share_media_tasks",
+      "rls": true
+    }
+  ],
+  "containerStopped": true,
+  "containerRemoved": true,
+  "finishedAt": "2026-10-28T00:20:23.684Z"
+}

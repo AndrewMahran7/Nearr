@@ -1,0 +1,1611 @@
+{
+  "capturedAt": "2026-10-28T00:04:38.431Z",
+  "kind": "read-only-live-backend-reconciliation",
+  "source": "3dbf10278368c2074afa095627b71be21f24aaa3",
+  "workerTree": "4f8f50dc7253a1b4451b4f960ff9d144a965c040",
+  "mutations": [],
+  "environments": {
+    "development": {
+      "ref": "qnfxnmvxpjzfydgudtvs",
+      "railway": {
+        "project": "4037a3b5-d66f-409e-b734-56c22c244e3e",
+        "environment": "57d055b7-5326-4f96-a7a9-70523ee0d3f0",
+        "service": "3c8cd190-b118-4ee4-9338-407843ef4e1f",
+        "configuration": {
+          "flags": {
+            "AUTOMATIC_DEEP_RECOGNITION_ENABLED": "false",
+            "AUTO_DEEP_RECOGNITION_ENABLED": "false",
+            "FACEBOOK_MEDIA_RESOLVER_ENABLED": "false",
+            "INSTAGRAM_COMMENT_INGESTION_ENABLED": "false",
+            "INSTAGRAM_MEDIA_RESOLVER_ENABLED": "false",
+            "MEDIA_FALLBACK_ENABLED": "false",
+            "MEDIA_OPENAI_RECOGNITION_ENABLED": "false",
+            "NATIVE_VIDEO_ANALYSIS_ENABLED": "false",
+            "PREMIUM_REQUESTS_ENABLED": "false",
+            "RECOGNITION_CACHE_READS_ENABLED": "false",
+            "SCRAPECREATORS_FACEBOOK_FALLBACK_ENABLED": "false",
+            "SCRAPECREATORS_INSTAGRAM_FALLBACK_ENABLED": "false",
+            "SCRAPECREATORS_TIKTOK_FALLBACK_ENABLED": "false",
+            "SNAPCHAT_MEDIA_RESOLVER_ENABLED": "false",
+            "TIKTOK_MEDIA_RESOLVER_ENABLED": "false",
+            "VAYRIN_ADAPTIVE_SOL_FRAMES_ENABLED": "false",
+            "VAYRIN_VERIFICATION_V3_ENABLED": "false",
+            "VAYRIN_VISUAL_GEOLOCATION_ENABLED": "false",
+            "YOUTUBE_MEDIA_RESOLVER_ENABLED": "false"
+          },
+          "routes": {
+            "MEDIA_ANALYSIS_PROVIDER": "disabled",
+            "MEDIA_TRANSCRIPTION_PROVIDER": "noop",
+            "MEDIA_OCR_PROVIDER": "noop",
+            "NEARR_ALLOWED_PROVIDER_ROUTE": "disabled",
+            "GEMINI_MODEL": "gemini-3.5-flash-lite",
+            "MEDIA_TRANSCRIPTION_MODEL": "whisper-1"
+          },
+          "supabaseUrl": "https://qnfxnmvxpjzfydgudtvs.supabase.co",
+          "secretPresence": {
+            "GEMINI_API_KEY": true,
+            "GOOGLE_PLACES_KEY": true,
+            "MEDIA_FINALIZE_SECRET": true,
+            "MEDIA_TRANSCRIPTION_API_KEY": true,
+            "SCRAPE_CREATORS_KEY": true,
+            "SHARE_MEDIA_WORKER_SECRET": true,
+            "SUPABASE_SERVICE_ROLE_KEY": true
+          }
+        },
+        "deployments": [
+          {
+            "id": "70fc5c6f-1b8b-4e5c-915e-7c30ccbab360",
+            "status": "SUCCESS",
+            "createdAt": "2026-10-26T19:49:42.071Z",
+            "meta": {
+              "imageDigest": "sha256:0ca141b72cd33c64cfaaa58014db13d0be9df91f82223534c9362e28c110737f"
+            }
+          },
+          {
+            "id": "0f738ab6-ec1a-4b34-a2c6-bc67488b74c3",
+            "status": "REMOVED",
+            "createdAt": "2026-10-26T19:39:47.086Z",
+            "meta": {
+              "imageDigest": "sha256:6c25b4262344bbfe7ad9106913c7c194cf693e2e16b37d500be1647ebbcd0c21"
+            }
+          },
+          {
+            "id": "69831ef2-7da5-495d-95b4-f1618b2f0b6e",
+            "status": "REMOVED",
+            "createdAt": "2026-10-19T18:13:09.190Z",
+            "meta": {
+              "imageDigest": "sha256:39aed6af4a791cf5db17b201be66570b843f52fc60f639a44c94c5591b5ef0d2"
+            }
+          }
+        ]
+      },
+      "endpoints": [
+        {
+          "path": "/health",
+          "status": 200,
+          "body": {
+            "status": "ok",
+            "service": "nearr-media-worker"
+          }
+        },
+        {
+          "path": "/ready",
+          "status": 503,
+          "body": {
+            "status": "not_ready",
+            "checks": {
+              "config": false,
+              "ffmpeg": true,
+              "ffprobe": true,
+              "ytdlp": true,
+              "supabase": false
+            },
+            "capabilities": {
+              "aiNoteEnrichment": true,
+              "scrapeCreatorsTikTokFallback": false,
+              "scrapeCreatorsInstagramFallback": false,
+              "scrapeCreatorsFacebookFallback": false
+            },
+            "runtime": {
+              "ytDlpVersion": "2026.08.19",
+              "ytDlpStatus": "ok"
+            },
+            "missingConfig": [
+              "MEDIA_TRANSCRIPTION_PROVIDER=openai",
+              "MEDIA_ANALYSIS_PROVIDER=openai",
+              "MEDIA_OPENAI_RECOGNITION_ENABLED=true",
+              "NEARR_ALLOWED_PROVIDER_ROUTE=openai_only",
+              "MEDIA_OPENAI_RECOGNITION_API_KEY",
+              "MEDIA_OPENAI_RECOGNITION_MODEL"
+            ]
+          }
+        }
+      ],
+      "edge": [
+        {
+          "name": "create-share-job",
+          "version": 75,
+          "status": "ACTIVE",
+          "verifyJwt": true,
+          "sha256": "cd51fc94fc40088e99fe556a10ca4ba050b5c26fe9509babe0ec145c5c0a875a",
+          "updatedAt": "2026-10-26T02:26:34.815Z"
+        },
+        {
+          "name": "delete-account",
+          "version": 58,
+          "status": "ACTIVE",
+          "verifyJwt": true,
+          "sha256": "6ef7334c1572f4f754d85cca815879e9ecd15625c0c6960c2063d0c5d6ab82c7",
+          "updatedAt": "2026-09-03T22:53:41.058Z"
+        },
+        {
+          "name": "process-share-jobs",
+          "version": 144,
+          "status": "ACTIVE",
+          "verifyJwt": false,
+          "sha256": "85d2039de5782b288295734f4fab1d1a231d73cfe77d89c554f866098fcb4d59",
+          "updatedAt": "2026-10-26T02:26:56.003Z"
+        },
+        {
+          "name": "process-share-link",
+          "version": 88,
+          "status": "ACTIVE",
+          "verifyJwt": false,
+          "sha256": "db08d45faf513a4ec7397a411c9193d7f99d1d15b827930b2cf58b254bd392a5",
+          "updatedAt": "2026-10-26T02:26:48.767Z"
+        },
+        {
+          "name": "e2e-place-fixture",
+          "version": 53,
+          "status": "ACTIVE",
+          "verifyJwt": false,
+          "sha256": "20f26cb1e6d13ebc5275901f1d467f57881e25993cdb8b0d07ad5cd2b6932397",
+          "updatedAt": "2026-08-21T03:43:48.415Z"
+        },
+        {
+          "name": "delete-share-job",
+          "version": 52,
+          "status": "ACTIVE",
+          "verifyJwt": true,
+          "sha256": "88c625982be7d7c64d81c9bdbcd38a8333ac22c6ba61844190fb8848780c73dc",
+          "updatedAt": "2026-08-25T00:48:52.746Z"
+        },
+        {
+          "name": "monetization",
+          "version": 44,
+          "status": "ACTIVE",
+          "verifyJwt": true,
+          "sha256": "a58057377579ab1d5e447e023751c2dd5b9c7cc5d5883714b8bde77de1a8135f",
+          "updatedAt": "2026-09-10T18:45:21.565Z"
+        },
+        {
+          "name": "public-place",
+          "version": 12,
+          "status": "ACTIVE",
+          "verifyJwt": false,
+          "sha256": "ddd57441cdd4647b14fded422375837861a489a128971054a2f7a4e2471684b9",
+          "updatedAt": "2026-09-05T23:22:31.004Z"
+        },
+        {
+          "name": "get-place-videos",
+          "version": 10,
+          "status": "ACTIVE",
+          "verifyJwt": false,
+          "sha256": "92141568b51776c9b6ebf348147ce0706e6172266cc3ac699af06b6edbd8f050",
+          "updatedAt": "2026-09-06T20:31:01.461Z"
+        },
+        {
+          "name": "revenuecat-webhook",
+          "version": 9,
+          "status": "ACTIVE",
+          "verifyJwt": false,
+          "sha256": "db5a050393480243cac20326fe9843c894919a4a29791ffebe2ac362abb1a808",
+          "updatedAt": "2026-09-10T19:27:45.629Z"
+        },
+        {
+          "name": "get-onboarding-tutorial",
+          "version": 11,
+          "status": "ACTIVE",
+          "verifyJwt": true,
+          "sha256": "59aab65fdc34c361b3b747257d5d5b0b81ba0a3e7ca596f46b37bee63d1fc542",
+          "updatedAt": "2026-09-11T02:31:47.605Z"
+        },
+        {
+          "name": "reset-onboarding-qa",
+          "version": 1,
+          "status": "ACTIVE",
+          "verifyJwt": true,
+          "sha256": "dd0340fea538c76ab3e6edb25ec2727b1923e7b1c74a35698e8e0289cc02f4d3",
+          "updatedAt": "2026-09-11T02:31:52.551Z"
+        },
+        {
+          "name": "plus-api",
+          "version": 1,
+          "status": "ACTIVE",
+          "verifyJwt": true,
+          "sha256": "c5c8d36430dc3cf5ebebc5d2349046f1b5a89a828a3794cc3b2c2b631bcdd50d",
+          "updatedAt": "2026-10-26T02:27:01.429Z"
+        },
+        {
+          "name": "revenuecat-plus-webhook",
+          "version": 1,
+          "status": "ACTIVE",
+          "verifyJwt": false,
+          "sha256": "200ee56f926f9eee8667dacc98a5be0ef9770272130065dbbcd554e0fc10a5b7",
+          "updatedAt": "2026-10-26T02:27:06.645Z"
+        }
+      ],
+      "migrations": [
+        {
+          "name": "init_schema",
+          "version": "20260426000001"
+        },
+        {
+          "name": "analytics_events",
+          "version": "20260427000001"
+        },
+        {
+          "name": "notification_count",
+          "version": "20260501000001"
+        },
+        {
+          "name": "legal_acceptance",
+          "version": "20260502000001"
+        },
+        {
+          "name": "opportunity_archive",
+          "version": "20260503000001"
+        },
+        {
+          "name": "share_agent_runs",
+          "version": "20260504000001"
+        },
+        {
+          "name": "feedback",
+          "version": "20260706000001"
+        },
+        {
+          "name": "share_extraction_failures",
+          "version": "20260708000001"
+        },
+        {
+          "name": "share_jobs",
+          "version": "20260731000001"
+        },
+        {
+          "name": "user_push_tokens",
+          "version": "20260731000002"
+        },
+        {
+          "name": "share_jobs_worker",
+          "version": "20260731000003"
+        },
+        {
+          "name": "share_jobs_notifications",
+          "version": "20260731000004"
+        },
+        {
+          "name": "lock_worker_rpc_grants",
+          "version": "20260731000005"
+        },
+        {
+          "name": "share_jobs_worker_secret",
+          "version": "20260731000006"
+        },
+        {
+          "name": "share_media_tasks",
+          "version": "20260801000001"
+        },
+        {
+          "name": "share_media_worker",
+          "version": "20260801000002"
+        },
+        {
+          "name": "share_media_task_recovery",
+          "version": "20260801000003"
+        },
+        {
+          "name": "explicit_privileges",
+          "version": "20260801000004"
+        },
+        {
+          "name": "aux_privileges",
+          "version": "20260801000005"
+        },
+        {
+          "name": "share_job_place_results",
+          "version": "20260803000001"
+        },
+        {
+          "name": "place_categories_and_undo",
+          "version": "20260803000002"
+        },
+        {
+          "name": "saved_place_ai_notes",
+          "version": "20260812000001"
+        },
+        {
+          "name": "correct_saved_place_provider",
+          "version": "20260812000002"
+        },
+        {
+          "name": "post_save_media_enrichment",
+          "version": "20260813000001"
+        },
+        {
+          "name": "place_category_taxonomy_v3",
+          "version": "20260813000002"
+        },
+        {
+          "name": "saved_place_source_enrichment",
+          "version": "20260814000001"
+        },
+        {
+          "name": "saved_place_source_type_platforms",
+          "version": "20260815000001"
+        },
+        {
+          "name": "anonymous_onboarding_v2",
+          "version": "20260819000002"
+        },
+        {
+          "name": "share_job_failed_notifications",
+          "version": "20260820000001"
+        },
+        {
+          "name": "share_job_failure_taxonomy",
+          "version": "20260820000002"
+        },
+        {
+          "name": "video_ai_note_guarantee",
+          "version": "20260821000001"
+        },
+        {
+          "name": "share_job_failed_notifications",
+          "version": "20260821000002"
+        },
+        {
+          "name": "share_job_failure_taxonomy",
+          "version": "20260821000003"
+        },
+        {
+          "name": "anonymous_onboarding_v2",
+          "version": "20260822000001"
+        },
+        {
+          "name": "vayrin_recognition_cache_and_place_sources",
+          "version": "20260822000002"
+        },
+        {
+          "name": "correct_saved_place_multi_source",
+          "version": "20260822000003"
+        },
+        {
+          "name": "developer_dashboard",
+          "version": "20260824000001"
+        },
+        {
+          "name": "vayrin_quick_check_evidence_frames",
+          "version": "20260824225520"
+        },
+        {
+          "name": "empty_queue_durable",
+          "version": "20260824233000"
+        },
+        {
+          "name": "user_scoped_recognition_rejections",
+          "version": "20260825000001"
+        },
+        {
+          "name": "place_find_monetization",
+          "version": "20260903000001"
+        },
+        {
+          "name": "qualify_place_find_balance_columns",
+          "version": "20260903000002"
+        },
+        {
+          "name": "preserve_place_find_ledger_on_account_deletion",
+          "version": "20260903000003"
+        },
+        {
+          "name": "dev_token_pack_quantities",
+          "version": "20260903000004"
+        },
+        {
+          "name": "premium_request_monetization",
+          "version": "20260904000001"
+        },
+        {
+          "name": "fix_premium_request_available_uses",
+          "version": "20260905000001"
+        },
+        {
+          "name": "right_size_premium_token_packs",
+          "version": "20260905000002"
+        },
+        {
+          "name": "public_place_sharing",
+          "version": "20260905000003"
+        },
+        {
+          "name": "public_place_ref_pgcrypto_schema",
+          "version": "20260905000004"
+        },
+        {
+          "name": "shared_place_source_context",
+          "version": "20260905000005"
+        },
+        {
+          "name": "fix_shared_source_url_verifier",
+          "version": "20260905000006"
+        },
+        {
+          "name": "qualify_shared_save_source_lookup",
+          "version": "20260905000007"
+        },
+        {
+          "name": "qualify_shared_source_dedupe",
+          "version": "20260905000008"
+        },
+        {
+          "name": "qualify_corrected_place_source_merge",
+          "version": "20260905000009"
+        },
+        {
+          "name": "qualify_corrected_place_source_reads",
+          "version": "20260905000010"
+        },
+        {
+          "name": "automatic_completion_soft_alternatives",
+          "version": "20260906000001"
+        },
+        {
+          "name": "fix_soft_alternative_promotion_ambiguity",
+          "version": "20260906000002"
+        },
+        {
+          "name": "place_video_gallery_v1",
+          "version": "20260906000003"
+        },
+        {
+          "name": "recognition_cache_v2",
+          "version": "20260906000004"
+        },
+        {
+          "name": "recognition_cache_v2_saved_category",
+          "version": "20260906000005"
+        },
+        {
+          "name": "token_monetization_v1",
+          "version": "20260906000006"
+        },
+        {
+          "name": "recognition_revalidation_failure_quarantine_repair",
+          "version": "20260906000007"
+        },
+        {
+          "name": "named_lead_automatic_completion",
+          "version": "20260907000001"
+        },
+        {
+          "name": "fix_named_lead_saved_place_ambiguity",
+          "version": "20260907000002"
+        },
+        {
+          "name": "fix_named_lead_job_pointer_ambiguity",
+          "version": "20260907000003"
+        },
+        {
+          "name": "dev_qualification_fresh_recognition",
+          "version": "20260908000001"
+        },
+        {
+          "name": "canonical_development_recognition_baseline",
+          "version": "20260909000001"
+        },
+        {
+          "name": "curated_tutorial_fixtures_v1",
+          "version": "20260909000002"
+        },
+        {
+          "name": "token_monetization_v1",
+          "version": "20260910000001"
+        },
+        {
+          "name": "nearr_monetization_experiment_v2",
+          "version": "20260910000002"
+        },
+        {
+          "name": "nearr_monetization_dev_revenuecat_binding",
+          "version": "20260910000003"
+        },
+        {
+          "name": "nearr_pro_event_column_qualification",
+          "version": "20260910000004"
+        },
+        {
+          "name": "fix_create_share_job_status_ambiguity",
+          "version": "20260910000005"
+        },
+        {
+          "name": "onboarding_practice_entitlement",
+          "version": "20260910000006"
+        },
+        {
+          "name": "transfer_onboarding_practice_ownership",
+          "version": "20260910000007"
+        },
+        {
+          "name": "onboarding_qa_non_monetized_runtime",
+          "version": "20260910000008"
+        },
+        {
+          "name": "recognition_geography_state_consistency",
+          "version": "20260914000001"
+        },
+        {
+          "name": "recognition_entity_role_latency_state",
+          "version": "20260914000002"
+        },
+        {
+          "name": "profile_provider_names",
+          "version": "20260925000001"
+        },
+        {
+          "name": "onboarding_real_saved_place_transfer",
+          "version": "20260928000001"
+        },
+        {
+          "name": "onboarding_transfer_owner_order",
+          "version": "20261009000001"
+        },
+        {
+          "name": "onboarding_transfer_grace_recovery",
+          "version": "20261015000001"
+        },
+        {
+          "name": "adult_age_eligibility",
+          "version": "20261018000001"
+        },
+        {
+          "name": "adult_dispatch_transition_guard",
+          "version": "20261018000002"
+        },
+        {
+          "name": "global_eligibility_and_consent",
+          "version": "20261021000001"
+        },
+        {
+          "name": "nearr_plus_verified_entitlements",
+          "version": "20261021000002"
+        },
+        {
+          "name": "global_share_ingress",
+          "version": "20261021000003"
+        },
+        {
+          "name": "account_ui_locale",
+          "version": "20261021000004"
+        },
+        {
+          "name": "global_claim_eligibility",
+          "version": "20261021000005"
+        }
+      ],
+      "localMigrationsNotApplied": [],
+      "remoteMigrationsNotInLocal": [],
+      "schema": [
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "account_eligibility_v2"
+        },
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "account_processing_permissions"
+        },
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "eligibility_region_policy"
+        },
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "global_release_policy"
+        },
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "nearr_plus_config"
+        },
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "nearr_plus_entitlements"
+        },
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "nearr_plus_webhook_events"
+        },
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "saved_place_sources"
+        },
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "saved_places"
+        },
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "share_jobs"
+        },
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "share_media_tasks"
+        }
+      ],
+      "counts": [
+        {
+          "auth_users": 43,
+          "saved_places": 20,
+          "share_jobs": 66,
+          "share_media_tasks": 58
+        }
+      ],
+      "queue": [
+        {
+          "count": 2,
+          "relation": "share_jobs",
+          "status": "awaiting_purchase"
+        },
+        {
+          "count": 29,
+          "relation": "share_jobs",
+          "status": "completed"
+        },
+        {
+          "count": 8,
+          "relation": "share_jobs",
+          "status": "failed"
+        },
+        {
+          "count": 27,
+          "relation": "share_jobs",
+          "status": "needs_help"
+        },
+        {
+          "count": 49,
+          "relation": "share_media_tasks",
+          "status": "completed"
+        },
+        {
+          "count": 7,
+          "relation": "share_media_tasks",
+          "status": "failed"
+        },
+        {
+          "count": 1,
+          "relation": "share_media_tasks",
+          "status": "needs_help"
+        },
+        {
+          "count": 1,
+          "relation": "share_media_tasks",
+          "status": "queued"
+        }
+      ],
+      "functions": [
+        {
+          "args": "p_user_id uuid",
+          "proname": "account_ai_access_reason",
+          "security_definer": true
+        },
+        {
+          "args": "p_user_id uuid, p_snapshot jsonb",
+          "proname": "apply_nearr_plus_snapshot",
+          "security_definer": true
+        },
+        {
+          "args": "p_event_id text, p_event_type text, p_payload_sha256 text, p_snapshots jsonb",
+          "proname": "apply_nearr_plus_webhook",
+          "security_definer": true
+        },
+        {
+          "args": "p_limit integer, p_lock_seconds integer",
+          "proname": "claim_share_jobs",
+          "security_definer": true
+        },
+        {
+          "args": "p_at_least_18 boolean",
+          "proname": "declare_age_eligibility_18_plus",
+          "security_definer": true
+        },
+        {
+          "args": "p_age_band text, p_country_code text",
+          "proname": "declare_global_eligibility",
+          "security_definer": true
+        },
+        {
+          "args": "",
+          "proname": "guard_share_job_age_eligibility",
+          "security_definer": true
+        },
+        {
+          "args": "",
+          "proname": "guard_share_media_task_age_eligibility",
+          "security_definer": true
+        },
+        {
+          "args": "p_user_id uuid",
+          "proname": "is_account_eligible_for_ai",
+          "security_definer": true
+        },
+        {
+          "args": "p_user_id uuid",
+          "proname": "is_account_eligible_for_purchase",
+          "security_definer": true
+        },
+        {
+          "args": "p_user_id uuid",
+          "proname": "is_adult_eligible_for_ai",
+          "security_definer": true
+        },
+        {
+          "args": "",
+          "proname": "nearr_plus_reserve_job_trigger",
+          "security_definer": true
+        },
+        {
+          "args": "",
+          "proname": "nearr_plus_settle_job_trigger",
+          "security_definer": true
+        },
+        {
+          "args": "",
+          "proname": "nearr_plus_settle_result_trigger",
+          "security_definer": true
+        },
+        {
+          "args": "p_user_id uuid",
+          "proname": "nearr_plus_usage",
+          "security_definer": true
+        },
+        {
+          "args": "",
+          "proname": "propagate_transferred_age_eligibility",
+          "security_definer": true
+        },
+        {
+          "args": "",
+          "proname": "propagate_transferred_global_eligibility",
+          "security_definer": true
+        },
+        {
+          "args": "p_user_id uuid, p_job_id uuid",
+          "proname": "reserve_nearr_plus_recognition",
+          "security_definer": true
+        },
+        {
+          "args": "p_allowed boolean, p_notice_version text",
+          "proname": "set_ai_sharing_permission",
+          "security_definer": true
+        },
+        {
+          "args": "p_job_id uuid",
+          "proname": "settle_nearr_plus_recognition",
+          "security_definer": true
+        }
+      ],
+      "releasePolicy": [
+        {
+          "ai_notice_version": "nearr-ai-openai-v1",
+          "evidence_reference": null,
+          "legal_approved": false,
+          "policy_version": "nearr-global-13-v1",
+          "privacy_notice_version": "nearr-global-privacy-v1",
+          "provider_route": "disabled",
+          "purchase_qualified": false,
+          "recognition_qualified": false,
+          "singleton": true,
+          "terms_version": "nearr-global-terms-v1"
+        }
+      ],
+      "regions": [
+        {
+          "country_code": "BR",
+          "evidence_reference": null,
+          "market_qualified": false,
+          "minimum_age": 18,
+          "minor_ai_qualified": false
+        },
+        {
+          "country_code": "DE",
+          "evidence_reference": null,
+          "market_qualified": false,
+          "minimum_age": 16,
+          "minor_ai_qualified": false
+        },
+        {
+          "country_code": "ES",
+          "evidence_reference": null,
+          "market_qualified": false,
+          "minimum_age": 14,
+          "minor_ai_qualified": false
+        },
+        {
+          "country_code": "FR",
+          "evidence_reference": null,
+          "market_qualified": false,
+          "minimum_age": 15,
+          "minor_ai_qualified": false
+        },
+        {
+          "country_code": "GB",
+          "evidence_reference": null,
+          "market_qualified": false,
+          "minimum_age": 13,
+          "minor_ai_qualified": false
+        },
+        {
+          "country_code": "IT",
+          "evidence_reference": null,
+          "market_qualified": false,
+          "minimum_age": 14,
+          "minor_ai_qualified": false
+        },
+        {
+          "country_code": "JP",
+          "evidence_reference": null,
+          "market_qualified": false,
+          "minimum_age": 18,
+          "minor_ai_qualified": false
+        },
+        {
+          "country_code": "KR",
+          "evidence_reference": null,
+          "market_qualified": false,
+          "minimum_age": 14,
+          "minor_ai_qualified": false
+        },
+        {
+          "country_code": "MX",
+          "evidence_reference": null,
+          "market_qualified": false,
+          "minimum_age": 18,
+          "minor_ai_qualified": false
+        },
+        {
+          "country_code": "US",
+          "evidence_reference": null,
+          "market_qualified": false,
+          "minimum_age": 13,
+          "minor_ai_qualified": false
+        }
+      ],
+      "plusConfig": [
+        {
+          "catalog_verified": false,
+          "enforce_allowance": false,
+          "entitlement_id": "nearr_plus",
+          "environment": "SANDBOX",
+          "free_finds": 3,
+          "id": true,
+          "offering_id": "nearr_plus_v1",
+          "plus_finds": 10,
+          "product_id": "nearr_plus_monthly_v1",
+          "release_qualified": false,
+          "revenuecat_app_id": null,
+          "sales_enabled": false
+        }
+      ]
+    },
+    "production": {
+      "ref": "rlqvxdwtetxsqxhqztkw",
+      "railway": {
+        "project": "4037a3b5-d66f-409e-b734-56c22c244e3e",
+        "environment": "49650a9c-4744-4649-8cd1-4ff38473d22f",
+        "service": "59234570-e2ec-4a7e-86de-22826da86c66",
+        "configuration": {
+          "flags": {
+            "AUTOMATIC_DEEP_RECOGNITION_ENABLED": "true",
+            "FACEBOOK_MEDIA_RESOLVER_ENABLED": "true",
+            "INSTAGRAM_MEDIA_RESOLVER_ENABLED": "true",
+            "MEDIA_FALLBACK_ENABLED": "true",
+            "NATIVE_VIDEO_ANALYSIS_ENABLED": "true",
+            "PREMIUM_REQUESTS_ENABLED": "false",
+            "RECOGNITION_CACHE_READS_ENABLED": "true",
+            "SCRAPECREATORS_FACEBOOK_FALLBACK_ENABLED": "true",
+            "SCRAPECREATORS_INSTAGRAM_FALLBACK_ENABLED": "true",
+            "SCRAPECREATORS_TIKTOK_FALLBACK_ENABLED": "true",
+            "SNAPCHAT_MEDIA_RESOLVER_ENABLED": "true",
+            "TIKTOK_MEDIA_RESOLVER_ENABLED": "true",
+            "VAYRIN_VERIFICATION_V3_ENABLED": "true",
+            "VAYRIN_VISUAL_GEOLOCATION_ENABLED": "true",
+            "YOUTUBE_MEDIA_RESOLVER_ENABLED": "true"
+          },
+          "routes": {
+            "MEDIA_ANALYSIS_PROVIDER": "gemini",
+            "MEDIA_TRANSCRIPTION_PROVIDER": "openai",
+            "GEMINI_MODEL": "gemini-3.5-flash-lite",
+            "MEDIA_TRANSCRIPTION_MODEL": "whisper-1"
+          },
+          "supabaseUrl": "https://rlqvxdwtetxsqxhqztkw.supabase.co",
+          "secretPresence": {
+            "GEMINI_API_KEY": true,
+            "GOOGLE_PLACES_KEY": true,
+            "MEDIA_FINALIZE_SECRET": true,
+            "MEDIA_TRANSCRIPTION_API_KEY": true,
+            "SCRAPE_CREATORS_KEY": true,
+            "SHARE_MEDIA_WORKER_SECRET": true,
+            "SUPABASE_SERVICE_ROLE_KEY": true
+          }
+        },
+        "deployments": [
+          {
+            "id": "fee82c18-6652-449b-8f54-9868ad54dcc0",
+            "status": "SKIPPED",
+            "createdAt": "2026-09-09T05:13:01.421Z",
+            "meta": {
+              "commitHash": "ded040465176a193bba8c6921b179b07ef6a9a64",
+              "commitMessage": "fix: make fallback place save one tap",
+              "branch": "main"
+            }
+          },
+          {
+            "id": "6e78ebe9-58f7-4799-a90e-86238a1b14e9",
+            "status": "SUCCESS",
+            "createdAt": "2026-09-08T23:27:26.675Z",
+            "meta": {
+              "commitHash": "e9daf499cfb276ea7072b651642a04218b90ccf9",
+              "commitMessage": "chore: align source conflict metrics",
+              "branch": "main",
+              "imageDigest": "sha256:7c5c4e0c1d6b636cf4d6572b4535c7186cf17f666613e9e9233fc1a87587a571"
+            }
+          },
+          {
+            "id": "8d809893-3c89-47fa-9cf8-1ea22484dafb",
+            "status": "REMOVED",
+            "createdAt": "2026-09-08T23:11:16.450Z",
+            "meta": {
+              "imageDigest": "sha256:94cfd17892b22befa9da1a0e22594fc0c4eecc26e3b2c0608f93a0507595caaf"
+            }
+          }
+        ]
+      },
+      "endpoints": [
+        {
+          "path": "/health",
+          "status": 200,
+          "body": {
+            "status": "ok",
+            "service": "nearr-media-worker"
+          }
+        },
+        {
+          "path": "/ready",
+          "status": 200,
+          "body": {
+            "status": "ready",
+            "checks": {
+              "config": true,
+              "ffmpeg": true,
+              "ffprobe": true,
+              "ytdlp": true,
+              "supabase": true
+            },
+            "capabilities": {
+              "aiNoteEnrichment": true,
+              "scrapeCreatorsTikTokFallback": true,
+              "scrapeCreatorsInstagramFallback": true,
+              "scrapeCreatorsFacebookFallback": true
+            },
+            "runtime": {
+              "ytDlpVersion": "2026.08.19",
+              "ytDlpStatus": "ok"
+            },
+            "missingConfig": []
+          }
+        }
+      ],
+      "edge": [
+        {
+          "name": "process-share-link",
+          "version": 153,
+          "status": "ACTIVE",
+          "verifyJwt": false,
+          "sha256": "5925fde1868010306fa5fbcf1b10d399bf65fed38737a1606b96e9e07f7a6290",
+          "updatedAt": "2026-09-08T23:10:39.059Z"
+        },
+        {
+          "name": "delete-account",
+          "version": 42,
+          "status": "ACTIVE",
+          "verifyJwt": true,
+          "sha256": "6ef7334c1572f4f754d85cca815879e9ecd15625c0c6960c2063d0c5d6ab82c7",
+          "updatedAt": "2026-09-05T07:27:33.153Z"
+        },
+        {
+          "name": "create-share-job",
+          "version": 45,
+          "status": "ACTIVE",
+          "verifyJwt": true,
+          "sha256": "d8f2e4a35d8a5c9f9dbcfc0795343a586c319042eb0c9df3fac96c7b801e0451",
+          "updatedAt": "2026-09-06T22:42:41.488Z"
+        },
+        {
+          "name": "process-share-jobs",
+          "version": 124,
+          "status": "ACTIVE",
+          "verifyJwt": false,
+          "sha256": "68f55b9ff9e154b80610cb3c53fe9a2d0a5199443b3cef3352b2d615b2451c01",
+          "updatedAt": "2026-10-11T00:37:17.982Z"
+        },
+        {
+          "name": "delete-share-job",
+          "version": 18,
+          "status": "ACTIVE",
+          "verifyJwt": true,
+          "sha256": "850ce03727419256f340313a12f8308966c15a562d1e1c1fcc16ec223c796de2",
+          "updatedAt": "2026-08-25T01:18:49.479Z"
+        },
+        {
+          "name": "monetization",
+          "version": 19,
+          "status": "ACTIVE",
+          "verifyJwt": true,
+          "sha256": "e0b02b8a1563e02fc460e4d71dfd9609c0813382c53323647aad7f81d85b4c6d",
+          "updatedAt": "2026-09-05T20:31:16.505Z"
+        },
+        {
+          "name": "public-place",
+          "version": 16,
+          "status": "ACTIVE",
+          "verifyJwt": false,
+          "sha256": "ec91e1f1b9294eb867fa10b733de79e641cd39b461df5c35b3b0efd2d96879fd",
+          "updatedAt": "2026-09-06T00:29:30.198Z"
+        },
+        {
+          "name": "get-place-videos",
+          "version": 16,
+          "status": "ACTIVE",
+          "verifyJwt": false,
+          "sha256": "92141568b51776c9b6ebf348147ce0706e6172266cc3ac699af06b6edbd8f050",
+          "updatedAt": "2026-09-06T20:42:00.889Z"
+        }
+      ],
+      "migrations": [
+        {
+          "name": "init_schema",
+          "version": "20260426000001"
+        },
+        {
+          "name": "analytics_events",
+          "version": "20260427000001"
+        },
+        {
+          "name": "notification_count",
+          "version": "20260501000001"
+        },
+        {
+          "name": "legal_acceptance",
+          "version": "20260502000001"
+        },
+        {
+          "name": "opportunity_archive",
+          "version": "20260503000001"
+        },
+        {
+          "name": "share_agent_runs",
+          "version": "20260504000001"
+        },
+        {
+          "name": "feedback",
+          "version": "20260706000001"
+        },
+        {
+          "name": "share_extraction_failures",
+          "version": "20260708000001"
+        },
+        {
+          "name": "share_jobs",
+          "version": "20260731000001"
+        },
+        {
+          "name": "user_push_tokens",
+          "version": "20260731000002"
+        },
+        {
+          "name": "share_jobs_worker",
+          "version": "20260731000003"
+        },
+        {
+          "name": "share_jobs_notifications",
+          "version": "20260731000004"
+        },
+        {
+          "name": "lock_worker_rpc_grants",
+          "version": "20260731000005"
+        },
+        {
+          "name": "share_jobs_worker_secret",
+          "version": "20260731000006"
+        },
+        {
+          "name": "share_media_tasks",
+          "version": "20260801000001"
+        },
+        {
+          "name": "share_media_worker",
+          "version": "20260801000002"
+        },
+        {
+          "name": "share_media_task_recovery",
+          "version": "20260801000003"
+        },
+        {
+          "name": "explicit_privileges",
+          "version": "20260801000004"
+        },
+        {
+          "name": "aux_privileges",
+          "version": "20260801000005"
+        },
+        {
+          "name": "share_job_place_results",
+          "version": "20260803000001"
+        },
+        {
+          "name": "place_categories_and_undo",
+          "version": "20260803000002"
+        },
+        {
+          "name": "saved_place_ai_notes",
+          "version": "20260812000001"
+        },
+        {
+          "name": "correct_saved_place_provider",
+          "version": "20260812000002"
+        },
+        {
+          "name": "post_save_media_enrichment",
+          "version": "20260813000001"
+        },
+        {
+          "name": "place_category_taxonomy_v3",
+          "version": "20260813000002"
+        },
+        {
+          "name": "saved_place_source_enrichment",
+          "version": "20260814000001"
+        },
+        {
+          "name": "saved_place_source_type_platforms",
+          "version": "20260815000001"
+        },
+        {
+          "name": "dev_history_compat",
+          "version": "20260819000002"
+        },
+        {
+          "name": "dev_history_compat",
+          "version": "20260820000001"
+        },
+        {
+          "name": "dev_history_compat",
+          "version": "20260820000002"
+        },
+        {
+          "name": "video_ai_note_guarantee",
+          "version": "20260821000001"
+        },
+        {
+          "name": "share_job_failed_notifications",
+          "version": "20260821000002"
+        },
+        {
+          "name": "share_job_failure_taxonomy",
+          "version": "20260821000003"
+        },
+        {
+          "name": "anonymous_onboarding_v2",
+          "version": "20260822000001"
+        },
+        {
+          "name": "vayrin_recognition_cache_and_place_sources",
+          "version": "20260822000002"
+        },
+        {
+          "name": "correct_saved_place_multi_source",
+          "version": "20260822000003"
+        },
+        {
+          "name": "dev_history_compat",
+          "version": "20260824000001"
+        },
+        {
+          "name": "vayrin_quick_check_evidence_frames",
+          "version": "20260824225520"
+        },
+        {
+          "name": "empty_queue_durable",
+          "version": "20260824233000"
+        },
+        {
+          "name": "user_scoped_recognition_rejections",
+          "version": "20260825000001"
+        },
+        {
+          "name": "place_find_monetization",
+          "version": "20260903000001"
+        },
+        {
+          "name": "qualify_place_find_balance_columns",
+          "version": "20260903000002"
+        },
+        {
+          "name": "preserve_place_find_ledger_on_account_deletion",
+          "version": "20260903000003"
+        },
+        {
+          "name": "dev_token_pack_quantities",
+          "version": "20260903000004"
+        },
+        {
+          "name": "premium_request_monetization",
+          "version": "20260904000001"
+        },
+        {
+          "name": "fix_premium_request_available_uses",
+          "version": "20260905000001"
+        },
+        {
+          "name": "dev_history_compat",
+          "version": "20260905000002"
+        },
+        {
+          "name": "public_place_sharing",
+          "version": "20260905000003"
+        },
+        {
+          "name": "public_place_ref_pgcrypto_schema",
+          "version": "20260905000004"
+        },
+        {
+          "name": "shared_place_source_context",
+          "version": "20260905000005"
+        },
+        {
+          "name": "fix_shared_source_url_verifier",
+          "version": "20260905000006"
+        },
+        {
+          "name": "qualify_shared_save_source_lookup",
+          "version": "20260905000007"
+        },
+        {
+          "name": "qualify_shared_source_dedupe",
+          "version": "20260905000008"
+        },
+        {
+          "name": "qualify_corrected_place_source_merge",
+          "version": "20260905000009"
+        },
+        {
+          "name": "qualify_corrected_place_source_reads",
+          "version": "20260905000010"
+        },
+        {
+          "name": "automatic_completion_soft_alternatives",
+          "version": "20260906000001"
+        },
+        {
+          "name": "fix_soft_alternative_promotion_ambiguity",
+          "version": "20260906000002"
+        },
+        {
+          "name": "place_video_gallery_v1",
+          "version": "20260906000003"
+        },
+        {
+          "name": "recognition_cache_v2",
+          "version": "20260906000004"
+        },
+        {
+          "name": "recognition_cache_v2_saved_category",
+          "version": "20260906000005"
+        },
+        {
+          "name": "recognition_revalidation_failure_quarantine",
+          "version": "20260906000006"
+        },
+        {
+          "name": "recognition_revalidation_failure_quarantine_repair",
+          "version": "20260906000007"
+        },
+        {
+          "name": "named_lead_automatic_completion",
+          "version": "20260907000001"
+        },
+        {
+          "name": "fix_named_lead_saved_place_ambiguity",
+          "version": "20260907000002"
+        },
+        {
+          "name": "fix_named_lead_job_pointer_ambiguity",
+          "version": "20260907000003"
+        },
+        {
+          "name": "nearr_15_provider_names",
+          "version": "20261008000001"
+        },
+        {
+          "name": "saved_place_source_owner_invariant",
+          "version": "20261009000001"
+        },
+        {
+          "name": "safe_onboarding_account_transfer_v2",
+          "version": "20261009000002"
+        },
+        {
+          "name": "legacy_transfer_source_preservation",
+          "version": "20261009000003"
+        },
+        {
+          "name": "converted_source_write_guard",
+          "version": "20261009000004"
+        },
+        {
+          "name": "converted_anonymous_save_write_guard",
+          "version": "20261009000005"
+        },
+        {
+          "name": "share_job_notification_at_most_once",
+          "version": "20261009000006"
+        }
+      ],
+      "localMigrationsNotApplied": [
+        {
+          "version": "20260908000001",
+          "file": "20260908000001_development_history_marker.sql",
+          "sha256": "d11549af97981f0849dac0b9056ed16a2183b05eea0ba579200cd57c9784b367"
+        },
+        {
+          "version": "20260909000001",
+          "file": "20260909000001_canonical_development_recognition_baseline.sql",
+          "sha256": "50825638db4395eeaf36889539732acd0c840d115181658344f719f4b49216af"
+        },
+        {
+          "version": "20260909000002",
+          "file": "20260909000002_curated_tutorial_fixtures_v1.sql",
+          "sha256": "89661a7f87a0f5055b47418581f0306a11a650820079a28ae36da0fca3bfc899"
+        },
+        {
+          "version": "20260910000001",
+          "file": "20260910000001_token_monetization_v1.sql",
+          "sha256": "b51ef66d38d51ccaf0fbbeb9cb7fc2c647ec69b2dff12df0b9ae9e7652a69d80"
+        },
+        {
+          "version": "20260910000002",
+          "file": "20260910000002_nearr_monetization_experiment_v2.sql",
+          "sha256": "b5fc70ba45bdf7dd303b1e725838e5fda8eead84dd6f03308beff2570fd5addb"
+        },
+        {
+          "version": "20260910000003",
+          "file": "20260910000003_nearr_monetization_dev_revenuecat_binding.sql",
+          "sha256": "a22c1c8ba6a2ef3c6632a2b41ffb796e7beee28a7a70ddd202ad92b85388ec4d"
+        },
+        {
+          "version": "20260910000004",
+          "file": "20260910000004_nearr_pro_event_column_qualification.sql",
+          "sha256": "436dc662ea28b94a5987efcc1f658428b9ec17bba0eb35f8201284f3c88b49b6"
+        },
+        {
+          "version": "20260910000005",
+          "file": "20260910000005_fix_create_share_job_status_ambiguity.sql",
+          "sha256": "78b2450bcefdb36aa56579bbe68387a6d8ba192b5b6651aeaef4e100244e9531"
+        },
+        {
+          "version": "20260910000006",
+          "file": "20260910000006_onboarding_practice_entitlement.sql",
+          "sha256": "dc91091005f2bcf970ffdc7a90e7ee0a9bafb2ba63f256af78e90b8829d5c8eb"
+        },
+        {
+          "version": "20260910000007",
+          "file": "20260910000007_transfer_onboarding_practice_ownership.sql",
+          "sha256": "61a36392849042d689fdf970348a322dac31eec3f8be19be451b329617345508"
+        },
+        {
+          "version": "20260910000008",
+          "file": "20260910000008_onboarding_qa_non_monetized_runtime.sql",
+          "sha256": "3532d12eadc39140e9ec6a28e581cfee355c47a22f0cddc8a30a27e9cec4c652"
+        },
+        {
+          "version": "20260914000001",
+          "file": "20260914000001_recognition_geography_state_consistency.sql",
+          "sha256": "732c6e6f32a47660ec944868f9087f1becf79b54f430c3947ee5effc09fd9b99"
+        },
+        {
+          "version": "20260914000002",
+          "file": "20260914000002_recognition_entity_role_latency_state.sql",
+          "sha256": "6d119de830c90be40bf520a11e9af6975c6e43f4c5fb6168948c3a9fbac5b1ce"
+        },
+        {
+          "version": "20260925000001",
+          "file": "20260925000001_profile_provider_names.sql",
+          "sha256": "b8a50d396c5a8b7ef3772ee30c37f26e6ec902b13ea9eae67a8d12313003a26c"
+        },
+        {
+          "version": "20260928000001",
+          "file": "20260928000001_onboarding_real_saved_place_transfer.sql",
+          "sha256": "fe228290325edf39ff3134ec0a21f944c8eb6c61dd048ef3f1e1e4069276c2c6"
+        },
+        {
+          "version": "20261015000001",
+          "file": "20261015000001_onboarding_transfer_grace_recovery.sql",
+          "sha256": "c11beeda45ad8e163c6f26bf860d51c9a372031e6f54932ae0775c46322f3a5e"
+        },
+        {
+          "version": "20261018000001",
+          "file": "20261018000001_adult_age_eligibility.sql",
+          "sha256": "f0db5c6279aa2ac2a1839e9d900740ae62eeed4db8898dbaf61625dfe27a5c7d"
+        },
+        {
+          "version": "20261018000002",
+          "file": "20261018000002_adult_dispatch_transition_guard.sql",
+          "sha256": "178c3ede3dfc2fa30a86b8c83eeb9199779ab09fbdec763e42742843b7f76b4a"
+        },
+        {
+          "version": "20261021000001",
+          "file": "20261021000001_global_eligibility_and_consent.sql",
+          "sha256": "f6d022cbbee450f14147b2fb25907090492994278b1b8d9b654847563e7c9634"
+        },
+        {
+          "version": "20261021000002",
+          "file": "20261021000002_nearr_plus_verified_entitlements.sql",
+          "sha256": "0eccb18d19419aa43628329a44d509013baed9f5a6ce309d1c7d5e350d7bc02b"
+        },
+        {
+          "version": "20261021000003",
+          "file": "20261021000003_global_share_ingress.sql",
+          "sha256": "df7d3545608f5a26210453e0a267683ae1d9ed0605895029be27d530a6dcce24"
+        },
+        {
+          "version": "20261021000004",
+          "file": "20261021000004_account_ui_locale.sql",
+          "sha256": "a3cc8dfa35bbe596d4c68aa3463df33ab050822ecf9511f6053d21fc21956f85"
+        },
+        {
+          "version": "20261021000005",
+          "file": "20261021000005_global_claim_eligibility.sql",
+          "sha256": "45c9de7a38e38a4deb42912d1926d6d5afd34f1dc25cb46580641c2f052393f7"
+        }
+      ],
+      "remoteMigrationsNotInLocal": [
+        {
+          "name": "nearr_15_provider_names",
+          "version": "20261008000001"
+        },
+        {
+          "name": "safe_onboarding_account_transfer_v2",
+          "version": "20261009000002"
+        },
+        {
+          "name": "legacy_transfer_source_preservation",
+          "version": "20261009000003"
+        },
+        {
+          "name": "converted_source_write_guard",
+          "version": "20261009000004"
+        },
+        {
+          "name": "converted_anonymous_save_write_guard",
+          "version": "20261009000005"
+        },
+        {
+          "name": "share_job_notification_at_most_once",
+          "version": "20261009000006"
+        }
+      ],
+      "schema": [
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "saved_place_sources"
+        },
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "saved_places"
+        },
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "share_jobs"
+        },
+        {
+          "force_rls": false,
+          "rls": true,
+          "table_name": "share_media_tasks"
+        }
+      ],
+      "counts": [
+        {
+          "auth_users": 112,
+          "saved_places": 642,
+          "share_jobs": 915,
+          "share_media_tasks": 1000
+        }
+      ],
+      "queue": [
+        {
+          "count": 1,
+          "relation": "share_jobs",
+          "status": "cancelled"
+        },
+        {
+          "count": 519,
+          "relation": "share_jobs",
+          "status": "completed"
+        },
+        {
+          "count": 15,
+          "relation": "share_jobs",
+          "status": "failed"
+        },
+        {
+          "count": 378,
+          "relation": "share_jobs",
+          "status": "needs_help"
+        },
+        {
+          "count": 2,
+          "relation": "share_jobs",
+          "status": "processing_metadata"
+        },
+        {
+          "count": 776,
+          "relation": "share_media_tasks",
+          "status": "completed"
+        },
+        {
+          "count": 94,
+          "relation": "share_media_tasks",
+          "status": "failed"
+        },
+        {
+          "count": 123,
+          "relation": "share_media_tasks",
+          "status": "needs_help"
+        },
+        {
+          "count": 7,
+          "relation": "share_media_tasks",
+          "status": "queued"
+        }
+      ],
+      "functions": [
+        {
+          "args": "p_limit integer, p_lock_seconds integer",
+          "proname": "claim_share_jobs",
+          "security_definer": true
+        }
+      ],
+      "backupAvailability": {
+        "backups": null,
+        "physical_backup_data": {},
+        "pitr_enabled": false,
+        "region": "us-west-2",
+        "walg_enabled": true
+      }
+    }
+  },
+  "finishedAt": "2026-10-28T00:05:24.835Z"
+}

@@ -1,0 +1,20 @@
+{
+  "startedAt": "2026-10-28T00:13:13.415Z",
+  "kind": "private-read-only-production-database-backup",
+  "target": "rlqvxdwtetxsqxhqztkw",
+  "privateFile": "C:\\Users\\andre\\.codex\\worktrees\\nearr-app-store-final\\Nearr\\artifacts\\global-release\\final-production\\backend\\.tmp\\private-production-backup\\production-20261028.dump",
+  "aclRestricted": true,
+  "format": "PostgreSQL custom archive",
+  "remoteMutation": false,
+  "storageObjectBytesIncluded": false,
+  "includesAllDatabaseSchemas": true,
+  "aclIncluded": true,
+  "rolesAndOwnershipRestorationQualified": false,
+  "dumpExit": 0,
+  "bytes": 15411678,
+  "sha256": "6bfee2f9351c66a11d75febb4a62cd56ca0b0b8a48e73dae426c60c9fea415b7",
+  "archiveReadable": true,
+  "tableDataEntries": 85,
+  "completedAt": "2026-10-28T00:13:35.889Z",
+  "passed": true
+}

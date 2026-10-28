@@ -1,0 +1,251 @@
+{
+  "capturedAt": "2026-10-28T00:07:38.817Z",
+  "kind": "deployed-edge-source-recovery",
+  "environments": {
+    "development": {
+      "ref": "qnfxnmvxpjzfydgudtvs",
+      "functions": [
+        {
+          "name": "create-share-job",
+          "downloadCompleted": false,
+          "entryRecovered": true,
+          "relativePath": "artifacts/global-release/final-production/backend/.tmp/development/supabase/functions/create-share-job/index.ts",
+          "downloadedSha256": "6ba953c7756577d664815074f0a5523fdef4910d484b229b1061aa5af0c3debb",
+          "localSha256": "6ba953c7756577d664815074f0a5523fdef4910d484b229b1061aa5af0c3debb",
+          "equalLfNormalized": true,
+          "observedEligibilitySymbols": [
+            "checkAgeEligibility",
+            "global-v1"
+          ]
+        },
+        {
+          "name": "process-share-link",
+          "downloadCompleted": false,
+          "entryRecovered": true,
+          "relativePath": "artifacts/global-release/final-production/backend/.tmp/development/supabase/functions/process-share-link/index.ts",
+          "downloadedSha256": "7f74bea3631df02e224e100af0c6f01d3730092ca6f278d5e8a2abd3cdb971ef",
+          "localSha256": "7f74bea3631df02e224e100af0c6f01d3730092ca6f278d5e8a2abd3cdb971ef",
+          "equalLfNormalized": true,
+          "observedEligibilitySymbols": [
+            "checkAgeEligibility",
+            "global-v1"
+          ]
+        },
+        {
+          "name": "process-share-jobs",
+          "downloadCompleted": false,
+          "entryRecovered": true,
+          "relativePath": "artifacts/global-release/final-production/backend/.tmp/development/supabase/functions/process-share-jobs/index.ts",
+          "downloadedSha256": "27b0dafea32985e0e1caf8aecb28caad377355bb606c162a81e0edd495c78df1",
+          "localSha256": "27b0dafea32985e0e1caf8aecb28caad377355bb606c162a81e0edd495c78df1",
+          "equalLfNormalized": true,
+          "observedEligibilitySymbols": [
+            "checkAgeEligibility"
+          ]
+        },
+        {
+          "name": "plus-api",
+          "downloadCompleted": false,
+          "entryRecovered": true,
+          "relativePath": "artifacts/global-release/final-production/backend/.tmp/development/supabase/functions/plus-api/index.ts",
+          "downloadedSha256": "cb90984170f12542ddeed43cad8abf089b47f1673c385434aa87ce8b2958ed33",
+          "localSha256": "4d59144d8b26ca8d77bdfd8fcd071cc5c42beaa0a0cebe54eadf32774bea4e86",
+          "equalLfNormalized": true,
+          "observedEligibilitySymbols": []
+        },
+        {
+          "name": "revenuecat-plus-webhook",
+          "downloadCompleted": false,
+          "entryRecovered": true,
+          "relativePath": "artifacts/global-release/final-production/backend/.tmp/development/supabase/functions/revenuecat-plus-webhook/index.ts",
+          "downloadedSha256": "c308abe5c19d47d55b47af8a7fd9720ded748aff7333134f70f7cd8631934990",
+          "localSha256": "279f71e8f6a9cdce943e03b97a675bb93b31322a2829e6beb35fe878ca653115",
+          "equalLfNormalized": true,
+          "observedEligibilitySymbols": []
+        }
+      ],
+      "files": [
+        {
+          "relativePath": "supabase/functions/create-share-job/index.ts",
+          "sha256": "6ba953c7756577d664815074f0a5523fdef4910d484b229b1061aa5af0c3debb"
+        },
+        {
+          "relativePath": "supabase/functions/plus-api/index.ts",
+          "sha256": "cb90984170f12542ddeed43cad8abf089b47f1673c385434aa87ce8b2958ed33"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-jobs/index.ts",
+          "sha256": "27b0dafea32985e0e1caf8aecb28caad377355bb606c162a81e0edd495c78df1"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/auth.ts",
+          "sha256": "5db1a4d733a86e23379c429c4c4e7b561540b9281bf50756017c1ae9ddc92779"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/cors.ts",
+          "sha256": "9e99f8d19a501996f2e1058fccbc928b8695c1a7ef9a56f875cc71d521701987"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/diagnostics/logger.ts",
+          "sha256": "bb8324ee7d7d0741f2da8c06e04cf4346b5e61052a893f661a10fdd1ed0dfc17"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/env.ts",
+          "sha256": "04aa567a6cae85c67a52a1c38faf912c03ae040f10d081d6b5b8ca80aae4f272"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/index.ts",
+          "sha256": "7f74bea3631df02e224e100af0c6f01d3730092ca6f278d5e8a2abd3cdb971ef"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/metadata/fetchMetadata.ts",
+          "sha256": "b61e6a23c7111c148108d852be73b1fb70414725c56a761587e2c96f63d7c2e4"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/metadata/fetchTikTokOEmbed.ts",
+          "sha256": "3585e6e37260a56cfb5e1e7881828c594334b038186c80e43bbfa796635c2030"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/metadata/htmlMeta.ts",
+          "sha256": "e32fff1f3bdfb198035b2143c9caff6ce9c0651dd7e4c5582fbcceac9ffbfaaa"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/metadata/normalizeText.ts",
+          "sha256": "38181d044acd246dccff1e901c25c770917f221757bd4cb25632f4917c54147a"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/platform/detectPlatform.ts",
+          "sha256": "207eb09ab4178d7a1f5999e8f49682ecffb5cb17ad99de1ad12d053183a4c818"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/request.ts",
+          "sha256": "9ed8ff3bcfa2691098de321c5ba8f1f6d0bbabf7ce2a3d2874e56e868707a9a5"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/response.ts",
+          "sha256": "162221c9120b09057e35681cd742b4e09c7ca0c40aa2b9886c341d42a9ed7e6b"
+        },
+        {
+          "relativePath": "supabase/functions/revenuecat-plus-webhook/index.ts",
+          "sha256": "c308abe5c19d47d55b47af8a7fd9720ded748aff7333134f70f7cd8631934990"
+        },
+        {
+          "relativePath": "supabase/functions/_shared/ageEligibility.ts",
+          "sha256": "bd6dbc7e37a3e20e8cb544deccab28840024f4b172befd379850fb5c3c2d920d"
+        }
+      ]
+    },
+    "production": {
+      "ref": "rlqvxdwtetxsqxhqztkw",
+      "functions": [
+        {
+          "name": "create-share-job",
+          "downloadCompleted": false,
+          "entryRecovered": true,
+          "relativePath": "artifacts/global-release/final-production/backend/.tmp/production/supabase/functions/create-share-job/index.ts",
+          "downloadedSha256": "77553d141f4079c7c880ae254714086ed6c96079fe052c771b3d9f50a631a7c8",
+          "localSha256": "6ba953c7756577d664815074f0a5523fdef4910d484b229b1061aa5af0c3debb",
+          "equalLfNormalized": false,
+          "observedEligibilitySymbols": []
+        },
+        {
+          "name": "process-share-link",
+          "downloadCompleted": false,
+          "entryRecovered": true,
+          "relativePath": "artifacts/global-release/final-production/backend/.tmp/production/supabase/functions/process-share-link/index.ts",
+          "downloadedSha256": "2da70af8930b350dfe439a7a5a896bada29b56c42ba5328fd8c1c49083824277",
+          "localSha256": "7f74bea3631df02e224e100af0c6f01d3730092ca6f278d5e8a2abd3cdb971ef",
+          "equalLfNormalized": false,
+          "observedEligibilitySymbols": []
+        },
+        {
+          "name": "process-share-jobs",
+          "downloadCompleted": false,
+          "entryRecovered": true,
+          "relativePath": "artifacts/global-release/final-production/backend/.tmp/production/supabase/functions/process-share-jobs/index.ts",
+          "downloadedSha256": "0dfa8e17fd628cee9aba928299fc603d94bdf2655c0bf571446e68d9a13cd584",
+          "localSha256": "27b0dafea32985e0e1caf8aecb28caad377355bb606c162a81e0edd495c78df1",
+          "equalLfNormalized": false,
+          "observedEligibilitySymbols": []
+        },
+        {
+          "name": "monetization",
+          "downloadCompleted": false,
+          "entryRecovered": true,
+          "relativePath": "artifacts/global-release/final-production/backend/.tmp/production/supabase/functions/monetization/index.ts",
+          "downloadedSha256": "c9caabbb637af447e0a215d3ecd8f0e1551671bd4b35a209eb1ee4ced03da78f",
+          "localSha256": "c9caabbb637af447e0a215d3ecd8f0e1551671bd4b35a209eb1ee4ced03da78f",
+          "equalLfNormalized": true,
+          "observedEligibilitySymbols": []
+        }
+      ],
+      "files": [
+        {
+          "relativePath": "supabase/functions/create-share-job/index.ts",
+          "sha256": "77553d141f4079c7c880ae254714086ed6c96079fe052c771b3d9f50a631a7c8"
+        },
+        {
+          "relativePath": "supabase/functions/monetization/index.ts",
+          "sha256": "c9caabbb637af447e0a215d3ecd8f0e1551671bd4b35a209eb1ee4ced03da78f"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-jobs/index.ts",
+          "sha256": "0dfa8e17fd628cee9aba928299fc603d94bdf2655c0bf571446e68d9a13cd584"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/auth.ts",
+          "sha256": "5db1a4d733a86e23379c429c4c4e7b561540b9281bf50756017c1ae9ddc92779"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/cors.ts",
+          "sha256": "9e99f8d19a501996f2e1058fccbc928b8695c1a7ef9a56f875cc71d521701987"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/diagnostics/logger.ts",
+          "sha256": "bb8324ee7d7d0741f2da8c06e04cf4346b5e61052a893f661a10fdd1ed0dfc17"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/env.ts",
+          "sha256": "04aa567a6cae85c67a52a1c38faf912c03ae040f10d081d6b5b8ca80aae4f272"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/index.ts",
+          "sha256": "2da70af8930b350dfe439a7a5a896bada29b56c42ba5328fd8c1c49083824277"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/metadata/fetchMetadata.ts",
+          "sha256": "b61e6a23c7111c148108d852be73b1fb70414725c56a761587e2c96f63d7c2e4"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/metadata/fetchTikTokOEmbed.ts",
+          "sha256": "3585e6e37260a56cfb5e1e7881828c594334b038186c80e43bbfa796635c2030"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/metadata/htmlMeta.ts",
+          "sha256": "e32fff1f3bdfb198035b2143c9caff6ce9c0651dd7e4c5582fbcceac9ffbfaaa"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/metadata/normalizeText.ts",
+          "sha256": "38181d044acd246dccff1e901c25c770917f221757bd4cb25632f4917c54147a"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/platform/detectPlatform.ts",
+          "sha256": "207eb09ab4178d7a1f5999e8f49682ecffb5cb17ad99de1ad12d053183a4c818"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/request.ts",
+          "sha256": "9ed8ff3bcfa2691098de321c5ba8f1f6d0bbabf7ce2a3d2874e56e868707a9a5"
+        },
+        {
+          "relativePath": "supabase/functions/process-share-link/response.ts",
+          "sha256": "162221c9120b09057e35681cd742b4e09c7ca0c40aa2b9886c341d42a9ed7e6b"
+        },
+        {
+          "relativePath": "supabase/functions/_shared/premiumRequests.ts",
+          "sha256": "224a42d723371d7c844db5ebededaca8307aa0a8ca1373f93a9222ca0bf215d7"
+        }
+      ]
+    }
+  },
+  "finishedAt": "2026-10-28T00:07:57.614Z"
+}
