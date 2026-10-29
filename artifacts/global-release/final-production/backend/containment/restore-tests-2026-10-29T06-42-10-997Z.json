@@ -1,0 +1,77 @@
+{
+  "startedAt": "2026-10-29T06:42:10.997Z",
+  "kind": "isolated-local-production-containment-tests",
+  "image": "public.ecr.aws/supabase/postgres:17.6.1.111",
+  "containerName": "nearr-containment-test-2fb0ef59",
+  "network": "none",
+  "cpuLimit": 1,
+  "memoryLimitMiB": 640,
+  "archiveSha256": "6bfee2f9351c66a11d75febb4a62cd56ca0b0b8a48e73dae426c60c9fea415b7",
+  "remoteMutation": false,
+  "passed": true,
+  "containerId": "6a13afe94e33c3ce76f5dfb3cb7f67770ff8435f27d3bfebf85cf39cc1441731",
+  "roleBootstrapCount": 15,
+  "rolePasswordsRestored": false,
+  "roleMembershipsRestored": false,
+  "restoreExit": 0,
+  "counts": {
+    "auth_users": 112,
+    "saved_places": 642,
+    "saved_place_sources": 558,
+    "share_jobs": 915,
+    "share_media_tasks": 1000,
+    "migrations": 72
+  },
+  "ownership": [
+    {
+      "relation": "saved_places",
+      "row_count": 642,
+      "ownership_md5": "58619de9e935cc1d925a0b11c08d4502"
+    },
+    {
+      "relation": "saved_place_sources",
+      "row_count": 558,
+      "ownership_md5": "6c3ce5865f547976378043d5b9ceecd4"
+    }
+  ],
+  "ownershipMatches": true,
+  "rls": [
+    {
+      "table_name": "saved_place_sources",
+      "rls": true
+    },
+    {
+      "table_name": "saved_places",
+      "rls": true
+    },
+    {
+      "table_name": "share_jobs",
+      "rls": true
+    },
+    {
+      "table_name": "share_media_tasks",
+      "rls": true
+    }
+  ],
+  "containment": {
+    "passed": true,
+    "tests": [
+      "Applying containment changes no user/save/source/job/task/wallet row, existing trigger, notification function or RLS flag",
+      "Direct share-job INSERT and public creation RPC fail closed with no wallet mutation",
+      "New recognition media task is denied; optional AI-note INSERT is skipped without an error or row",
+      "Actual share-job claim RPC cannot lease queued or expired work",
+      "Actual media claim RPC cannot lease queued recognition work",
+      "Direct retry/reclaim status, attempts and lease writes are denied",
+      "User cancellation and existing media cancellation cascade still work",
+      "Manual completion and notification-only updates remain possible",
+      "A real video-source saved-place INSERT commits while its automatic AI-note enqueue is skipped",
+      "Optional AI-note ON CONFLICT rearm cannot rewrite existing task payload or status"
+    ],
+    "sqlSha256": "d3fa6a8e4bc41b1f79c9fe3a58dcc3ff46b05e676d8e3554b4f4231c870a09f5",
+    "userRowsEmitted": false,
+    "scope": "Historical private Production backup restored into a new local network-none container; not a live cutover"
+  },
+  "containerStopped": true,
+  "containerRemoved": true,
+  "finishedAt": "2026-10-29T06:42:33.515Z"
+}

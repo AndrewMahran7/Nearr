@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-10-29T06:43:15.841Z",
+  "readOnly": true,
+  "buildId": "a61830e1-432d-4fec-b0e9-11ea7a69826a",
+  "appVersion": "1.4.55",
+  "buildNumber": "55",
+  "distribution": "STORE",
+  "gitCommitHash": "4e6b60e9b6e727381eeac98d8361d01423e95210",
+  "createdAt": "2026-09-06T01:05:46.078Z",
+  "artifactFileName": "VP-1Xf78KYb-SVPqiwUhuBX2usDRsW8Z4nqhzXTFe60.ipa",
+  "artifactHost": "expo.dev",
+  "artifactHttpStatus": 404,
+  "artifactAvailableFields": [
+    "buildUrl",
+    "xcodeBuildLogsUrl",
+    "applicationArchiveUrl"
+  ],
+  "bundleInspected": false,
+  "cloudMutations": [],
+  "realInferenceCalls": 0,
+  "caveat": "Artifact fetch denied; no signed bundle or credential-absence claim. No signed URL or key values recorded."
+}

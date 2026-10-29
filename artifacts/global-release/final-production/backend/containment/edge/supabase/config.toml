@@ -1,0 +1,10 @@
+project_id = "nearr-production-recognition-containment"
+
+[functions.create-share-job]
+verify_jwt = true
+
+[functions.process-share-link]
+verify_jwt = false
+
+[functions.process-share-jobs]
+verify_jwt = false

@@ -1,0 +1,57 @@
+{
+  "startedAt": "2026-10-29T06:56:50.994Z",
+  "scope": "Exact three-file inert worker image; local Docker network-none runtime only",
+  "passed": true,
+  "remoteMutations": [],
+  "containerName": "nearr-containment-image-test-72ea3e4f",
+  "network": "none",
+  "port": 8080,
+  "memoryLimitMiB": 192,
+  "cpuLimit": 0.5,
+  "sourceHashes": {
+    "Dockerfile": "fe252abf5003e5e20cbe2bce82cb3fab2a9f89467f83ede52db421cf6d7a6ccc",
+    "railway.toml": "f79d3d21aea84d50cf830e2a1057489beb72fa2442136148bbe75d7f8ffaa3d3",
+    "server.cjs": "d08d386998e2d475c3d92b7e0a0fdc1a4adecba50371a3f74831fa72672d0622"
+  },
+  "baseImage": "node:22-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da",
+  "imageId": "sha256:4f9c9e59916125b5b89dda0302136a685008a379677a1ad6a7bdf84fc4c3baf9",
+  "baseImageId": "sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da",
+  "probes": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "status": 200,
+      "paused": true,
+      "providerDispatchEnabled": false,
+      "version": "nearr-production-pause-v1"
+    },
+    {
+      "method": "GET",
+      "path": "/ready",
+      "status": 503,
+      "paused": true,
+      "providerDispatchEnabled": false,
+      "version": "nearr-production-pause-v1"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/process-media-tasks",
+      "status": 503,
+      "paused": true,
+      "providerDispatchEnabled": false,
+      "version": "nearr-production-pause-v1"
+    },
+    {
+      "method": "POST",
+      "path": "/unknown",
+      "status": 503,
+      "paused": true,
+      "providerDispatchEnabled": false,
+      "version": "nearr-production-pause-v1"
+    }
+  ],
+  "containerStopped": true,
+  "containerRemoved": true,
+  "taskImageRemoved": true,
+  "finishedAt": "2026-10-29T06:56:55.857Z"
+}

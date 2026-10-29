@@ -1,0 +1,127 @@
+{
+  "generatedAt": "2026-10-29T07:11:52.730Z",
+  "status": "LOCAL_TESTED_CANDIDATE_NOT_DEPLOYED",
+  "remoteMutations": [],
+  "authority": "Original tested temporary-recognition-pause approval is recorded. Independent review completed; global client-plus-server zero dispatch is not proved. Revised server-only scope requires separate human authorization. No permission to enable providers or deploy full1.7.",
+  "target": {
+    "supabaseRef": "rlqvxdwtetxsqxhqztkw",
+    "railwayProject": "4037a3b5-d66f-409e-b734-56c22c244e3e",
+    "railwayEnvironment": "49650a9c-4744-4649-8cd1-4ff38473d22f",
+    "railwayService": "59234570-e2ec-4a7e-86de-22826da86c66",
+    "expectedActiveDeployment": "6e78ebe9-58f7-4799-a90e-86238a1b14e9",
+    "expectedActiveSource": "e9daf499cfb276ea7072b651642a04218b90ccf9",
+    "domain": "nearr-production.up.railway.app",
+    "port": 8080,
+    "replicas": {
+      "sfo": 1
+    }
+  },
+  "sources": [
+    {
+      "path": "artifacts/global-release/final-production/backend/containment/pause-queue.sql",
+      "sha256": "d3fa6a8e4bc41b1f79c9fe3a58dcc3ff46b05e676d8e3554b4f4231c870a09f5"
+    },
+    {
+      "path": "artifacts/global-release/final-production/backend/containment/edge/supabase/config.toml",
+      "sha256": "629478b16035f60bb8948e662ad6c62d8731ef2bca6c0aa5935f969995589cc2"
+    },
+    {
+      "path": "artifacts/global-release/final-production/backend/containment/edge/supabase/functions/create-share-job/index.ts",
+      "sha256": "f6398c787be05c1f092154c93a97b7c06c1851dee156c8d02140d825fe04759f"
+    },
+    {
+      "path": "artifacts/global-release/final-production/backend/containment/edge/supabase/functions/process-share-jobs/index.ts",
+      "sha256": "eb054a45202f6be8e7a12e357cd406b8f8bb43764949f21367aa10c8c264ac33"
+    },
+    {
+      "path": "artifacts/global-release/final-production/backend/containment/edge/supabase/functions/process-share-link/index.ts",
+      "sha256": "c2bca4bda0974dc47005f7ddc4e92406c87dbeca3609eb98dc92274ad64bd2b1"
+    },
+    {
+      "path": "artifacts/global-release/final-production/backend/containment/worker/Dockerfile",
+      "sha256": "fe252abf5003e5e20cbe2bce82cb3fab2a9f89467f83ede52db421cf6d7a6ccc"
+    },
+    {
+      "path": "artifacts/global-release/final-production/backend/containment/worker/railway.toml",
+      "sha256": "f79d3d21aea84d50cf830e2a1057489beb72fa2442136148bbe75d7f8ffaa3d3"
+    },
+    {
+      "path": "artifacts/global-release/final-production/backend/containment/worker/server.cjs",
+      "sha256": "d08d386998e2d475c3d92b7e0a0fdc1a4adecba50371a3f74831fa72672d0622"
+    }
+  ],
+  "databaseTests": {
+    "receipt": "artifacts/global-release/final-production/backend/containment/restore-tests-2026-10-29T06-56-55-954Z.json",
+    "passed": 17,
+    "archiveSha256": "6bfee2f9351c66a11d75febb4a62cd56ca0b0b8a48e73dae426c60c9fea415b7",
+    "scope": "Historical private Production backup restored into a new local network-none container; not a live cutover"
+  },
+  "workerTests": {
+    "receipt": "artifacts/global-release/final-production/backend/containment/worker-tests.json",
+    "passed": 4,
+    "scope": "Exact inert worker running on loopback; not a Railway/container deployment"
+  },
+  "containerTests": {
+    "receipt": "artifacts/global-release/final-production/backend/containment/container-tests.json",
+    "passed": 4,
+    "imageId": "sha256:4f9c9e59916125b5b89dda0302136a685008a379677a1ad6a7bdf84fc4c3baf9",
+    "baseImage": "node:22-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da",
+    "scope": "Exact three-file inert worker image; local Docker network-none runtime only"
+  },
+  "auxiliarySourceClosure": {
+    "downloadCompleted": true,
+    "files": [
+      {
+        "path": "delete-account/authToken.ts",
+        "sha256": "8b40630b49f8bb579ed3ae87c709fd31e52ee55ccca28c81905a841b7f2f361d"
+      },
+      {
+        "path": "delete-account/cors.ts",
+        "sha256": "b39dc132f13befd691799cbbf711e522520f39f682c0179013d88c2247947580"
+      },
+      {
+        "path": "delete-account/index.ts",
+        "sha256": "56e1cc276d2c00ede27801f152a5f27c26adef8905946d8a3cac8cd374c3ebc2"
+      },
+      {
+        "path": "delete-share-job/index.ts",
+        "sha256": "51d54a3f419ba870a4172fe7e246052f89241518f918a68114b84b5272f7e5aa"
+      },
+      {
+        "path": "get-place-videos/index.ts",
+        "sha256": "1e1f252236b08a7fc0c1d573b77f0744a3b812b88730818400dd24ee91224e81"
+      },
+      {
+        "path": "public-place/index.ts",
+        "sha256": "f5c7069cecf4d6721d2d263f0adc03daabc0f87ac08c93b7af8d383ceeb0ed8c"
+      },
+      {
+        "path": "_shared/shareEvidenceLifecycle.ts",
+        "sha256": "695e4eddd2689357d9289f05374084cc0de48a246041df6e3493456d26d385b0"
+      }
+    ]
+  },
+  "deploymentPackaging": {
+    "edgeDirectory": "artifacts/global-release/final-production/backend/containment/edge",
+    "workerRootDirectory": "/artifacts/global-release/final-production/backend/containment/worker",
+    "railwayConfigFile": "/artifacts/global-release/final-production/backend/containment/worker/railway.toml",
+    "requiredSource": "Pin exact reviewed candidate Git commit on release/nearr-1.7-app-store-final in Production; never follow main or reuse legacy image",
+    "privateArchiveUploadAllowed": false
+  },
+  "remainingGates": [
+    "Human decision on revised server-only containment with unresolved legacy-client risk; original approval does not waive this scope change",
+    "Global closure remains unproved after completed independent review: exact signed IPA unavailable404 and OTA bundle unavailable403; no repeated original-IPA request",
+    "Freeze and push exact candidate commit; stage Production-only pinned source/root/config/disabled flags together",
+    "Fresh private backup at a new exclusive destination plus aggregate/ownership and deployment-drift preflight",
+    "After execution verify all new Edge versions, paused responses, ready503/health200, zero new server claims/dispatch, old deployment/replica retirement and unchanged non-AI contracts; do not claim global client closure"
+  ],
+  "limitations": [
+    "Historical backup does not include subsequent live writes",
+    "No live Auth/photo/reminder/device end-to-end claim",
+    "No Storage object-byte recovery",
+    "Existing in-flight external requests cannot be recalled",
+    "Recognition-result notifications/receipts pause; attempt markers and at-most-once functions preserved",
+    "Old1.4 clients show generic manual help, not explicit pause-message copy",
+    "No unsigned-source inference of credential absence in signed iOS bundle"
+  ]
+}

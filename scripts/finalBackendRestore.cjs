@@ -6,13 +6,14 @@ const {readFileSync,writeFileSync}=require('node:fs');
 const {join}=require('node:path');
 const {randomUUID,createHash}=require('node:crypto');
 const {save,output}=require('./finalBackendReadiness.cjs');
+const containmentTest=process.argv.includes('--containment-test');
 const backup=JSON.parse(readFileSync(join(output,'backup-receipt.json'),'utf8'));
 if(!backup.passed||backup.target!=='rlqvxdwtetxsqxhqztkw'||!backup.aclIncluded)throw new Error('Qualified private archive prerequisite missing');
 if(createHash('sha256').update(readFileSync(backup.privateFile)).digest('hex')!==backup.sha256)throw new Error('Archive hash changed');
-const name='nearr-final-restore-'+randomUUID().slice(0,8);
+const name=(containmentTest?'nearr-containment-test-':'nearr-final-restore-')+randomUUID().slice(0,8);
 const image='public.ecr.aws/supabase/postgres:17.6.1.111';
 const db='nearr_final_restore';
-const result={startedAt:new Date().toISOString(),kind:'isolated-local-production-restore-rehearsal',image,containerName:name,network:'none',cpuLimit:1,memoryLimitMiB:640,archiveSha256:backup.sha256,remoteMutation:false,passed:false};
+const result={startedAt:new Date().toISOString(),kind:containmentTest?'isolated-local-production-containment-tests':'isolated-local-production-restore-rehearsal',image,containerName:name,network:'none',cpuLimit:1,memoryLimitMiB:640,archiveSha256:backup.sha256,remoteMutation:false,passed:false};
 let started=false;
 const docker=(args,timeout=30000,input)=>spawnSync('docker',args,{encoding:'utf8',windowsHide:true,timeout,maxBuffer:8*1024*1024,input});
 const sql=query=>{const r=docker(['exec','-i',name,'psql','-X','-qAt','-U','supabase_admin','-d',db,'-v','ON_ERROR_STOP=1'],30000,query);if(r.status!==0)throw new Error('local_sql_failed');return r.stdout.trim();};
@@ -52,9 +53,13 @@ const sql=query=>{const r=docker(['exec','-i',name,'psql','-X','-qAt','-U','supa
   result.ownershipMatches=expected.every(e=>result.ownership.some(r=>r.relation===e.relation&&r.row_count===e.row_count&&r.ownership_md5===e.ownership_md5));
   result.rls=JSON.parse(sql("select json_agg(x order by table_name) from (select c.relname as table_name,c.relrowsecurity as rls from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname in ('saved_places','saved_place_sources','share_jobs','share_media_tasks')) x;"));
   result.passed=result.ownershipMatches&&result.rls.every(r=>r.rls);
+  if(containmentTest&&result.passed){
+    result.containment=require('./finalBackendContainmentDatabaseTests.cjs').run(sql);
+    result.passed=result.passed&&result.containment.passed;
+  }
  }catch(e){result.errorCategory??=e.message;}
  finally{
   if(started){const stopped=docker(['stop','--time','10',name],30000);result.containerStopped=stopped.status===0;result.containerRemoved=docker(['container','inspect',name]).status!==0;}
-  result.finishedAt=new Date().toISOString();save('restore-receipt.json',result);console.log(JSON.stringify(result));if(!result.passed)process.exitCode=1;
+  result.finishedAt=new Date().toISOString();save(containmentTest?`containment/restore-tests-${result.startedAt.replace(/[:.]/g,'-')}.json`:'restore-receipt.json',result);console.log(JSON.stringify(result));if(!result.passed)process.exitCode=1;
  }
 })();

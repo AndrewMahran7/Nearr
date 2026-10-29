@@ -1,0 +1,61 @@
+{
+  "checkedAt": "2026-10-29T06:56:29.084Z",
+  "readOnly": true,
+  "channel": {
+    "id": "019fc837-aa72-7f99-b465-22ac420b6b77",
+    "name": "production",
+    "isPaused": false,
+    "branchId": "019f9854-ea8f-7c89-90aa-afe6d236ad52",
+    "branchName": "production"
+  },
+  "update": {
+    "id": "01a0849a-63a3-76ff-b495-e1b766edc03e",
+    "group": "f9a9846f-3643-4644-a05f-a59be8baa1da",
+    "runtimeVersion": "1.4.55",
+    "gitCommitHash": "ded040465176a193bba8c6921b179b07ef6a9a64",
+    "isGitWorkingTreeDirty": false,
+    "createdAt": "2026-09-09T05:18:25.699Z",
+    "isRollBackToEmbedded": false
+  },
+  "build": {
+    "id": "a61830e1-432d-4fec-b0e9-11ea7a69826a",
+    "gitCommitHash": "4e6b60e9b6e727381eeac98d8361d01423e95210",
+    "isGitWorkingTreeDirty": null,
+    "appVersion": "1.4.55",
+    "appBuildVersion": "55",
+    "fieldNames": [
+      "id",
+      "status",
+      "platform",
+      "artifacts",
+      "initiatingActor",
+      "logFiles",
+      "project",
+      "channel",
+      "distribution",
+      "buildProfile",
+      "sdkVersion",
+      "appVersion",
+      "appBuildVersion",
+      "runtimeVersion",
+      "gitCommitHash",
+      "gitCommitMessage",
+      "priority",
+      "createdAt",
+      "updatedAt",
+      "completedAt",
+      "expirationDate",
+      "isForIosSimulator",
+      "metrics"
+    ]
+  },
+  "manifestFetched": true,
+  "manifestUpdateIdVerified": true,
+  "launchAssetInspected": false,
+  "launchAssetHost": "assets.eascdn.net",
+  "failure": "launch_asset_http_403_host_assets.eascdn.net",
+  "geminiManifestFieldNames": [],
+  "realInferenceCalls": 0,
+  "cloudMutations": [],
+  "caveat": "Manifest metadata is verified, but inaccessible launch asset prevents actual bundle inspection. No key values or URLs recorded."
+}

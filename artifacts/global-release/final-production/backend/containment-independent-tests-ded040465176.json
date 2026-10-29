@@ -1,0 +1,46 @@
+{
+  "testedAt": "2026-10-29T06:59:58.432Z",
+  "kind": "offline-historical-client-containment-compatibility",
+  "historicalCommit": "ded040465176a193bba8c6921b179b07ef6a9a64",
+  "historicalVersion": "1.4.55",
+  "buildMetadataLinkageVerified": true,
+  "buildMetadataEvidence": "legacy-public-build-inspection.json (EAS Build55 git/version match) plus root live ASC selected Build55",
+  "publishedOtaMetadataEvidence": "legacy-production-ota-inspection.json (production channel / clean ded0404 iOS update)",
+  "actualSignedBundleInspected": false,
+  "actualPublishedOtaBundleInspected": false,
+  "candidateSourceHandlersTested": true,
+  "candidateDeploymentTested": false,
+  "candidateHashes": {
+    "artifacts/global-release/final-production/backend/containment/edge/supabase/functions/process-share-link/index.ts": "c2bca4bda0974dc47005f7ddc4e92406c87dbeca3609eb98dc92274ad64bd2b1",
+    "artifacts/global-release/final-production/backend/containment/edge/supabase/functions/create-share-job/index.ts": "f6398c787be05c1f092154c93a97b7c06c1851dee156c8d02140d825fe04759f",
+    "artifacts/global-release/final-production/backend/containment/edge/supabase/functions/process-share-jobs/index.ts": "eb054a45202f6be8e7a12e357cd406b8f8bb43764949f21367aa10c8c264ac33",
+    "artifacts/global-release/final-production/backend/containment/worker/server.cjs": "d08d386998e2d475c3d92b7e0a0fdc1a4adecba50371a3f74831fa72672d0622"
+  },
+  "realNetworkCalls": 0,
+  "cloudMutations": [],
+  "sourceHashes": {
+    "lib/shareExtractionBackend.ts": "ce660ec2abcb84178d3d577d2884a77f49bfcaf63d7e5902b40e57ac8ed08fb1",
+    "lib/shareJobClient.ts": "295243b9c745f0123611d69d70311e98f4d385c0be107e06f48c520001425b97",
+    "lib/aiExtractPlace.ts": "c658de5cf45c71ca78c085742ae37ae93fbdbbe80ea6411a194004017c050282",
+    "app/share.tsx": "fed4a636cd576635c9951ed2fdfc0c597e80b54766e6f43f243f2f81c7c39287",
+    "ShareExtension.tsx": "b6e5eec2a1e3ead631789dd747840dac69a4786245fefd8bd0a7aae45fb53199"
+  },
+  "passed": 9,
+  "failed": 0,
+  "tests": [
+    "Historical 1.4.55 parser plus original host decision block confirms generic 503 reaches legacy fallback (hazard, not safe containment).",
+    "Reference HTTP200 extracted/manual_fallback envelope is accepted by actual old parser and original decision block exits without autosave or legacy fallback.",
+    "Actual old create-share-job client rejects paused503 as http_error and never acknowledges a fake durable job.",
+    "Actual old AI fallback makes zero provider requests with an absent key; source has a direct Gemini route if a key exists. Signed-binary key absence is not established.",
+    "Old manual fallback uses hardcoded MANUAL_FALLBACK_MESSAGE, not the response message: explicit pause copy in that binary is not claimed.",
+    "Actual candidate process-share-link: OPTIONS/GET/POST execute with zero body/auth/env/network reads; correct no-store pause contract; actual old parser/decision block exits without automatic fallback.",
+    "Actual candidate create-share-job: OPTIONS/GET/POST execute with zero body/auth/env/network reads; correct no-store pause contract.",
+    "Actual candidate process-share-jobs: OPTIONS/GET/POST execute with zero body/auth/env/network reads; correct no-store pause contract.",
+    "Actual inert worker routes: health200, readiness/process/finalize/unknown503, only node:http imported, no provider/database/bootstrap modules."
+  ],
+  "boundaries": [
+    "Supabase auth/session and fetch injected",
+    "Empty profile normalization helpers injected",
+    "Original host decision block executed, not a full React screen or iOS extension render"
+  ]
+}

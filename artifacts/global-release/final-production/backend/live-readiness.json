@@ -1,7 +1,7 @@
 {
-  "capturedAt": "2026-10-28T00:04:38.431Z",
+  "capturedAt": "2026-10-29T06:28:54.285Z",
   "kind": "read-only-live-backend-reconciliation",
-  "source": "3dbf10278368c2074afa095627b71be21f24aaa3",
+  "source": "d924c25e27a8ab8d3a834fefd4e97d762d32c188",
   "workerTree": "4f8f50dc7253a1b4451b4f960ff9d144a965c040",
   "mutations": [],
   "environments": {
@@ -593,7 +593,13 @@
           "version": "20261021000005"
         }
       ],
-      "localMigrationsNotApplied": [],
+      "localMigrationsNotApplied": [
+        {
+          "version": "20261028000001",
+          "file": "20261028000001_nearr_free_only_release.sql",
+          "sha256": "d69a9072f84e169b9aec6ec451089a0ee04a611d677907665763b923e12ec6cc"
+        }
+      ],
       "remoteMigrationsNotInLocal": [],
       "schema": [
         {
@@ -654,7 +660,7 @@
       ],
       "counts": [
         {
-          "auth_users": 43,
+          "auth_users": 42,
           "saved_places": 20,
           "share_jobs": 66,
           "share_media_tasks": 58
@@ -1486,6 +1492,11 @@
           "version": "20261021000005",
           "file": "20261021000005_global_claim_eligibility.sql",
           "sha256": "45c9de7a38e38a4deb42912d1926d6d5afd34f1dc25cb46580641c2f052393f7"
+        },
+        {
+          "version": "20261028000001",
+          "file": "20261028000001_nearr_free_only_release.sql",
+          "sha256": "d69a9072f84e169b9aec6ec451089a0ee04a611d677907665763b923e12ec6cc"
         }
       ],
       "remoteMigrationsNotInLocal": [
@@ -1539,9 +1550,9 @@
       "counts": [
         {
           "auth_users": 112,
-          "saved_places": 642,
-          "share_jobs": 915,
-          "share_media_tasks": 1000
+          "saved_places": 643,
+          "share_jobs": 918,
+          "share_media_tasks": 1004
         }
       ],
       "queue": [
@@ -1551,12 +1562,12 @@
           "status": "cancelled"
         },
         {
-          "count": 519,
+          "count": 521,
           "relation": "share_jobs",
           "status": "completed"
         },
         {
-          "count": 15,
+          "count": 16,
           "relation": "share_jobs",
           "status": "failed"
         },
@@ -1571,7 +1582,7 @@
           "status": "processing_metadata"
         },
         {
-          "count": 776,
+          "count": 779,
           "relation": "share_media_tasks",
           "status": "completed"
         },
@@ -1581,7 +1592,7 @@
           "status": "failed"
         },
         {
-          "count": 123,
+          "count": 124,
           "relation": "share_media_tasks",
           "status": "needs_help"
         },
@@ -1607,5 +1618,5 @@
       }
     }
   },
-  "finishedAt": "2026-10-28T00:05:24.835Z"
+  "finishedAt": "2026-10-29T06:29:37.824Z"
 }

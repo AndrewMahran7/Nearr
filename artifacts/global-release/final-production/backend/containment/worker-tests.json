@@ -1,0 +1,13 @@
+{
+  "testedAt": "2026-10-29T06:48:18.727Z",
+  "passed": true,
+  "sourceSha256": "d08d386998e2d475c3d92b7e0a0fdc1a4adecba50371a3f74831fa72672d0622",
+  "tests": [
+    "Liveness remains 200 while declaring recognition paused",
+    "Readiness, every former dispatch endpoint, unknown paths and methods fail closed without echoing bodies",
+    "24 authenticated-looking concurrent requests cannot dispatch or acquire work",
+    "Exact source uses no environment/provider/database/file/network-client capability in handler execution"
+  ],
+  "outboundCalls": 0,
+  "scope": "Exact inert worker running on loopback; not a Railway/container deployment"
+}

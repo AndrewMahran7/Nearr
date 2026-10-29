@@ -1,0 +1,31 @@
+{
+  "testedAt": "2026-10-29T06:59:55.271Z",
+  "kind": "tracked-client-environment-static-and-transform-check",
+  "sourceRef": "4e6b60e9b6e727381eeac98d8361d01423e95210",
+  "versions": {
+    "babel-preset-expo": "11.0.15",
+    "@expo/metro-config": "0.18.11",
+    "metro": "0.80.12",
+    "react-native": "0.74.5",
+    "expo": "51.0.39"
+  },
+  "passed": 5,
+  "failed": 0,
+  "tests": [
+    "Installed Expo/Babel/Metro/RN versions match exact public-source lockfile.",
+    "Production iOS Babel transform inlines public sentinel but leaves bare GEMINI_API_KEY lookup; private build sentinel never enters output.",
+    "Actual Metro production prelude plus transformed code yields undefined Gemini key in fresh JS runtime.",
+    "Actual Expo development prelude also excludes non-EXPO_PUBLIC key.",
+    "Tracked runtime/plugin/patch source has no process.env replacement, Gemini key assignment or custom environment-inline transformer."
+  ],
+  "sourceHashes": {
+    "babel.config.js": "7750b65193d0c4d35c3e98965f769ed3b79226848d32efeb71914447243039fd",
+    "metro.config.js": "f2218cc59337620ee82a311ba08fc46507beffb3171db25363dae08c4707f95b",
+    "eas.json": "fd4e6eb6b2a319e4f99bf1e59e6cf4890a94981aab1b0fe86c6e0361ce597951",
+    "app.config.js": "4e36fe519444de952c523e3b50c6c44f4ddf9305dc83efb444c61a81ab78ad7d",
+    "lib/aiExtractPlace.ts": "c658de5cf45c71ca78c085742ae37ae93fbdbbe80ea6411a194004017c050282"
+  },
+  "providerCalls": 0,
+  "cloudMutations": [],
+  "conclusion": "Strong conditional evidence that the tracked clean standard build does not supply the legacy direct-client Gemini key. Not an attestation of actual Build55 uploaded source cleanliness, unavailable signed/OTA bundles, all older cached updates or native runtime tampering. Global zero-provider-dispatch gate remains unproved."
+}

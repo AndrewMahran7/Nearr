@@ -1,0 +1,802 @@
+{
+  "capturedAt": "2026-10-29T06:32:14.805Z",
+  "source": "d924c25e27a8ab8d3a834fefd4e97d762d32c188",
+  "ref": "rlqvxdwtetxsqxhqztkw",
+  "mutations": [],
+  "columns": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "source_url",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "canonical_url",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "source_platform",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "status",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "progress_stage",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "decision",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "saved_place_id",
+      "data_type": "uuid",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "candidate_payload",
+      "data_type": "jsonb",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "extraction_payload",
+      "data_type": "jsonb",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "suggested_query",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "needs_help_reason",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "failure_reason",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "idempotency_key",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "attempts",
+      "data_type": "integer",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "max_attempts",
+      "data_type": "integer",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "locked_until",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "last_error",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "completed_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_status",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_attempts",
+      "data_type": "integer",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_max_attempts",
+      "data_type": "integer",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_last_attempt_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_next_attempt_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_ticket_ids",
+      "data_type": "jsonb",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_error_code",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_submitted_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_payload",
+      "data_type": "jsonb",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_receipts_checked_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "failure_category",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "failure_code",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "analysis_attempted",
+      "data_type": "boolean",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "recognition_identity_key",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "recognition_identity_version",
+      "data_type": "integer",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "recognition_content_id",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "queue_archived_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "billing_mode",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "billing_outcome",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "billing_settled_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "premium_request_id",
+      "data_type": "uuid",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "premium_state",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "premium_eligibility_reason",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "premium_requested_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "premium_started_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "premium_completed_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "premium_settlement_reason",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "premium_result_chargeable",
+      "data_type": "boolean",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "premium_cost_components",
+      "data_type": "jsonb",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_logical_id",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_attempt_id",
+      "data_type": "uuid",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_attempt_started_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "notification_receipt_status",
+      "data_type": "text",
+      "table_name": "share_jobs"
+    },
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "share_job_id",
+      "data_type": "uuid",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "source_url",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "canonical_url",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "platform",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "status",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "progress_stage",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "attempts",
+      "data_type": "integer",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "max_attempts",
+      "data_type": "integer",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "locked_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "locked_until",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "resolver_name",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "media_duration_seconds",
+      "data_type": "numeric",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "media_size_bytes",
+      "data_type": "bigint",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "media_sha256",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "transcription_provider",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "analysis_provider",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "failure_code",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "failure_detail",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "warnings",
+      "data_type": "jsonb",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "completed_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "next_attempt_at",
+      "data_type": "timestamp with time zone",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "task_kind",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "saved_place_id",
+      "data_type": "uuid",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "target_place_id",
+      "data_type": "uuid",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "retry_cycles",
+      "data_type": "integer",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "evidence_snapshot",
+      "data_type": "jsonb",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "media_acquired_once",
+      "data_type": "boolean",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "frame_snapshot",
+      "data_type": "bytea",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "frame_snapshot_timestamp_seconds",
+      "data_type": "double precision",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "analysis_model",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "prompt_version",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "latency_ms",
+      "data_type": "integer",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "model_calls",
+      "data_type": "integer",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "model_input_tokens",
+      "data_type": "integer",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "model_output_tokens",
+      "data_type": "integer",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "model_thinking_tokens",
+      "data_type": "integer",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "model_latency_ms",
+      "data_type": "integer",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "ai_note_outcome",
+      "data_type": "text",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "premium_request_id",
+      "data_type": "uuid",
+      "table_name": "share_media_tasks"
+    },
+    {
+      "column_name": "recognition_revalidation_task_id",
+      "data_type": "uuid",
+      "table_name": "share_media_tasks"
+    }
+  ],
+  "queueFunctions": [
+    {
+      "args": "p_limit integer, p_lock_seconds integer",
+      "definition": "CREATE OR REPLACE FUNCTION public.claim_media_tasks(p_limit integer DEFAULT 2, p_lock_seconds integer DEFAULT 600)\n RETURNS SETOF share_media_tasks\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\nbegin\r\n  return query update public.share_media_tasks mt set\r\n    status='processing',attempts=mt.attempts+1,locked_at=now(),\r\n    locked_until=now()+make_interval(secs=>greatest(p_lock_seconds,60)),\r\n    progress_stage=coalesce(mt.progress_stage,'queued'),updated_at=now()\r\n  where mt.id in (\r\n    select c.id from public.share_media_tasks c\r\n    where c.attempts<c.max_attempts and (c.next_attempt_at is null or c.next_attempt_at<=now())\r\n      and (c.status='queued' or (c.status='processing' and c.locked_until is not null and c.locked_until<now()))\r\n      and (\r\n        (c.task_kind in ('recognition','premium_recognition') and exists(\r\n          select 1 from public.share_jobs sj where sj.id=c.share_job_id and (\r\n            sj.status='processing_metadata' or\r\n            (c.task_kind='recognition' and sj.status='completed' and sj.saved_place_id is not null)\r\n          )\r\n        )) or\r\n        (c.task_kind='ai_note_enrichment' and exists(\r\n          select 1 from public.saved_places sp where sp.id=c.saved_place_id\r\n            and sp.user_id=c.user_id and sp.place_id=c.target_place_id\r\n            and sp.source_url=coalesce(c.canonical_url,c.source_url)\r\n            and public.is_video_derived_saved_place(sp.source_type,sp.source_url)\r\n            and coalesce(length(trim(sp.ai_note)),0)=0\r\n        )) or\r\n        (c.task_kind='recognition_revalidation' and exists(\r\n          select 1 from public.recognition_revalidation_tasks rt\r\n           where rt.id=c.recognition_revalidation_task_id\r\n             and rt.state in ('QUEUED','RETRY_WAIT','PROCESSING') and rt.next_attempt_at<=now()\r\n        ))\r\n      )\r\n    order by c.created_at for update skip locked limit greatest(p_limit,1)\r\n  ) returning mt.*;\r\nend;\r\n$function$\n",
+      "proname": "claim_media_tasks"
+    },
+    {
+      "args": "p_job_id uuid, p_logical_result_id text, p_policy_version text",
+      "definition": "CREATE OR REPLACE FUNCTION public.claim_named_lead_auto_recovery(p_job_id uuid, p_logical_result_id text, p_policy_version text)\n RETURNS TABLE(attempt_token uuid, query text, expected_name text, context_label text)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\ndeclare\r\n  v_uid uuid := auth.uid();\r\n  v_job public.share_jobs%rowtype;\r\n  v_slot jsonb;\r\n  v_identity jsonb;\r\n  v_prior jsonb;\r\n  v_token uuid := gen_random_uuid();\r\n  v_logical text := trim(p_logical_result_id);\r\nbegin\r\n  if v_uid is null then raise exception 'not_authenticated'; end if;\r\n  if length(v_logical) not between 1 and 160 or length(trim(p_policy_version)) not between 1 and 80 then\r\n    raise exception 'invalid_recovery_request';\r\n  end if;\r\n  select * into v_job from public.share_jobs\r\n   where id=p_job_id and user_id=v_uid for update;\r\n  if v_job.id is null then raise exception 'share_job_not_found'; end if;\r\n  if v_job.status not in ('needs_help','failed') then return; end if;\r\n\r\n  select s into v_slot from jsonb_array_elements(\r\n    case when jsonb_typeof(v_job.candidate_payload->'mentionSlots')='array'\r\n      then v_job.candidate_payload->'mentionSlots' else '[]'::jsonb end\r\n  ) s where s->>'mentionId'=v_logical limit 1;\r\n  select i into v_identity from jsonb_array_elements(\r\n    case when jsonb_typeof(v_slot->'identityHypotheses')='array'\r\n      then v_slot->'identityHypotheses' else '[]'::jsonb end\r\n  ) i where coalesce(i->>'evidenceKind','observable')='observable'\r\n      and length(trim(coalesce(i->>'name',''))) between 2 and 160 limit 1;\r\n  if v_identity is null then return; end if;\r\n\r\n  v_prior := v_job.candidate_payload->'automaticRecovery'->v_logical;\r\n  if v_prior->>'policyVersion'=trim(p_policy_version) and (\r\n    v_prior->>'status' in ('no_match','choice_required','saved') or\r\n    (v_prior->>'status'='searching' and\r\n      coalesce((v_prior->>'attemptedAt')::timestamptz,now()) > now()-interval '5 minutes') or\r\n    (v_prior->>'status'='technical_failure' and\r\n      coalesce((v_prior->>'retryAfter')::timestamptz,now()) > now())\r\n  ) then return; end if;\r\n\r\n  update public.share_jobs set candidate_payload=jsonb_set(\r\n    coalesce(candidate_payload,'{}'::jsonb),'{automaticRecovery}',\r\n    coalesce(candidate_payload->'automaticRecovery','{}'::jsonb) || jsonb_build_object(v_logical,\r\n      jsonb_build_object('policyVersion',trim(p_policy_version),'status','searching',\r\n        'attemptToken',v_token,'attemptedAt',now())),true),updated_at=now()\r\n  where id=v_job.id;\r\n  return query select v_token,\r\n    concat_ws(' ',trim(v_identity->>'name'),nullif(trim(coalesce(v_identity->>'contextLabel',v_slot->>'contextLabel')),'')),\r\n    trim(v_identity->>'name'),nullif(trim(coalesce(v_identity->>'contextLabel',v_slot->>'contextLabel')),'');\r\nend;\r\n$function$\n",
+      "proname": "claim_named_lead_auto_recovery"
+    },
+    {
+      "args": "p_identity_key text, p_owner_token uuid, p_lease_seconds integer",
+      "definition": "CREATE OR REPLACE FUNCTION public.claim_recognition_identity(p_identity_key text, p_owner_token uuid, p_lease_seconds integer DEFAULT 600)\n RETURNS TABLE(claimed boolean, owner_token uuid, lease_expires_at timestamp with time zone)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\ndeclare v_row public.recognition_inflight%rowtype;\r\nbegin\r\n  if p_identity_key is null or length(trim(p_identity_key)) not between 3 and 2048\r\n    then raise exception 'invalid_identity_key'; end if;\r\n  if p_owner_token is null then raise exception 'invalid_owner_token'; end if;\r\n  insert into public.recognition_inflight(identity_key, owner_token, lease_expires_at)\r\n  values (trim(p_identity_key), p_owner_token,\r\n    now() + make_interval(secs => least(greatest(p_lease_seconds, 30), 900)))\r\n  on conflict (identity_key) do update set\r\n    owner_token = excluded.owner_token,\r\n    lease_expires_at = excluded.lease_expires_at,\r\n    updated_at = now()\r\n  where public.recognition_inflight.lease_expires_at <= now()\r\n     or public.recognition_inflight.owner_token = excluded.owner_token;\r\n\r\n  select * into v_row from public.recognition_inflight\r\n   where identity_key = trim(p_identity_key);\r\n  return query select v_row.owner_token = p_owner_token, v_row.owner_token, v_row.lease_expires_at;\r\nend;\r\n$function$\n",
+      "proname": "claim_recognition_identity"
+    },
+    {
+      "args": "p_limit integer, p_stale_seconds integer",
+      "definition": "CREATE OR REPLACE FUNCTION public.claim_share_job_notifications(p_limit integer DEFAULT 20, p_stale_seconds integer DEFAULT 180)\n RETURNS SETOF share_jobs\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\nbegin\n  -- Multiple immediate/cron drains may reconcile concurrently. Lock in a\n  -- stable order and skip rows another drain already owns.\n  with stale as (\n    select c.id from public.share_jobs c\n     where c.notification_status = 'sending'\n       and c.notification_attempt_started_at is not null\n       and c.notification_last_attempt_at < now() - make_interval(secs => greatest(p_stale_seconds, 30))\n     order by c.id\n     for update skip locked\n     limit greatest(p_limit, 1)\n  )\n  update public.share_jobs sj\n     set notification_status = 'delivery_unknown',\n         notification_error_code = 'provider_outcome_unknown_stale',\n         notification_next_attempt_at = null,\n         updated_at = now()\n   where sj.id in (select id from stale);\n\n  return query\n  update public.share_jobs sj\n     set notification_status = 'sending',\n         notification_attempts = coalesce(sj.notification_attempts, 0) + 1,\n         notification_attempt_id = gen_random_uuid(),\n         notification_attempt_started_at = null,\n         notification_logical_id = coalesce(\n           sj.notification_logical_id,\n           'n1:' || sj.id::text || ':' || case sj.status\n             when 'completed' then 'c' when 'needs_help' then 'h' else 'f' end\n         ),\n         notification_last_attempt_at = now(),\n         updated_at = now()\n   where sj.id in (\n     select c.id from public.share_jobs c\n      where c.status in ('completed', 'needs_help', 'failed')\n        and c.notification_payload is not null\n        and coalesce(c.notification_attempts, 0) < coalesce(c.notification_max_attempts, 6)\n        and (\n          (c.notification_status in ('pending', 'retryable_failed')\n            and coalesce(c.notification_next_attempt_at, now()) <= now())\n          or (c.notification_status = 'sending'\n            and c.notification_attempt_started_at is null\n            and c.notification_last_attempt_at < now() - make_interval(secs => greatest(p_stale_seconds, 30)))\n        )\n      order by coalesce(c.notification_next_attempt_at, c.created_at), c.created_at\n      for update skip locked\n      limit greatest(p_limit, 1)\n   )\n  returning sj.*;\nend;\n$function$\n",
+      "proname": "claim_share_job_notifications"
+    },
+    {
+      "args": "p_limit integer, p_recheck_seconds integer",
+      "definition": "CREATE OR REPLACE FUNCTION public.claim_share_job_receipts(p_limit integer DEFAULT 20, p_recheck_seconds integer DEFAULT 90)\n RETURNS SETOF share_jobs\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\nbegin\n  return query\n  update public.share_jobs sj\n     set notification_receipts_checked_at = now(), updated_at = now()\n   where sj.id in (\n     select c.id from public.share_jobs c\n      where c.status in ('completed', 'needs_help', 'failed')\n        and c.notification_status in ('submitted', 'delivery_unknown')\n        and c.notification_ticket_ids is not null\n        and jsonb_typeof(c.notification_ticket_ids) = 'array'\n        and jsonb_array_length(c.notification_ticket_ids) > 0\n        and coalesce(c.notification_receipt_status, 'pending') in ('pending', 'unknown')\n        and (c.notification_receipts_checked_at is null\n          or c.notification_receipts_checked_at < now() - make_interval(secs => greatest(p_recheck_seconds, 30)))\n      order by coalesce(c.notification_submitted_at, c.updated_at), c.updated_at\n      for update skip locked\n      limit greatest(p_limit, 1)\n   )\n  returning sj.*;\nend;\n$function$\n",
+      "proname": "claim_share_job_receipts"
+    },
+    {
+      "args": "p_limit integer, p_lock_seconds integer",
+      "definition": "CREATE OR REPLACE FUNCTION public.claim_share_jobs(p_limit integer DEFAULT 5, p_lock_seconds integer DEFAULT 120)\n RETURNS SETOF share_jobs\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\nbegin\r\n  return query\r\n  update public.share_jobs sj\r\n     set status = 'processing_metadata',\r\n         attempts = sj.attempts + 1,\r\n         locked_until = now() + make_interval(secs => greatest(p_lock_seconds, 30)),\r\n         updated_at = now()\r\n   where sj.id in (\r\n     select c.id\r\n       from public.share_jobs c\r\n      where c.attempts < c.max_attempts\r\n        and (\r\n          c.status = 'queued'\r\n          or (c.status = 'processing_metadata' and c.locked_until is not null and c.locked_until < now())\r\n        )\r\n      order by c.created_at\r\n      for update skip locked\r\n      limit greatest(p_limit, 1)\r\n   )\r\n  returning sj.*;\r\nend;\r\n$function$\n",
+      "proname": "claim_share_jobs"
+    },
+    {
+      "args": "p_limit integer",
+      "definition": "CREATE OR REPLACE FUNCTION public.claim_stranded_media_parents(p_limit integer DEFAULT 25)\n RETURNS SETOF share_jobs\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\nbegin\r\n  return query select sj.* from public.share_jobs sj\r\n  where sj.status='processing_metadata' and exists(\r\n    select 1 from public.share_media_tasks mt where mt.share_job_id=sj.id\r\n      and mt.task_kind=case when sj.billing_mode='premium_request' then 'premium_recognition' else 'recognition' end\r\n      and mt.status in ('failed','cancelled')\r\n  ) order by sj.updated_at for update skip locked limit greatest(p_limit,1);\r\nend;\r\n$function$\n",
+      "proname": "claim_stranded_media_parents"
+    },
+    {
+      "args": "p_user_id uuid, p_source_url text, p_canonical_url text, p_source_platform text, p_idempotency_key text, p_dedupe_window_seconds integer, p_is_anonymous boolean, p_force_rerun boolean",
+      "definition": "CREATE OR REPLACE FUNCTION public.create_share_job_for_user(p_user_id uuid, p_source_url text, p_canonical_url text, p_source_platform text, p_idempotency_key text DEFAULT NULL::text, p_dedupe_window_seconds integer DEFAULT 90, p_is_anonymous boolean DEFAULT false, p_force_rerun boolean DEFAULT false)\n RETURNS TABLE(job_id uuid, status text, duplicate boolean, requires_purchase boolean, available_uses integer)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\ndeclare v_existing record; v_job public.share_jobs%rowtype; v_lock_key bigint; v_available integer:=0;\r\nbegin\r\n  if p_user_id is null then raise exception 'missing_user_id'; end if;\r\n  v_lock_key:=hashtextextended(p_user_id::text||':'||coalesce(p_canonical_url,p_source_url,''),0);\r\n  perform pg_advisory_xact_lock(v_lock_key);\r\n  if not p_is_anonymous then\r\n    perform * from public.ensure_place_find_wallet(p_user_id,false);\r\n    select pfw.available_uses into v_available\r\n      from public.place_find_wallets as pfw where pfw.user_id=p_user_id;\r\n  end if;\r\n  if nullif(trim(p_idempotency_key),'') is not null then\r\n    select sj.* into v_existing from public.share_jobs sj\r\n      where sj.user_id=p_user_id and sj.idempotency_key=p_idempotency_key limit 1;\r\n    if found then return query select v_existing.id,v_existing.status,true,false,v_available; return; end if;\r\n  end if;\r\n  select sj.* into v_existing from public.share_jobs sj\r\n    where sj.user_id=p_user_id and sj.canonical_url=p_canonical_url\r\n      and sj.status in ('queued','processing_metadata')\r\n      and sj.created_at>=now()-make_interval(secs=>greatest(p_dedupe_window_seconds,1))\r\n    order by sj.created_at desc limit 1;\r\n  if found then return query select v_existing.id,v_existing.status,true,false,v_available; return; end if;\r\n  if not p_force_rerun then\r\n    select sj.* into v_existing from public.share_jobs sj\r\n      where sj.user_id=p_user_id and sj.canonical_url=p_canonical_url and sj.status='completed'\r\n      order by sj.completed_at desc nulls last,sj.created_at desc limit 1;\r\n    if found then return query select v_existing.id,v_existing.status,true,false,v_available; return; end if;\r\n  end if;\r\n  insert into public.share_jobs(\r\n    user_id,source_url,canonical_url,source_platform,status,progress_stage,\r\n    idempotency_key,billing_mode,billing_outcome,billing_settled_at\r\n  ) values(\r\n    p_user_id,p_source_url,p_canonical_url,p_source_platform,'queued','queued',\r\n    p_idempotency_key,'normal_free','unmetered:normal_free',now()\r\n  ) returning * into v_job;\r\n  return query select v_job.id,v_job.status,false,false,v_available;\r\nend;\r\n$function$\n",
+      "proname": "create_share_job_for_user"
+    },
+    {
+      "args": "p_limit integer",
+      "definition": "CREATE OR REPLACE FUNCTION public.expire_media_tasks(p_limit integer DEFAULT 25)\n RETURNS SETOF share_media_tasks\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\nbegin\r\n  return query\r\n  update public.share_media_tasks mt\r\n     set status = case when mt.task_kind = 'ai_note_enrichment' then 'queued' else 'failed' end,\r\n         attempts = case when mt.task_kind = 'ai_note_enrichment' then 0 else mt.attempts end,\r\n         retry_cycles = case when mt.task_kind = 'ai_note_enrichment' then mt.retry_cycles + 1 else mt.retry_cycles end,\r\n         next_attempt_at = case\r\n           when mt.task_kind = 'ai_note_enrichment' then\r\n             now() + make_interval(secs => least(86400, 3600 * power(2, least(mt.retry_cycles, 5)))::integer)\r\n           else mt.next_attempt_at\r\n         end,\r\n         failure_code = coalesce(mt.failure_code, 'media_worker_unavailable'),\r\n         ai_note_outcome = case\r\n           when mt.task_kind = 'ai_note_enrichment' then 'retry_after_outage'\r\n           else mt.ai_note_outcome\r\n         end,\r\n         locked_until = null,\r\n         completed_at = case when mt.task_kind = 'ai_note_enrichment' then null else now() end,\r\n         updated_at = now()\r\n   where mt.id in (\r\n     select c.id\r\n       from public.share_media_tasks c\r\n      where c.status in ('queued', 'processing')\r\n        and c.attempts >= c.max_attempts\r\n        and (c.locked_until is null or c.locked_until < now())\r\n      order by c.updated_at\r\n      for update skip locked\r\n      limit greatest(p_limit, 1)\r\n   )\r\n  returning mt.*;\r\nend;\r\n$function$\n",
+      "proname": "expire_media_tasks"
+    },
+    {
+      "args": "",
+      "definition": "CREATE OR REPLACE FUNCTION public.invoke_process_media_tasks()\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\ndeclare\r\n  v_base_url text;\r\n  v_secret text;\r\nbegin\r\n  -- Prefer Vault secrets.\r\n  begin\r\n    select decrypted_secret into v_base_url\r\n      from vault.decrypted_secrets\r\n     where name = 'share_media_worker_url'\r\n     limit 1;\r\n  exception when others then\r\n    v_base_url := null;\r\n  end;\r\n  begin\r\n    select decrypted_secret into v_secret\r\n      from vault.decrypted_secrets\r\n     where name = 'share_media_worker_secret'\r\n     limit 1;\r\n  exception when others then\r\n    v_secret := null;\r\n  end;\r\n\r\n  -- Fall back to database settings.\r\n  if v_base_url is null or v_base_url = '' then\r\n    v_base_url := nullif(current_setting('app.settings.share_media_worker_url', true), '');\r\n  end if;\r\n  if v_secret is null or v_secret = '' then\r\n    v_secret := nullif(current_setting('app.settings.share_media_worker_secret', true), '');\r\n  end if;\r\n\r\n  -- Not configured yet → no-op (never raise). The cron backstop starts\r\n  -- dispatching automatically once the secrets are set.\r\n  if v_base_url is null or v_secret is null then\r\n    return;\r\n  end if;\r\n\r\n  perform net.http_post(\r\n    url := rtrim(v_base_url, '/') || '/v1/process-media-tasks',\r\n    headers := jsonb_build_object(\r\n      'Content-Type', 'application/json',\r\n      'Authorization', 'Bearer ' || v_secret\r\n    ),\r\n    body := jsonb_build_object('trigger', 'db', 'limit', 2)\r\n  );\r\nexception when others then\r\n  -- pg_net missing / transient failure: swallow. Durability is the persisted\r\n  -- row + the cron sweep, not this call.\r\n  return;\r\nend;\r\n$function$\n",
+      "proname": "invoke_process_media_tasks"
+    },
+    {
+      "args": "p_task_id uuid",
+      "definition": "CREATE OR REPLACE FUNCTION public.queue_recognition_revalidation_media_task(p_task_id uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\ndeclare v_task public.recognition_revalidation_tasks%rowtype;\r\ndeclare v_source public.recognition_source_states%rowtype;\r\ndeclare v_user_id uuid;\r\nbegin\r\n  select * into v_task from public.recognition_revalidation_tasks where id=p_task_id for update;\r\n  if v_task.id is null or v_task.state not in ('QUEUED','RETRY_WAIT') or v_task.next_attempt_at > now() then return false; end if;\r\n  select * into v_source from public.recognition_source_states where identity_key=v_task.identity_key;\r\n  select ce.user_id into v_user_id from public.recognition_correction_events ce where ce.id=v_task.correction_event_id;\r\n  if v_source.identity_key is null or v_user_id is null then return false; end if;\r\n  if exists(select 1 from public.share_media_tasks mt where mt.recognition_revalidation_task_id=v_task.id\r\n    and mt.status in ('queued','processing')) then return false; end if;\r\n  insert into public.share_media_tasks(\r\n    task_kind,recognition_revalidation_task_id,user_id,source_url,canonical_url,\r\n    platform,status,progress_stage,max_attempts,next_attempt_at\r\n  ) values (\r\n    'recognition_revalidation',v_task.id,v_user_id,v_source.canonical_url,v_source.canonical_url,\r\n    v_source.platform,'queued','queued',3,now()\r\n  );\r\n  update public.recognition_revalidation_tasks set state='QUEUED',updated_at=now() where id=v_task.id;\r\n  return true;\r\nend;\r\n$function$\n",
+      "proname": "queue_recognition_revalidation_media_task"
+    },
+    {
+      "args": "p_task_id uuid, p_backoff_seconds integer, p_failure_code text",
+      "definition": "CREATE OR REPLACE FUNCTION public.requeue_media_task(p_task_id uuid, p_backoff_seconds integer, p_failure_code text DEFAULT NULL::text)\n RETURNS boolean\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\ndeclare\r\n  v_updated integer;\r\nbegin\r\n  update public.share_media_tasks mt\r\n     set status = 'queued',\r\n         locked_until = null,\r\n         next_attempt_at = now() + make_interval(secs => greatest(coalesce(p_backoff_seconds, 30), 1)),\r\n         failure_code = coalesce(p_failure_code, mt.failure_code),\r\n         updated_at = now()\r\n   where mt.id = p_task_id\r\n     and mt.status not in ('completed', 'needs_help', 'failed', 'cancelled');\r\n  get diagnostics v_updated = row_count;\r\n  return v_updated > 0;\r\nend;\r\n$function$\n",
+      "proname": "requeue_media_task"
+    },
+    {
+      "args": "",
+      "definition": "CREATE OR REPLACE FUNCTION public.share_media_tasks_after_insert_kick()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\nbegin\r\n  perform public.invoke_process_media_tasks();\r\n  return null;\r\nend;\r\n$function$\n",
+      "proname": "share_media_tasks_after_insert_kick"
+    },
+    {
+      "args": "",
+      "definition": "CREATE OR REPLACE FUNCTION public.share_media_tasks_enforce_owner()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\ndeclare v_owner uuid; v_target uuid; v_premium_id uuid;\r\nbegin\r\n  if new.task_kind in ('recognition','premium_recognition') then\r\n    select sj.user_id,sj.premium_request_id into v_owner,v_premium_id\r\n      from public.share_jobs sj where sj.id=new.share_job_id;\r\n    if v_owner is null then raise exception 'share_media_tasks: parent share_job % not found',new.share_job_id; end if;\r\n    if new.task_kind='premium_recognition' and new.premium_request_id is distinct from v_premium_id then\r\n      raise exception 'share_media_tasks: premium request mismatch';\r\n    end if;\r\n  elsif new.task_kind='ai_note_enrichment' then\r\n    select sp.user_id,sp.place_id into v_owner,v_target from public.saved_places sp where sp.id=new.saved_place_id;\r\n    if v_owner is null or v_target is distinct from new.target_place_id then\r\n      raise exception 'share_media_tasks: invalid ai note target';\r\n    end if;\r\n  elsif new.task_kind='recognition_revalidation' then\r\n    select ce.user_id into v_owner\r\n      from public.recognition_revalidation_tasks rt\r\n      join public.recognition_correction_events ce on ce.id=rt.correction_event_id\r\n     where rt.id=new.recognition_revalidation_task_id;\r\n    if v_owner is null then raise exception 'share_media_tasks: invalid revalidation target'; end if;\r\n  else\r\n    raise exception 'share_media_tasks: invalid task_kind %',new.task_kind;\r\n  end if;\r\n  if new.user_id is distinct from v_owner then raise exception 'share_media_tasks: owner mismatch'; end if;\r\n  return new;\r\nend;\r\n$function$\n",
+      "proname": "share_media_tasks_enforce_owner"
+    },
+    {
+      "args": "",
+      "definition": "CREATE OR REPLACE FUNCTION public.sync_premium_media_task_state()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\ndeclare v_changed integer;\r\nbegin\r\n  if new.task_kind='premium_recognition' and new.status='processing' and old.status is distinct from new.status then\r\n    update public.share_jobs set premium_state='processing',premium_started_at=coalesce(premium_started_at,now()),updated_at=now()\r\n      where id=new.share_job_id and premium_request_id=new.premium_request_id and premium_state='reserved';\r\n    get diagnostics v_changed=row_count;\r\n    if v_changed>0 then\r\n      insert into public.analytics_events(user_id,event_name,properties) values(\r\n        new.user_id,'premium_request_started',jsonb_build_object('share_job_id',new.share_job_id)\r\n      );\r\n    end if;\r\n  end if;\r\n  return new;\r\nend;\r\n$function$\n",
+      "proname": "sync_premium_media_task_state"
+    }
+  ],
+  "queueTriggers": [
+    {
+      "definition": "CREATE TRIGGER share_jobs_cancel_cascade_media AFTER UPDATE OF status ON public.share_jobs FOR EACH ROW EXECUTE FUNCTION share_jobs_cascade_cancel_media()",
+      "relation": "share_jobs",
+      "tgname": "share_jobs_cancel_cascade_media"
+    },
+    {
+      "definition": "CREATE TRIGGER share_jobs_kick_worker AFTER INSERT ON public.share_jobs FOR EACH STATEMENT EXECUTE FUNCTION share_jobs_after_insert_kick()",
+      "relation": "share_jobs",
+      "tgname": "share_jobs_kick_worker"
+    },
+    {
+      "definition": "CREATE TRIGGER share_jobs_set_updated_at BEFORE UPDATE ON public.share_jobs FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+      "relation": "share_jobs",
+      "tgname": "share_jobs_set_updated_at"
+    },
+    {
+      "definition": "CREATE TRIGGER share_media_tasks_admit_recognition_v2 AFTER UPDATE OF status ON public.share_media_tasks FOR EACH ROW EXECUTE FUNCTION admit_recognition_after_media_completion_v2()",
+      "relation": "share_media_tasks",
+      "tgname": "share_media_tasks_admit_recognition_v2"
+    },
+    {
+      "definition": "CREATE TRIGGER share_media_tasks_kick_worker AFTER INSERT ON public.share_media_tasks FOR EACH STATEMENT EXECUTE FUNCTION share_media_tasks_after_insert_kick()",
+      "relation": "share_media_tasks",
+      "tgname": "share_media_tasks_kick_worker"
+    },
+    {
+      "definition": "CREATE TRIGGER share_media_tasks_owner_guard BEFORE INSERT OR UPDATE OF user_id, share_job_id, saved_place_id, target_place_id, task_kind, recognition_revalidation_task_id ON public.share_media_tasks FOR EACH ROW EXECUTE FUNCTION share_media_tasks_enforce_owner()",
+      "relation": "share_media_tasks",
+      "tgname": "share_media_tasks_owner_guard"
+    },
+    {
+      "definition": "CREATE TRIGGER share_media_tasks_revalidation_processing AFTER UPDATE OF status ON public.share_media_tasks FOR EACH ROW EXECUTE FUNCTION mark_recognition_revalidation_processing_v2()",
+      "relation": "share_media_tasks",
+      "tgname": "share_media_tasks_revalidation_processing"
+    },
+    {
+      "definition": "CREATE TRIGGER share_media_tasks_set_updated_at BEFORE UPDATE ON public.share_media_tasks FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+      "relation": "share_media_tasks",
+      "tgname": "share_media_tasks_set_updated_at"
+    },
+    {
+      "definition": "CREATE TRIGGER share_media_tasks_sync_premium_state AFTER UPDATE OF status ON public.share_media_tasks FOR EACH ROW EXECUTE FUNCTION sync_premium_media_task_state()",
+      "relation": "share_media_tasks",
+      "tgname": "share_media_tasks_sync_premium_state"
+    }
+  ],
+  "counts": [
+    {
+      "jobs": 918,
+      "saves": 643,
+      "sources": 560,
+      "tasks": 1004,
+      "users": 112
+    }
+  ],
+  "queue": [
+    {
+      "count": 1,
+      "relation": "share_jobs",
+      "status": "cancelled"
+    },
+    {
+      "count": 521,
+      "relation": "share_jobs",
+      "status": "completed"
+    },
+    {
+      "count": 16,
+      "relation": "share_jobs",
+      "status": "failed"
+    },
+    {
+      "count": 378,
+      "relation": "share_jobs",
+      "status": "needs_help"
+    },
+    {
+      "count": 2,
+      "relation": "share_jobs",
+      "status": "processing_metadata"
+    },
+    {
+      "count": 779,
+      "relation": "share_media_tasks",
+      "status": "completed"
+    },
+    {
+      "count": 94,
+      "relation": "share_media_tasks",
+      "status": "failed"
+    },
+    {
+      "count": 124,
+      "relation": "share_media_tasks",
+      "status": "needs_help"
+    },
+    {
+      "count": 7,
+      "relation": "share_media_tasks",
+      "status": "queued"
+    }
+  ],
+  "ownership": [
+    {
+      "ownership_hash": "d52461e3bea1de9d6ab0464d4803a460",
+      "relation": "saved_places"
+    },
+    {
+      "ownership_hash": "6b91d5d7653b3698b27c70df8cf2ffa8",
+      "relation": "saved_place_sources"
+    }
+  ],
+  "edge": [
+    {
+      "name": "process-share-link",
+      "version": 153,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "5925fde1868010306fa5fbcf1b10d399bf65fed38737a1606b96e9e07f7a6290"
+    },
+    {
+      "name": "delete-account",
+      "version": 42,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "6ef7334c1572f4f754d85cca815879e9ecd15625c0c6960c2063d0c5d6ab82c7"
+    },
+    {
+      "name": "create-share-job",
+      "version": 45,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "d8f2e4a35d8a5c9f9dbcfc0795343a586c319042eb0c9df3fac96c7b801e0451"
+    },
+    {
+      "name": "process-share-jobs",
+      "version": 124,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "68f55b9ff9e154b80610cb3c53fe9a2d0a5199443b3cef3352b2d615b2451c01"
+    },
+    {
+      "name": "delete-share-job",
+      "version": 18,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "850ce03727419256f340313a12f8308966c15a562d1e1c1fcc16ec223c796de2"
+    },
+    {
+      "name": "monetization",
+      "version": 19,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "e0b02b8a1563e02fc460e4d71dfd9609c0813382c53323647aad7f81d85b4c6d"
+    },
+    {
+      "name": "public-place",
+      "version": 16,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "ec91e1f1b9294eb867fa10b733de79e641cd39b461df5c35b3b0efd2d96879fd"
+    },
+    {
+      "name": "get-place-videos",
+      "version": 16,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "92141568b51776c9b6ebf348147ce0706e6172266cc3ac699af06b6edbd8f050"
+    }
+  ],
+  "jobs": [
+    {
+      "active": true,
+      "command_hash": "bc6aa8eb6b3d0349e08239554ede4101",
+      "jobid": 1,
+      "jobname": "process-share-jobs-sweep",
+      "schedule": "* * * * *"
+    },
+    {
+      "active": true,
+      "command_hash": "4aaeb76cdbe1332c3876c4b5e130d142",
+      "jobid": 2,
+      "jobname": "process-media-tasks-sweep",
+      "schedule": "* * * * *"
+    }
+  ],
+  "endpoints": [
+    {
+      "path": "/health",
+      "status": 200,
+      "body": {
+        "status": "ok",
+        "service": "nearr-media-worker"
+      }
+    },
+    {
+      "path": "/ready",
+      "status": 200,
+      "body": {
+        "status": "ready",
+        "checks": {
+          "config": true,
+          "ffmpeg": true,
+          "ffprobe": true,
+          "ytdlp": true,
+          "supabase": true
+        },
+        "capabilities": {
+          "aiNoteEnrichment": true,
+          "scrapeCreatorsTikTokFallback": true,
+          "scrapeCreatorsInstagramFallback": true,
+          "scrapeCreatorsFacebookFallback": true
+        },
+        "runtime": {
+          "ytDlpVersion": "2026.08.19",
+          "ytDlpStatus": "ok"
+        },
+        "missingConfig": []
+      }
+    }
+  ]
+}
