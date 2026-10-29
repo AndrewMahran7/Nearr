@@ -1,0 +1,26 @@
+/** Explicit, consent-only Development migration. No release gate is enabled. */
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const { command, json, sql } = require('./finalBackendReadiness.cjs');
+const target = { ref: 'qnfxnmvxpjzfydgudtvs', cwd: process.env.NEARR_LINKED_DEV_WORKDIR || process.cwd() };
+if (!process.argv.includes('--apply')) throw new Error('Pass --apply for the explicit Development-only transaction');
+if (fs.readFileSync(path.join(target.cwd, 'supabase/.temp/project-ref'), 'utf8').trim() !== target.ref) throw new Error('Unexpected linked target');
+const migrations = ['20261029000001_atomic_terms_privacy_acceptance.sql', '20261029000002_revision_bound_legal_acceptance.sql'];
+const policy = sql(target, 'select to_jsonb(p) as policy from public.global_release_policy p');
+if (policy.length !== 1 || ['legal_approved','recognition_qualified','purchase_qualified'].some(k => policy[0].policy[k] !== false) || policy[0].policy.provider_route !== 'disabled') throw new Error('Expected unqualified Development policy');
+const before = sql(target, 'select version from supabase_migrations.schema_migrations order by version').map(r => r.version);
+const sources = migrations.map(file => ({ file, version: file.split('_')[0], source: fs.readFileSync(path.join('supabase/migrations', file), 'utf8') }));
+if (sources.some(m => before.includes(m.version))) throw new Error('Migration already present; inspect receipt instead of replaying');
+const literal = s => "'" + s.replace(/'/g, "''") + "'";
+const statement = "begin; set local lock_timeout='5s'; set local statement_timeout='20s'; select pg_advisory_xact_lock(17912901);\n" + sources.map(m => m.source + '\ninsert into supabase_migrations.schema_migrations(version,name,statements) values(' + literal(m.version) + ',' + literal(m.file.replace(/^\d+_/, '').replace(/\.sql$/, '')) + ',array[' + literal(m.source) + ']);').join('\n') + '\ncommit;';
+command('supabase', ['db','query','--linked',statement,'-o','json'], target.cwd);
+const after = sql(target, 'select version from supabase_migrations.schema_migrations order by version').map(r => r.version);
+const afterPolicy = sql(target, 'select to_jsonb(p) as policy from public.global_release_policy p');
+const signatures = sql(target, "select pg_get_function_identity_arguments(p.oid) as args, p.prosecdef as security_definer, has_function_privilege('anon',p.oid,'execute') as anon_execute, has_function_privilege('authenticated',p.oid,'execute') as authenticated_execute from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='record_global_terms_and_privacy' order by args");
+if (!sources.every(m => after.includes(m.version)) || JSON.stringify(policy) !== JSON.stringify(afterPolicy)) throw new Error('Post-deploy verification mismatch');
+if (signatures.length !== 2 || signatures.some(s => !s.security_definer || s.anon_execute || !s.authenticated_execute)) throw new Error('Unexpected consent grants');
+const receipt = { deployedAt: new Date().toISOString(), target: target.ref, sourceCommit: command('git',['rev-parse','HEAD']).trim(), scope: 'consent-only Development migrations; all release gates unchanged', beforeCount: before.length, afterCount: after.length, migrations: sources.map(({source,...m}) => ({...m,sha256:crypto.createHash('sha256').update(source).digest('hex')})), policyUnchanged:true, signatures, productionMutation:false, billingMutation:false };
+fs.mkdirSync('artifacts/global-release/paid-launch',{recursive:true});
+fs.writeFileSync('artifacts/global-release/paid-launch/development-consent-deployment.json',JSON.stringify(receipt,null,2)+'\n');
+console.log(JSON.stringify(receipt));
