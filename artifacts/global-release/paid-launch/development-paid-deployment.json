@@ -1,0 +1,63 @@
+{
+  "testedAt": "2026-10-29T21:31:56.291Z",
+  "mode": "development-disabled-deployment",
+  "target": "qnfxnmvxpjzfydgudtvs",
+  "sourceCommit": "b5d6e1ae56411e79f1ca448955ee73154b95b10f",
+  "migrations": [
+    {
+      "file": "20261028000001_nearr_free_only_release.sql",
+      "version": "20261028000001",
+      "sha256": "31d9e4d6038ce7d392073d0506e965adb5e439eb08f823732721e10d9739e1b1"
+    },
+    {
+      "file": "20261029000003_unlimited_plus_paid_finds.sql",
+      "version": "20261029000003",
+      "sha256": "57d78e6ec9e24a287bd67f1f9fe0b3c2ac85cd5fd90cc80d1d3cf0959f339bc2"
+    },
+    {
+      "file": "20261029000004_recognition_commit_authorization.sql",
+      "version": "20261029000004",
+      "sha256": "e5d1376dc5f70c3650e6e1fa36b140c388a1cfe72870b22fc2eb96124de9349a"
+    }
+  ],
+  "beforeCount": 91,
+  "afterCount": 94,
+  "policyUnchanged": true,
+  "historyUnchanged": true,
+  "financialFingerprints": [
+    {
+      "checksum": "8c357b20311a252365cbc95f25247ae5",
+      "relation": "place_find_wallets",
+      "rows": 93
+    },
+    {
+      "checksum": "05fe6b1584b1bd34642579d8b035c7c7",
+      "relation": "place_find_lots",
+      "rows": 111
+    },
+    {
+      "checksum": "31bf202a9deba79e1f466771796ef149",
+      "relation": "place_find_ledger",
+      "rows": 555
+    },
+    {
+      "checksum": "fe731f048c6eb1e824365603f7d41194",
+      "relation": "place_find_purchase_transactions",
+      "rows": 27
+    },
+    {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+      "relation": "nearr_plus_entitlements",
+      "rows": 0
+    },
+    {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+      "relation": "nearr_plus_recognitions",
+      "rows": 0
+    }
+  ],
+  "productionMutation": false,
+  "purchasesActivated": false,
+  "providerCalls": false,
+  "passed": true
+}

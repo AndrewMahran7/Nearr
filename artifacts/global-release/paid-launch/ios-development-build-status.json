@@ -1,0 +1,11 @@
+{
+  "capturedAt": "2026-10-29T21:37:41.512Z",
+  "id": "da13c7d7-b11d-4497-8862-615af269ec76",
+  "status": "IN_PROGRESS",
+  "distribution": "INTERNAL",
+  "profile": "development",
+  "version": "1.7.0",
+  "buildNumber": "73",
+  "gitCommitHash": "b5d6e1ae56411e79f1ca448955ee73154b95b10f",
+  "createdAt": "2026-10-29T21:36:28.095Z"
+}

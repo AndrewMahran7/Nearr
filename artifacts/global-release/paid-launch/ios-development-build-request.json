@@ -1,0 +1,22 @@
+{
+  "startedAt": "2026-10-29T21:31:03.945Z",
+  "finishedAt": "2026-10-29T21:36:29.233Z",
+  "sourceCommit": "b5d6e1ae56411e79f1ca448955ee73154b95b10f",
+  "profile": "development",
+  "platform": "ios",
+  "requestedBuild": "73",
+  "exitCode": 0,
+  "signal": null,
+  "builds": [
+    {
+      "id": "da13c7d7-b11d-4497-8862-615af269ec76",
+      "status": "NEW",
+      "distribution": "INTERNAL",
+      "profile": "development",
+      "version": "1.7.0",
+      "buildNumber": "73",
+      "gitCommitHash": "b5d6e1ae56411e79f1ca448955ee73154b95b10f",
+      "createdAt": "2026-10-29T21:36:28.095Z"
+    }
+  ]
+}
