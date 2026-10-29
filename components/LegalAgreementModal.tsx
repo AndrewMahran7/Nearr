@@ -14,6 +14,7 @@ type Props = {
   onViewPrivacy: () => void;
   onAgree: () => void;
   agreeing?: boolean;
+  error?: boolean;
 };
 
 export function LegalAgreementModal({
@@ -22,6 +23,7 @@ export function LegalAgreementModal({
   onViewPrivacy,
   onAgree,
   agreeing = false,
+  error = false,
 }: Props) {
   useLocale();
   const { colors, typography, resolvedTheme } = useTheme();
@@ -47,23 +49,24 @@ export function LegalAgreementModal({
             {t("Please review and accept Nearr's Terms of Service and Privacy Policy to continue.")}</Text>
 
           <ScrollView style={styles.links} contentContainerStyle={styles.linksContent}>
-            <Pressable style={styles.linkRow} onPress={onViewTerms}>
+            <Pressable style={styles.linkRow} accessibilityRole="link" accessibilityLabel={t('View Terms')} onPress={onViewTerms}>
               <Text style={typography.bodyStrong}>{t("View Terms")}</Text>
               <Text style={styles.chevron}>›</Text>
             </Pressable>
-            <Pressable style={styles.linkRow} onPress={onViewPrivacy}>
+            <Pressable style={styles.linkRow} accessibilityRole="link" accessibilityLabel={t('View Privacy Policy')} onPress={onViewPrivacy}>
               <Text style={typography.bodyStrong}>{t("View Privacy Policy")}</Text>
               <Text style={styles.chevron}>›</Text>
             </Pressable>
           </ScrollView>
 
-          <Pressable style={styles.checkboxRow} onPress={() => setAgreed((v) => !v)}>
+          <Pressable style={styles.checkboxRow} accessibilityRole="checkbox" accessibilityState={{ checked: agreed }} accessibilityLabel={t("I agree to the Terms of Service and acknowledge the Privacy Policy.")} onPress={() => setAgreed((v) => !v)}>
             <View style={[styles.checkbox, agreed && styles.checkboxActive]}>
               {agreed ? <Text style={styles.checkboxTick}>✓</Text> : null}
             </View>
             <Text style={[typography.body, styles.checkboxText]}>
-              {t("I agree to the Terms of Service and Privacy Policy.")}</Text>
+              {t("I agree to the Terms of Service and acknowledge the Privacy Policy.")}</Text>
           </Pressable>
+          {error ? <Text accessibilityRole="alert" style={styles.body}>{t('Could not save')} · {t('Please try again.')}</Text> : null}
 
           <View style={styles.actions}>
             <Button

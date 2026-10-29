@@ -24,9 +24,8 @@ async function transportFor(isExtension: boolean): Promise<ConsentTransport> {
 
 export function AiSharePermissionPrompt({ onAllow, onCancel, compact = false, isExtension = false }: Props) {
   useLocale();
-  const [state, setState] = useState<'loading' | 'unavailable' | 'terms' | 'permission' | 'saving' | 'error'>('loading');
+  const [state, setState] = useState<'loading' | 'unavailable' | 'guardian' | 'terms' | 'permission' | 'saving' | 'error'>('loading');
   const transport = useRef<ConsentTransport | null>(null);
-  const termsVersion = useRef('');
   const busy = useRef(false);
   const owner = useRef<string | null>(null);
   const generation = useRef(0);
@@ -36,7 +35,7 @@ export function AiSharePermissionPrompt({ onAllow, onCancel, compact = false, is
     let authTimer: ReturnType<typeof setTimeout> | undefined;
     const refresh = () => {
       const epoch = ++generation.current;
-      owner.current = null; transport.current = null; termsVersion.current = ''; busy.current = false; setState('loading');
+      owner.current = null; transport.current = null; busy.current = false; setState('loading');
       void (async () => {
         const value = await transportFor(isExtension);
         const subject = decodeJwtClaims(value.accessToken)?.sub;
@@ -46,8 +45,8 @@ export function AiSharePermissionPrompt({ onAllow, onCancel, compact = false, is
         if (!mounted || epoch !== generation.current) return;
         if (decodeJwtClaims(current.accessToken)?.sub !== subject) { setState('error'); return; }
         owner.current = subject; transport.current = current;
-        termsVersion.current = typeof access.termsVersion === 'string' ? access.termsVersion : '';
-        if (access.status !== 'eligible' || access.legalApproved !== true || access.noticeVersion !== AI_NOTICE_VERSION || ['guardian_authorization_required', 'region_not_available', 'recognition_not_available'].includes(String(access.aiReason))) setState('unavailable');
+        if (access.aiReason === 'guardian_authorization_required') setState('guardian');
+        else if (access.status !== 'eligible' || access.legalApproved !== true || access.noticeVersion !== AI_NOTICE_VERSION || ['region_not_available', 'recognition_not_available'].includes(String(access.aiReason))) setState('unavailable');
         else setState(access.termsAccepted === true ? 'permission' : 'terms');
       })().catch(() => { if (mounted && epoch === generation.current) setState('error'); });
     };
@@ -69,9 +68,16 @@ export function AiSharePermissionPrompt({ onAllow, onCancel, compact = false, is
   }
   async function acceptTerms() {
     if (!transport.current || busy.current) return;
-    const epoch = generation.current; const version = termsVersion.current;
+    const epoch = generation.current;
     busy.current = true; setState('saving');
-    try { const current = await currentBoundTransport(epoch); await consentRpc(current, 'record_global_terms', { p_terms_version: version }); await currentBoundTransport(epoch); setState('permission'); }
+    try {
+      const current = await currentBoundTransport(epoch);
+      await consentRpc(current, 'record_global_terms_and_privacy');
+      const refreshed = await currentBoundTransport(epoch);
+      const access = await consentRpc(refreshed, 'get_my_global_access') as Record<string, unknown>;
+      await currentBoundTransport(epoch);
+      setState(access.termsAccepted === true ? 'permission' : 'unavailable');
+    }
     catch { if (epoch === generation.current) setState('error'); }
     finally { if (epoch === generation.current) busy.current = false; }
   }
@@ -88,11 +94,12 @@ export function AiSharePermissionPrompt({ onAllow, onCancel, compact = false, is
     finally { if (epoch === generation.current) busy.current = false; }
   }
   return <View style={styles.root}><ScrollView contentContainerStyle={[styles.content, compact && styles.compactContent]}>
-    <Text style={styles.title}>{state === 'unavailable' ? t('Recognition is not available for this account yet') : t('Analyze this post?')}</Text>
+    <Text style={styles.title}>{state === 'unavailable' || state === 'guardian' ? t('Recognition is not available for this account yet') : t('Analyze this post?')}</Text>
     {state === 'loading' || state === 'saving' ? <ActivityIndicator color="#246447" accessibilityLabel={t('Checking permissions')} /> : null}
     {state === 'unavailable' && <Text style={styles.body}>{t('Your saved places remain available. Open Nearr to review eligibility and permissions. This post has not been sent for analysis.')}</Text>}
+    {state === 'guardian' && <Text style={styles.body}>{t('Guardian authorization has not been verified for this account. Your saved places remain available.')}</Text>}
     {state === 'error' && <Text style={styles.body}>{t('We could not verify permissions. Open Nearr and try again. This post has not been sent for analysis.')}</Text>}
-    {state === 'terms' && <><Pressable accessibilityRole="link" onPress={() => void Linking.openURL('https://nearrapp.com/terms')} style={styles.cancelButton}><Text style={styles.cancelText}>{t('Terms of Service')}</Text></Pressable><Pressable accessibilityRole="link" onPress={() => void Linking.openURL('https://andrewmahran7.github.io/nearr-legal/privacy')} style={styles.cancelButton}><Text style={styles.cancelText}>{t('Privacy Policy')}</Text></Pressable><Text style={styles.body}>{t('Review the current Terms of Service and Privacy Policy in Nearr before continuing. Agreeing to Terms is separate from allowing AI analysis.')}</Text><Pressable accessibilityRole="button" onPress={() => void acceptTerms()} style={styles.allowButton}><Text style={styles.allowText}>{t('I agree to the Terms of Service')}</Text></Pressable></>}
+    {state === 'terms' && <><Pressable accessibilityRole="link" onPress={() => void Linking.openURL('https://nearrapp.com/terms')} style={styles.cancelButton}><Text style={styles.cancelText}>{t('Terms of Service')}</Text></Pressable><Pressable accessibilityRole="link" onPress={() => void Linking.openURL('https://andrewmahran7.github.io/nearr-legal/privacy')} style={styles.cancelButton}><Text style={styles.cancelText}>{t('Privacy Policy')}</Text></Pressable><Text style={styles.body}>{t('Review the current Terms of Service and Privacy Policy in Nearr before continuing. Agreeing to Terms is separate from allowing AI analysis.')}</Text><Pressable accessibilityRole="button" onPress={() => void acceptTerms()} style={styles.allowButton}><Text style={styles.allowText}>{t('I agree to the Terms of Service and acknowledge the Privacy Policy.')}</Text></Pressable></>}
     {state === 'permission' && <><Text style={styles.body}>{t(AI_SHARE_PERMISSION_NOTICE)}</Text><Pressable accessibilityRole="button" accessibilityLabel={t('Allow third-party AI analysis of this post')} onPress={() => void allow()} style={styles.allowButton}><Text style={styles.allowText}>{t('Allow AI analysis')}</Text></Pressable></>}
     <Pressable accessibilityRole="button" disabled={state === 'saving'} accessibilityLabel={t('Cancel share without analyzing this post')} onPress={onCancel} style={styles.cancelButton}><Text style={styles.cancelText}>{t('Cancel share')}</Text></Pressable>
   </ScrollView></View>;

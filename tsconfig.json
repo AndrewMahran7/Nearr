@@ -10,5 +10,5 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "services/media-worker"]
+  "exclude": ["node_modules", "services/media-worker", "artifacts/global-release/final-production/backend/containment/edge"]
 }

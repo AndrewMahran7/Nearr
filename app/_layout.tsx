@@ -62,18 +62,18 @@ import {
 } from '@/lib/pushTokens';
 import { logDebug, logInfo } from '@/lib/logger';
 import { hashCreateMapTraceId, traceCreateMapContinue } from '@/lib/createMapContinueTrace';
-import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import {
   checkProximityOnce,
   ensureNotificationPermission,
   getNotificationPermissionState,
   syncProximityWatch,
 } from '@/services/notifications';
-import { acceptLegalTerms, getLegalAcceptanceStatus } from '@/services/profileService';
 import '@/lib/notifications'; // registers background location task
 import '@/lib/geofencing'; // registers geofence task
 import { syncGeofencesForSavedPlaces } from '@/lib/geofencing';
 import { Colors } from '@/constants';
+import { TERMS_PUBLIC_URL } from '@/constants/legal';
+import privacyPolicy from '@/constants/privacyPolicy.json';
 import { ThemeProvider, useTheme } from '@/lib/theme';
 import { AutoSaveUndoToast } from '@/components/AutoSaveUndoToast';
 import { NotificationTapController } from '@/components/NotificationTapController';
@@ -85,6 +85,9 @@ import { isOnboardingV2DevelopmentResetAvailable } from '@/lib/onboardingV2DevRe
 import { setNotificationForegroundPathname } from '@/lib/notificationForegroundPolicy';
 
 logInfo('APP_START', '_layout module loaded');
+// Separate from the retired profile-only gate in constants/legal.ts. The new
+// server-backed gate cannot accept an unapproved legal revision.
+const GLOBAL_TERMS_ACCEPTANCE_REQUIRED = true;
 
 // ---------------------------------------------------------------------------
 // Crash-safe Error Boundary — catches render exceptions that would otherwise
@@ -314,8 +317,9 @@ function AuthGate({
   const [needsNotifications, setNeedsNotifications] = useState(false);
   const [needsLocation, setNeedsLocation] = useState(false);
   const [setupReminderDismissedThisSession, setSetupReminderDismissedThisSession] = useState(false);
-  const [legalAgreementVisible, setLegalAgreementVisible] = useState(false);
+  const legalAgreementVisible = GLOBAL_TERMS_ACCEPTANCE_REQUIRED && ageRequired && ageEligibility.status === 'eligible' && ageEligibility.legalApproved && !ageEligibility.termsAccepted;
   const [acceptingLegal, setAcceptingLegal] = useState(false);
+  const [legalAcceptanceError, setLegalAcceptanceError] = useState(false);
   const previousUserIdRef = useRef<string | null>(null);
   const startupPending = loading || (isOnboardingV2Enabled() && onboardingV2Loading);
   const startupWatchdog = useStartupWatchdog(startupPending);
@@ -345,38 +349,6 @@ function AuthGate({
     previousUserIdRef.current = next;
   }, [session?.user.id]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!session || isDevSession || isAnonymousSession || !LEGAL_ACCEPTANCE_REQUIRED) {
-      setLegalAgreementVisible(false);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    void (async () => {
-      let status: Awaited<ReturnType<typeof getLegalAcceptanceStatus>> = null;
-      try {
-        status = await getLegalAcceptanceStatus(session.user.id);
-      } catch (err) {
-        // Network/RLS error here used to leave the legal modal hidden but
-        // also gated the HowNearr modal indefinitely if the effect deps
-        // shifted. Fail-open: assume accepted so the rest of onboarding
-        // can proceed. Logged so we can spot it in support traces.
-        console.warn('[onboarding] getLegalAcceptanceStatus failed, failing open', err);
-        if (!cancelled) setLegalAgreementVisible(false);
-        return;
-      }
-      if (cancelled) return;
-      setLegalAgreementVisible(!status?.acceptedCurrentVersion);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [session, session?.user.id, isAnonymousSession, isDevSession]);
-
   const refreshSetupReminder = useCallback(async (force = false) => {
     if (!session || isDevSession || isAnonymousSession || !ageAccessApproved) {
       setSetupReminderVisible(false);
@@ -384,7 +356,7 @@ function AuthGate({
       setNeedsLocation(false);
       return;
     }
-    if (LEGAL_ACCEPTANCE_REQUIRED && legalAgreementVisible) return;
+    if (GLOBAL_TERMS_ACCEPTANCE_REQUIRED && legalAgreementVisible) return;
     if (suppressSetupReminder) return;
     if (setupReminderDismissedThisSession && !force) return;
 
@@ -402,11 +374,15 @@ function AuthGate({
   }, [suppressSetupReminder, isAnonymousSession, isDevSession, ageAccessApproved, legalAgreementVisible, session, setupReminderDismissedThisSession]);
 
   async function handleAcceptLegal() {
-    if (!session) return;
+    if (!session || !legalAgreementVisible || acceptingLegal) return;
     setAcceptingLegal(true);
+    setLegalAcceptanceError(false);
     try {
-      await acceptLegalTerms(session.user.id, LEGAL_VERSION);
-      setLegalAgreementVisible(false);
+      const { error } = await supabase.rpc('record_global_terms_and_privacy');
+      if (error) throw error;
+      ageEligibility.retry();
+    } catch {
+      setLegalAcceptanceError(true);
     } finally {
       setAcceptingLegal(false);
     }
@@ -703,11 +679,12 @@ function AuthGate({
       <NotificationTapController authReady={!loading && !!session && !authLinkPending && ageAccessApproved} />
       <AutoSaveUndoToast />
       <LegalAgreementModal
-        visible={LEGAL_ACCEPTANCE_REQUIRED && legalAgreementVisible}
-        onViewTerms={() => router.push('/legal/terms')}
-        onViewPrivacy={() => router.push('/legal/privacy')}
+        visible={GLOBAL_TERMS_ACCEPTANCE_REQUIRED && legalAgreementVisible}
+        onViewTerms={() => { void Linking.openURL(TERMS_PUBLIC_URL).catch(() => setLegalAcceptanceError(true)); }}
+        onViewPrivacy={() => { void Linking.openURL(privacyPolicy.canonicalUrl).catch(() => setLegalAcceptanceError(true)); }}
         onAgree={() => void handleAcceptLegal()}
         agreeing={acceptingLegal}
+        error={legalAcceptanceError}
       />
       <SetupReminderModal
         visible={setupReminderVisible && !suppressSetupReminder && !legalAgreementVisible}

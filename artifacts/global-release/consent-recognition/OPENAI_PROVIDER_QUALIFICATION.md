@@ -1,0 +1,5 @@
+# OpenAI API qualification
+
+OpenAI's [Business Terms](https://openai.com/policies/may-2025-business-terms/) prohibit allowing minors to use the services without parent/guardian consent. The [API under-18 guidance](https://developers.openai.com/api/docs/guides/safety-checks/under-18-api-guidance) requires age-appropriate safeguards and warns about data from children below the applicable digital consent age. Consumer Terms alone do not determine the business API account's permission. An ordinary applicable agreement may suffice; no special enterprise agreement is presumed.
+
+The existing Responses adapter uses bounded inputs and `store:false`, which does not establish zero retention. The authorized organization's applicable agreement, project/model entitlement, data controls, billing limits, actual guardian process and media processor permissions were not verified. The founder previously said they did not know whether such an agreement/process existed. The provider route remains disabled. No live inference was authorized or run.

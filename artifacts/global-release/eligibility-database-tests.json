@@ -1,8 +1,8 @@
 {
-  "testedAt": "2026-10-28T00:42:49.740Z",
+  "testedAt": "2026-10-29T17:59:18.846Z",
   "engine": "PostgreSQL 18.3 on x86_64-windows, compiled by msvc-19.44.35223, 64-bit",
-  "scope": "disposable PostgreSQL, actual three age migrations; synthetic qualification only",
-  "passed": 12,
+  "scope": "disposable PostgreSQL, three age migrations plus atomic legal acceptance; synthetic qualification only",
+  "passed": 13,
   "failed": 0,
   "tests": [
     "new policy is fail-closed with no automatically approved evidence",
@@ -11,6 +11,7 @@
     "legacy adult does not waive regional redeclaration or consent",
     "old under18 declaration may establish teen eligibility but not become adult",
     "role grants and owner RLS prevent forged qualification and permissions",
+    "one explicit action records both current legal revisions without AI permission",
     "terms privacy notice and AI permission are distinct",
     "a qualified adult fixture cannot implicitly authorize a minor",
     "queued work cannot claim after withdrawal and saved records are preserved",
