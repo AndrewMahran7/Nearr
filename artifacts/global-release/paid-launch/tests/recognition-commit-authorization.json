@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-29T21:22:01.774Z",
-  "passed": 18,
+  "testedAt": "2026-10-29T21:29:58.649Z",
+  "passed": 24,
   "failed": 0,
   "scope": "Actual PostgreSQL authorization migration + real consent policy + delegate boundary probes; not a complete Places/save integration",
   "tests": [
@@ -21,6 +21,12 @@
     "withdrawal blocks later automated identity, source, note and result changes",
     "owner-only transfers, personal fields, source photos and notification bookkeeping survive withdrawal",
     "service-role save holds consent until its own transaction commits",
-    "withdrawal-first service-role write waits, rechecks, and changes no saved data"
+    "withdrawal-first service-role write waits, rechecks, and changes no saved data",
+    "legacy insert-missing: save-first blocks administrative revocation until save commit without deadlock",
+    "legacy insert-missing: revocation-first rejects waiting save before any write",
+    "legacy upsert-missing: save-first blocks administrative revocation until save commit without deadlock",
+    "legacy upsert-missing: revocation-first rejects waiting save before any write",
+    "legacy upsert-existing: save-first blocks administrative revocation until save commit without deadlock",
+    "legacy upsert-existing: revocation-first rejects waiting save before any write"
   ]
 }

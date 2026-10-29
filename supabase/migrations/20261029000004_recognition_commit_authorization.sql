@@ -19,6 +19,23 @@ begin
 end $$;
 revoke all on function public.require_current_recognition_commit(uuid) from public,anon,authenticated,service_role;
 
+-- A global account can legitimately have no legacy eligibility row. Locking
+-- that missing row cannot serialize a later administrative revoked INSERT.
+-- Use the existing global account as the parent lock, in the same parent-then-
+-- legacy order as require_current_recognition_commit. BEFORE INSERT also runs
+-- before ON CONFLICT locks/updates its legacy target. Existing-row UPDATEs are
+-- already serialized by the guard's legacy row lock and must not invert order
+-- by acquiring this parent lock after first locking the legacy row.
+create function public.lock_recognition_parent_for_legacy_insert()
+returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
+begin
+  perform 1 from public.account_eligibility_v2 where user_id=new.user_id for update;
+  return new;
+end $$;
+revoke all on function public.lock_recognition_parent_for_legacy_insert() from public,anon,authenticated,service_role;
+create trigger legacy_eligibility_recognition_parent before insert on public.account_age_eligibility
+  for each row execute function public.lock_recognition_parent_for_legacy_insert();
+
 alter function public.auto_complete_named_lead(uuid,text,uuid,text,text,text,numeric,numeric,text,jsonb,numeric,text)
   rename to auto_complete_named_lead_pre_commit_guard;
 revoke all on function public.auto_complete_named_lead_pre_commit_guard(uuid,text,uuid,text,text,text,numeric,numeric,text,jsonb,numeric,text)
