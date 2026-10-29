@@ -94,11 +94,15 @@ serve(async req => {
       if (typeof hint?.transactionId === 'string' && PAID_TOKEN_PRODUCTS.some(p => p.productId === hint.productId)
           && config.token_catalog_verified === true && config.revenuecat_project_id
           && PAID_TOKEN_PRODUCTS.every(p => typeof config.revenuecat_token_product_ids?.[p.productId] === 'string')) {
+        // RevenueCat v1 keys are not valid v2 credentials. Recovery uses its
+        // own server-only scoped key; never fall back to the subscriber key.
+        const recoverySecret = Deno.env.get('REVENUECAT_V2_SECRET_API_KEY') ?? '';
+        if (!recoverySecret) return json({ ok: false, error: 'purchase_verification_pending' }, 503);
         const recovery = await fetchPaidPurchaseRecovery({
           projectId: config.revenuecat_project_id, appId: config.revenuecat_app_id,
           appUserId: customer.app_user_id, environment: config.environment,
           productIds: config.revenuecat_token_product_ids,
-        }, hint.transactionId, secret);
+        }, hint.transactionId, recoverySecret);
         const recovered = await admin.rpc('apply_nearr_paid_recovery', { p_user_id: auth.user.id, p_snapshot: recovery });
         if (recovered.error) return json({ ok: false, error: recovered.error.message?.includes('paid_recovery_refund_reconciliation_required')
           ? 'purchase_refund_reconciliation_required' : 'purchase_verification_pending' }, 503);

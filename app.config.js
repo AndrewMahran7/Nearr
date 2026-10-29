@@ -28,6 +28,13 @@ const GOOGLE_PLACES_REST_KEY_SOURCE = (process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY
   ? 'maps_fallback'
   : 'missing';
 
+// Only the public Apple SDK key belongs in Expo extra (embedded in the app).
+// Server API keys and webhook authorization must never be fallbacks here.
+const REVENUECAT_IOS_API_KEY = (process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY || '').trim();
+if (REVENUECAT_IOS_API_KEY && !/^appl_[A-Za-z0-9]+$/.test(REVENUECAT_IOS_API_KEY)) {
+  throw new Error('[REVENUECAT_CONFIG] EXPO_PUBLIC_REVENUECAT_IOS_API_KEY must be a public Apple SDK key (appl_). Value omitted.');
+}
+
 // NOTE(ios-share-extension): Re-enabled in app.json after the first
 // TestFlight build shipped as a single-target app. Before submitting a
 // build that includes the extension, make sure:
@@ -213,6 +220,7 @@ module.exports = ({ config }) => {
       // code paths that don't read process.env directly.
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+      revenueCatIosApiKey: REVENUECAT_IOS_API_KEY,
       googlePlacesKey: GOOGLE_PLACES_REST_KEY,
       // Lets the device prove whether the slot contains the dedicated REST key
       // or the native Maps compatibility fallback without exposing the value.
