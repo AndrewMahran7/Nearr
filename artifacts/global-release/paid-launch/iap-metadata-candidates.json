@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 1,
+  "preparedAt": "2026-10-29",
+  "status": "DRAFT_NOT_UPLOADED_NOT_NATIVE_REVIEWED",
+  "readyToUpload": false,
+  "nativeSpeakerReviewed": false,
+  "appStoreReadbackVerified": false,
+  "subscriptionGroup": {
+    "referenceName": "Nearr Plus Unlimited",
+    "appNameDisplayOption": "USE_APP_NAME",
+    "groupPlacementVerified": false,
+    "note": "Proposed group label only. Read existing Pro groups/obligations before creating or choosing a group; do not create a parallel subscription charge by assumption."
+  },
+  "products": [
+    {
+      "productId": "com.nearr.plus.unlimited.monthly.v1",
+      "referenceName": "Nearr Plus Unlimited Monthly v1",
+      "type": "AUTO_RENEWABLE_SUBSCRIPTION",
+      "duration": "ONE_MONTH",
+      "trial": false,
+      "annual": false,
+      "benefit": "UNLIMITED_SUCCESSFUL_FINDS_WHILE_ACTIVE"
+    },
+    {
+      "productId": "com.nearr.tokens.20.v2",
+      "referenceName": "Nearr Starter 20 v2",
+      "type": "CONSUMABLE",
+      "finds": 20,
+      "expires": false,
+      "reuseRequiresExistingProductCompatibility": true
+    },
+    {
+      "productId": "com.nearr.tokens.50.v2",
+      "referenceName": "Nearr Explorer 50 v2",
+      "type": "CONSUMABLE",
+      "finds": 50,
+      "expires": false,
+      "reuseRequiresExistingProductCompatibility": true
+    },
+    {
+      "productId": "com.nearr.tokens.200.v2",
+      "referenceName": "Nearr Adventurer 200 v2",
+      "type": "CONSUMABLE",
+      "finds": 200,
+      "expires": false,
+      "reuseRequiresExistingProductCompatibility": true
+    }
+  ],
+  "fieldLimits": {
+    "productDisplayName": {
+      "minimumCharacters": 2,
+      "maximumCharacters": 30
+    },
+    "productDescription": {
+      "minimumCharacters": 1,
+      "maximumCharacters": 45
+    },
+    "productReferenceName": {
+      "maximumCharacters": 64
+    },
+    "productId": {
+      "maximumCharacters": 100
+    },
+    "subscriptionGroupDisplayName": {
+      "officialNumericMaximumVerified": null,
+      "localConservativeBudget": 30,
+      "liveFieldValidationPending": true
+    }
+  },
+  "sources": [
+    {
+      "url": "https://developer.apple.com/help/app-store-connect/reference/in-app-purchases-and-subscriptions/in-app-purchase-information",
+      "checkedAt": "2026-10-29",
+      "supports": "Product display name 2–30 characters; description <=45; reference name <=64; product ID <=100 and immutable."
+    },
+    {
+      "url": "https://developer.apple.com/help/app-store-connect/reference/in-app-purchases-and-subscriptions/auto-renewable-subscription-information/",
+      "checkedAt": "2026-10-29",
+      "supports": "Subscription group and subscription localization fields, one-month duration and group subscription behavior. This page did not state a numeric group-display-name limit; no 75-character limit is asserted."
+    }
+  ],
+  "notes": [
+    "Model-authored candidate copy; native-speaker and signed-iOS review remain outstanding. Nothing was uploaded or saved remotely.",
+    "Pack labels reuse locales/paidMonetization.ts. Short descriptions are adapted to Apple's character limits and preserve exact quantities/non-expiry.",
+    "The same ASCII brand label Nearr Plus is intentional for subscription and group in every locale. No control characters, markup, emoji or decorative symbols in those names.",
+    "These descriptions express the intended paid-launch benefit. They must not be published while recognition, catalog, eligibility, provider and purchase qualification gates remain closed.",
+    "No prices are embedded. StoreKit supplies current localized prices; target USD prices and unresolved Apple price points are documented separately.",
+    "Descriptions do not promise recognition accuracy. Product duration is configured as one month; the app and native checkout disclose automatic renewal, exact price and cancellation.",
+    "Group reference/display label is a proposal, not evidence that a group exists or that legacy Pro obligations are resolved."
+  ],
+  "locales": {
+    "en-US": {
+      "subscriptionGroupDisplayName": "Nearr Plus",
+      "products": {
+        "com.nearr.plus.unlimited.monthly.v1": {
+          "displayName": "Nearr Plus",
+          "description": "Unlimited successful finds, billed monthly."
+        },
+        "com.nearr.tokens.20.v2": {
+          "displayName": "Starter 20",
+          "description": "20 successful finds. No expiry."
+        },
+        "com.nearr.tokens.50.v2": {
+          "displayName": "Explorer 50",
+          "description": "50 successful finds. No expiry."
+        },
+        "com.nearr.tokens.200.v2": {
+          "displayName": "Adventurer 200",
+          "description": "200 successful finds. No expiry."
+        }
+      }
+    },
+    "es-MX": {
+      "subscriptionGroupDisplayName": "Nearr Plus",
+      "products": {
+        "com.nearr.plus.unlimited.monthly.v1": {
+          "displayName": "Nearr Plus",
+          "description": "Búsquedas exitosas ilimitadas cada mes."
+        },
+        "com.nearr.tokens.20.v2": {
+          "displayName": "Inicial 20",
+          "description": "20 búsquedas exitosas. No caducan."
+        },
+        "com.nearr.tokens.50.v2": {
+          "displayName": "Explorador 50",
+          "description": "50 búsquedas exitosas. No caducan."
+        },
+        "com.nearr.tokens.200.v2": {
+          "displayName": "Aventurero 200",
+          "description": "200 búsquedas exitosas. No caducan."
+        }
+      }
+    },
+    "es-ES": {
+      "subscriptionGroupDisplayName": "Nearr Plus",
+      "products": {
+        "com.nearr.plus.unlimited.monthly.v1": {
+          "displayName": "Nearr Plus",
+          "description": "Búsquedas exitosas ilimitadas cada mes."
+        },
+        "com.nearr.tokens.20.v2": {
+          "displayName": "Inicial 20",
+          "description": "20 búsquedas exitosas. No caducan."
+        },
+        "com.nearr.tokens.50.v2": {
+          "displayName": "Explorador 50",
+          "description": "50 búsquedas exitosas. No caducan."
+        },
+        "com.nearr.tokens.200.v2": {
+          "displayName": "Aventurero 200",
+          "description": "200 búsquedas exitosas. No caducan."
+        }
+      }
+    },
+    "pt-BR": {
+      "subscriptionGroupDisplayName": "Nearr Plus",
+      "products": {
+        "com.nearr.plus.unlimited.monthly.v1": {
+          "displayName": "Nearr Plus",
+          "description": "Buscas bem-sucedidas ilimitadas por mês."
+        },
+        "com.nearr.tokens.20.v2": {
+          "displayName": "Inicial 20",
+          "description": "20 buscas bem-sucedidas. Não expiram."
+        },
+        "com.nearr.tokens.50.v2": {
+          "displayName": "Explorador 50",
+          "description": "50 buscas bem-sucedidas. Não expiram."
+        },
+        "com.nearr.tokens.200.v2": {
+          "displayName": "Aventureiro 200",
+          "description": "200 buscas bem-sucedidas. Não expiram."
+        }
+      }
+    },
+    "fr-FR": {
+      "subscriptionGroupDisplayName": "Nearr Plus",
+      "products": {
+        "com.nearr.plus.unlimited.monthly.v1": {
+          "displayName": "Nearr Plus",
+          "description": "Recherches réussies illimitées, au mois."
+        },
+        "com.nearr.tokens.20.v2": {
+          "displayName": "Découverte 20",
+          "description": "20 recherches réussies, sans expiration."
+        },
+        "com.nearr.tokens.50.v2": {
+          "displayName": "Explorateur 50",
+          "description": "50 recherches réussies, sans expiration."
+        },
+        "com.nearr.tokens.200.v2": {
+          "displayName": "Aventurier 200",
+          "description": "200 recherches réussies, sans expiration."
+        }
+      }
+    },
+    "de-DE": {
+      "subscriptionGroupDisplayName": "Nearr Plus",
+      "products": {
+        "com.nearr.plus.unlimited.monthly.v1": {
+          "displayName": "Nearr Plus",
+          "description": "Unbegrenzte erfolgreiche Suchen. Monatsabo."
+        },
+        "com.nearr.tokens.20.v2": {
+          "displayName": "Starter 20",
+          "description": "20 erfolgreiche Suchen ohne Ablaufdatum"
+        },
+        "com.nearr.tokens.50.v2": {
+          "displayName": "Entdecker 50",
+          "description": "50 erfolgreiche Suchen ohne Ablaufdatum"
+        },
+        "com.nearr.tokens.200.v2": {
+          "displayName": "Abenteurer 200",
+          "description": "200 erfolgreiche Suchen ohne Ablaufdatum"
+        }
+      }
+    },
+    "it": {
+      "subscriptionGroupDisplayName": "Nearr Plus",
+      "products": {
+        "com.nearr.plus.unlimited.monthly.v1": {
+          "displayName": "Nearr Plus",
+          "description": "Ricerche riuscite illimitate. Piano mensile."
+        },
+        "com.nearr.tokens.20.v2": {
+          "displayName": "Base 20",
+          "description": "20 ricerche riuscite, senza scadenza."
+        },
+        "com.nearr.tokens.50.v2": {
+          "displayName": "Esploratore 50",
+          "description": "50 ricerche riuscite, senza scadenza."
+        },
+        "com.nearr.tokens.200.v2": {
+          "displayName": "Avventuriero 200",
+          "description": "200 ricerche riuscite, senza scadenza."
+        }
+      }
+    },
+    "ja": {
+      "subscriptionGroupDisplayName": "Nearr Plus",
+      "products": {
+        "com.nearr.plus.unlimited.monthly.v1": {
+          "displayName": "Nearr Plus",
+          "description": "成功した場所検索は無制限。月額プラン。"
+        },
+        "com.nearr.tokens.20.v2": {
+          "displayName": "スターター 20",
+          "description": "場所検索の成功20回分。有効期限なし。"
+        },
+        "com.nearr.tokens.50.v2": {
+          "displayName": "エクスプローラー 50",
+          "description": "場所検索の成功50回分。有効期限なし。"
+        },
+        "com.nearr.tokens.200.v2": {
+          "displayName": "アドベンチャー 200",
+          "description": "場所検索の成功200回分。有効期限なし。"
+        }
+      }
+    },
+    "ko": {
+      "subscriptionGroupDisplayName": "Nearr Plus",
+      "products": {
+        "com.nearr.plus.unlimited.monthly.v1": {
+          "displayName": "Nearr Plus",
+          "description": "성공한 장소 찾기 무제한. 월간 구독."
+        },
+        "com.nearr.tokens.20.v2": {
+          "displayName": "스타터 20",
+          "description": "성공한 장소 찾기 20회. 유효기간 없음."
+        },
+        "com.nearr.tokens.50.v2": {
+          "displayName": "탐험가 50",
+          "description": "성공한 장소 찾기 50회. 유효기간 없음."
+        },
+        "com.nearr.tokens.200.v2": {
+          "displayName": "모험가 200",
+          "description": "성공한 장소 찾기 200회. 유효기간 없음."
+        }
+      }
+    },
+    "zh-Hans": {
+      "subscriptionGroupDisplayName": "Nearr Plus",
+      "products": {
+        "com.nearr.plus.unlimited.monthly.v1": {
+          "displayName": "Nearr Plus",
+          "description": "成功地点查找次数不限，按月订阅。"
+        },
+        "com.nearr.tokens.20.v2": {
+          "displayName": "入门 20",
+          "description": "20 次成功地点查找，无有效期。"
+        },
+        "com.nearr.tokens.50.v2": {
+          "displayName": "探索 50",
+          "description": "50 次成功地点查找，无有效期。"
+        },
+        "com.nearr.tokens.200.v2": {
+          "displayName": "冒险 200",
+          "description": "200 次成功地点查找，无有效期。"
+        }
+      }
+    }
+  }
+}

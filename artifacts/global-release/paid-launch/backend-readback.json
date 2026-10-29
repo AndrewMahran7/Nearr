@@ -1,0 +1,834 @@
+{
+  "capturedAt": "2026-10-29T20:22:25.163Z",
+  "mutations": [],
+  "environments": {
+    "Development": {
+      "ref": "qnfxnmvxpjzfydgudtvs",
+      "migrations": [
+        {
+          "name": "init_schema",
+          "version": "20260426000001"
+        },
+        {
+          "name": "analytics_events",
+          "version": "20260427000001"
+        },
+        {
+          "name": "notification_count",
+          "version": "20260501000001"
+        },
+        {
+          "name": "legal_acceptance",
+          "version": "20260502000001"
+        },
+        {
+          "name": "opportunity_archive",
+          "version": "20260503000001"
+        },
+        {
+          "name": "share_agent_runs",
+          "version": "20260504000001"
+        },
+        {
+          "name": "feedback",
+          "version": "20260706000001"
+        },
+        {
+          "name": "share_extraction_failures",
+          "version": "20260708000001"
+        },
+        {
+          "name": "share_jobs",
+          "version": "20260731000001"
+        },
+        {
+          "name": "user_push_tokens",
+          "version": "20260731000002"
+        },
+        {
+          "name": "share_jobs_worker",
+          "version": "20260731000003"
+        },
+        {
+          "name": "share_jobs_notifications",
+          "version": "20260731000004"
+        },
+        {
+          "name": "lock_worker_rpc_grants",
+          "version": "20260731000005"
+        },
+        {
+          "name": "share_jobs_worker_secret",
+          "version": "20260731000006"
+        },
+        {
+          "name": "share_media_tasks",
+          "version": "20260801000001"
+        },
+        {
+          "name": "share_media_worker",
+          "version": "20260801000002"
+        },
+        {
+          "name": "share_media_task_recovery",
+          "version": "20260801000003"
+        },
+        {
+          "name": "explicit_privileges",
+          "version": "20260801000004"
+        },
+        {
+          "name": "aux_privileges",
+          "version": "20260801000005"
+        },
+        {
+          "name": "share_job_place_results",
+          "version": "20260803000001"
+        },
+        {
+          "name": "place_categories_and_undo",
+          "version": "20260803000002"
+        },
+        {
+          "name": "saved_place_ai_notes",
+          "version": "20260812000001"
+        },
+        {
+          "name": "correct_saved_place_provider",
+          "version": "20260812000002"
+        },
+        {
+          "name": "post_save_media_enrichment",
+          "version": "20260813000001"
+        },
+        {
+          "name": "place_category_taxonomy_v3",
+          "version": "20260813000002"
+        },
+        {
+          "name": "saved_place_source_enrichment",
+          "version": "20260814000001"
+        },
+        {
+          "name": "saved_place_source_type_platforms",
+          "version": "20260815000001"
+        },
+        {
+          "name": "anonymous_onboarding_v2",
+          "version": "20260819000002"
+        },
+        {
+          "name": "share_job_failed_notifications",
+          "version": "20260820000001"
+        },
+        {
+          "name": "share_job_failure_taxonomy",
+          "version": "20260820000002"
+        },
+        {
+          "name": "video_ai_note_guarantee",
+          "version": "20260821000001"
+        },
+        {
+          "name": "share_job_failed_notifications",
+          "version": "20260821000002"
+        },
+        {
+          "name": "share_job_failure_taxonomy",
+          "version": "20260821000003"
+        },
+        {
+          "name": "anonymous_onboarding_v2",
+          "version": "20260822000001"
+        },
+        {
+          "name": "vayrin_recognition_cache_and_place_sources",
+          "version": "20260822000002"
+        },
+        {
+          "name": "correct_saved_place_multi_source",
+          "version": "20260822000003"
+        },
+        {
+          "name": "developer_dashboard",
+          "version": "20260824000001"
+        },
+        {
+          "name": "vayrin_quick_check_evidence_frames",
+          "version": "20260824225520"
+        },
+        {
+          "name": "empty_queue_durable",
+          "version": "20260824233000"
+        },
+        {
+          "name": "user_scoped_recognition_rejections",
+          "version": "20260825000001"
+        },
+        {
+          "name": "place_find_monetization",
+          "version": "20260903000001"
+        },
+        {
+          "name": "qualify_place_find_balance_columns",
+          "version": "20260903000002"
+        },
+        {
+          "name": "preserve_place_find_ledger_on_account_deletion",
+          "version": "20260903000003"
+        },
+        {
+          "name": "dev_token_pack_quantities",
+          "version": "20260903000004"
+        },
+        {
+          "name": "premium_request_monetization",
+          "version": "20260904000001"
+        },
+        {
+          "name": "fix_premium_request_available_uses",
+          "version": "20260905000001"
+        },
+        {
+          "name": "right_size_premium_token_packs",
+          "version": "20260905000002"
+        },
+        {
+          "name": "public_place_sharing",
+          "version": "20260905000003"
+        },
+        {
+          "name": "public_place_ref_pgcrypto_schema",
+          "version": "20260905000004"
+        },
+        {
+          "name": "shared_place_source_context",
+          "version": "20260905000005"
+        },
+        {
+          "name": "fix_shared_source_url_verifier",
+          "version": "20260905000006"
+        },
+        {
+          "name": "qualify_shared_save_source_lookup",
+          "version": "20260905000007"
+        },
+        {
+          "name": "qualify_shared_source_dedupe",
+          "version": "20260905000008"
+        },
+        {
+          "name": "qualify_corrected_place_source_merge",
+          "version": "20260905000009"
+        },
+        {
+          "name": "qualify_corrected_place_source_reads",
+          "version": "20260905000010"
+        },
+        {
+          "name": "automatic_completion_soft_alternatives",
+          "version": "20260906000001"
+        },
+        {
+          "name": "fix_soft_alternative_promotion_ambiguity",
+          "version": "20260906000002"
+        },
+        {
+          "name": "place_video_gallery_v1",
+          "version": "20260906000003"
+        },
+        {
+          "name": "recognition_cache_v2",
+          "version": "20260906000004"
+        },
+        {
+          "name": "recognition_cache_v2_saved_category",
+          "version": "20260906000005"
+        },
+        {
+          "name": "token_monetization_v1",
+          "version": "20260906000006"
+        },
+        {
+          "name": "recognition_revalidation_failure_quarantine_repair",
+          "version": "20260906000007"
+        },
+        {
+          "name": "named_lead_automatic_completion",
+          "version": "20260907000001"
+        },
+        {
+          "name": "fix_named_lead_saved_place_ambiguity",
+          "version": "20260907000002"
+        },
+        {
+          "name": "fix_named_lead_job_pointer_ambiguity",
+          "version": "20260907000003"
+        },
+        {
+          "name": "dev_qualification_fresh_recognition",
+          "version": "20260908000001"
+        },
+        {
+          "name": "canonical_development_recognition_baseline",
+          "version": "20260909000001"
+        },
+        {
+          "name": "curated_tutorial_fixtures_v1",
+          "version": "20260909000002"
+        },
+        {
+          "name": "token_monetization_v1",
+          "version": "20260910000001"
+        },
+        {
+          "name": "nearr_monetization_experiment_v2",
+          "version": "20260910000002"
+        },
+        {
+          "name": "nearr_monetization_dev_revenuecat_binding",
+          "version": "20260910000003"
+        },
+        {
+          "name": "nearr_pro_event_column_qualification",
+          "version": "20260910000004"
+        },
+        {
+          "name": "fix_create_share_job_status_ambiguity",
+          "version": "20260910000005"
+        },
+        {
+          "name": "onboarding_practice_entitlement",
+          "version": "20260910000006"
+        },
+        {
+          "name": "transfer_onboarding_practice_ownership",
+          "version": "20260910000007"
+        },
+        {
+          "name": "onboarding_qa_non_monetized_runtime",
+          "version": "20260910000008"
+        },
+        {
+          "name": "recognition_geography_state_consistency",
+          "version": "20260914000001"
+        },
+        {
+          "name": "recognition_entity_role_latency_state",
+          "version": "20260914000002"
+        },
+        {
+          "name": "profile_provider_names",
+          "version": "20260925000001"
+        },
+        {
+          "name": "onboarding_real_saved_place_transfer",
+          "version": "20260928000001"
+        },
+        {
+          "name": "onboarding_transfer_owner_order",
+          "version": "20261009000001"
+        },
+        {
+          "name": "onboarding_transfer_grace_recovery",
+          "version": "20261015000001"
+        },
+        {
+          "name": "adult_age_eligibility",
+          "version": "20261018000001"
+        },
+        {
+          "name": "adult_dispatch_transition_guard",
+          "version": "20261018000002"
+        },
+        {
+          "name": "global_eligibility_and_consent",
+          "version": "20261021000001"
+        },
+        {
+          "name": "nearr_plus_verified_entitlements",
+          "version": "20261021000002"
+        },
+        {
+          "name": "global_share_ingress",
+          "version": "20261021000003"
+        },
+        {
+          "name": "account_ui_locale",
+          "version": "20261021000004"
+        },
+        {
+          "name": "global_claim_eligibility",
+          "version": "20261021000005"
+        }
+      ],
+      "missingLocal": [
+        "20261028000001_nearr_free_only_release.sql",
+        "20261029000001_atomic_terms_privacy_acceptance.sql",
+        "20261029000002_revision_bound_legal_acceptance.sql"
+      ],
+      "remoteOnly": [],
+      "edge": [
+        {
+          "name": "create-share-job",
+          "version": 75,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "delete-account",
+          "version": 58,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "process-share-jobs",
+          "version": 144,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "process-share-link",
+          "version": 88,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "e2e-place-fixture",
+          "version": 53,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "delete-share-job",
+          "version": 52,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "monetization",
+          "version": 44,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "public-place",
+          "version": 12,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "get-place-videos",
+          "version": 10,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "revenuecat-webhook",
+          "version": 9,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "get-onboarding-tutorial",
+          "version": 11,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "reset-onboarding-qa",
+          "version": 1,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "plus-api",
+          "version": 1,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "revenuecat-plus-webhook",
+          "version": 1,
+          "status": "ACTIVE"
+        }
+      ]
+    },
+    "Production": {
+      "ref": "rlqvxdwtetxsqxhqztkw",
+      "migrations": [
+        {
+          "name": "init_schema",
+          "version": "20260426000001"
+        },
+        {
+          "name": "analytics_events",
+          "version": "20260427000001"
+        },
+        {
+          "name": "notification_count",
+          "version": "20260501000001"
+        },
+        {
+          "name": "legal_acceptance",
+          "version": "20260502000001"
+        },
+        {
+          "name": "opportunity_archive",
+          "version": "20260503000001"
+        },
+        {
+          "name": "share_agent_runs",
+          "version": "20260504000001"
+        },
+        {
+          "name": "feedback",
+          "version": "20260706000001"
+        },
+        {
+          "name": "share_extraction_failures",
+          "version": "20260708000001"
+        },
+        {
+          "name": "share_jobs",
+          "version": "20260731000001"
+        },
+        {
+          "name": "user_push_tokens",
+          "version": "20260731000002"
+        },
+        {
+          "name": "share_jobs_worker",
+          "version": "20260731000003"
+        },
+        {
+          "name": "share_jobs_notifications",
+          "version": "20260731000004"
+        },
+        {
+          "name": "lock_worker_rpc_grants",
+          "version": "20260731000005"
+        },
+        {
+          "name": "share_jobs_worker_secret",
+          "version": "20260731000006"
+        },
+        {
+          "name": "share_media_tasks",
+          "version": "20260801000001"
+        },
+        {
+          "name": "share_media_worker",
+          "version": "20260801000002"
+        },
+        {
+          "name": "share_media_task_recovery",
+          "version": "20260801000003"
+        },
+        {
+          "name": "explicit_privileges",
+          "version": "20260801000004"
+        },
+        {
+          "name": "aux_privileges",
+          "version": "20260801000005"
+        },
+        {
+          "name": "share_job_place_results",
+          "version": "20260803000001"
+        },
+        {
+          "name": "place_categories_and_undo",
+          "version": "20260803000002"
+        },
+        {
+          "name": "saved_place_ai_notes",
+          "version": "20260812000001"
+        },
+        {
+          "name": "correct_saved_place_provider",
+          "version": "20260812000002"
+        },
+        {
+          "name": "post_save_media_enrichment",
+          "version": "20260813000001"
+        },
+        {
+          "name": "place_category_taxonomy_v3",
+          "version": "20260813000002"
+        },
+        {
+          "name": "saved_place_source_enrichment",
+          "version": "20260814000001"
+        },
+        {
+          "name": "saved_place_source_type_platforms",
+          "version": "20260815000001"
+        },
+        {
+          "name": "dev_history_compat",
+          "version": "20260819000002"
+        },
+        {
+          "name": "dev_history_compat",
+          "version": "20260820000001"
+        },
+        {
+          "name": "dev_history_compat",
+          "version": "20260820000002"
+        },
+        {
+          "name": "video_ai_note_guarantee",
+          "version": "20260821000001"
+        },
+        {
+          "name": "share_job_failed_notifications",
+          "version": "20260821000002"
+        },
+        {
+          "name": "share_job_failure_taxonomy",
+          "version": "20260821000003"
+        },
+        {
+          "name": "anonymous_onboarding_v2",
+          "version": "20260822000001"
+        },
+        {
+          "name": "vayrin_recognition_cache_and_place_sources",
+          "version": "20260822000002"
+        },
+        {
+          "name": "correct_saved_place_multi_source",
+          "version": "20260822000003"
+        },
+        {
+          "name": "dev_history_compat",
+          "version": "20260824000001"
+        },
+        {
+          "name": "vayrin_quick_check_evidence_frames",
+          "version": "20260824225520"
+        },
+        {
+          "name": "empty_queue_durable",
+          "version": "20260824233000"
+        },
+        {
+          "name": "user_scoped_recognition_rejections",
+          "version": "20260825000001"
+        },
+        {
+          "name": "place_find_monetization",
+          "version": "20260903000001"
+        },
+        {
+          "name": "qualify_place_find_balance_columns",
+          "version": "20260903000002"
+        },
+        {
+          "name": "preserve_place_find_ledger_on_account_deletion",
+          "version": "20260903000003"
+        },
+        {
+          "name": "dev_token_pack_quantities",
+          "version": "20260903000004"
+        },
+        {
+          "name": "premium_request_monetization",
+          "version": "20260904000001"
+        },
+        {
+          "name": "fix_premium_request_available_uses",
+          "version": "20260905000001"
+        },
+        {
+          "name": "dev_history_compat",
+          "version": "20260905000002"
+        },
+        {
+          "name": "public_place_sharing",
+          "version": "20260905000003"
+        },
+        {
+          "name": "public_place_ref_pgcrypto_schema",
+          "version": "20260905000004"
+        },
+        {
+          "name": "shared_place_source_context",
+          "version": "20260905000005"
+        },
+        {
+          "name": "fix_shared_source_url_verifier",
+          "version": "20260905000006"
+        },
+        {
+          "name": "qualify_shared_save_source_lookup",
+          "version": "20260905000007"
+        },
+        {
+          "name": "qualify_shared_source_dedupe",
+          "version": "20260905000008"
+        },
+        {
+          "name": "qualify_corrected_place_source_merge",
+          "version": "20260905000009"
+        },
+        {
+          "name": "qualify_corrected_place_source_reads",
+          "version": "20260905000010"
+        },
+        {
+          "name": "automatic_completion_soft_alternatives",
+          "version": "20260906000001"
+        },
+        {
+          "name": "fix_soft_alternative_promotion_ambiguity",
+          "version": "20260906000002"
+        },
+        {
+          "name": "place_video_gallery_v1",
+          "version": "20260906000003"
+        },
+        {
+          "name": "recognition_cache_v2",
+          "version": "20260906000004"
+        },
+        {
+          "name": "recognition_cache_v2_saved_category",
+          "version": "20260906000005"
+        },
+        {
+          "name": "recognition_revalidation_failure_quarantine",
+          "version": "20260906000006"
+        },
+        {
+          "name": "recognition_revalidation_failure_quarantine_repair",
+          "version": "20260906000007"
+        },
+        {
+          "name": "named_lead_automatic_completion",
+          "version": "20260907000001"
+        },
+        {
+          "name": "fix_named_lead_saved_place_ambiguity",
+          "version": "20260907000002"
+        },
+        {
+          "name": "fix_named_lead_job_pointer_ambiguity",
+          "version": "20260907000003"
+        },
+        {
+          "name": "nearr_15_provider_names",
+          "version": "20261008000001"
+        },
+        {
+          "name": "saved_place_source_owner_invariant",
+          "version": "20261009000001"
+        },
+        {
+          "name": "safe_onboarding_account_transfer_v2",
+          "version": "20261009000002"
+        },
+        {
+          "name": "legacy_transfer_source_preservation",
+          "version": "20261009000003"
+        },
+        {
+          "name": "converted_source_write_guard",
+          "version": "20261009000004"
+        },
+        {
+          "name": "converted_anonymous_save_write_guard",
+          "version": "20261009000005"
+        },
+        {
+          "name": "share_job_notification_at_most_once",
+          "version": "20261009000006"
+        }
+      ],
+      "missingLocal": [
+        "20260908000001_development_history_marker.sql",
+        "20260909000001_canonical_development_recognition_baseline.sql",
+        "20260909000002_curated_tutorial_fixtures_v1.sql",
+        "20260910000001_token_monetization_v1.sql",
+        "20260910000002_nearr_monetization_experiment_v2.sql",
+        "20260910000003_nearr_monetization_dev_revenuecat_binding.sql",
+        "20260910000004_nearr_pro_event_column_qualification.sql",
+        "20260910000005_fix_create_share_job_status_ambiguity.sql",
+        "20260910000006_onboarding_practice_entitlement.sql",
+        "20260910000007_transfer_onboarding_practice_ownership.sql",
+        "20260910000008_onboarding_qa_non_monetized_runtime.sql",
+        "20260914000001_recognition_geography_state_consistency.sql",
+        "20260914000002_recognition_entity_role_latency_state.sql",
+        "20260925000001_profile_provider_names.sql",
+        "20260928000001_onboarding_real_saved_place_transfer.sql",
+        "20261015000001_onboarding_transfer_grace_recovery.sql",
+        "20261018000001_adult_age_eligibility.sql",
+        "20261018000002_adult_dispatch_transition_guard.sql",
+        "20261021000001_global_eligibility_and_consent.sql",
+        "20261021000002_nearr_plus_verified_entitlements.sql",
+        "20261021000003_global_share_ingress.sql",
+        "20261021000004_account_ui_locale.sql",
+        "20261021000005_global_claim_eligibility.sql",
+        "20261028000001_nearr_free_only_release.sql",
+        "20261029000001_atomic_terms_privacy_acceptance.sql",
+        "20261029000002_revision_bound_legal_acceptance.sql"
+      ],
+      "remoteOnly": [
+        {
+          "name": "nearr_15_provider_names",
+          "version": "20261008000001"
+        },
+        {
+          "name": "safe_onboarding_account_transfer_v2",
+          "version": "20261009000002"
+        },
+        {
+          "name": "legacy_transfer_source_preservation",
+          "version": "20261009000003"
+        },
+        {
+          "name": "converted_source_write_guard",
+          "version": "20261009000004"
+        },
+        {
+          "name": "converted_anonymous_save_write_guard",
+          "version": "20261009000005"
+        },
+        {
+          "name": "share_job_notification_at_most_once",
+          "version": "20261009000006"
+        }
+      ],
+      "edge": [
+        {
+          "name": "process-share-link",
+          "version": 153,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "delete-account",
+          "version": 42,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "create-share-job",
+          "version": 45,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "process-share-jobs",
+          "version": 124,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "delete-share-job",
+          "version": 18,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "monetization",
+          "version": 19,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "public-place",
+          "version": 16,
+          "status": "ACTIVE"
+        },
+        {
+          "name": "get-place-videos",
+          "version": 16,
+          "status": "ACTIVE"
+        }
+      ]
+    }
+  }
+}

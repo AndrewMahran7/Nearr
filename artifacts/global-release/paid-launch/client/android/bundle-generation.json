@@ -1,0 +1,8 @@
+{
+  "createdAt": "2026-10-29T20:40:34.116Z",
+  "http": 200,
+  "bytes": 19681902,
+  "sha256": "64bacb395fc1d2bc40b022d621096045252c7d61c05bbc10b4cde50fc1db5e73",
+  "kind": "Development Metro bundle generation only; not installed runtime or screenshot proof",
+  "port": 8082
+}

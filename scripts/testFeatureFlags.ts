@@ -1,13 +1,12 @@
 /**
  * scripts/testFeatureFlags.ts
  *
- * Regression test for the async share-jobs FLAG-OFF contract
+ * Regression test for ordinary default-OFF feature flags
  * (lib/featureFlagsCore.ts — the pure core behind lib/featureFlags.ts).
  *
  * Locks down: the flag is OFF by default and turns ON only for an explicit
  * truthy string, with the build-time env value winning over the `extra`
- * fallback. This is the guard that keeps the current App Store synchronous
- * share flow untouched when nothing is configured.
+ * fallback. Durable share admission is mandatory in1.7 and separately checked.
  *
  * Run:
  *   npx ts-node -P scripts/tsconfig.json scripts/testFeatureFlags.ts
@@ -66,6 +65,7 @@ check('isTruthyFlag(1 number)', isTruthyFlag(1 as unknown) === false);
 // both runtime env and app.config extra. Static checks avoid importing Expo in
 // this pure Node contract test.
 const featureFlagsSource = readFileSync(join(process.cwd(), 'lib/featureFlags.ts'), 'utf8');
+check('1.7 cannot disable durable financial admission with an old rollout flag', /export function isAsyncShareJobsEnabled\(\): boolean \{\s*return true;\s*\}/.test(featureFlagsSource));
 const appConfigSource = readFileSync(join(process.cwd(), 'app.config.js'), 'utf8');
 check('Vayrin Product UI flag reads build env', /EXPO_PUBLIC_VAYRIN_PRODUCT_UI_ENABLED/.test(featureFlagsSource));
 check('Vayrin Product UI flag has app config fallback', /readExtra\('vayrinProductUiEnabled'\)/.test(featureFlagsSource));

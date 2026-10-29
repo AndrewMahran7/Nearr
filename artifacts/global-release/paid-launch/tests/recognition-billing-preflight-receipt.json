@@ -1,0 +1,19 @@
+{
+  "capturedAt": "2026-10-29T21:13:50.4075508Z",
+  "checksPassed": 15,
+  "offlineOnly": true,
+  "actualSavedPlacesAuthenticationBoundaryExercised": true,
+  "databaseAndNetworkMocked": true,
+  "liveStoreKitCalls": 0,
+  "providerInferenceCalls": 0,
+  "sourceHashes": {
+    "lib/recognitionBillingPreflight.ts": "c97c10e72c9f242aa8781b4dda4f04f1ee7dd92013567a6bf2c5a8b3292534fd",
+    "services/shareJobCandidateSave.ts": "3c0f88bcc2c4f18b37e23cc579de8163a3c3038f04e4cbfd953c748c7ccc62ba",
+    "services/shareJobsService.ts": "dff5fe1fc80c56e750bf238a28276a4c7a279793f2efaf8507e3fe784ce66868",
+    "services/savedPlacesService.ts": "d5afb88c5988c1c3885a94a94a297fcc0b5960f05783698dcafc8c36fbc16473",
+    "scripts/testRecognitionBillingPreflight.ts": "8aa5d141aa7b732b18b15d09de17ad22db6309ccdf45ebb364edd9a54659ec82",
+    "artifacts/global-release/paid-launch/tests/recognition-billing-preflight.log": "639a55f49c805f775afc2f15ce8596a5ee7d0f250f6d50d5408eaad44c2edeb1"
+  },
+  "manualSaveAndResolveAtomic": false,
+  "fullTypecheck": "root final matrix pending"
+}

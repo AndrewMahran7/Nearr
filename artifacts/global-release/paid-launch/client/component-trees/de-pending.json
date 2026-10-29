@@ -1,0 +1,536 @@
+{
+  "kind": "react-test-renderer component tree, not pixels or native screenshot",
+  "locale": "de",
+  "state": "pending",
+  "tree": {
+    "type": "Screen",
+    "props": {},
+    "children": [
+      {
+        "type": "ScrollView",
+        "props": {
+          "contentContainerStyle": {
+            "gap": 24,
+            "paddingBottom": 48
+          }
+        },
+        "children": [
+          {
+            "type": "Button",
+            "props": {
+              "title": "Nicht jetzt",
+              "variant": "ghost"
+            },
+            "children": [
+              "Nicht jetzt"
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 12
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "Deine nächste Entdeckung"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {
+                  "accessibilityRole": "header",
+                  "style": [
+                    null,
+                    {
+                      "color": "#172b22"
+                    }
+                  ]
+                },
+                "children": [
+                  "Entdecke weitere Orte"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "Deine gespeicherten Orte gehören dir, mit oder ohne Abo."
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "style": [
+                        null,
+                        {
+                          "color": "#172b22"
+                        }
+                      ]
+                    },
+                    "children": [
+                      "Deine Suchvorgänge"
+                    ]
+                  },
+                  {
+                    "type": "View",
+                    "props": {
+                      "style": {
+                        "gap": 4
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "Monatliche kostenlose Suchen"
+                        ]
+                      },
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "1 von 3 verfügbar"
+                        ]
+                      },
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "Für ausstehende Ergebnisse reserviert: 1"
+                        ]
+                      },
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "Kostenlose Suchen werden am 1. Nov. 2026 erneuert (UTC)."
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Gekaufte Tokens: 47"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Für ausstehende Ergebnisse reserviert: 3"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Gekaufte Tokens verfallen nicht. Plus verbraucht sie nicht."
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "alert",
+                      "accessibilityLiveRegion": "polite"
+                    },
+                    "children": [
+                      "Kauf ausstehend. Prüfe den Status, bevor du erneut bezahlst."
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Die Bestätigung durch Apple oder dein Konto kann noch ausstehen. Bezahle nicht erneut, um fehlendes Guthaben wiederherzustellen."
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "Kaufstatus prüfen",
+                      "disabled": false,
+                      "loading": false
+                    },
+                    "children": [
+                      "Kaufstatus prüfen"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {
+              "style": {
+                "borderColor": "#35594b"
+              }
+            },
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 16
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "style": [
+                        null,
+                        {
+                          "color": "#d77343"
+                        }
+                      ]
+                    },
+                    "children": [
+                      "Nearr Plus"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "Unbegrenzte Suchen"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Unbegrenzte erfolgreiche Videosuchen, solange Plus aktiv ist. Kein Tokenverbrauch."
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "1,99 $ / Monat"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "Nearr Plus abonnieren",
+                      "disabled": true,
+                      "loading": false
+                    },
+                    "children": [
+                      "Nearr Plus abonnieren"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Apple rechnet monatlich ab und verlängert automatisch, sofern du nicht in den Abonnementeinstellungen kündigst. Kein kostenloser Testzeitraum und kein Jahresabo."
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 12
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "props": {
+                  "accessibilityRole": "header"
+                },
+                "children": [
+                  "Oder kaufe Suchen nach Bedarf"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "Ein Token bezahlt eine erfolgreiche Videosuche. Gekaufte Tokens verfallen nicht."
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Starter"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "20 Tokens"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "20 Tokens kaufen · 1,19 $",
+                      "variant": "secondary",
+                      "disabled": true,
+                      "loading": false
+                    },
+                    "children": [
+                      "20 Tokens kaufen · 1,19 $"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Entdecker"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "50 Tokens"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "50 Tokens kaufen · 2,49 $",
+                      "variant": "secondary",
+                      "disabled": true,
+                      "loading": false
+                    },
+                    "children": [
+                      "50 Tokens kaufen · 2,49 $"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Abenteurer"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "200 Tokens"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "200 Tokens kaufen · 5,00 $",
+                      "variant": "secondary",
+                      "disabled": true,
+                      "loading": false
+                    },
+                    "children": [
+                      "200 Tokens kaufen · 5,00 $"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "Zuerst gilt Plus, dann die monatlichen kostenlosen Suchen, dann gekaufte Tokens."
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "Die kostenlose Version enthält 3 erfolgreiche Videosuchen pro Kalendermonat.",
+              " (UTC)"
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "Ein Video zählt einmal, auch wenn es mehrere Orte enthält. Fehlgeschlagene Suchen verbrauchen dein Kontingent nicht."
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "Quick Check reserviert eine Suche bis zum Speichern oder Ablauf der Reservierung. Monatliche kostenlose Suchen werden nicht übertragen."
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 8
+              }
+            },
+            "children": [
+              {
+                "type": "Button",
+                "props": {
+                  "title": "Käufe wiederherstellen",
+                  "variant": "secondary",
+                  "disabled": false
+                },
+                "children": [
+                  "Käufe wiederherstellen"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "Wiederherstellen verknüpft bestätigte Käufe mit deinem Konto. Verbrauchte Tokens werden nicht erneut gutgeschrieben."
+                ]
+              },
+              {
+                "type": "Button",
+                "props": {
+                  "title": "Abo verwalten",
+                  "variant": "ghost",
+                  "disabled": false
+                },
+                "children": [
+                  "Abo verwalten"
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "Guthaben aktualisieren",
+              "variant": "ghost",
+              "disabled": false
+            },
+            "children": [
+              "Guthaben aktualisieren"
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "Nutzungsbedingungen",
+              "variant": "ghost"
+            },
+            "children": [
+              "Nutzungsbedingungen"
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "Datenschutzerklärung",
+              "variant": "ghost"
+            },
+            "children": [
+              "Datenschutzerklärung"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

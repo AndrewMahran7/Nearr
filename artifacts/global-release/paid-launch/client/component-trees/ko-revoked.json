@@ -1,0 +1,499 @@
+{
+  "kind": "react-test-renderer component tree, not pixels or native screenshot",
+  "locale": "ko",
+  "state": "revoked",
+  "tree": {
+    "type": "Screen",
+    "props": {},
+    "children": [
+      {
+        "type": "ScrollView",
+        "props": {
+          "contentContainerStyle": {
+            "gap": 24,
+            "paddingBottom": 48
+          }
+        },
+        "children": [
+          {
+            "type": "Button",
+            "props": {
+              "title": "나중에",
+              "variant": "ghost"
+            },
+            "children": [
+              "나중에"
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 12
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "다음 발견을 향해"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {
+                  "accessibilityRole": "header",
+                  "style": [
+                    null,
+                    {
+                      "color": "#172b22"
+                    }
+                  ]
+                },
+                "children": [
+                  "계속 새로운 장소를 발견하세요"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "구독 여부와 관계없이 저장한 장소는 계속 내 것으로 남습니다."
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "style": [
+                        null,
+                        {
+                          "color": "#172b22"
+                        }
+                      ]
+                    },
+                    "children": [
+                      "내 장소 찾기"
+                    ]
+                  },
+                  {
+                    "type": "View",
+                    "props": {
+                      "style": {
+                        "gap": 4
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "월간 무료 찾기"
+                        ]
+                      },
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "3회 중 1회 사용 가능"
+                        ]
+                      },
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "대기 중인 결과에 예약됨: 1"
+                        ]
+                      },
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "무료 횟수는 2026년 11월 1일(UTC)에 갱신됩니다."
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "구매한 토큰: 47"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "대기 중인 결과에 예약됨: 3"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "구매한 토큰은 만료되지 않습니다. Plus 이용 중에는 차감되지 않습니다."
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {
+              "style": {
+                "borderColor": "#35594b"
+              }
+            },
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 16
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "style": [
+                        null,
+                        {
+                          "color": "#d77343"
+                        }
+                      ]
+                    },
+                    "children": [
+                      "Nearr Plus"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "무제한 장소 찾기"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Plus 이용 기간에는 성공한 영상 장소 찾기가 무제한입니다. 토큰은 차감되지 않습니다."
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "월 US$1.99"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "Nearr Plus 구독",
+                      "disabled": false,
+                      "loading": false
+                    },
+                    "children": [
+                      "Nearr Plus 구독"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Apple이 매월 청구하며 구독 설정에서 취소하지 않으면 자동 갱신됩니다. 무료 체험이나 연간 요금제는 없습니다."
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Plus가 더 이상 활성 상태가 아닙니다. 무료 찾기, 구매한 토큰 및 저장한 장소는 유지됩니다."
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 12
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "props": {
+                  "accessibilityRole": "header"
+                },
+                "children": [
+                  "필요할 때만 찾기 횟수 구매"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "토큰 1개로 성공한 영상 장소 찾기 1회를 이용합니다. 구매한 토큰은 만료되지 않습니다."
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "스타터"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "토큰 20개"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "토큰 20개 구매 · US$1.19",
+                      "variant": "secondary",
+                      "disabled": false,
+                      "loading": false
+                    },
+                    "children": [
+                      "토큰 20개 구매 · US$1.19"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "탐험가"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "토큰 50개"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "토큰 50개 구매 · US$2.49",
+                      "variant": "secondary",
+                      "disabled": false,
+                      "loading": false
+                    },
+                    "children": [
+                      "토큰 50개 구매 · US$2.49"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "모험가"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "토큰 200개"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "토큰 200개 구매 · US$5.00",
+                      "variant": "secondary",
+                      "disabled": false,
+                      "loading": false
+                    },
+                    "children": [
+                      "토큰 200개 구매 · US$5.00"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "Plus, 월간 무료 찾기, 구매한 토큰 순서로 사용됩니다."
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "무료로 매월 3회 영상 속 장소를 성공적으로 찾을 수 있습니다.",
+              " (UTC)"
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "한 동영상에 여러 장소가 있어도 한 번으로 계산합니다. 검색에 실패하면 이용 횟수가 차감되지 않습니다."
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "Quick Check는 저장하거나 예약이 만료될 때까지 찾기 1회를 예약합니다. 월간 무료 횟수는 이월되지 않습니다."
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 8
+              }
+            },
+            "children": [
+              {
+                "type": "Button",
+                "props": {
+                  "title": "구매 복원",
+                  "variant": "secondary",
+                  "disabled": false
+                },
+                "children": [
+                  "구매 복원"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "복원은 확인된 구매를 계정에 다시 연결합니다. 사용한 토큰은 복원되지 않습니다."
+                ]
+              },
+              {
+                "type": "Button",
+                "props": {
+                  "title": "구독 관리",
+                  "variant": "ghost",
+                  "disabled": false
+                },
+                "children": [
+                  "구독 관리"
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "잔액 새로고침",
+              "variant": "ghost",
+              "disabled": false
+            },
+            "children": [
+              "잔액 새로고침"
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "서비스 이용약관",
+              "variant": "ghost"
+            },
+            "children": [
+              "서비스 이용약관"
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "개인정보 처리방침",
+              "variant": "ghost"
+            },
+            "children": [
+              "개인정보 처리방침"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

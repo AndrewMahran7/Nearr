@@ -19,6 +19,7 @@ const supabase = {
 Module._load = function(request: string, parent: any, isMain: boolean) {
   if (request === 'expo-constants') return { __esModule: true, default: { expoConfig: { extra: {} } } };
   if (request === 'expo-crypto') return { randomUUID: () => 'fixture-event-id' };
+  if (request === '@react-native-async-storage/async-storage') return {__esModule:true,default:{getItem:async()=>null,setItem:async()=>{},removeItem:async()=>{}}};
   if (request === './supabase' && /plusClient/.test(parent?.filename ?? '')) return { supabase };
   if (request === 'react-native-purchases') { sdkLoads++; throw new Error('disabled storefront must never load purchase SDK'); }
   if (request === '@/lib/i18n') return translations;
@@ -26,6 +27,8 @@ Module._load = function(request: string, parent: any, isMain: boolean) {
   if (request === '@/hooks/usePlus') return { usePlus: () => plusState };
   if (request === '@/lib/plusClient') return originalLoad(require.resolve('../lib/plusClient'), parent, isMain);
   if (request === '@/lib/plusEntitlements') return originalLoad(require.resolve('../lib/plusEntitlements'), parent, isMain);
+  if (request === '@/lib/paidClientModel') return originalLoad(require.resolve('../lib/paidClientModel'), parent, isMain);
+  if (request === '@/components/PaidFindsBalance') return originalLoad(require.resolve('../components/PaidFindsBalance'), parent, isMain);
   if (request === 'expo-router') return { useRouter: () => ({ back() {}, push() {} }) };
   if (request === 'react-native') return { ActivityIndicator: 'ActivityIndicator', ScrollView: 'ScrollView', Text: 'Text', View: 'View', Linking: { openURL: async () => {} } };
   if (request === '@/components') return { Screen: 'Screen', Card: 'Card', Button: (props: any) => React.createElement('Button', props, props.title) };

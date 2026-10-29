@@ -1,0 +1,14 @@
+{
+  "createdAt": "2026-10-29T21:16:38.644Z",
+  "kind": "actual hostShareSubmit and createShareJob with mocked auth/network/query boundaries",
+  "tests": [
+    "same account deduplicates concurrent requests and accepted replay without changing server SID",
+    "identical SID in a different account cannot read the prior accepted or in-flight cache",
+    "signed-out reads and account switch while returning a cache hit cannot expose acceptance",
+    "account switch after cache selection but before dispatch performs no create request",
+    "account switch during create cannot return or cache the old accepted outcome for the new account",
+    "lost acknowledgement recovery queries the expected owner and discards an identity change during lookup",
+    "same-account token rotation remains valid and denied submissions retry with the original SID"
+  ],
+  "liveCalls": 0
+}

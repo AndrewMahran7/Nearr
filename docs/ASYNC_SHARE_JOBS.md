@@ -1,3 +1,9 @@
+# Nearr 1.7 paid launch integration
+
+Durable queue admission is now mandatory for every source-video submission, including pasted links and the iOS Share Extension. The old `EXPO_PUBLIC_ASYNC_SHARE_JOBS_ENABLED` switch cannot restore synchronous processing; the retained runtime helper returns true so queue notifications and undo remain enabled too. The historical rollout instructions below describe earlier releases. This change does not enable provider access, billing or Store sales; their server qualification gates remain independent.
+
+---
+
 # Nearr — Async Share Jobs (Phase 1)
 
 > Last updated: 2026-07-31

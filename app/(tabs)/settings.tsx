@@ -36,6 +36,7 @@ import { useRouter } from 'expo-router';
 
 import { Button, Card, DemoModeBanner, DevModeBanner, HowNearrWorksModal, IconButton, Input, Screen, SetupChecklist } from '@/components';
 import { LanguageSelector } from '@/components/localization/LanguageSelector';
+import { PaidFindsSettingsCard } from '@/components/PaidFindsSettingsCard';
 import { Radius, Spacing } from '@/constants';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -828,6 +829,8 @@ export default function SettingsScreen() {
         ) : null}
 
         {/* --- Notifications ------------------------------------------- */}
+        <PaidFindsSettingsCard />
+
         <Text style={styles.sectionLabel}>{t("Nearby alerts")}</Text>
         <Card style={styles.section}>
           <ToggleRow

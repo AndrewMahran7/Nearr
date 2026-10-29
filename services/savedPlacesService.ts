@@ -72,6 +72,8 @@ import type {
 
 export type SaveSavedPlaceInput = {
   candidate: PlaceCandidate;
+  /** Recognition callers bind the save to the owner verified for their job. */
+  expectedUserId?: string;
   /** null/null means "use the category-aware automatic radius". */
   radiusValue: number | null;
   radiusUnit: RadiusUnit | null;
@@ -370,6 +372,7 @@ export async function saveSavedPlace(
   if (userErr) throw new Error(`Not signed in: ${userErr.message}`);
   const userId = userRes.user?.id;
   if (!userId) throw new Error('Not signed in.');
+  if (input.expectedUserId !== undefined && userId !== input.expectedUserId) throw new Error('recognition_account_changed');
 
   const existingForUser = await findExistingSavedPlaceForUser(
     userId,

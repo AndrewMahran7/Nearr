@@ -41,6 +41,7 @@ import {
   recognitionCacheDiagnostics,
 } from '../_shared/recognitionCachePolicy.ts';
 import { checkAgeEligibility } from '../_shared/ageEligibility.ts';
+import { refreshStalePaidEntitlements } from '../_shared/paidEntitlementRefresh.ts';
 
 const DEVELOPMENT_PROJECT_REF = 'qnfxnmvxpjzfydgudtvs';
 
@@ -179,6 +180,9 @@ serve(async (req) => {
       p_dedupe_window_seconds: dedupeWindowSeconds,
       p_submission_path: ['share_extension', 'background_import', 'host_app'].includes(body.submissionPath ?? '') ? body.submissionPath : null,
     };
+  try {
+    await refreshStalePaidEntitlements(admin,userId,{ revenueCatSecret:Deno.env.get('REVENUECAT_SECRET_API_KEY') ?? '' });
+  } catch { return json({ error:'plus_verification_required' },409); }
   const { data: created, error: createErr } = await admin.rpc(rpcName, rpcArgs);
 
   if (createErr) {

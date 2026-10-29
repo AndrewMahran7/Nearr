@@ -4,6 +4,7 @@ from pathlib import Path
 
 ipa = Path(sys.argv[1])
 expected_build = sys.argv[2] if len(sys.argv) > 2 else '72'
+output_path = Path(sys.argv[3]) if len(sys.argv) > 3 else Path('artifacts/global-release/onboarding-integration/ipa-verification.json')
 with zipfile.ZipFile(ipa) as z:
     names = z.namelist()
     host = next(n[:-len('Info.plist')] for n in names if re.fullmatch(r'Payload/[^/]+\.app/Info.plist', n))
@@ -60,4 +61,5 @@ with zipfile.ZipFile(ipa) as z:
     assert required.issubset(result['host']['locales']) and required.issubset(result['shareExtension']['locales'])
     assert result['expo']['EXUpdatesRuntimeVersion'] == '1.7-onboarding-date-v1'
     assert result['expo']['EXUpdatesRequestHeaders']['expo-channel-name'] == 'development'
-    Path('artifacts/global-release/onboarding-integration/ipa-verification.json').write_text(json.dumps(result, indent=2) + '\n')
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(result, indent=2) + '\n')

@@ -21,7 +21,7 @@
     "server balance remains authoritative",
     "Plus has localized loading, restore, alerts and accessible shared buttons",
     "Plus never exposes mock pricing; legacy mock mode remains Development-only",
-    "responsive Plus uses scrolling without retired fixed pack rows",
+    "responsive Plus uses scrolling and wrapping pack cards",
     "monetization surfaces contain no user-facing Vayrin branding",
     "wallet, reserve, consume, release, and free-grant contracts are unchanged"
   ]

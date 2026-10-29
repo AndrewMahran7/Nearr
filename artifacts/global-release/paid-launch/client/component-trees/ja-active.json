@@ -1,0 +1,457 @@
+{
+  "kind": "react-test-renderer component tree, not pixels or native screenshot",
+  "locale": "ja",
+  "state": "active",
+  "tree": {
+    "type": "Screen",
+    "props": {},
+    "children": [
+      {
+        "type": "ScrollView",
+        "props": {
+          "contentContainerStyle": {
+            "gap": 24,
+            "paddingBottom": 48
+          }
+        },
+        "children": [
+          {
+            "type": "Button",
+            "props": {
+              "title": "今はしない",
+              "variant": "ghost"
+            },
+            "children": [
+              "今はしない"
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 12
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "次の発見へ"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {
+                  "accessibilityRole": "header",
+                  "style": [
+                    null,
+                    {
+                      "color": "#172b22"
+                    }
+                  ]
+                },
+                "children": [
+                  "場所との出会いを、もっと"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "サブスクリプションの有無にかかわらず、保存した場所はあなたのものです。"
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "style": [
+                        null,
+                        {
+                          "color": "#172b22"
+                        }
+                      ]
+                    },
+                    "children": [
+                      "Nearr Plusが有効です"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "回数無制限の場所検索"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Plusの利用資格を2026年10月30日（UTC）まで確認済みです。"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "購入済みトークン：47"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "未確定の結果に予約中：3"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "購入済みトークンに有効期限はありません。Plus利用中は消費されません。"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {
+              "style": {
+                "borderColor": "#35594b"
+              }
+            },
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 16
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "style": [
+                        null,
+                        {
+                          "color": "#d77343"
+                        }
+                      ]
+                    },
+                    "children": [
+                      "Nearr Plus"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "回数無制限の場所検索"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Plusが有効な間は、成功した動画の場所検索が無制限。トークンは消費しません。"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Nearr Plusが有効です"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Appleが毎月請求し、サブスクリプション設定で解約しない限り自動更新されます。無料体験・年間プランはありません。"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 12
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "props": {
+                  "accessibilityRole": "header"
+                },
+                "children": [
+                  "必要なときだけ検索回数を購入"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "1トークンで、成功した動画の場所検索1回分を支払えます。購入済みトークンに有効期限はありません。"
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "スターター"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "20トークン"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "20トークンを購入 · $1.19",
+                      "variant": "secondary",
+                      "disabled": false,
+                      "loading": false
+                    },
+                    "children": [
+                      "20トークンを購入 · $1.19"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "エクスプローラー"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "50トークン"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "50トークンを購入 · $2.49",
+                      "variant": "secondary",
+                      "disabled": false,
+                      "loading": false
+                    },
+                    "children": [
+                      "50トークンを購入 · $2.49"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "アドベンチャー"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "200トークン"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "200トークンを購入 · $5.00",
+                      "variant": "secondary",
+                      "disabled": false,
+                      "loading": false
+                    },
+                    "children": [
+                      "200トークンを購入 · $5.00"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "Plus、毎月の無料枠、購入済みトークンの順に適用されます。"
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "無料プランでは、毎暦月3件の動画の場所を見つけられます。",
+              " (UTC)"
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "1本の動画に複数の場所があっても、1回と数えます。検索に失敗した場合、利用枠は消費されません。"
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "Quick Checkは保存または予約期限まで検索1回分を予約します。毎月の無料枠は繰り越されません。"
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 8
+              }
+            },
+            "children": [
+              {
+                "type": "Button",
+                "props": {
+                  "title": "購入を復元",
+                  "variant": "secondary",
+                  "disabled": false
+                },
+                "children": [
+                  "購入を復元"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "復元すると、確認済みの購入がアカウントに再連携されます。使用済みトークンは戻りません。"
+                ]
+              },
+              {
+                "type": "Button",
+                "props": {
+                  "title": "サブスクリプションを管理",
+                  "variant": "ghost",
+                  "disabled": false
+                },
+                "children": [
+                  "サブスクリプションを管理"
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "残高を更新",
+              "variant": "ghost",
+              "disabled": false
+            },
+            "children": [
+              "残高を更新"
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "利用規約",
+              "variant": "ghost"
+            },
+            "children": [
+              "利用規約"
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "プライバシーポリシー",
+              "variant": "ghost"
+            },
+            "children": [
+              "プライバシーポリシー"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

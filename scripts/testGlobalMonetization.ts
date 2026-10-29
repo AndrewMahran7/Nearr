@@ -94,14 +94,20 @@ test('client uses StoreKit display price and server sync after purchase or resto
   const source = readFileSync('lib/plusClient.ts', 'utf8');
   assert.match(source, /priceString/); assert.match(source, /subscriptionPeriod === 'P1M'/);
   assert.match(source, /fetchPlusStatus\(userId, 'sync'\)/); assert.match(source, /restorePurchases/);
-  assert.doesNotMatch(source, /set.*entitlement|AsyncStorage.*plus/i);
+  assert.doesNotMatch(source, /setEntitlement\s*\(|AsyncStorage\.setItem[^;\n]*(?:entitlement|isPlus|hasPlus)/i);
+  // Durable pending transaction hints support recovery; they never grant access.
+  const writes=source.match(/AsyncStorage\.setItem\([^;\n]+/g)??[];
+  assert.equal(writes.length,2);
+  assert.ok(writes.every(write=>write==='AsyncStorage.setItem(pendingKey(userId),JSON.stringify(hint))'));
 });
 test('Edge endpoints authenticate server-side and re-read RevenueCat', () => {
   const api = readFileSync('supabase/functions/plus-api/index.ts', 'utf8');
   const hook = readFileSync('supabase/functions/revenuecat-plus-webhook/index.ts', 'utf8');
   assert.match(api, /auth\.getUser\(accessToken\)/); assert.match(api, /is_account_eligible_for_purchase/);
   assert.match(api, /api\.revenuecat\.com\/v1\/subscribers/); assert.match(hook, /api\.revenuecat\.com\/v1\/subscribers/);
-  assert.match(hook, /equalSecret/); assert.match(hook, /apply_nearr_plus_webhook/);
+  assert.match(hook, /equalSecret/); assert.match(hook, /apply_nearr_paid_webhook/);
+  assert.match(hook, /parseTrustedPaidPurchaseEvent/);
+  assert.match(api, /apply_nearr_paid_recovery/);
   assert.match(hook,/config\?\.release_mode === 'free_only'/);
   assert.ok(hook.indexOf("config?.release_mode === 'free_only'") < hook.indexOf('const payload = await subscriber('));
 });

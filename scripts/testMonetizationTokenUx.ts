@@ -83,7 +83,7 @@ test('Treasure Pack is 75 tokens at the existing Dev price', () => {
 test('legacy Explorer recommendation is preserved but not offered in Plus', () => {
   assert.equal(tokenPackPresentation(30).recommended, true);
   assert.doesNotMatch(paywall, /recommendedProduct|BEST VALUE|packSelected/);
-  assert.match(paywall, /plus\.canOffer && plus\.offer/);
+  assert.match(paywall, /purchaseBlocked\|\|!plus\.canOffer/);
 });
 
 test('Dev mock price mapping matches Premium Request V2', () => {
@@ -95,8 +95,8 @@ test('Dev mock price mapping matches Premium Request V2', () => {
 
 test('Plus CTA requires a qualified offer and uses its localized store price', () => {
   assert.doesNotMatch(paywall, /setSelectedProductId|selectedPack/);
-  assert.match(paywall, /t\('Subscribe for \{\{price\}\} \/ month', \{ price: plus\.offer\.price \}\)/);
-  assert.match(paywall, /disabled=\{busy \|\| plus\.loading\}/);
+  assert.match(paywall, /t\('\{\{price\}\} \/ month',\{price:plus\.offer\.price\}\)/);
+  assert.match(paywall, /purchaseBlocked=preview\|\|busy\|\|plus\.loading\|\|!!plus\.purchasePending/);
 });
 
 test('mock purchases credit the configured quantity exactly once', () => {
@@ -110,9 +110,9 @@ test('mock purchases credit the configured quantity exactly once', () => {
 });
 
 test('Plus success requires verification, never a local token increment', () => {
-  assert.match(paywall, /result\.outcome === 'verified'/);
-  assert.match(paywall, /Your subscription is verified\./);
-  assert.match(plusClient, /hasVerifiedPlusAccess\(verified\.entitlement\) \? 'verified' : 'pending'/);
+  assert.match(paywall, /result\.outcome==='verified'/);
+  assert.match(paywall, /Purchase verified\. Your account is up to date\./);
+  assert.match(plusClient, /receiptMatches\(hint, verified\.purchaseVerification\)/);
   assert.doesNotMatch(paywall, /tokens added|successBalanceNumber|TokenSymbol/);
   assert.doesNotMatch(paywall, /new balance[\s\S]{0,80}left/i);
 });
@@ -147,15 +147,15 @@ test('Plus has localized loading, restore, alerts and accessible shared buttons'
 
 test('Plus never exposes mock pricing; legacy mock mode remains Development-only', () => {
   assert.doesNotMatch(paywall, /dev_mock|Dev pricing preview/);
-  assert.match(plusHook, /const paidMode = status\?\.releaseMode !== 'free_only'/);
-  assert.match(plusHook, /canOffer: paidMode && !!offer && status\?\.salesEnabled === true/);
+  assert.match(plusHook, /const paidMode = safeStatus\?\.releaseMode !== 'free_only'/);
+  assert.match(plusHook, /canOffer: paidMode && !!safeStatus && !!offer && safeStatus.salesEnabled === true && !purchasePending/);
   assert.match(monetizationClient, /areDeveloperToolsVisible\(\) \? 'dev_mock' : 'disabled'/);
 });
 
-test('responsive Plus uses scrolling without retired fixed pack rows', () => {
+test('responsive Plus uses scrolling and wrapping pack cards', () => {
   assert.match(paywall, /<ScrollView/);
-  assert.match(paywall, /contentContainerStyle=\{\{ gap: 20, paddingBottom: 36 \}\}/);
-  assert.doesNotMatch(paywall, /packCopy|packName/);
+  assert.match(paywall, /contentContainerStyle=\{\{gap:24,paddingBottom:48\}\}/);
+  assert.doesNotMatch(paywall, /numberOfLines|height:\s*\d+/);
 });
 
 test('monetization surfaces contain no user-facing Vayrin branding', () => {

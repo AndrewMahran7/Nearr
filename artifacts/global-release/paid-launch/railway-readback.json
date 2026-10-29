@@ -1,0 +1,74 @@
+{
+  "capturedAt": "2026-10-29T20:30:49.090Z",
+  "mutations": [],
+  "environments": {
+    "Development": {
+      "environment": {
+        "id": "57d055b7-5326-4f96-a7a9-70523ee0d3f0",
+        "name": "development"
+      },
+      "service": {
+        "id": "3c8cd190-b118-4ee4-9338-407843ef4e1f",
+        "name": "media-worker",
+        "state": "live"
+      },
+      "latestDeployment": {
+        "createdAt": "2026-10-26T19:49:42.071Z",
+        "id": "70fc5c6f-1b8b-4e5c-915e-7c30ccbab360",
+        "status": "SUCCESS",
+        "url": null
+      },
+      "domains": {
+        "customDomains": [],
+        "serviceDomains": [
+          {
+            "domain": "media-worker-development.up.railway.app",
+            "id": "ed240c6e-6128-4c2d-ba8d-55fc852bb3eb",
+            "targetPort": 8080
+          }
+        ]
+      },
+      "staged": null,
+      "source": {
+        "branch": "integrate/safe-development-baseline",
+        "checkSuites": false,
+        "repo": "AndrewMahran7/Nearr",
+        "rootDirectory": "/services/media-worker"
+      }
+    },
+    "Production": {
+      "environment": {
+        "id": "49650a9c-4744-4649-8cd1-4ff38473d22f",
+        "name": "production"
+      },
+      "service": {
+        "id": "59234570-e2ec-4a7e-86de-22826da86c66",
+        "name": "Nearr",
+        "state": "live"
+      },
+      "latestDeployment": {
+        "createdAt": "2026-09-08T23:27:26.675Z",
+        "id": "6e78ebe9-58f7-4799-a90e-86238a1b14e9",
+        "status": "SUCCESS",
+        "url": null
+      },
+      "domains": {
+        "customDomains": [],
+        "serviceDomains": [
+          {
+            "domain": "nearr-production.up.railway.app",
+            "id": "28b17caa-502b-40db-abb5-b9e2e09586ff",
+            "targetPort": 8080
+          }
+        ]
+      },
+      "staged": null,
+      "source": {
+        "branch": "main",
+        "checkSuites": false,
+        "repo": "AndrewMahran7/Nearr",
+        "rootDirectory": "/services/media-worker"
+      }
+    }
+  }
+}

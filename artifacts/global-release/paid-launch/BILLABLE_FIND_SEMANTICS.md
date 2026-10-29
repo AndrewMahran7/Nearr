@@ -1,0 +1,21 @@
+# Billable find contract
+
+Paid recognition uses the durable job ingress. `process-share-link` refuses synchronous extract/save before metadata or provider dispatch when the paid policy is active; it cannot turn a best-effort evidence snapshot into an unmetered find. The actual Edge router has eight boundary scenarios covering paid, unavailable and disabled policy. Incoming URLs and pasted links must route through the existing job handoff in the qualified paid client.
+
+Prepared implementation: `20261029000003_unlimited_plus_paid_finds.sql`. This document describes the local candidate, not a claim of live paid operation or StoreKit qualification.
+
+One successfully processed source submission with at least one verified, persisted destination is one find. A multi-place submission still settles once. AI attempts, candidate generation, pending Quick Check, opening a saved place, failures, cancellation, tutorial fixtures and cached completion do not consume allowance or tokens.
+
+The authoritative success evidence is an owned `share_job_place_results` saved outcome whose canonical Google destination matches the owned saved place, or the legacy job pointer together with an owned source association and a real canonical Google destination. The job must be completed or have a useful partial result. A saved-place UUID alone is insufficient. Client-supplied payment, success or entitlement booleans are never settlement inputs.
+
+For the new products, funding priority is active verified unlimited Plus, three monthly free finds, then one purchased token. An existing separately verified capped Plus obligation is honored as a legacy benefit before spending the new free allowance; it is never represented as unlimited. Historical Nearr Pro and promotional-credit obligations require explicit reconciliation evidence before enabling the policy.
+
+Admission reserves capacity atomically with job creation. Final settlement rechecks eligibility, cancellation, current verified Plus, the current UTC calendar month, and purchased funds. A Plus upgrade releases a prior token hold. Month boundaries use UTC arithmetic even when the database session uses a local timezone. Free unused capacity does not carry forward; purchased tokens do not expire. Stale paid verification requires refresh rather than silently spending tokens.
+
+The terminal job update and financial settlement share one database transaction. Quick Check's verified save/result write invokes the same settlement trigger when its job is already awaiting confirmation. For automatic recognition, the existing pipeline can persist intermediate place/result rows before its terminal update; those rows are not themselves charged until the terminal transition. A rejected terminal transition now raises a database error into bounded worker recovery instead of being mislabeled a completed replay. These tests do not claim that every intermediate provider/Places operation is one database transaction.
+
+Durable `nearr_paid_finds.job_id` survives job deletion. Source receipts retain initial canonical URL, resolved canonical URL, and content identity aliases, so redirects, repeated callbacks, retries and cached source replay cannot become additional charges. Authorised job ownership transfer copies replay rights while retaining the original financial record. An ordinary account switch cannot acquire another wallet.
+
+Quick Check holds expire after seven days. A bounded reaper runs on status and admission and releases at most 100 old holds per account per invocation. Returning a refunded token hold revokes it rather than making it spendable. Late confirmation after expiry must reacquire valid current funding; late success after cancellation or authorization withdrawal is not retroactively billed.
+
+Meaningful deterministic evidence is in `paid-find-database-tests.json`. It uses actual PostgreSQL, real legacy table definitions and the candidate migration, including concurrent admissions, purchases and completions. It does not prove hosted login, actual provider recognition, live legacy-account migration or Apple sandbox purchases. Those remain release qualification requirements.

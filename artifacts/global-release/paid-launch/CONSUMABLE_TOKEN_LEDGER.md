@@ -1,0 +1,19 @@
+# Consumable token ledger
+
+Approved local identifiers retain their existing quantities: `com.nearr.tokens.20.v2`, `.50.v2` and `.200.v2` grant 20, 50 and 200 tokens respectively. Price/catalog availability and real transaction proof are separate release gates. The migration does not activate sales or alter historical balances.
+
+The existing `place_find_wallets`, `place_find_lots`, `place_find_purchase_transactions` and append-only `place_find_ledger` remain authoritative. No replacement wallet erases historical grants, consumption, refunds or promotional credits. A shared `(environment, transaction_id)` key binds one store purchase to one wallet and one exact product/quantity. Legacy transactions must reconcile to exactly one existing purchase lot; ambiguity fails closed instead of minting another grant.
+
+The authenticated RevenueCat callback verifies the configured app, Apple store, environment, primary database customer mapping, exact product, ownership, transaction identity, purchase date and bounded event shape. Product quantity comes from the server allowlist. Alias IDs do not grant a second purchase. Database functions are service-only; forged client purchase payloads cannot grant funds.
+
+RevenueCat v1 `non_subscriptions.id` is not assumed to be a StoreKit transaction ID. Sync/restore reads the durable ledger. For a known transaction hint, the server can recover a missed webhook through two bounded RevenueCat v2 GETs: transaction lookup and the mapped product/application read. Recovery validates project, app, bundle, store, environment, owner, product, quantity and status using server-held configuration. Client hints only select a lookup. Missing configuration, ambiguous responses and unavailable verification remain pending, never purchase success.
+
+Purchase events are deduplicated atomically with grants. Ordinary replay cannot advance a refund watermark or undo revocation. A cancellation revokes available tokens and records consumed/reserved shortfall without making a balance negative. Refunded holds are revoked on release. Only a genuinely newer explicit refund reversal restores unspent revoked funds; consumed tokens are never restored by purchase replay or ordinary restore.
+
+Recovery proofs are audited separately from callback timestamps. A recovered refund quarantines spendable funds conservatively. An older reversal cannot defeat a newer recovered refund observation. A fresh owned recovery never revives an existing refund, and an in-flight recovery snapshot cannot override a newer real callback. The pure adapter tests and real PostgreSQL tests cover these ordering boundaries.
+
+Each successful token-funded job consumes exactly one token. Holds and settlement changes append ledger entries with stable job/cycle keys. A shared advisory lock and READ COMMITTED-only financial writers serialize admission, refunds, grants and settlement. Stronger fixed-snapshot isolation is rejected explicitly. All lot totals remain constrained to granted = available + reserved + consumed + revoked.
+
+Accepted anonymous-to-permanent onboarding transfer can attach the original wallet to its verified destination through a private ownership record, retaining every wallet/lot/transaction/ledger ID. The former anonymous auth row is detached from that wallet so cleanup cannot erase transferred funds. Ordinary switching or restoring into an unrelated permanent account does not create this authority. Production transfer behavior still requires hosted integration qualification.
+
+The client retains a per-user pending purchase hint before StoreKit and does not repeat payment merely because a callback was lost. Exact transaction receipt matching or a unique server-verified receipt after the exact attempted time resolves the hint; a balance increase is not proof. No-ID ambiguity remains pending. Real sandbox purchase/renewal/refund/reinstall/multi-device evidence is mandatory and is not replaced by these local tests.

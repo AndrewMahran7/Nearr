@@ -1,24 +1,10 @@
 import { i18n, t } from '@/lib/i18n';
 import { useLocale } from '@/hooks/useLocale';
 /**
- * Share entry screen — one-tap save flow.
- *
- * Flow:
- *   1. User pastes (or arrives via deep link with ?url=...) a TikTok /
- *      Instagram / generic URL.
- *   2. User taps a single primary button: "Save place".
- *   3. We parse public OpenGraph metadata in the background, derive a
- *      Google-Places-friendly query, and call `searchPlaces`.
- *   4. If exactly one candidate comes back, we save it automatically using
- *      the category-aware automatic radius, preserve `source_url` /
- *      `source_type`, show a success alert, and navigate to /(tabs)/map.
- *   5. If multiple identity candidates come back, we show an exclusive picker
- *      and require an explicit save action.
- *   6. If parsing or search fails (no metadata, ZERO_RESULTS, network), we
- *      show a friendly message and a small manual search input. We never
- *      dump raw OG metadata at the user.
- *
- * V1 scope: no clustering, no caption editing, no in-screen map preview.
+ * Share entry screen. Every validated incoming or pasted URL enters the
+ * consent-aware ShareJobHandoff and durable create-share-job admission.
+ * Metadata, recognition and saving happen only after server admission.
+ * Historical synchronous helpers remain below but are not mounted by 1.7.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -46,7 +32,7 @@ import { VayrinPresentationHeader } from '@/components/VayrinPresentationHeader'
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
-import { isAsyncShareJobsEnabled, isVayrinProductUiEnabled } from '@/lib/featureFlags';
+import { isVayrinProductUiEnabled } from '@/lib/featureFlags';
 import { sharedAuth } from '@/lib/sharedAuth';
 import { mapSyncShareToVayrinPresentation } from '@/lib/vayrinPresentation';
 import { getActivationSaveFeedback } from '@/lib/activation';
@@ -408,6 +394,7 @@ export default function ShareScreen() {
   const params = useLocalSearchParams<{ url?: string; sid?: string }>();
   const submissionId = typeof params.sid === 'string' ? params.sid : undefined;
   const [tracedSubmissionId, setTracedSubmissionId] = useState<string | null>(null);
+  const [pastedUrl, setPastedUrl] = useState<string | null>(null);
   useEffect(() => {
     if (submissionId) {
       sharedAuth.recordShareTrace(submissionId, 'host_share_route_entered');
@@ -424,13 +411,10 @@ export default function ShareScreen() {
 
   // Preserve route -> payload -> component ordering in the cross-process trace.
   if (submissionId && tracedSubmissionId !== submissionId) return null;
-  // Async rollout: when the flag is on and a URL arrived (Android share
-  // intent, iOS signed-out/network handoff, or in-app paste-link), create a
-  // durable job and dismiss instead of running synchronous extraction. Falls
-  // back to the legacy synchronous screen otherwise (incl. the no-url manual
-  // paste case). `sid` (when present) is the stable submission id propagated
-  // from the share extension so cold/warm re-delivery dedupes to one job.
-  if (isAsyncShareJobsEnabled() && params.url && isLikelyUrl(params.url)) {
+  // Every 1.7 video submission enters durable admission before extraction.
+  // A stale rollout flag must never reopen the synchronous/unmetered route.
+  // Handoff owns consent and onboarding preparation; no local parsing runs.
+  if (typeof params.url === 'string' && isLikelyUrl(params.url)) {
     return (
       <ShareJobHandoff
         key={params.url}
@@ -439,7 +423,31 @@ export default function ShareScreen() {
       />
     );
   }
-  return <LegacyShareScreen />;
+  if (pastedUrl) return <ShareJobHandoff key={pastedUrl} url={pastedUrl} />;
+  return <PasteShareEntry initialUrl={typeof params.url === 'string' ? params.url : ''} onSubmit={setPastedUrl}/>;
+}
+
+function PasteShareEntry({initialUrl,onSubmit}:{initialUrl:string;onSubmit:(url:string)=>void}) {
+  const {colors,typography}=useTheme();const router=useRouter();const navigation=useNavigation();
+  const [url,setUrl]=useState(initialUrl);
+  const submit=()=>{
+    const trimmed=url.trim();
+    if(!isLikelyUrl(trimmed)){
+      Alert.alert(t('Paste a valid link'),t('The link should start with http:// or https://'));
+      return;
+    }
+    onSubmit(trimmed);
+  };
+  return <Screen><KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{gap:Spacing.lg,paddingBottom:Spacing.xl}}>
+      <Text style={typography.title}>{t('Save from a link')}</Text>
+      <Text style={[typography.body,{color:colors.textSecondary}]}>{t('Paste a link from Instagram, TikTok, or anywhere else.')}</Text>
+      <Input value={url} onChangeText={setUrl} placeholder="https://..." autoCapitalize="none" autoCorrect={false}
+        keyboardType="url" accessibilityLabel={t('Video link')} onSubmitEditing={submit}/>
+      <Button title={t('Find the place')} accessibilityLabel={t('Find the place from this video')} onPress={submit} disabled={!url.trim()}/>
+      <Button title={t('Close')} variant="ghost" onPress={()=>navigation.canGoBack()?router.back():router.replace('/(tabs)/home')}/>
+    </ScrollView>
+  </KeyboardAvoidingView></Screen>;
 }
 
 function sharePlatform(url: string): string {

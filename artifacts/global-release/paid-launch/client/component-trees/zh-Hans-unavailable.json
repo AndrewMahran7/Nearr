@@ -1,0 +1,466 @@
+{
+  "kind": "react-test-renderer component tree, not pixels or native screenshot",
+  "locale": "zh-Hans",
+  "state": "unavailable",
+  "tree": {
+    "type": "Screen",
+    "props": {},
+    "children": [
+      {
+        "type": "ScrollView",
+        "props": {
+          "contentContainerStyle": {
+            "gap": 24,
+            "paddingBottom": 48
+          }
+        },
+        "children": [
+          {
+            "type": "Button",
+            "props": {
+              "title": "暂不",
+              "variant": "ghost"
+            },
+            "children": [
+              "暂不"
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 12
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "下一次发现"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {
+                  "accessibilityRole": "header",
+                  "style": [
+                    null,
+                    {
+                      "color": "#172b22"
+                    }
+                  ]
+                },
+                "children": [
+                  "继续发现心仪地点"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "无论是否订阅，你已保存的地点始终属于你。"
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "style": [
+                        null,
+                        {
+                          "color": "#172b22"
+                        }
+                      ]
+                    },
+                    "children": [
+                      "你的地点查找"
+                    ]
+                  },
+                  {
+                    "type": "View",
+                    "props": {
+                      "style": {
+                        "gap": 4
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "每月免费查找"
+                        ]
+                      },
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "3 次中可用 1 次"
+                        ]
+                      },
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "为待处理结果预留：1"
+                        ]
+                      },
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "免费额度于 2026年11月1日（UTC）重置。"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "已购代币：47"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "为待处理结果预留：3"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "已购代币永不过期，Plus 不会消耗它们。"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {
+              "style": {
+                "borderColor": "#35594b"
+              }
+            },
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 16
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "style": [
+                        null,
+                        {
+                          "color": "#d77343"
+                        }
+                      ]
+                    },
+                    "children": [
+                      "Nearr Plus"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "无限次地点查找"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Plus 有效期间，成功的视频地点查找次数不限，不扣除代币。"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "此账户目前无法购买 Plus。"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Apple 按月收费，除非在订阅设置中取消，否则会自动续订。无免费试用或年度方案。"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 12
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "props": {
+                  "accessibilityRole": "header"
+                },
+                "children": [
+                  "也可按需购买查找次数"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "一个代币可支付一次成功的视频地点查找。已购代币永不过期。"
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "入门"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "20 个代币"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "商店价格暂不可用，此套餐尚无法购买。"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "探索"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "50 个代币"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "商店价格暂不可用，此套餐尚无法购买。"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "冒险"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "200 个代币"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "商店价格暂不可用，此套餐尚无法购买。"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "依次使用 Plus、每月免费额度、已购代币。"
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "免费方案每个自然月包含 3 次成功的视频地点查找。",
+              " (UTC)"
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "一段视频即使包含多个地点，也只计为一次。查找失败不会消耗你的额度。"
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "Quick Check 会预留一次查找，直至保存或预留到期。每月免费额度不结转。"
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 8
+              }
+            },
+            "children": [
+              {
+                "type": "Button",
+                "props": {
+                  "title": "恢复购买",
+                  "variant": "secondary",
+                  "disabled": true
+                },
+                "children": [
+                  "恢复购买"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "恢复操作会将已验证购买重新关联至账户，不会补回已使用的代币。"
+                ]
+              },
+              {
+                "type": "Button",
+                "props": {
+                  "title": "管理订阅",
+                  "variant": "ghost",
+                  "disabled": false
+                },
+                "children": [
+                  "管理订阅"
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "刷新余额",
+              "variant": "ghost",
+              "disabled": false
+            },
+            "children": [
+              "刷新余额"
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "服务条款",
+              "variant": "ghost"
+            },
+            "children": [
+              "服务条款"
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "隐私政策",
+              "variant": "ghost"
+            },
+            "children": [
+              "隐私政策"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

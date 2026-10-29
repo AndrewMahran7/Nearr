@@ -1,0 +1,35 @@
+{
+  "capturedAt": "2026-10-29T21:10:55.733Z",
+  "builds": [
+    {
+      "id": "3d96cf71-c507-449e-af77-3bfd7fd57f38",
+      "status": "FINISHED",
+      "distribution": "INTERNAL",
+      "profile": "development",
+      "version": "1.7.0",
+      "buildNumber": "72",
+      "gitCommitHash": "4346840b69749b4ff54a7c9bd2e0abb0e67c8b12",
+      "createdAt": "2026-10-27T18:28:25.306Z"
+    },
+    {
+      "id": "6afca96b-3902-48b5-82ff-e19a2d72b36e",
+      "status": "FINISHED",
+      "distribution": "INTERNAL",
+      "profile": "development",
+      "version": "1.7.0",
+      "buildNumber": "71",
+      "gitCommitHash": "5539bc329c1c1f860a9f8fbbe512f90c2746cb9e",
+      "createdAt": "2026-10-27T18:24:27.720Z"
+    },
+    {
+      "id": "b9999bdf-a1bc-4b96-bec4-912375379f61",
+      "status": "FINISHED",
+      "distribution": "INTERNAL",
+      "profile": "development",
+      "version": "1.7.0",
+      "buildNumber": "70",
+      "gitCommitHash": "fcf2c78646975347206b44bdea0f9c31b9c643d1",
+      "createdAt": "2026-10-27T18:11:51.400Z"
+    }
+  ]
+}

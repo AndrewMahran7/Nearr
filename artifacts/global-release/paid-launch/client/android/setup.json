@@ -1,0 +1,16 @@
+{
+  "capturedAt": "2026-10-29T20:34:40.727Z",
+  "source": "adb exec-out screencap -p",
+  "platform": "Android",
+  "device": "existing Pixel 8a API36 emulator",
+  "width": 1080,
+  "height": 2400,
+  "fontScale": "1.0",
+  "density": "Physical density: 420",
+  "fixture": true,
+  "livePurchaseProof": false,
+  "iosEvidence": false,
+  "appSource": "a07016ab99fccb4b9b27510d2ed295ee021411de",
+  "workingTreeEdits": true,
+  "sha256": "3f9303c8b3aaac1632bd52162f646d4b6cb79f3a8cb6d6e949a2e5119391f3ab"
+}

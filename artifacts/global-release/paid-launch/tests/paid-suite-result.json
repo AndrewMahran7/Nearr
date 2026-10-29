@@ -1,0 +1,22 @@
+{
+  "recordedAt": "2026-10-29T21:16:58.177Z",
+  "command": "npm run test:paid-launch",
+  "exitCode": 0,
+  "logSha256": "718cce3ec523c8fbda30126beb5f9fdd29c44f6f284fc8e0395748a4ae59d642",
+  "suites": {
+    "paidPolicy": 13,
+    "purchaseVerification": 49,
+    "purchaseRecovery": 57,
+    "postgresqlFinancial": 40,
+    "clientRuntimeGroups": 16,
+    "clientScreenRenders": 110,
+    "entitlementRefresh": 56,
+    "edgeRefreshCallers": 5,
+    "edgeIngress": 8,
+    "recognitionOwnerPreflight": 15,
+    "hostIngress": 6,
+    "hostAccountBoundaries": 7
+  },
+  "liveStoreKit": false,
+  "liveRecognition": false
+}

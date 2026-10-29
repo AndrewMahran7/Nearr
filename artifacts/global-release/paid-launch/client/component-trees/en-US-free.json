@@ -1,0 +1,492 @@
+{
+  "kind": "react-test-renderer component tree, not pixels or native screenshot",
+  "locale": "en-US",
+  "state": "free",
+  "tree": {
+    "type": "Screen",
+    "props": {},
+    "children": [
+      {
+        "type": "ScrollView",
+        "props": {
+          "contentContainerStyle": {
+            "gap": 24,
+            "paddingBottom": 48
+          }
+        },
+        "children": [
+          {
+            "type": "Button",
+            "props": {
+              "title": "Not now",
+              "variant": "ghost"
+            },
+            "children": [
+              "Not now"
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 12
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "Your next discovery"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {
+                  "accessibilityRole": "header",
+                  "style": [
+                    null,
+                    {
+                      "color": "#172b22"
+                    }
+                  ]
+                },
+                "children": [
+                  "Keep discovering places"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "Your saved places stay yours, with or without a subscription."
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "style": [
+                        null,
+                        {
+                          "color": "#172b22"
+                        }
+                      ]
+                    },
+                    "children": [
+                      "Your finds"
+                    ]
+                  },
+                  {
+                    "type": "View",
+                    "props": {
+                      "style": {
+                        "gap": 4
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "Monthly free finds"
+                        ]
+                      },
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "1 of 3 available"
+                        ]
+                      },
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "Reserved for pending results: 1"
+                        ]
+                      },
+                      {
+                        "type": "Text",
+                        "props": {},
+                        "children": [
+                          "Free resets Nov 1, 2026 (UTC)."
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Purchased tokens: 47"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Reserved for pending results: 3"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Purchased tokens never expire. Plus leaves them untouched."
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {
+              "style": {
+                "borderColor": "#35594b"
+              }
+            },
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 16
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "style": [
+                        null,
+                        {
+                          "color": "#d77343"
+                        }
+                      ]
+                    },
+                    "children": [
+                      "Nearr Plus"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "Unlimited finds"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Unlimited successful video finds while Plus is active. No token deductions."
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "$1.99 / month"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "Get Nearr Plus",
+                      "disabled": false,
+                      "loading": false
+                    },
+                    "children": [
+                      "Get Nearr Plus"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Apple bills monthly and renews automatically unless cancelled in subscription settings. No free trial or annual plan."
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 12
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "props": {
+                  "accessibilityRole": "header"
+                },
+                "children": [
+                  "Or buy finds when you need them"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "One token pays for one successful video find. Purchased tokens do not expire."
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Starter"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "20 tokens"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "Buy 20 tokens · $1.19",
+                      "variant": "secondary",
+                      "disabled": false,
+                      "loading": false
+                    },
+                    "children": [
+                      "Buy 20 tokens · $1.19"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Explorer"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "50 tokens"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "Buy 50 tokens · $2.49",
+                      "variant": "secondary",
+                      "disabled": false,
+                      "loading": false
+                    },
+                    "children": [
+                      "Buy 50 tokens · $2.49"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "gap": 12
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {},
+                    "children": [
+                      "Adventurer"
+                    ]
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "accessibilityRole": "header"
+                    },
+                    "children": [
+                      "200 tokens"
+                    ]
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "title": "Buy 200 tokens · $5.00",
+                      "variant": "secondary",
+                      "disabled": false,
+                      "loading": false
+                    },
+                    "children": [
+                      "Buy 200 tokens · $5.00"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "Plus is used first, then monthly free finds, then purchased tokens."
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "Free includes 3 successful video finds each calendar month.",
+              " (UTC)"
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "One video counts once, even when it contains several places. Failed searches do not use your allowance."
+            ]
+          },
+          {
+            "type": "Text",
+            "props": {},
+            "children": [
+              "Quick Check reserves a find until you save or the reservation expires. Monthly free finds do not roll over."
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "gap": 8
+              }
+            },
+            "children": [
+              {
+                "type": "Button",
+                "props": {
+                  "title": "Restore Purchases",
+                  "variant": "secondary",
+                  "disabled": false
+                },
+                "children": [
+                  "Restore Purchases"
+                ]
+              },
+              {
+                "type": "Text",
+                "props": {},
+                "children": [
+                  "Restore reconnects verified purchases to your account. Spent tokens are not restored."
+                ]
+              },
+              {
+                "type": "Button",
+                "props": {
+                  "title": "Manage Subscription",
+                  "variant": "ghost",
+                  "disabled": false
+                },
+                "children": [
+                  "Manage Subscription"
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "Refresh balance",
+              "variant": "ghost",
+              "disabled": false
+            },
+            "children": [
+              "Refresh balance"
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "Terms of Service",
+              "variant": "ghost"
+            },
+            "children": [
+              "Terms of Service"
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "Privacy Policy",
+              "variant": "ghost"
+            },
+            "children": [
+              "Privacy Policy"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

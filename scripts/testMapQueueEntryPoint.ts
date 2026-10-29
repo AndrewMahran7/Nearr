@@ -50,8 +50,9 @@ assert.match(read('components/map/MapBottomSheet.tsx'), /<ShareQueueButton \/>/,
 const hook = read('hooks/useShareJobs.ts');
 assert.ok(hook.includes('canReachShareQueue'));
 assert.ok(!hook.includes('isAsyncShareJobsEnabled'));
-for (const writePath of ['app/share.tsx', 'ShareExtension.tsx']) {
-  assert.ok(read(writePath).includes('isAsyncShareJobsEnabled()'));
-}
+const hostShare=read('app/share.tsx');
+assert.match(hostShare, /<ShareJobHandoff/);
+assert.doesNotMatch(hostShare, /isAsyncShareJobsEnabled\(\)|return <LegacyShareScreen/, 'host video ingress cannot reopen a synchronous fallback');
+assert.ok(read('ShareExtension.tsx').includes('isAsyncShareJobsEnabled()'));
 
 console.log('PASS map Activity entry point: reachable on map, suppressed under owned surfaces, pointer-safe');

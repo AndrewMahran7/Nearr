@@ -8,7 +8,7 @@
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
     "ios": {
-      "buildNumber": "72",
+      "buildNumber": "73",
       "supportsTablet": false,
       "bundleIdentifier": "com.nearr.ios",
       "associatedDomains": [

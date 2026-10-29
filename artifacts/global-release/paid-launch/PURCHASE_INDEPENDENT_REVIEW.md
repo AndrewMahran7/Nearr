@@ -1,0 +1,19 @@
+# Independent purchase review
+
+Reviewed 2026-10-29 UTC. Scope: local paid ledger migration and Edge ingress, separate from Apple/RevenueCat live qualification. No cloud mutation performed by this reviewer.
+
+Reviewed migration: `supabase/migrations/20261029000003_unlimited_plus_paid_finds.sql`, SHA-256 `f3092ae0974c6f4c15bbf3ca6b15b2f6ab40674d2062c68c677e8f85ad83acd5`. The backend's `paid-find-database-tests.json` records 39 passing local PostgreSQL cases; I inspected the receipt and source, rather than rerunning its database suite independently.
+
+Findings reported during review and closed in this source:
+
+- Ordinary purchase replay previously advanced the refund watermark and could suppress a later real cancellation. Callback type is now stored; ordinary replay does not move it, and explicit reversals must be newer.
+- New refunded v2 recovery lacked a barrier against an older delayed refund reversal. Recovery proof is now separate, and reversal at or before its latest revoked observation cannot restore funds.
+- A known refunded recovery previously returned an error while leaving verified funds spendable. Current recovery quarantines available credit, accounts for held/consumed amounts and preserves the callback watermark; a callback after the lookup started wins over an in-flight older snapshot.
+- An older recovery could mutate balances before the receipt UPSERT rejected its old timestamp. The observation check now returns before mutation.
+- Legacy capped Plus initially lacked verification freshness. It now requires a fresh proof before any funding; its shared period usage remains distinct from unlimited Plus.
+
+The inspected implementation keeps protected financial operations under the shared READ COMMITTED lock, gives client roles no new mint/settlement privileges, binds transactions to the exact environment/product/owner, and combines callback deduplication with settlement in one database transaction. Authorized anonymous onboarding transfer uses a durable wallet alias while unrelated permanent accounts cannot claim the same funds. Source completion requires a verified owned save and durable source receipt; retries/aliases retain financial idempotency. No additional concrete money or authorization defect remained in this focused source review.
+
+Owned pure verification/recovery modules passed **49 + 57 = 106** focused offline checks, including malformed array-valued states, wrong app/store/environment/owner, refunded-before-purchase ordering, stale recovery, cross-account replay, and an actual 15-second hanging-transport deadline. Exact hashes and logs are in `tests/purchase-verification-receipt.json`. Isolated strict TypeScript passed for the current four files. A full root `npm run typecheck` also passed before the last three strict-type rejection tests; the final suite should include the current source.
+
+Operational limits remain: the live RC app/project/product mappings, supported Apple price points, current agreement state, actual refund/recovery delivery and real StoreKit lifecycle are unverified. The prior capped `nearr_plus_monthly_v1` obligation is different from historically offered `com.nearr.pro.monthly.v1`; current legacy Pro contract/history must be reconciled before activation. This review supports local engineering qualification and does not authorize sales or App Review submission.

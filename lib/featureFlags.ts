@@ -12,8 +12,8 @@
  * DEPENDENCY RULE: keep this file importable from the iOS Share Extension
  * target — only `expo-constants`, no `lib/supabase`, no `lib/shareAgent/*`.
  *
- * Flag is DEFAULT OFF. When off, the app keeps the existing synchronous
- * share flow untouched (see docs/ASYNC_SHARE_JOBS.md → Feature flag).
+ * Nearr 1.7 requires durable share jobs for financial admission/settlement.
+ * The old async rollout switch cannot select unmetered synchronous recognition.
  */
 
 import Constants from 'expo-constants';
@@ -45,16 +45,12 @@ function readExtra(key: string): string {
 }
 
 /**
- * True when the async share-job flow should be used. Default OFF.
- *
- * Enable per build with:
- *   eas env:create EXPO_PUBLIC_ASYNC_SHARE_JOBS_ENABLED --value true
+ * Durable queue admission is mandatory in 1.7, including the Share Extension,
+ * push registration and saved-result undo. Retain this API for those callers;
+ * stale build environment values must not reactivate the synchronous path.
  */
 export function isAsyncShareJobsEnabled(): boolean {
-  return resolveBooleanFlag(
-    process.env.EXPO_PUBLIC_ASYNC_SHARE_JOBS_ENABLED,
-    readExtra('asyncShareJobsEnabled'),
-  );
+  return true;
 }
 
 /** True when the validated Place Recommendations V1 surface is enabled. */

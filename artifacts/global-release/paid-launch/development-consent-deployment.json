@@ -1,0 +1,37 @@
+{
+  "deployedAt": "2026-10-29T20:26:11.471Z",
+  "target": "qnfxnmvxpjzfydgudtvs",
+  "sourceCommit": "a07016ab99fccb4b9b27510d2ed295ee021411de",
+  "scope": "consent-only Development migrations; all release gates unchanged",
+  "beforeCount": 89,
+  "afterCount": 91,
+  "migrations": [
+    {
+      "file": "20261029000001_atomic_terms_privacy_acceptance.sql",
+      "version": "20261029000001",
+      "sha256": "acddb96adcdc7eea2de950c1dfd9414b28da9f265977911bce6b31721df3406c"
+    },
+    {
+      "file": "20261029000002_revision_bound_legal_acceptance.sql",
+      "version": "20261029000002",
+      "sha256": "d7af8ab80a4dc8bdd82f03d174ae3dbe8d86ae247d76edb0f12fa75732cbb002"
+    }
+  ],
+  "policyUnchanged": true,
+  "signatures": [
+    {
+      "anon_execute": false,
+      "args": "",
+      "authenticated_execute": true,
+      "security_definer": true
+    },
+    {
+      "anon_execute": false,
+      "args": "p_terms_version text, p_privacy_version text, p_expected_user_id uuid",
+      "authenticated_execute": true,
+      "security_definer": true
+    }
+  ],
+  "productionMutation": false,
+  "billingMutation": false
+}

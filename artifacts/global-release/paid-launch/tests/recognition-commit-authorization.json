@@ -1,0 +1,18 @@
+{
+  "testedAt": "2026-10-29T21:15:27.318Z",
+  "passed": 10,
+  "failed": 0,
+  "scope": "Actual PostgreSQL authorization migration + real consent policy + delegate boundary probes; not a complete Places/save integration",
+  "tests": [
+    "original delegate bodies are unchanged and inaccessible to client roles",
+    "unqualified caller reaches none of the three mutation delegates",
+    "qualified owner retains original RPC return contracts and writes",
+    "original owner validation remains effective after authorization",
+    "withdrawn AI permission rejects all mutation entrypoints without a write",
+    "new legal revision invalidates stale acceptance before writes",
+    "fixed-snapshot isolation is rejected",
+    "anonymous direct execution and helper bypass are denied",
+    "save first locks consent through commit; concurrent withdrawal commits afterward",
+    "withdrawal first makes a waiting save recheck current consent and write nothing"
+  ]
+}

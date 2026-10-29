@@ -3,9 +3,9 @@ import { useLocale } from '@/hooks/useLocale';
 /**
  * components/ShareJobHandoff.tsx
  *
- * Host-app async submit panel. Used by app/share.tsx when the async
- * share-jobs flag is on and a URL arrives (Android share intent, iOS
- * signed-out/network handoff, or in-app paste-link). It creates a durable
+ * Host-app durable submit panel. Used by app/share.tsx for every validated
+ * URL (Android share intent, iOS signed-out/network handoff, or in-app
+ * paste-link), independently of the former rollout flag. It creates a durable
  * job via `create-share-job` and confirms — it does NOT run extraction
  * inline. Mirrors the share-extension behavior for parity.
  *
@@ -32,11 +32,13 @@ import { sharedAuth } from '@/lib/sharedAuth';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { prepareOnboardingV2RealPracticeShare } from '@/lib/onboardingV2';
 import { isExpectedOnboardingSource } from '@/lib/onboardingV2Core';
+import { shareAccessPresentation } from '@/lib/shareAccessPresentation';
 
 type UiState =
   | { kind: 'submitting' }
   | { kind: 'accepted'; duplicate: boolean }
   | { kind: 'signed_out' }
+  | { kind: 'restricted'; code: string }
   | { kind: 'error' };
 
 export function ShareJobHandoff({ url, submissionId }: { url: string; submissionId?: string }) {
@@ -82,6 +84,8 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
         closeTimerRef.current = setTimeout(() => router.replace('/(tabs)/map'), 1600);
       } else if (result.reason === 'unauthorized' || result.reason === 'missing_auth') {
         setUi({ kind: 'signed_out' });
+      } else if (typeof result.reason === 'string' && shareAccessPresentation(result.reason)) {
+        setUi({ kind: 'restricted', code: result.reason });
       } else {
         console.log(`[share-job] job_accepted=false reason=${result.reason}`);
         void recordDiagnostic({
@@ -188,6 +192,19 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
         </View>
       </Screen>
     );
+  }
+
+  if (ui.kind === 'restricted') {
+    const access = shareAccessPresentation(ui.code)!;
+    const purchase = ui.code === 'plus_allowance_exhausted' || ui.code === 'plus_verification_required';
+    return <Screen><View style={styles.centered}>
+      <Text accessibilityRole="header" style={[typography.heading, styles.title]}>{access.title}</Text>
+      <Text accessibilityRole="alert" style={[typography.body, styles.subtle]}>{access.body}</Text>
+      <View style={{ height: Spacing.lg }} />
+      {purchase && <Button title={t('Finds, Plus and tokens')} onPress={() => router.push('/plus')} />}
+      {purchase && <Button title={t('Retry')} variant="ghost" onPress={() => void submit()} />}
+      <Button title={t('Done')} variant="ghost" onPress={() => router.replace('/(tabs)/map')} />
+    </View></Screen>;
   }
 
   if (ui.kind === 'error') {

@@ -51,6 +51,7 @@ import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
 import { inspectFacebookUrl } from '../../../lib/shareAgent/facebookUrl.ts';
 import { evaluateMetadataAutoSave } from '../process-share-jobs/metadataAutoSaveGate.ts';
 import { checkAgeEligibility } from '../_shared/ageEligibility.ts';
+import { checkSynchronousRecognitionPolicy } from '../_shared/paidRecognitionIngress.ts';
 
 // ---------------------------------------------------------------------------
 
@@ -111,6 +112,9 @@ serve(async (req) => {
   if (req.headers.get('x-nearr-contract') !== 'global-v1') return statusFailed('update_required', 426);
   const age = await checkAgeEligibility(userClient, userId);
   if (!age.ok) return statusFailed(age.code, age.code === 'age_check_unavailable' ? 503 : 403);
+  const paidIngress = await checkSynchronousRecognitionPolicy(userClient);
+  if (paidIngress === 'requires_job') return statusFailed('update_required',426);
+  if (paidIngress !== 'allowed') return statusFailed('paid_policy_unavailable',503);
 
   // ---- Fetch metadata -------------------------------------------
   // Normalize first: lowercase host + strip share-sheet tracking params

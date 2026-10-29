@@ -380,7 +380,8 @@
     "test:recognition-consent": "ts-node -P scripts/tsconfig.json scripts/testRecognitionConsentBoundary.ts",
     "test:global-eligibility-db": "ts-node -P scripts/tsconfig.json scripts/testGlobalEligibilityDatabase.ts",
     "test:localization": "npx ts-node -P scripts/tsconfig.json scripts/testLocalization.ts",
-    "test:native-localization": "node scripts/testNativeLocalization.cjs"
+    "test:native-localization": "node scripts/testNativeLocalization.cjs",
+    "test:paid-launch": "ts-node -P scripts/tsconfig.json scripts/testPaidFindPolicy.ts && ts-node -P scripts/tsconfig.json scripts/testPaidPurchaseVerification.ts && ts-node -P scripts/tsconfig.json scripts/testPaidPurchaseRecovery.ts && ts-node -P scripts/tsconfig.json scripts/testPaidFindsDatabase.ts && ts-node -P scripts/tsconfig.json scripts/testPaidFindsClientRuntime.ts && ts-node -P scripts/tsconfig.json scripts/testPaidEntitlementRefresh.ts && node scripts/testPaidRefreshCallers.cjs && node scripts/testPaidRecognitionIngress.cjs && ts-node -P scripts/tsconfig.json scripts/testRecognitionBillingPreflight.ts && ts-node -P scripts/tsconfig.json scripts/testPaidHostShareIngress.ts && ts-node -P scripts/tsconfig.json scripts/testHostShareAccountBoundary.ts && ts-node -P scripts/tsconfig.json scripts/testRecognitionCommitAuthorization.ts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",

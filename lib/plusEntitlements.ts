@@ -1,9 +1,10 @@
 /** Shared, pure contract. Only the Edge service may turn RevenueCat API responses
  * into database entitlements. SDK customerInfo is never an authorization input. */
 export const PLUS_ENTITLEMENT_ID = 'nearr_plus';
-export const PLUS_PRODUCT_ID = 'nearr_plus_monthly_v1';
+export const PLUS_PRODUCT_ID = 'com.nearr.plus.unlimited.monthly.v1';
 export const PLUS_FREE_FINDS = 3;
-export const PLUS_MONTHLY_FINDS = 10;
+/** Unlimited is deliberately not represented by a large numeric allowance. */
+export const PLUS_MONTHLY_FINDS = null;
 export const PLUS_VERIFICATION_MAX_AGE_MS = 15 * 60 * 1000;
 
 export type PlusState = 'free' | 'active' | 'trial' | 'intro' | 'grace' | 'cancelled' | 'expired' | 'revoked';
@@ -54,9 +55,29 @@ export function verifyPlusSubscriber(payload: unknown, config: VerificationConfi
 }
 
 export function hasVerifiedPlusAccess(snapshot: PlusEntitlementSnapshot | null | undefined, now = Date.now()): boolean {
-  if (!snapshot || !['active', 'trial', 'intro', 'grace', 'cancelled'].includes(snapshot.state)) return false;
+  if (!snapshot || snapshot.productId !== PLUS_PRODUCT_ID || !['active', 'trial', 'intro', 'grace', 'cancelled'].includes(snapshot.state)) return false;
   const verified = date(snapshot.verifiedAt); const until = date(snapshot.accessUntil);
   return verified !== null && until !== null && verified <= now + 60_000 && now - verified <= PLUS_VERIFICATION_MAX_AGE_MS && until > now;
+}
+
+/** Keep the old capped subscription's verified obligation separate. Its receipt
+ * can never establish unlimited access and a new free snapshot cannot erase it. */
+export function verifyPaidSubscriber(payload: unknown, config: VerificationConfig, now = Date.now()) {
+  const root = object(payload); const subscriber = object(root?.subscriber);
+  const entitlements = object(subscriber?.entitlements); const subscriptions = object(subscriber?.subscriptions);
+  if (!root || !subscriber || !entitlements || !subscriptions) throw new Error('plus_verification_invalid');
+  const oldProduct = 'nearr_plus_monthly_v1';
+  const current = object(entitlements[config.entitlementId]);
+  const newEntitlements = { ...entitlements };
+  if (current?.product_identifier === oldProduct) delete newEntitlements[config.entitlementId];
+  const snapshot = verifyPlusSubscriber({ ...root, subscriber: { ...subscriber, entitlements: newEntitlements } }, config, now);
+  const old = object(subscriptions[oldProduct]);
+  const legacyEntitlements = old ? { [config.entitlementId]: {
+    product_identifier: oldProduct, expires_date: old.expires_date,
+    grace_period_expires_date: old.grace_period_expires_date ?? null,
+  } } : {};
+  const legacySnapshot = verifyPlusSubscriber({ ...root, subscriber: { ...subscriber, entitlements: legacyEntitlements } }, { ...config, productId: oldProduct }, now);
+  return { snapshot, legacySnapshot };
 }
 
 /** Opaque server-assigned identities, never email, advertising IDs or a client

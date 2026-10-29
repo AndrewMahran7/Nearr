@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-29",
+  "ownedMetroProcessTreesStopped": [67540, 65136],
+  "ownedTransformWorkersStopped": [3088, 103916, 65624, 103644],
+  "adbReverse8081Removed": true,
+  "liveAccountsCreated": 0,
+  "cloudFixturesCreated": 0,
+  "deviceSettingsChanged": false,
+  "emulatorApp": "Cached debug APK remains installed; no native restart or release-APK restoration after rejected action",
+  "productionChanges": false
+}

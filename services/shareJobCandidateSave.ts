@@ -25,14 +25,17 @@ import {
 import type { SavedPlaceWithPlace, SourceType } from '@/types';
 import type { CanonicalSaveOutcome } from '@/lib/canonicalSaveContract';
 import { trackEvent } from '@/lib/analytics';
+import { assertRecognitionAccount, refreshRecognitionBilling } from '@/lib/recognitionBillingPreflight';
 
 export type ShareJobCandidateSaveDependencies = {
+  preflight: (jobId: string) => Promise<string>;
   save: (input: SaveSavedPlaceInput) => Promise<SaveSavedPlaceResult>;
   cache: (saved: SavedPlaceWithPlace) => void;
   resolve: (jobId: string, savedPlaceId: string) => Promise<void>;
 };
 
 const productionDependencies: ShareJobCandidateSaveDependencies = {
+  preflight: (jobId) => refreshRecognitionBilling({ jobId }),
   save: saveSavedPlace,
   cache: upsertSavedPlaceIntoCache,
   resolve: markShareJobResolved,
@@ -71,8 +74,9 @@ export async function persistShareJobCandidate(
     sourceUrl: string | null;
     aiNote?: string | null;
   },
-  dependencies: Pick<ShareJobCandidateSaveDependencies, 'save' | 'cache'> = productionDependencies,
+  dependencies: Pick<ShareJobCandidateSaveDependencies, 'preflight' | 'save' | 'cache'> = productionDependencies,
 ): Promise<ShareJobCandidateSaveOutcome> {
+  const expectedUserId = args.jobId ? await dependencies.preflight(args.jobId) : undefined;
   recordBreadcrumb('save_started', { jobId: args.jobId });
   const result = await dependencies.save({
     candidate: args.candidate,
@@ -81,7 +85,10 @@ export async function persistShareJobCandidate(
     sourceType: shareJobSourceType(args.platform),
     sourceUrl: args.sourceUrl,
     aiNote: args.aiNote ?? undefined,
+    ...(expectedUserId ? { expectedUserId } : {}),
   });
+  // Do not seed the newly signed-in account's visible cache with a late save.
+  if (expectedUserId) await assertRecognitionAccount(expectedUserId);
   if (result.status === 'saved') {
     dependencies.cache(result.saved);
     recordBreadcrumb('save_response', {

@@ -23,6 +23,7 @@ import type { SavedPlaceWithPlace } from '@/types';
 import type { ShareFailureCategory } from '@/lib/shareFailurePresentation';
 import type { PremiumRequestState } from '@/lib/premiumRequestMonetization';
 import { requireRealSavedPlaceId } from '@/lib/savedPlaceIdentity';
+import { refreshRecognitionBilling } from '@/lib/recognitionBillingPreflight';
 
 export type ShareJobStatus =
   | 'awaiting_purchase'
@@ -174,6 +175,7 @@ export async function autoCompleteNamedLead(args: {
   attemptToken: string;
   candidate: ShareJobCandidate;
 }): Promise<{ savedPlaceId: string; reused: boolean; completed: boolean; idempotent: boolean }> {
+  await refreshRecognitionBilling({ jobId: args.jobId });
   const candidate = args.candidate;
   const { data, error } = await supabase.rpc('auto_complete_named_lead', {
     p_job_id: args.jobId,
@@ -249,6 +251,7 @@ export async function promoteShareJobSoftAlternative(
   resultId: string,
   makePrimary = true,
 ): Promise<{ savedPlaceId: string; primaryReplaced: boolean }> {
+  await refreshRecognitionBilling({ resultId });
   const { data, error } = await supabase.rpc('promote_share_job_soft_alternative', {
     p_result_id: resultId,
     p_make_primary: makePrimary,
@@ -423,6 +426,7 @@ export async function markShareJobResolved(
 ): Promise<void> {
   if (isDemoMode() || isMapPreviewMode()) return;
   savedPlaceId = requireRealSavedPlaceId(savedPlaceId, 'resolve_share_job');
+  await refreshRecognitionBilling({ jobId });
   const { data, error } = await supabase.rpc('resolve_share_job', {
     p_job_id: jobId,
     p_saved_place_id: savedPlaceId,

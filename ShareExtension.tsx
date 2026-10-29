@@ -424,8 +424,8 @@ export default function ShareExtension(props: ExtensionInitialProps) {
       />
     );
   }
-  // Feature-flagged: async submit-and-dismiss (new) vs the legacy synchronous
-  // handoff (unchanged). Default OFF keeps the proven flow until rollout.
+  // Durable admission is mandatory in1.7; the retained helper always returns
+  // true. An old environment flag cannot select the synchronous billing bypass.
   if (isAsyncShareJobsEnabled()) {
     return <AsyncShareExtension {...props} />;
   }

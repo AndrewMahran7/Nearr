@@ -1,0 +1,14 @@
+{
+  "liveRevenueCatCalls": 0,
+  "recoveryChecks": 57,
+  "sourceHashes": {
+    "scripts/testPaidPurchaseVerification.ts": "ac808053d48259e6cde59dc30631ef6b3d484721ea5fb6911a1f98c317d8a3fa",
+    "lib/paidPurchaseVerification.ts": "7a5bbd4e5958ea69c86458bf9d1c602b2ebe07b4715e72461e782f74c37bb063",
+    "scripts/testPaidPurchaseRecovery.ts": "bd21e189193037e0360e6936bc488f2440f91f273b4aaadd49985e0980dc115a",
+    "lib/paidPurchaseRecovery.ts": "a4558a22781a90b7552d421abad316509f5d2d79de93200e68f4263dd3235978"
+  },
+  "capturedAt": "2026-10-29T20:50:36.0930450Z",
+  "realStoreKitTransactions": 0,
+  "offlineOnly": true,
+  "verificationChecks": 49
+}

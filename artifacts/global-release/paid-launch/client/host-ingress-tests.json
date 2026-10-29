@@ -1,0 +1,14 @@
+{
+  "createdAt": "2026-10-29T21:16:38.041Z",
+  "kind": "actual ShareScreen, ShareJobHandoff, AiSharePermissionPrompt, hostShareSubmit and createShareJob with mocked native/auth/network boundaries",
+  "tests": [
+    "pasted button and keyboard submit mount actual consent/handoff before any parse, extraction, provider or save",
+    "valid incoming URL preserves sid and trace ordering despite old async flag false; new URL asks consent again",
+    "invalid paste and denied consent never submit or enter legacy extraction",
+    "durable admission denial and server failure never fall back to sync provider calls",
+    "exhausted or unverified finds open the paywall and retry the identical submission through server admission",
+    "consent and provider restrictions have no network retry or paid bypass CTA"
+  ],
+  "liveCalls": 0,
+  "legacyFlagInTest": false
+}

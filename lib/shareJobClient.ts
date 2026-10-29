@@ -30,6 +30,7 @@ export type CreateShareJobResult =
         | 'ai_permission_required'
         | 'recognition_not_available'
         | 'plus_allowance_exhausted'
+        | 'plus_verification_required'
         | 'timeout'
         | 'network'
         | 'http_error'
@@ -123,6 +124,8 @@ export async function createShareJob(args: {
     if (json?.error === 'ai_permission_required') return { ok: false, reason: 'ai_permission_required', ...diagnostic };
     if (json?.error === 'recognition_not_available') return { ok: false, reason: 'recognition_not_available', ...diagnostic };
     if (json?.error === 'plus_allowance_exhausted') return { ok: false, reason: 'plus_allowance_exhausted', ...diagnostic };
+    if (json?.error === 'plus_verification_required') return { ok: false, reason: 'plus_verification_required', ...diagnostic };
+    if (json?.error === 'plus_recognition_ineligible') return { ok: false, reason: 'recognition_not_available', ...diagnostic };
     if (res.status === 400) return { ok: false, reason: 'invalid_url', ...diagnostic };
     if (!res.ok) return { ok: false, reason: 'http_error', ...diagnostic };
 

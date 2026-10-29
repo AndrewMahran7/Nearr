@@ -1,0 +1,18 @@
+{
+  "createdAt": "2026-10-29T21:01:15.660Z",
+  "files": {
+    "app/plus.tsx": "354cfcf24af9a666cdee848e6ba2a04fc0f369b4a8e9553155ac0dcf8f066aad",
+    "app/(tabs)/settings.tsx": "4f47f988fe9f3ed0548fbd4d5f73a215b55f7e89713484a2a968f78a77221ce8",
+    "app/dev-qa.tsx": "153ee2f6d3540480eced5d1483fba2e77c1cbbda47e0ea7e90a82d8ddf903d59",
+    "hooks/usePlus.ts": "44a97aa219d519b83b198b5b6e6c049bf035939871cfcb971492558bd641833d",
+    "lib/plusClient.ts": "d0918d565b27ed7ddfa1cba0ab1f84214395c696d2ee6e250040fbd7b990ed4e",
+    "lib/paidClientModel.ts": "52ea95393776bdec06e8cc1eb7f1c50ca0d2a1590c61bc7009c00f38001fd116",
+    "lib/paidPreviewFixtures.ts": "54d17e0bd37369d95e450baf97419f13857f6f847b57c302d4c7ef431a6a5adb",
+    "components/PaidFindsBalance.tsx": "9af4bc64ddb141a43cd3009ff34b066a58fb295cd3f3dd0f026d68f16bed56d5",
+    "components/PaidFindsSettingsCard.tsx": "3dd25ec99b4385f04f647b10bfc26f420791977b4cee1a265c15285b334bb11d",
+    "components/PaidFindsNativePreview.tsx": "90e6ae3b261c76ba2098292e87498472c3419b1798c65c325e066cb182ceb9dd",
+    "locales/paidMonetization.ts": "0101857137c1cf1effe50a29b037ab1cf2ed6a4b9df915e1f90da47794bfb211",
+    "locales/index.ts": "f3e66c8f01fd0a138fbf57f29a5bfc68ee25d948e8de40fadbb6a3fa70f44731",
+    "app/share.tsx": "9240c50dd4fa5c99884ec17c8fb44226e899f1513dbe0785ba79b31be50ffa8f"
+  }
+}

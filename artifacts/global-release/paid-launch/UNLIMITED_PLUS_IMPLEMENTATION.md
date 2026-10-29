@@ -1,0 +1,17 @@
+# Unlimited Plus implementation
+
+Routine entitlement freshness is server-managed: durable admission, recognition processing, media finalization and successful terminal settlement invoke a bounded refresh when an otherwise-active paid receipt is stale. Status also refreshes stale access for client confirmation preflights. Missing verification fails closed with a recoverable response; it does not silently debit a token. Free accounts and fresh receipts do not require a RevenueCat network call at these boundaries.
+
+New subscription: `com.nearr.plus.unlimited.monthly.v1`, target US price $1.99/month, no annual plan or trial. Actual Apple price/catalog readback is recorded separately. This product is distinct from old capped `nearr_plus_monthly_v1` and historical `com.nearr.pro.monthly.v1`.
+
+Fresh server-verified active access gives unlimited successful finds. `plusFinds`, `usage.limit` and `usage.remaining` are null for unlimited access; no large numeric sentinel or monthly cap implements this benefit. More than 100 successful saved submissions are covered in the local SQL suite without decrementing free allowance or purchased tokens. Existing bounded retry, identity, eligibility and infrastructure protections remain separate from a usage allowance.
+
+Cancellation retains access through its verified paid period. Expiration, refund and grace are evaluated from trusted current subscription state. The server rechecks freshness at financial admission and settlement; a client SDK entitlement never grants access. Purchased tokens remain intact when Plus is bought, renewed, cancelled, expired or restored.
+
+Old capped Plus records are copied to a separate protected legacy entitlement table and refreshed independently. A new-product free snapshot cannot erase that old obligation or make it unlimited. Historical Nearr Pro and promotional balances remain unmodified and require an explicit reconciliation decision before activation.
+
+The paid `plus-api` contract exposes `subscriptionBenefit: unlimited`, `catalogVerified`, exact token products, purchase readiness/reason, server-backed receipts and usage with `free`, `tokens`, `unlimited`, `verificationRequired`, `canSubmit` and `paymentPriority: plus_free_tokens`. The old client-compatible fields remain, while the new client rejects a capped or unqualified catalog before StoreKit. Restore/reconciliation remains available to existing customers when new sales are disabled.
+
+Migration defaults keep sales, allowance enforcement, release qualification, token qualification and paid-find policy off. Activation additionally requires the legacy experiment to be disabled, old reservations reconciled, exact RevenueCat recovery mappings, and documented legacy-obligation reconciliation. Merely setting sales true cannot make the new API advertise a usable paid catalog without the complete policy gate. No provider/region/legal flag is enabled by this migration.
+
+Local tests include actual PostgreSQL concurrency, pure subscription and purchase parsing, authenticated webhook contract, receipt binding, and RevenueCat recovery boundaries. Their receipts distinguish deterministic tests from real StoreKit purchases. Before paid release: verify actual Apple/RevenueCat catalog and prices, perform real sandbox lifecycle tests, qualify current Dev/Production schema and legacy obligations, and demonstrate permitted recognition with paid-find settlement. Do not submit or enable purchases based on local tests alone.

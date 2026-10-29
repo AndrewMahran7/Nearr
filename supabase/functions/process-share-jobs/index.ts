@@ -22,6 +22,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
 
 import { readEnv, validateEnv } from '../process-share-link/env.ts';
 import { checkAgeEligibility } from '../_shared/ageEligibility.ts';
+import { refreshStalePaidEntitlements } from '../_shared/paidEntitlementRefresh.ts';
 import { detectPlatform, legacySourceFor } from '../process-share-link/platform/detectPlatform.ts';
 import {
   fetchPostMetadata,
@@ -846,6 +847,9 @@ async function finalize(
   note: { title: string; body: string; data: Record<string, unknown> } | null,
 ): Promise<void> {
   const updatePatch: Record<string, unknown> = { ...patch };
+  if (patch.status === 'completed' || (patch.status === 'needs_help' && (patch.saved_place_id || job.saved_place_id))) {
+    await refreshStalePaidEntitlements(admin,job.user_id,{ revenueCatSecret:Deno.env.get('REVENUECAT_SECRET_API_KEY') ?? '' });
+  }
   // Qualification runs exercise the real recognition policy but can never
   // promote experimental outcomes into reusable recognition truth.
   const skipRecognitionCachePersist = updatePatch.__skipRecognitionCachePersist === true ||
@@ -927,7 +931,7 @@ async function finalize(
     updatePatch.premium_eligibility_reason = eligibility.reason;
   }
 
-  const { data: updated } = await admin
+  const { data: updated, error: finalizeError } = await admin
     .from('share_jobs')
     .update(updatePatch)
     .eq('id', job.id)
@@ -935,6 +939,9 @@ async function finalize(
     .select('id')
     .maybeSingle();
 
+  // A rejected atomic billing/terminal transition is not an already-completed
+  // replay. Surface it for the existing bounded retry/recovery path.
+  if (finalizeError) throw new Error(`share_job_finalize_failed:${finalizeError.code ?? 'database'}`);
   if (!updated) {
     console.log(`[share-job] finalize_skipped job_id=${job.id} already_terminal=true`);
     // A prior invocation may have committed the terminal job transition and
@@ -2409,6 +2416,9 @@ async function finalizeMediaTask(
   if (task.task_kind === 'ai_note_enrichment') {
     return await finalizeVideoAiNoteTask(admin, task, body, logFinalStatus);
   }
+  try {
+    await refreshStalePaidEntitlements(admin,task.user_id,{ revenueCatSecret:Deno.env.get('REVENUECAT_SECRET_API_KEY') ?? '' });
+  } catch { return json({ error:'plus_verification_required' },503); }
 
   const outcome = typeof body.outcome === 'string' ? body.outcome : 'evidence';
   const failureCode = safeMediaFailureCode(body.failureCode);
@@ -4293,6 +4303,7 @@ async function processOne(
     return;
   }
   const processingStartedMs = Date.now();
+  await refreshStalePaidEntitlements(admin,job.user_id,{ revenueCatSecret:Deno.env.get('REVENUECAT_SECRET_API_KEY') ?? '' });
   policy = recognitionCachePolicyForRun(policy, job.recognition_run_mode);
   const rawUrl = job.canonical_url || job.source_url;
   const normalized = normalizeShareUrl(rawUrl);

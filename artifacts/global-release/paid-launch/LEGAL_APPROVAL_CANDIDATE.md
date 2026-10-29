@@ -1,0 +1,149 @@
+# Unified Privacy Policy and Terms — final review drafts
+
+Prepared **2026-10-20**, paid product wording technically revised **2026-10-29 America/Los_Angeles**. **UNPUBLISHED / UNAPPROVED.** These are proposed consumer texts for the unified release. They are not legal approval, publication evidence, or proof that every described control has passed qualification. The revision corrects Birthday onboarding, distinguishes disabled optional app analytics from necessary diagnostics, and restores the existing website-attribution disclosure. The founder selected unlimited Plus plus token packs for this release. The final provider/guardian design, purchase qualification and exact publication text still require one consolidated approval. No effective date has been invented.
+
+Before publication, confirm the operator details, approve an effective date, validate the final binary and service configuration against these statements, complete required translations and regional review, and publish the approved text at the canonical URLs. The release gates remain closed while those steps are incomplete.
+
+## BEGIN PRIVACY POLICY CONSUMER TEXT
+
+# Nearr Privacy Policy
+
+Effective date: [approved publication date]
+
+Nearr is operated by Andrew Mahran (individual). This policy explains how we handle information in the Nearr mobile app and its connected services. For privacy questions or requests, contact andrew.mahran@icloud.com.
+
+Nearr helps you save places from selected links and searches, organize them on a personal map and receive optional reminders. Some features depend on your age, region, permissions and service availability. You do not need to buy a plan to access your existing saved content or make a privacy request.
+
+### Age and eligibility
+
+Nearr's minimum age is 13. A higher age or additional restrictions apply in some regions. The onboarding screen asks for your birthday and country. Your birthday is used on that screen to calculate an age range; the full date is not saved to device storage, sent to Nearr's server, or included in analytics by this flow. We retain only the age range and country, together with the eligibility result, relevant policy version and time. The screen clears the birthday after a successful declaration or when it is closed. We do not request a government ID or facial scan in this flow. An age declaration is not proof that a parent or guardian has authorized processing.
+
+This release does not offer an under-13 account or parental-consent program. AI recognition and purchases can remain unavailable even when the basic age threshold is met. We do not send a restricted account's new recognition content to AI or acquisition providers. Existing accounts may need to complete eligibility and permission steps before using new processing features. Restriction does not silently delete existing saves or remove access to privacy assistance.
+
+If you believe a child below the permitted age has provided information, contact us. We will review the account and handle the information and request under applicable law. Please do not send identity documents, passwords or extra information about a child unless a secure, necessary process has been explained to you.
+
+### Account, saved information and preferences
+
+We process your email, account and sign-in identifiers, and names supplied by your chosen sign-in method. Apple private relay may provide a relay email. For email-and-password sign-in, our authentication provider stores a password verifier rather than a plaintext password. Apple and Google sign-in do not give us your passwords for those services.
+
+We store places you save, source links, notes, categories, visited or archive actions, reminder choices and related place information. A saved place's address or coordinates identify the destination; saving it does not mean you are there. We also store relevant onboarding choices, interface language and account preferences. Some settings and downloaded snapshots stay on your device.
+
+We retain records of Terms acceptance, which privacy notice was presented and your AI-sharing choice, including their versions and times. Terms acceptance, a privacy notice and AI-sharing permission are separate steps.
+
+### Shared links and AI recognition
+
+When an eligible account requests recognition and has enabled the required sharing permission, we and our providers retrieve the selected public source. Processing can include the link and content identifier, creator or source attribution, caption, descriptions, thumbnails, video frames, audio extracted for transcription, transcript text and place clues. This feature does not scan your photo library or continually listen through your microphone.
+
+Selected image frames and relevant text can be sent to OpenAI's developer API to identify places or generate related text. Source audio may be sent to its transcription API where needed. Public social-content acquisition can use ScrapeCreators and the source platform or its content-delivery services. These server requests do not deliberately include your Nearr account ID or your device's IP address, but selected content can identify a creator or another person.
+
+You can withdraw AI-sharing permission in Settings. Withdrawal stops future authorized processing; it cannot recall a provider request already sent and does not itself erase saved records. AI may be wrong, so review results before relying on them.
+
+### Searches, service records and diagnostics
+
+Place searches go to our search provider to retrieve results. Nearr can retain search terms, source links and account-linked actions associated with searches, saves, corrections and source openings. Nearr does not read your general browser history.
+
+We use necessary service records for account security, eligibility and permission enforcement, recognition processing, delivery, entitlement accounting, support and reliability. These records can contain account, job, source, installation and notification identifiers, timestamps, app or runtime version, provider outcomes, errors and processing durations.
+
+Optional behavioral analytics in the 1.7 app is disabled. This does not disable necessary operational records, diagnostics, or the website attribution described below.
+
+### Website attribution
+
+The Nearr website may record referral information supplied in a link, including campaign parameters, creator identifiers and video or campaign identifiers. It may store this information in a first-party browser cookie for up to 90 days to measure how people reach the website and later actions such as opening the App Store link. This website attribution is separate from the app's account and product records. The cookie does not by itself establish that app data is combined with third-party data for advertising; any such use must be separately verified and disclosed.
+
+### Location and reminders
+
+If you allow location access, Nearr uses device location to show nearby saved places and support reminders you choose. Background location can be used for those reminders when you grant the operating-system permission. You can change location permission in device settings and remove reminders in Nearr.
+
+Saved destinations and location-trigger records can reveal interests or routines. Nearr does not treat a saved destination as proof that you visited it. Operating-system and map providers process location and map requests under their own terms.
+
+### Notifications and device information
+
+If enabled, Nearr uses a notification token and related delivery information to send processing updates and place reminders. Device and app information can be used for compatibility, security and reliable delivery. You can turn notifications off in device settings.
+
+### Nearr Plus and purchases
+
+For optional Nearr Plus subscriptions and token purchases, Apple processes payment and RevenueCat helps verify purchases. Nearr uses an opaque purchase-customer identifier linked to your account and receives product, transaction, period, expiration, refund and revocation information needed to provide and reconcile access. Nearr retains a server-side purchase and consumption ledger so a transaction cannot credit tokens twice, a completed find cannot be charged twice, and refunds can be reconciled. We do not deliberately send RevenueCat your name, email, age declaration, saved locations or recognition content as customer attributes.
+
+The planned free allowance is three successful video finds per UTC calendar month. Active Nearr Plus provides unlimited successful finds without a monthly find quota or token deduction. Alternatively, you can buy packages of 20, 50 or 200 tokens. One successfully processed source-video submission with at least one verified, saved destination counts as one find, including a video containing multiple destinations. Active Plus is used first, then the monthly free allowance, then purchased tokens. Unused free allowance does not roll over. Purchased tokens do not expire with time or when Plus starts, renews, ends or is cancelled. Pending review is not a completed find; failed, cancelled, duplicate, replayed or tutorial processing is not charged. A verified refund or revocation can remove unused tokens from the refunded purchase. The final localized price is the price shown by Apple before purchase.
+
+### Providers and international processing
+
+We use service providers for authentication and database hosting, maps and place search, content acquisition, AI processing, notifications, app distribution and purchase verification. Depending on configuration, these can include Supabase, Google, Apple, Expo, OpenAI, ScrapeCreators and RevenueCat. Providers process information under their own applicable terms and our service arrangements.
+
+Information may be processed in countries other than your own. Before enabling a market, Nearr must confirm the applicable transfer safeguards and provider terms. This draft does not claim that every market or provider route is qualified.
+
+### Retention and deletion
+
+We keep account and saved-place information while needed to provide the service and until deletion, subject to legal, security and backup requirements. Recognition inputs and operational records can have different lifecycles. Downloaded raw media is normally temporary, but selected evidence images, thumbnails, text, transcripts, results and necessary service records can remain. Failed cleanup or backups can delay removal.
+
+Shared canonical place or public-source records can support more than one save. Deleting one save does not necessarily remove information still used lawfully for another account. A deletion request must address account-linked records, provider-held copies and backup or fraud-prevention exceptions accurately; no immediate or zero-retention promise is made here.
+
+### Your choices and rights
+
+You can review and change available permissions, withdraw AI sharing, manage reminders and notifications, restore or manage a subscription, reconcile purchased-token access, and request access, correction, export or deletion by contacting andrew.mahran@icloud.com. Applicable law may provide additional rights, including objection, restriction, portability, appeal or complaint to a regulator.
+
+Withdrawing permission does not make earlier processing unlawful and cannot recall information already sent. Deleting the app does not cancel an Apple subscription. Privacy requests and access to existing saved content do not require a paid plan.
+
+### Security, changes and contact
+
+We use technical and organizational measures intended to protect information, including access controls and server-side authorization. No system is perfectly secure. Do not send passwords or unnecessary identity documents by ordinary email.
+
+We may update this policy when the service, providers or law changes. We will provide notice and request a new choice where required. Contact Andrew Mahran at andrew.mahran@icloud.com for privacy questions or requests.
+
+## END PRIVACY POLICY CONSUMER TEXT
+
+## BEGIN TERMS CONSUMER TEXT
+
+# Nearr Terms of Service
+
+Effective date: [approved publication date]
+
+These Terms govern use of Nearr, operated by Andrew Mahran (individual). By creating or using an account, you agree to the current approved Terms presented to you. Contact andrew.mahran@icloud.com with questions.
+
+### Eligibility and accounts
+
+You must meet Nearr's minimum age and any higher regional requirement. Features can require an eligible region, current Terms acceptance and separate processing permission. This release does not provide an under-13 or guardian-authorization program. Give accurate account and eligibility information and keep your credentials secure.
+
+### The service and automated results
+
+Nearr helps save destinations from links and searches, organize them on a map and provide optional reminders. Recognition can analyze images, captions, source audio or transcripts and other clues. It can return multiple places, uncertain leads or no useful result. Availability depends on evidence, providers, permissions, region and eligibility.
+
+Automated results, AI notes, maps, addresses, hours and source content can be incomplete or wrong. Verify important details before traveling. Nearr is not an emergency, safety-critical or professional navigation service.
+
+### Your content and third-party services
+
+Share only content you have the right to access and submit. You keep rights you hold in your content and permit Nearr and necessary providers to process it to perform requested features, subject to the Privacy Policy and applicable permissions.
+
+External platforms, maps, venues and providers operate under their own terms. Do not use Nearr to stalk people, expose private residences or sensitive locations without a lawful basis, infringe rights, submit unlawful material, abuse the service or bypass access and security controls.
+
+### Free and paid features
+
+Nearr provides a free experience and may offer Nearr Plus through Apple's In-App Purchase system. The product screen shows the local price, billing period, subscription benefit and token quantity before purchase. Existing saves and privacy rights do not become paywalled when an allowance is used or a plan ends.
+
+The planned free allowance is three successful video finds per UTC calendar month. Nearr Plus provides unlimited successful finds while active, without a monthly find quota. Token packages contain 20, 50 or 200 tokens. One token pays for one successfully processed source-video submission with at least one verified, saved destination, including multi-place results. Active Plus is used first without using tokens, followed by free allowance and then purchased tokens. Unused free allowance does not roll over; purchased tokens do not expire with time or because subscription status changes. Failed, cancelled, duplicate, replayed and tutorial processing is not charged. Pending Quick Check review is not a completed find. Reasonable account-security and abuse protections still apply. The final localized price and billing terms are those displayed by Apple before purchase.
+
+### Subscription renewal, restore and refunds
+
+A subscription renews automatically at the disclosed interval unless cancelled through Apple's subscription settings. No trial or introductory price applies unless expressly displayed. Restore Purchases can recover a qualifying purchase for the relevant Store account, subject to account-ownership and transfer rules.
+
+Apple controls payment authorization and applicable Ask to Buy restrictions. Pending, declined, cancelled or failed purchases do not grant entitlement. Access follows verified purchase status, including expiration, refund or revocation. Deleting Nearr or your account does not itself cancel an Apple subscription. Mandatory consumer rights continue to apply.
+
+### Changes, suspension and termination
+
+We may restrict harmful, unlawful, fraudulent or unauthorized activity, or features that cannot be provided safely or contractually. Where appropriate, we will explain a restriction and provide an account or support route. We will not silently erase existing saves solely because eligibility or paid status changes.
+
+Features and providers can change or be interrupted. Material subscription or Terms changes will receive notice where required. A service change cannot authorize processing that requires a separate permission. You may stop using Nearr and request account deletion; subscription cancellation is a separate action.
+
+### Responsibility and legal rights
+
+We aim to provide reliable features but do not guarantee every recognition result, third-party item or notification is accurate or available. To the extent permitted by law, Nearr is provided as available. Nothing limits rights, liability or remedies that cannot lawfully be excluded.
+
+### Contact
+
+Contact Andrew Mahran at andrew.mahran@icloud.com about these Terms, restrictions, purchases or account assistance.
+
+## END TERMS CONSUMER TEXT
+
+## Review status
+
+The proposed texts assume a Gemini-free, server-gated candidate. Recognition, purchase, regional and legal qualification switches remain false. The proposed unlimited product is com.nearr.plus.unlimited.monthly.v1; actual Apple/RevenueCat catalog qualification and real sandbox transactions remain unverified. No public legal page was changed by this work. This draft is a proposed technical product description, not proof of completed implementation or legal approval.

@@ -3,7 +3,8 @@
 // @ts-nocheck -- Supabase Edge/Deno runtime.
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
-import { plusWebhookIdentities, plusWebhookMatchesConfiguration, verifyPlusSubscriber } from '../../../lib/plusEntitlements.ts';
+import { plusWebhookIdentities, plusWebhookMatchesConfiguration, verifyPaidSubscriber } from '../../../lib/plusEntitlements.ts';
+import { PAID_TOKEN_PRODUCTS, parseTrustedPaidPurchaseEvent } from '../../../lib/paidPurchaseVerification.ts';
 
 const json = (payload: unknown, status = 200) => new Response(JSON.stringify(payload), {
   status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
@@ -59,11 +60,26 @@ serve(async req => {
   if (customerError) return json({ ok: false, error: 'customer_lookup_failed' }, 503);
   const byIdentity = new Map((customers ?? []).map(row => [row.app_user_id, row]));
   const snapshots = [];
+  let purchase = null;
+  let purchaseUser = null;
   try {
-    for (const appUserId of identities) {
+    const isToken = Object.prototype.hasOwnProperty.call(PAID_TOKEN_PRODUCTS, event.product_id);
+    if (isToken) {
+      // A consumable belongs to its primary purchaser. Aliases/transfer targets
+      // cannot claim a second copy of the same store transaction.
+      const customer = byIdentity.get(event.app_user_id);
+      if (!customer) return json({ ok: false, error: 'unknown_purchase_owner' }, 400);
+      purchase = parseTrustedPaidPurchaseEvent(event, {
+        appId: config.revenuecat_app_id, appUserId: customer.app_user_id, environment: config.environment,
+      });
+      purchaseUser = customer.user_id;
+    }
+    // Consumable verification is the authenticated store event, not a V1
+    // non_subscriptions ID. Subscription events still re-fetch current state.
+    for (const appUserId of isToken ? [] : identities) {
       const customer = byIdentity.get(appUserId); if (!customer) continue;
       const payload = await subscriber(revenueCatSecret, appUserId);
-      snapshots.push({ userId: customer.user_id, snapshot: verifyPlusSubscriber(payload, {
+      snapshots.push({ userId: customer.user_id, ...verifyPaidSubscriber(payload, {
         entitlementId: config.entitlement_id, productId: config.product_id, environment: config.environment,
       }) });
     }
@@ -71,9 +87,10 @@ serve(async req => {
     console.warn(`[plus-webhook] verification failed: ${error instanceof Error ? error.message : 'unknown'}`);
     return json({ ok: false, error: 'store_verification_unavailable' }, 503);
   }
-  if (!snapshots.length) return json({ ok: false, error: 'unknown_customer' }, 400);
-  const applied = await admin.rpc('apply_nearr_plus_webhook', {
+  if (!snapshots.length && !purchase) return json({ ok: false, error: 'unknown_customer' }, 400);
+  const applied = await admin.rpc('apply_nearr_paid_webhook', {
     p_event_id: event.id, p_event_type: event.type, p_payload_sha256: await sha256(raw), p_snapshots: snapshots,
+    p_purchase_user: purchaseUser, p_purchase: purchase,
   });
   if (applied.error?.message?.includes('plus_free_only_paid_grant_blocked')) return json({ ok: false, error: 'release_mode_changed' }, 409);
   if (applied.error) return json({ ok: false, error: 'webhook_apply_failed' }, 503);
