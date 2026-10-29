@@ -62,3 +62,65 @@ begin
 end $$;
 revoke all on function public.resolve_share_job(uuid,uuid) from public,anon,authenticated;
 grant execute on function public.resolve_share_job(uuid,uuid) to authenticated;
+
+-- The worker also saves through separate service-role PostgREST requests.
+-- Authorize each user-bound write in its own transaction; an earlier Edge
+-- preflight cannot authorize a write after a committed consent withdrawal.
+-- current_user changes inside SECURITY DEFINER functions. The PostgreSQL role
+-- selected by PostgREST does not, and is not inferred from a nullable auth.uid
+-- or client-provided JWT JSON. Direct service-role sessions are covered too.
+create function public.guard_worker_recognition_commit()
+returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
+declare guarded boolean:=false;
+begin
+  if current_setting('role',true) is distinct from 'service_role'
+     and session_user<>'service_role' then return new; end if;
+  if tg_table_name='saved_places' then
+    -- Owner transfers, personal notes, radius/reminders, and photo fields are
+    -- independent of recognition. Automated identity/source/AI/category writes
+    -- are guarded even when a worker happens to supply an authenticated UID.
+    guarded:=tg_op='INSERT';
+    if tg_op='UPDATE' then
+      guarded:=(to_jsonb(new)->'place_id',to_jsonb(new)->'source_url',to_jsonb(new)->'source_type',
+        to_jsonb(new)->'ai_note',to_jsonb(new)->'category',to_jsonb(new)->'category_source',
+        to_jsonb(new)->'category_confidence',to_jsonb(new)->'category_model_version')
+        is distinct from
+        (to_jsonb(old)->'place_id',to_jsonb(old)->'source_url',to_jsonb(old)->'source_type',
+        to_jsonb(old)->'ai_note',to_jsonb(old)->'category',to_jsonb(old)->'category_source',
+        to_jsonb(old)->'category_confidence',to_jsonb(old)->'category_model_version');
+    end if;
+  elsif tg_table_name='saved_place_sources' then
+    guarded:=tg_op='INSERT';
+    if tg_op='UPDATE' then
+      guarded:=(to_jsonb(new)-array['user_id','updated_at','last_seen_at','thumbnail_url','is_primary'])
+        is distinct from (to_jsonb(old)-array['user_id','updated_at','last_seen_at','thumbnail_url','is_primary']);
+    end if;
+  elsif tg_table_name='share_job_place_results' then
+    guarded:=tg_op='INSERT';
+    if tg_op='UPDATE' then
+      guarded:=(to_jsonb(new)-array['user_id','updated_at'])
+        is distinct from (to_jsonb(old)-array['user_id','updated_at']);
+    end if;
+  elsif tg_table_name='share_jobs' then
+    if new.status in ('completed','needs_help') then
+      guarded:=tg_op='INSERT';
+      if tg_op='UPDATE' then
+        guarded:=(to_jsonb(new)->'status',to_jsonb(new)->'saved_place_id',to_jsonb(new)->'decision',to_jsonb(new)->'candidate_payload')
+          is distinct from
+          (to_jsonb(old)->'status',to_jsonb(old)->'saved_place_id',to_jsonb(old)->'decision',to_jsonb(old)->'candidate_payload');
+      end if;
+    end if;
+  else raise exception 'recognition_commit_unexpected_table';
+  end if;
+  if guarded then perform public.require_current_recognition_commit(new.user_id); end if;
+  return new;
+end $$;
+revoke all on function public.guard_worker_recognition_commit() from public,anon,authenticated,service_role;
+create trigger worker_recognition_commit_guard before insert or update on public.saved_places
+  for each row execute function public.guard_worker_recognition_commit();
+create trigger worker_recognition_commit_guard before insert or update on public.saved_place_sources
+  for each row execute function public.guard_worker_recognition_commit();
+create trigger worker_recognition_commit_guard before insert or update on public.share_job_place_results
+  for each row execute function public.guard_worker_recognition_commit();
+create trigger worker_recognition_commit_guard before insert or update on public.share_jobs
+  for each row execute function public.guard_worker_recognition_commit();

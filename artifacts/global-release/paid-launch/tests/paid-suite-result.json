@@ -18,5 +18,13 @@
     "hostAccountBoundaries": 7
   },
   "liveStoreKit": false,
-  "liveRecognition": false
+  "liveRecognition": false,
+  "additionalRun": {
+    "command": "ts-node -P scripts/tsconfig.json scripts/testRecognitionCommitAuthorization.ts",
+    "passed": 18,
+    "failed": 0,
+    "testedAt": "2026-10-29T21:22:01.774Z",
+    "receipt": "recognition-commit-authorization.json"
+  },
+  "note": "The full paid command completed before the final authorization suite was appended; that suite passed separately against its final migration bytes."
 }

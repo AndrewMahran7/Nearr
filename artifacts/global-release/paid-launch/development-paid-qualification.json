@@ -1,8 +1,8 @@
 {
-  "testedAt": "2026-10-29T21:17:01.928Z",
+  "testedAt": "2026-10-29T21:23:09.670Z",
   "mode": "development-transactional-rollback-qualification",
   "target": "qnfxnmvxpjzfydgudtvs",
-  "sourceCommit": "a07016ab99fccb4b9b27510d2ed295ee021411de",
+  "sourceCommit": "05200bf7fe2d50d4aa065fd6c747b7b2837e642c",
   "migrations": [
     {
       "file": "20261028000001_nearr_free_only_release.sql",
@@ -17,7 +17,7 @@
     {
       "file": "20261029000004_recognition_commit_authorization.sql",
       "version": "20261029000004",
-      "sha256": "1c11b721ed7f9b5d4b883f9559a3f08721ec4266bf5ebcba336b136b073be96b"
+      "sha256": "4593a4182ebfd7398547668159ebfb2d9f6c739968b4254721aa66265959186b"
     }
   ],
   "beforeCount": 91,
