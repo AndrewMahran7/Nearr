@@ -53,6 +53,9 @@ serve(async req => {
   // Never contact RevenueCat or apply paid grants while this mode is selected.
   if (!configError && config?.release_mode === 'free_only') return json({ ok: false, error: 'purchases_deferred' }, 409);
   if (configError || !config || !plusWebhookMatchesConfiguration(event, config.revenuecat_app_id, config.environment)) return json({ ok: false, error: 'configuration_mismatch' }, 400);
+  // Dashboard TEST events carry synthetic customer/product data. Acknowledge
+  // delivery only; they must never verify a subscriber or enter the paid ledger.
+  if (event.type === 'TEST') return json({ ok: true, test: true, applied: false });
   let identities: string[]; try { identities = plusWebhookIdentities(event); } catch { return json({ ok: false, error: 'invalid_identities' }, 400); }
   if (!identities.length) return json({ ok: false, error: 'unknown_customer' }, 400);
 
