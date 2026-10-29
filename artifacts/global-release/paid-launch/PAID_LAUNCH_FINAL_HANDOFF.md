@@ -59,7 +59,7 @@ LEGAL_APPROVAL_PACKAGE.md and LEGAL_APPROVAL_CANDIDATE.md provide one consolidat
 
 ## L. IOS BUILD
 
-Internal Development build 1.7.0 (73), EAS da13c7d7-b11d-4497-8862-615af269ec76, was accepted from source b5d6e1ae56411e79f1ca448955ee73154b95b10f. Its final status and artifact inspection are recorded in IOS_STORE_BUILD_VERIFICATION.md and the timestamped iOS JSON receipts. This is not Store distribution or physical iOS/StoreKit QA. No signed Store candidate is claimed.
+Internal Development build 1.7.0 (73), EAS da13c7d7-b11d-4497-8862-615af269ec76, FINISHED at 2026-10-29T21:41:50.250Z from source b5d6e1ae56411e79f1ca448955ee73154b95b10f. The downloaded 51,543,424-byte IPA has SHA256 488562adbda249b4a561ed3973cae2ac3bf677faab4af2ce7850588ad02850fc. Packaging checks passed exact host/extension IDs, 1.7.0(73) parity, ten locales, group.com.nearr.ios, runtime 1.7-onboarding-date-v1 and Development backend. Host JavaScript is not embedded: this Development client requires Metro. The extension bundle is embedded. Profiles/CodeResources inspection is not macOS signature verification, physical iOS or StoreKit QA. No Store-distribution candidate is claimed. Full details are in IOS_STORE_BUILD_VERIFICATION.md and the timestamped iOS JSON receipts.
 
 ## M. APP STORE CONNECT
 

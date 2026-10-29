@@ -1,0 +1,134 @@
+{
+  "ipaSha256": "488562adbda249b4a561ed3973cae2ac3bf677faab4af2ce7850588ad02850fc",
+  "host": {
+    "bundleIdentifier": "com.nearr.ios",
+    "build": "73",
+    "version": "1.7.0",
+    "locales": [
+      "de",
+      "en-US",
+      "es-ES",
+      "es-MX",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt-BR",
+      "zh-Hans"
+    ],
+    "signatureResourcesPresent": true,
+    "datePickerSymbolsPresent": true,
+    "provisioning": {
+      "applicationIdentifier": "9S69NZQTUX.com.nearr.ios",
+      "team": "9S69NZQTUX",
+      "appGroups": [
+        "group.com.nearr.ios"
+      ],
+      "registeredDeviceCount": 1,
+      "expires": "2027-02-22T08:07:46"
+    },
+    "iconFiles": [
+      "AppIcon60x60"
+    ],
+    "assetsCatalogPresent": true
+  },
+  "shareExtension": {
+    "bundleIdentifier": "com.nearr.ios.ShareExtension",
+    "build": "73",
+    "version": "1.7.0",
+    "locales": [
+      "de",
+      "en-US",
+      "es-ES",
+      "es-MX",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt-BR",
+      "zh-Hans"
+    ],
+    "signatureResourcesPresent": true,
+    "datePickerSymbolsPresent": true,
+    "provisioning": {
+      "applicationIdentifier": "9S69NZQTUX.com.nearr.ios.ShareExtension",
+      "team": "9S69NZQTUX",
+      "appGroups": [
+        "group.com.nearr.ios"
+      ],
+      "registeredDeviceCount": 1,
+      "expires": "2027-02-22T08:07:46"
+    },
+    "iconFiles": [],
+    "assetsCatalogPresent": false
+  },
+  "signatureVerificationLimit": "CodeResources and embedded profiles inspected. No macOS codesign verification or physical installation was performed on this Windows host.",
+  "embeddedConfiguration": {
+    "host": {
+      "eas": {
+        "projectId": "2ec7a08a-2078-4232-a244-c9d16fb75ffe",
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "NearrShareExtension",
+                  "bundleIdentifier": "com.nearr.ios.ShareExtension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.nearr.ios"
+                    ],
+                    "com.apple.developer.applesignin": [
+                      "Default"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "appEnv": "development",
+      "backendEnv": "development",
+      "supabaseUrl": "https://qnfxnmvxpjzfydgudtvs.supabase.co"
+    },
+    "shareExtension": {
+      "eas": {
+        "projectId": "2ec7a08a-2078-4232-a244-c9d16fb75ffe",
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "NearrShareExtension",
+                  "bundleIdentifier": "com.nearr.ios.ShareExtension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.nearr.ios"
+                    ],
+                    "com.apple.developer.applesignin": [
+                      "Default"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "appEnv": "development",
+      "backendEnv": "development",
+      "supabaseUrl": "https://qnfxnmvxpjzfydgudtvs.supabase.co"
+    }
+  },
+  "hostEmbeddedJavaScript": false,
+  "extensionEmbeddedJavaScript": true,
+  "expo": {
+    "EXUpdatesEnabled": true,
+    "EXUpdatesRequestHeaders": {
+      "expo-channel-name": "development"
+    },
+    "EXUpdatesRuntimeVersion": "1.7-onboarding-date-v1",
+    "EXUpdatesURL": "https://u.expo.dev/2ec7a08a-2078-4232-a244-c9d16fb75ffe"
+  }
+}

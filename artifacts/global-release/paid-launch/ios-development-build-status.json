@@ -1,11 +1,29 @@
 {
-  "capturedAt": "2026-10-29T21:37:41.512Z",
+  "capturedAt": "2026-10-29T21:42:49.007Z",
   "id": "da13c7d7-b11d-4497-8862-615af269ec76",
-  "status": "IN_PROGRESS",
+  "status": "FINISHED",
   "distribution": "INTERNAL",
   "profile": "development",
   "version": "1.7.0",
   "buildNumber": "73",
   "gitCommitHash": "b5d6e1ae56411e79f1ca448955ee73154b95b10f",
-  "createdAt": "2026-10-29T21:36:28.095Z"
+  "createdAt": "2026-10-29T21:36:28.095Z",
+  "completedAt": "2026-10-29T21:41:50.250Z",
+  "ipa": {
+    "downloadedAt": "2026-10-29T21:43:22.453Z",
+    "bytes": 51543424,
+    "sha256": "488562adbda249b4a561ed3973cae2ac3bf677faab4af2ce7850588ad02850fc",
+    "inspectionArtifact": "ios-development-ipa-verification.json",
+    "archiveCrcCheckPassed": true,
+    "packagingChecksPassed": true,
+    "hostAppJavaScriptEmbedded": false,
+    "shareExtensionJavaScriptEmbedded": true,
+    "standaloneHostRuntimeQualified": false
+  },
+  "limitations": [
+    "Internal Development client only; no Store-distribution candidate was built or submitted.",
+    "Host contains the development launcher bundle but no embedded main.jsbundle for the application.",
+    "CodeResources and embedded provisioning metadata were inspected; Windows inspection does not verify signature trust or signed executable entitlements.",
+    "No physical iOS installation, standalone host launch, upgrade, accessibility or StoreKit sandbox transaction qualification was performed."
+  ]
 }
