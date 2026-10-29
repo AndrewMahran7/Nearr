@@ -26,6 +26,7 @@ export function AiSharePermissionPrompt({ onAllow, onCancel, compact = false, is
   useLocale();
   const [state, setState] = useState<'loading' | 'unavailable' | 'guardian' | 'terms' | 'permission' | 'saving' | 'error'>('loading');
   const transport = useRef<ConsentTransport | null>(null);
+  const legalVersions = useRef({ terms: '', privacy: '' });
   const busy = useRef(false);
   const owner = useRef<string | null>(null);
   const generation = useRef(0);
@@ -45,6 +46,7 @@ export function AiSharePermissionPrompt({ onAllow, onCancel, compact = false, is
         if (!mounted || epoch !== generation.current) return;
         if (decodeJwtClaims(current.accessToken)?.sub !== subject) { setState('error'); return; }
         owner.current = subject; transport.current = current;
+        legalVersions.current = { terms: String(access.termsVersion ?? ''), privacy: String(access.privacyVersion ?? '') };
         if (access.aiReason === 'guardian_authorization_required') setState('guardian');
         else if (access.status !== 'eligible' || access.legalApproved !== true || access.noticeVersion !== AI_NOTICE_VERSION || ['region_not_available', 'recognition_not_available'].includes(String(access.aiReason))) setState('unavailable');
         else setState(access.termsAccepted === true ? 'permission' : 'terms');
@@ -72,7 +74,11 @@ export function AiSharePermissionPrompt({ onAllow, onCancel, compact = false, is
     busy.current = true; setState('saving');
     try {
       const current = await currentBoundTransport(epoch);
-      await consentRpc(current, 'record_global_terms_and_privacy');
+      await consentRpc(current, 'record_global_terms_and_privacy', {
+        p_terms_version: legalVersions.current.terms,
+        p_privacy_version: legalVersions.current.privacy,
+        p_expected_user_id: owner.current,
+      });
       const refreshed = await currentBoundTransport(epoch);
       const access = await consentRpc(refreshed, 'get_my_global_access') as Record<string, unknown>;
       await currentBoundTransport(epoch);

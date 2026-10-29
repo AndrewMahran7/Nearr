@@ -320,6 +320,8 @@ function AuthGate({
   const legalAgreementVisible = GLOBAL_TERMS_ACCEPTANCE_REQUIRED && ageRequired && ageEligibility.status === 'eligible' && ageEligibility.legalApproved && !ageEligibility.termsAccepted;
   const [acceptingLegal, setAcceptingLegal] = useState(false);
   const [legalAcceptanceError, setLegalAcceptanceError] = useState(false);
+  const legalSubmissionBusy = useRef(false);
+  const legalOwner = useRef(session?.user.id); legalOwner.current = session?.user.id;
   const previousUserIdRef = useRef<string | null>(null);
   const startupPending = loading || (isOnboardingV2Enabled() && onboardingV2Loading);
   const startupWatchdog = useStartupWatchdog(startupPending);
@@ -374,16 +376,23 @@ function AuthGate({
   }, [suppressSetupReminder, isAnonymousSession, isDevSession, ageAccessApproved, legalAgreementVisible, session, setupReminderDismissedThisSession]);
 
   async function handleAcceptLegal() {
-    if (!session || !legalAgreementVisible || acceptingLegal) return;
+    if (!session || !legalAgreementVisible || legalSubmissionBusy.current) return;
+    const owner = session.user.id;
+    legalSubmissionBusy.current = true;
     setAcceptingLegal(true);
     setLegalAcceptanceError(false);
     try {
-      const { error } = await supabase.rpc('record_global_terms_and_privacy');
+      const { error } = await supabase.rpc('record_global_terms_and_privacy', {
+        p_terms_version: ageEligibility.termsVersion,
+        p_privacy_version: ageEligibility.privacyVersion,
+        p_expected_user_id: owner,
+      });
       if (error) throw error;
-      ageEligibility.retry();
+      if (legalOwner.current === owner) ageEligibility.retry();
     } catch {
-      setLegalAcceptanceError(true);
+      if (legalOwner.current === owner) setLegalAcceptanceError(true);
     } finally {
+      legalSubmissionBusy.current = false;
       setAcceptingLegal(false);
     }
   }
@@ -679,6 +688,7 @@ function AuthGate({
       <NotificationTapController authReady={!loading && !!session && !authLinkPending && ageAccessApproved} />
       <AutoSaveUndoToast />
       <LegalAgreementModal
+        key={`${session?.user.id}:${ageEligibility.termsVersion}:${ageEligibility.privacyVersion}`}
         visible={GLOBAL_TERMS_ACCEPTANCE_REQUIRED && legalAgreementVisible}
         onViewTerms={() => { void Linking.openURL(TERMS_PUBLIC_URL).catch(() => setLegalAcceptanceError(true)); }}
         onViewPrivacy={() => { void Linking.openURL(privacyPolicy.canonicalUrl).catch(() => setLegalAcceptanceError(true)); }}

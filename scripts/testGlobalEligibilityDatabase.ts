@@ -51,12 +51,13 @@ async function main() {
     create table share_media_tasks(id uuid primary key default gen_random_uuid(),user_id uuid references auth.users,status text);
     create table onboarding_account_transfer_grants(id uuid primary key default gen_random_uuid(),source_user_id uuid references auth.users,destination_user_id uuid references auth.users,status text);
     insert into auth.users values('${u1}'),('${u2}'),('${u3}');`);
-  for (const migration of ['20261018000001_adult_age_eligibility.sql','20261018000002_adult_dispatch_transition_guard.sql','20261021000001_global_eligibility_and_consent.sql','20261029000001_atomic_terms_privacy_acceptance.sql']) sql(readFileSync(path.join('supabase/migrations',migration),'utf8'));
+  for (const migration of ['20261018000001_adult_age_eligibility.sql','20261018000002_adult_dispatch_transition_guard.sql','20261021000001_global_eligibility_and_consent.sql','20261029000001_atomic_terms_privacy_acceptance.sql','20261029000002_revision_bound_legal_acceptance.sql']) sql(readFileSync(path.join('supabase/migrations',migration),'utf8'));
   test('new policy is fail-closed with no automatically approved evidence', () => {
     assert.equal(sql(`select is_account_eligible_for_ai('${u1}'),is_account_eligible_for_purchase('${u1}');`),'f|f');
     fails('update global_release_policy set legal_approved=true;',/check constraint/);
     fails(userQuery(u1,"select record_global_terms('nearr-global-terms-v1');"),/terms_not_qualified/);
-    fails(userQuery(u1,'select record_global_terms_and_privacy();'),/terms_not_qualified/);
+    fails(userQuery(u1,'select record_global_terms_and_privacy();'),/legal_revision_required/);
+    fails(userQuery(u1,`select record_global_terms_and_privacy('nearr-global-terms-v1','nearr-global-privacy-v1','${u1}');`),/terms_not_qualified/);
   });
   test('60 region and age-band combinations match minimized offline screen policy', () => {
     for (const countryCode of Object.keys(ELIGIBILITY_POLICY.regions)) for (const ageBand of AGE_BANDS) {
@@ -92,10 +93,17 @@ async function main() {
   qualifiedFixture();
   test('one explicit action records both current legal revisions without AI permission', () => {
     assert.equal(sql(`begin; set local role authenticated; set local request.jwt.claim.sub='${u3}';
-      select record_global_terms_and_privacy();
+      select record_global_terms_and_privacy('nearr-global-terms-v1','nearr-global-privacy-v1','${u3}');
       select terms_version||'|'||privacy_notice_version||'|'||ai_allowed from public.account_processing_permissions where user_id='${u3}';
       select get_my_global_access()->>'termsAccepted'; rollback;`).replace(/\r\n/g,'\n'),'nearr-global-terms-v1|nearr-global-privacy-v1|false\ntrue');
     assert.equal(sql(`select count(*) from account_processing_permissions where user_id='${u3}';`),'0');
+  });
+  test('stale revisions and a changed account cannot record unseen acceptance', () => {
+    fails(userQuery(u1,`select record_global_terms_and_privacy('stale','nearr-global-privacy-v1','${u1}');`),/legal_revision_changed/);
+    fails(userQuery(u1,`select record_global_terms_and_privacy('nearr-global-terms-v1',null,'${u1}');`),/legal_revision_changed/);
+    fails(userQuery(u2,`select record_global_terms_and_privacy('nearr-global-terms-v1','nearr-global-privacy-v1','${u1}');`),/consent_identity_changed/);
+    fails(`set role anon; select record_global_terms_and_privacy('nearr-global-terms-v1','nearr-global-privacy-v1','${u1}');`,/permission denied/);
+    assert.equal(sql('select count(*) from account_processing_permissions;'),'0');
   });
   test('terms privacy notice and AI permission are distinct', () => {
     sql(userQuery(u1,"select record_global_privacy_notice('nearr-global-privacy-v1');"));
@@ -143,7 +151,7 @@ async function main() {
     assert.equal(sql(userQuery(u1,"select get_my_global_access()->>'aiAllowed';")),'false');
   });
   mkdirSync('artifacts/global-release',{recursive:true});
-  writeFileSync('artifacts/global-release/eligibility-database-tests.json',JSON.stringify({testedAt:new Date().toISOString(),engine:sql('select version();'),scope:'disposable PostgreSQL, three age migrations plus atomic legal acceptance; synthetic qualification only',passed:passed.length,failed:0,tests:passed},null,2)+'\n');
+  writeFileSync('artifacts/global-release/eligibility-database-tests.json',JSON.stringify({testedAt:new Date().toISOString(),engine:sql('select version();'),scope:'disposable PostgreSQL, three age migrations plus atomic revision-bound legal acceptance; synthetic qualification only',passed:passed.length,failed:0,tests:passed},null,2)+'\n');
   console.log(`PASS ${passed.length} PostgreSQL eligibility/security suites including 60 age/region combinations`);
 }
 main().catch(error => { console.error(error.message); process.exitCode=1; }).finally(() => {

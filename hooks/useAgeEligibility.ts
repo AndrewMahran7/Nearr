@@ -5,8 +5,8 @@ import type { EligibilityDeclaration } from '@/lib/globalEligibility';
 import { readOwnedLocalDeclaration } from '@/lib/localEligibility';
 
 export type AgeEligibilityState = 'loading' | 'pending' | 'eligible' | 'under_minimum' | 'region_unavailable' | 'revoked' | 'error';
-export type GlobalAccess = { status: AgeEligibilityState; aiAllowed: boolean; aiReason: string; aiPermission: boolean; legalApproved: boolean; termsAccepted: boolean; noticeVersion: string; termsVersion: string };
-const closed: GlobalAccess = { status: 'loading', aiAllowed: false, aiReason: 'eligibility_required', aiPermission: false, legalApproved: false, termsAccepted: false, noticeVersion: '', termsVersion: '' };
+export type GlobalAccess = { status: AgeEligibilityState; aiAllowed: boolean; aiReason: string; aiPermission: boolean; legalApproved: boolean; termsAccepted: boolean; noticeVersion: string; termsVersion: string; privacyVersion: string };
+const closed: GlobalAccess = { status: 'loading', aiAllowed: false, aiReason: 'eligibility_required', aiPermission: false, legalApproved: false, termsAccepted: false, noticeVersion: '', termsVersion: '', privacyVersion: '' };
 function parseAccess(value: unknown): GlobalAccess {
   if (!value || typeof value !== 'object') return { ...closed, status: 'error' };
   const row = value as Record<string, unknown>;
@@ -14,7 +14,7 @@ function parseAccess(value: unknown): GlobalAccess {
   return { status, aiAllowed: status === 'eligible' && row.aiAllowed === true,
     aiReason: typeof row.aiReason === 'string' ? row.aiReason : 'eligibility_required', aiPermission: row.aiPermission === true,
     legalApproved: row.legalApproved === true, termsAccepted: row.termsAccepted === true,
-    noticeVersion: typeof row.noticeVersion === 'string' ? row.noticeVersion : '', termsVersion: typeof row.termsVersion === 'string' ? row.termsVersion : '' };
+    noticeVersion: typeof row.noticeVersion === 'string' ? row.noticeVersion : '', termsVersion: typeof row.termsVersion === 'string' ? row.termsVersion : '', privacyVersion: typeof row.privacyVersion === 'string' ? row.privacyVersion : '' };
 }
 
 /** Server decision, refreshed on identity change and foreground. Never grants
