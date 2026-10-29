@@ -1,0 +1,494 @@
+{
+  "capturedAt": "2026-10-29T06:41:36.660Z",
+  "appId": "6764170112",
+  "draftVersion": "1.7.0",
+  "status": "PREPARE_FOR_SUBMISSION_DRAFT_ONLY",
+  "publicVersion": "1.4.55",
+  "publicBuild": "55",
+  "publicBuildRecordId": "b79f971f-5be7-4f34-b3b7-dc85ffca93c5",
+  "metadataSource": "metadata-candidates.json",
+  "sourceSha256": "6eec8fe347a31a54cd9c27db12d1140606ce9f8f316bfb554448810722601c23",
+  "versionFieldReadbacks": [
+    {
+      "locale": "en-US",
+      "label": "English (U.S.)",
+      "verifiedAt": "2026-10-29T06:36:33.104Z",
+      "fields": {
+        "promotionalText": {
+          "matches": true,
+          "length": 64
+        },
+        "description": {
+          "matches": true,
+          "length": 744
+        },
+        "whatsNew": {
+          "matches": true,
+          "length": 171
+        },
+        "keywords": {
+          "matches": true,
+          "length": 41
+        },
+        "support": {
+          "matches": true,
+          "length": 28
+        },
+        "marketing": {
+          "matches": true,
+          "length": 21
+        }
+      },
+      "saveDisabled": true
+    },
+    {
+      "locale": "es-MX",
+      "label": "Spanish (Mexico)",
+      "verifiedAt": "2026-10-29T06:36:42.639Z",
+      "fields": {
+        "promotionalText": {
+          "matches": true,
+          "length": 58
+        },
+        "description": {
+          "matches": true,
+          "length": 846
+        },
+        "whatsNew": {
+          "matches": true,
+          "length": 168
+        },
+        "keywords": {
+          "matches": true,
+          "length": 49
+        },
+        "support": {
+          "matches": true,
+          "length": 28
+        },
+        "marketing": {
+          "matches": true,
+          "length": 21
+        }
+      },
+      "saveDisabled": true
+    },
+    {
+      "locale": "es-ES",
+      "label": "Spanish (Spain)",
+      "verifiedAt": "2026-10-29T06:36:45.081Z",
+      "fields": {
+        "promotionalText": {
+          "matches": true,
+          "length": 57
+        },
+        "description": {
+          "matches": true,
+          "length": 842
+        },
+        "whatsNew": {
+          "matches": true,
+          "length": 168
+        },
+        "keywords": {
+          "matches": true,
+          "length": 48
+        },
+        "support": {
+          "matches": true,
+          "length": 28
+        },
+        "marketing": {
+          "matches": true,
+          "length": 21
+        }
+      },
+      "saveDisabled": true
+    },
+    {
+      "locale": "pt-BR",
+      "label": "Portuguese (Brazil)",
+      "verifiedAt": "2026-10-29T06:36:47.492Z",
+      "fields": {
+        "promotionalText": {
+          "matches": true,
+          "length": 54
+        },
+        "description": {
+          "matches": true,
+          "length": 804
+        },
+        "whatsNew": {
+          "matches": true,
+          "length": 164
+        },
+        "keywords": {
+          "matches": true,
+          "length": 47
+        },
+        "support": {
+          "matches": true,
+          "length": 28
+        },
+        "marketing": {
+          "matches": true,
+          "length": 21
+        }
+      },
+      "saveDisabled": true
+    },
+    {
+      "locale": "fr-FR",
+      "label": "French",
+      "verifiedAt": "2026-10-29T06:36:53.732Z",
+      "fields": {
+        "promotionalText": {
+          "matches": true,
+          "length": 59
+        },
+        "description": {
+          "matches": true,
+          "length": 903
+        },
+        "whatsNew": {
+          "matches": true,
+          "length": 175
+        },
+        "keywords": {
+          "matches": true,
+          "length": 46
+        },
+        "support": {
+          "matches": true,
+          "length": 28
+        },
+        "marketing": {
+          "matches": true,
+          "length": 21
+        }
+      },
+      "saveDisabled": true
+    },
+    {
+      "locale": "de-DE",
+      "label": "German",
+      "verifiedAt": "2026-10-29T06:36:55.660Z",
+      "fields": {
+        "promotionalText": {
+          "matches": true,
+          "length": 64
+        },
+        "description": {
+          "matches": true,
+          "length": 891
+        },
+        "whatsNew": {
+          "matches": true,
+          "length": 173
+        },
+        "keywords": {
+          "matches": true,
+          "length": 45
+        },
+        "support": {
+          "matches": true,
+          "length": 28
+        },
+        "marketing": {
+          "matches": true,
+          "length": 21
+        }
+      },
+      "saveDisabled": true
+    },
+    {
+      "locale": "it",
+      "label": "Italian",
+      "verifiedAt": "2026-10-29T06:36:57.608Z",
+      "fields": {
+        "promotionalText": {
+          "matches": true,
+          "length": 56
+        },
+        "description": {
+          "matches": true,
+          "length": 812
+        },
+        "whatsNew": {
+          "matches": true,
+          "length": 185
+        },
+        "keywords": {
+          "matches": true,
+          "length": 46
+        },
+        "support": {
+          "matches": true,
+          "length": 28
+        },
+        "marketing": {
+          "matches": true,
+          "length": 21
+        }
+      },
+      "saveDisabled": true
+    },
+    {
+      "locale": "ja",
+      "label": "Japanese",
+      "verifiedAt": "2026-10-29T06:37:06.691Z",
+      "fields": {
+        "promotionalText": {
+          "matches": true,
+          "length": 24
+        },
+        "description": {
+          "matches": true,
+          "length": 361
+        },
+        "whatsNew": {
+          "matches": true,
+          "length": 64
+        },
+        "keywords": {
+          "matches": true,
+          "length": 26
+        },
+        "support": {
+          "matches": true,
+          "length": 28
+        },
+        "marketing": {
+          "matches": true,
+          "length": 21
+        }
+      },
+      "saveDisabled": true
+    },
+    {
+      "locale": "ko",
+      "label": "Korean",
+      "verifiedAt": "2026-10-29T06:37:08.664Z",
+      "fields": {
+        "promotionalText": {
+          "matches": true,
+          "length": 25
+        },
+        "description": {
+          "matches": true,
+          "length": 417
+        },
+        "whatsNew": {
+          "matches": true,
+          "length": 72
+        },
+        "keywords": {
+          "matches": true,
+          "length": 23
+        },
+        "support": {
+          "matches": true,
+          "length": 28
+        },
+        "marketing": {
+          "matches": true,
+          "length": 21
+        }
+      },
+      "saveDisabled": true
+    },
+    {
+      "locale": "zh-Hans",
+      "label": "Chinese (Simplified)",
+      "verifiedAt": "2026-10-29T06:37:10.498Z",
+      "fields": {
+        "promotionalText": {
+          "matches": true,
+          "length": 17
+        },
+        "description": {
+          "matches": true,
+          "length": 243
+        },
+        "whatsNew": {
+          "matches": true,
+          "length": 56
+        },
+        "keywords": {
+          "matches": true,
+          "length": 24
+        },
+        "support": {
+          "matches": true,
+          "length": 28
+        },
+        "marketing": {
+          "matches": true,
+          "length": 21
+        }
+      },
+      "saveDisabled": true
+    }
+  ],
+  "appInformationReadbacks": [
+    {
+      "locale": "en-US",
+      "label": "English (U.S.)",
+      "verifiedAt": "2026-10-29T06:40:10.108Z",
+      "fields": {
+        "name": {
+          "matches": true,
+          "value": "Nearr"
+        },
+        "subtitle": {
+          "matches": true,
+          "value": "Keep your favorite places"
+        }
+      }
+    },
+    {
+      "locale": "es-MX",
+      "label": "Spanish (Mexico)",
+      "verifiedAt": "2026-10-29T06:40:19.489Z",
+      "fields": {
+        "name": {
+          "matches": true,
+          "value": "Nearr"
+        },
+        "subtitle": {
+          "matches": true,
+          "value": "Guarda tus lugares favoritos"
+        }
+      }
+    },
+    {
+      "locale": "es-ES",
+      "label": "Spanish (Spain)",
+      "verifiedAt": "2026-10-29T06:40:20.782Z",
+      "fields": {
+        "name": {
+          "matches": true,
+          "value": "Nearr"
+        },
+        "subtitle": {
+          "matches": true,
+          "value": "Guarda tus sitios favoritos"
+        }
+      }
+    },
+    {
+      "locale": "pt-BR",
+      "label": "Portuguese (Brazil)",
+      "verifiedAt": "2026-10-29T06:40:22.089Z",
+      "fields": {
+        "name": {
+          "matches": true,
+          "value": "Nearr"
+        },
+        "subtitle": {
+          "matches": true,
+          "value": "Guarde seus lugares favoritos"
+        }
+      }
+    },
+    {
+      "locale": "fr-FR",
+      "label": "French",
+      "verifiedAt": "2026-10-29T06:40:23.208Z",
+      "fields": {
+        "name": {
+          "matches": true,
+          "value": "Nearr"
+        },
+        "subtitle": {
+          "matches": true,
+          "value": "Gardez vos lieux favoris"
+        }
+      }
+    },
+    {
+      "locale": "de-DE",
+      "label": "German",
+      "verifiedAt": "2026-10-29T06:40:31.335Z",
+      "fields": {
+        "name": {
+          "matches": true,
+          "value": "Nearr"
+        },
+        "subtitle": {
+          "matches": true,
+          "value": "Deine Lieblingsorte sammeln"
+        }
+      }
+    },
+    {
+      "locale": "it",
+      "label": "Italian",
+      "verifiedAt": "2026-10-29T06:40:32.556Z",
+      "fields": {
+        "name": {
+          "matches": true,
+          "value": "Nearr"
+        },
+        "subtitle": {
+          "matches": true,
+          "value": "Conserva i tuoi luoghi"
+        }
+      }
+    },
+    {
+      "locale": "ja",
+      "label": "Japanese",
+      "verifiedAt": "2026-10-29T06:40:33.805Z",
+      "fields": {
+        "name": {
+          "matches": true,
+          "value": "Nearr"
+        },
+        "subtitle": {
+          "matches": true,
+          "value": "お気に入りの場所を地図に保存"
+        }
+      }
+    },
+    {
+      "locale": "ko",
+      "label": "Korean",
+      "verifiedAt": "2026-10-29T06:40:35.062Z",
+      "fields": {
+        "name": {
+          "matches": true,
+          "value": "Nearr"
+        },
+        "subtitle": {
+          "matches": true,
+          "value": "좋아하는 장소를 나만의 지도에"
+        }
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "label": "Chinese (Simplified)",
+      "verifiedAt": "2026-10-29T06:40:36.173Z",
+      "fields": {
+        "name": {
+          "matches": true,
+          "value": "Nearr"
+        },
+        "subtitle": {
+          "matches": true,
+          "value": "在个人地图上收藏心仪地点"
+        }
+      }
+    }
+  ],
+  "manualRelease": true,
+  "newScreenshotsUploaded": 0,
+  "inheritedEnglishScreenshots": 5,
+  "inheritedAssetStatus": "Using Existing Assets; stale, not qualified as 1.7 screenshots",
+  "buildSelected": false,
+  "submitted": false,
+  "automaticRelease": false,
+  "pendingQualifiedRecognitionCopyUploaded": false,
+  "proofScreenshot": "asc-1.7-ten-locale-draft.png"
+}
