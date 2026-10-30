@@ -20,14 +20,14 @@ import { FieldnotesNativePreview } from '@/components/FieldnotesNativePreview';
 import { PaidFindsNativePreview } from '@/components/PaidFindsNativePreview';
 
 export default function DevelopmentQaScreen() {
-  const params = useLocalSearchParams<{ fieldnotes?: string; paid?:string; locale?:string }>();
+  const params = useLocalSearchParams<{ fieldnotes?: string; paid?:string; locale?:string; theme?:string }>();
   const router = useRouter();
   const { user } = useAuth();
   const { colors, typography } = useTheme();
   const [busy, setBusy] = useState<'onboarding_only' | 'fresh_anonymous' | null>(null);
 
   if (!isOnboardingV2DevelopmentResetAvailable()) return <Redirect href="/" />;
-  if (__DEV__ && typeof params.paid === 'string') return <PaidFindsNativePreview state={params.paid} locale={params.locale??'en-US'}/>;
+  if (__DEV__ && typeof params.paid === 'string') return <PaidFindsNativePreview state={params.paid} locale={params.locale??'en-US'} theme={params.theme === 'light' || params.theme === 'dark' ? params.theme : undefined}/>;
   if (__DEV__ && isMapPreviewMode() && typeof params.fieldnotes === 'string') return <FieldnotesNativePreview surface={params.fieldnotes} />;
 
   async function run(mode: 'onboarding_only' | 'fresh_anonymous') {
