@@ -1,0 +1,224 @@
+
+> nearr@0.1.0 test:paid-launch
+> ts-node -P scripts/tsconfig.json scripts/testPaidFindPolicy.ts && ts-node -P scripts/tsconfig.json scripts/testPaidPurchaseVerification.ts && ts-node -P scripts/tsconfig.json scripts/testPaidPurchaseRecovery.ts && ts-node -P scripts/tsconfig.json scripts/testPaidFindsDatabase.ts && ts-node -P scripts/tsconfig.json scripts/testPaidFindsClientRuntime.ts && ts-node -P scripts/tsconfig.json scripts/testPaidEntitlementRefresh.ts && node scripts/testPaidRefreshCallers.cjs && node scripts/testPaidRecognitionIngress.cjs && ts-node -P scripts/tsconfig.json scripts/testRecognitionBillingPreflight.ts && ts-node -P scripts/tsconfig.json scripts/testPaidHostShareIngress.ts && ts-node -P scripts/tsconfig.json scripts/testHostShareAccountBoundary.ts && ts-node -P scripts/tsconfig.json scripts/testRecognitionCommitAuthorization.ts
+
+13 paid policy/legacy preservation/receipt binding checks passed
+PASS all three fixed product quantities
+PASS normalized purchase is bound to primary opaque owner and exact environment
+PASS reject foreign application
+PASS reject bundle ID is not app ID
+PASS reject wrong environment
+PASS reject missing environment
+PASS reject non Apple store
+PASS reject StoreKit local test store
+PASS reject foreign primary identity despite aliases
+PASS reject client user ID
+PASS reject anonymous primary identity
+PASS reject legacy token ID
+PASS reject subscription is not pack
+PASS reject prototype product name
+PASS reject numeric transaction ID
+PASS reject missing transaction ID
+PASS reject missing event ID
+PASS reject family shared transaction
+PASS reject unverified family status
+PASS reject future event
+PASS reject future purchase
+PASS reject event precedes purchase
+PASS reject fractional time
+PASS reject trial pack
+PASS reject expiring pack
+PASS reject untrusted quantity
+PASS reject dashboard test event
+PASS reject array event type cannot coerce to cancellation
+PASS malformed configuration rejected
+PASS untrusted SDK CustomerInfo is not a webhook
+PASS delayed authenticated delivery accepted without changing event time
+PASS refund after grant revokes
+PASS refund before original purchase remains revoked
+PASS late ordinary purchase cannot clear refund even with later timestamp
+PASS explicit newer refund reversal restores the same transaction
+PASS late old refund cannot undo newer reversal
+PASS new refund after reversal revokes
+PASS ties favor revocation
+PASS duplicate event is no additional grant
+PASS same event ID with changed state is rejected
+PASS repeated transaction across account is rejected
+PASS same transaction cannot change pack
+PASS same transaction cannot cross environments
+PASS documented v1 row never grants from internal ID or timestamp
+PASS even extra unqualified v1 fields do not create grants
+PASS empty v1 response cannot erase prior ledger
+PASS stale v1 response rejected
+PASS v1 ownership mismatch rejected
+PASS v1 environment mismatch rejected
+49 paid purchase verification checks passed. Offline fixtures only; no StoreKit or live RevenueCat qualification.
+PASS verified exact owned purchase binds all configured identifiers
+PASS refunded snapshot is explicit revoked, never purchase grant
+PASS archived compatible product still restores historical purchase
+PASS reject wrong primary owner despite original owner
+PASS reject unknown internal product
+PASS reject wrong transaction
+PASS reject numeric transaction coercion
+PASS reject wrong environment
+PASS reject test store
+PASS reject family ownership
+PASS reject assigned ownership
+PASS reject missing ownership
+PASS reject quantity over one
+PASS reject string quantity
+PASS reject unknown state
+PASS reject future purchase
+PASS reject invalid time
+PASS reject array refund status cannot coerce to verified
+PASS reject empty result
+PASS reject duplicate result
+PASS reject pagination result
+PASS reject missingPagination result
+PASS reject product internal ID
+PASS reject store product mapping
+PASS reject product app
+PASS reject subscription product
+PASS reject non-consumable product
+PASS reject missing consumable proof
+PASS reject unexpected subscription info
+PASS reject unknown product state
+PASS reject array product state cannot coerce to active
+PASS reject unexpanded app
+PASS reject foreign project
+PASS reject foreign expanded app
+PASS reject wrong bundle
+PASS missing trusted mapping rejects before lookup
+PASS ambiguous mappings rejected
+PASS stale read window rejected
+PASS owned recovery never revives refund tombstone
+PASS recovery replay preserves prior decision and timestamp
+PASS verified ledger versus fresh refunded recovery revokes spendable credit
+PASS newer callback outranks in-flight refunded recovery
+PASS older callback cannot keep freshly refunded funds spendable
+PASS older recovery cannot replace a newer observed decision
+PASS recovery cannot transfer another account transaction
+PASS recovery cannot change historical pack
+PASS missing ledger recovery retains explicit provenance
+PASS adapter uses two bounded fixed-origin GETs and approved product
+PASS HTTP denial stops before product request
+PASS redirect stops before credentials can be resent
+PASS non-JSON fails closed
+PASS declared oversized body fails closed
+PASS streamed oversized body fails closed
+PASS invalid JSON fails closed
+PASS client URL rejected before network
+PASS transport errors redact upstream details
+PASS total timeout bounds even a transport ignoring abort
+57 paid purchase recovery checks passed. Offline fixtures only; no live API or StoreKit qualification.
+40 paid-find PostgreSQL checks passed
+PASS catalog rejects legacy capped, free-only, disabled, unqualified and age-ineligible responses without StoreKit
+PASS actual Store strings, exact monthly no-trial subscription and all three consumables are required
+PASS malformed balances and old same-pack product-only receipts do not prove success
+PASS Plus succeeds through real server subscriber verification and reconciliation, clearing pending
+PASS Plus old, missing, stale, legacy or mismatched server proof remains pending and blocks duplicate StoreKit
+PASS Plus callback without transaction ID requires server attempt binding; old active period cannot resolve it
+PASS Plus lost SDK callback recovers via restore using real fresh subscriber proof, with no second charge
+PASS Plus revoked fresh server transaction clears pending without success
+PASS SDK success and existing tokens do not grant credit; pending blocks a second charge until reconciliation
+PASS cancel clears recovery marker; deferred/lost callback retains it, account switching cannot grant another user access
+PASS an exactly bound revoked transaction resolves recovery without granting credit
+PASS account switch after marker creation but before StoreKit clears the never-started attempt
+PASS stale prices, offline access and account mismatch cannot start purchase; restore uses server authority
+PASS real screen purchase action reports cancellation without credit and returns controls to idle
+PASS real hook retains pending recovery offline and clears prior-account presentation on switch
+PASS 16 groups; 110 real-screen renders; no live purchases or network
+PASS disabled policy reads no entitlements or customer and calls no API
+PASS fresh active avoids unnecessary API call
+PASS verified expired receipt avoids unnecessary API call
+PASS revoked receipt avoids unnecessary API call
+PASS free receipt avoids unnecessary API call
+PASS foreign product avoids unnecessary API call
+PASS foreign environment avoids unnecessary API call
+PASS absent unlimited and legacy rows require no API
+PASS stale unlimited uses real verifier and atomic subscriber RPC
+PASS stale capped legacy refreshes even without unlimited receipt
+PASS ended formerly active period refreshes despite fresh verification
+PASS ended formerly trial period refreshes despite fresh verification
+PASS ended formerly intro period refreshes despite fresh verification
+PASS ended formerly grace period refreshes despite fresh verification
+PASS ended formerly cancelled period refreshes despite fresh verification
+PASS verified expiry after missed renewal check prevents repeated API reads
+PASS ended legacy period refreshes before free or token fallback
+PASS fresh unlimited and stale legacy share one API read
+PASS new sales disabled does not strand an existing paid account
+PASS stale boundary or invalid timestamp 2026-10-29T20:45:00.000Z
+PASS stale boundary or invalid timestamp 2026-10-29T21:01:00.001Z
+PASS stale boundary or invalid timestamp null
+PASS stale boundary or invalid timestamp invalid
+PASS fresh revoked result reaches SQL without retaining old paid grant
+PASS fresh expired result reaches SQL without retaining old paid grant
+PASS fresh free result reaches SQL without retaining old paid grant
+PASS nearr_plus_config failure prevents admission and makes no grant
+PASS nearr_plus_entitlements failure prevents admission and makes no grant
+PASS nearr_legacy_plus_entitlements failure prevents admission and makes no grant
+PASS nearr_plus_customers failure prevents admission and makes no grant
+PASS malformed or unqualified enabled config fails before API
+PASS malformed or unqualified enabled config fails before API
+PASS malformed or unqualified enabled config fails before API
+PASS malformed or unqualified enabled config fails before API
+PASS malformed or unqualified enabled config fails before API
+PASS active receipt with malformed expiry fails closed
+PASS missing primary customer fails closed
+PASS raw account ID cannot substitute primary opaque customer
+PASS missing secret only matters when a stale receipt needs refresh
+PASS HTTP error never reaches apply
+PASS redirect never reaches apply
+PASS bad content type never reaches apply
+PASS declared oversized body never reaches apply
+PASS streamed oversized body never reaches apply
+PASS invalid JSON never reaches apply
+PASS transport failure is sanitized
+PASS client CustomerInfo cannot pass real verifier
+PASS wrong store receipt is rejected by real verifier
+PASS configuration disabled during GET prevents grant
+PASS configuration environment changed during GET prevents grant
+PASS RPC failure is surfaced for caller to stop
+PASS RPC success that leaves stale or future proof cannot admit recognition
+PASS RPC success that leaves stale or future proof cannot admit recognition
+PASS failed persisted proof readback fails closed after apply
+PASS malformed user ID fails before DB or API
+PASS whole-helper timeout bounds transport ignoring abort
+56 paid entitlement refresh checks passed. Offline fixtures, zero live RevenueCat calls.
+5 actual Edge freshness-boundary scenarios passed (admission, processing, callback, terminal)
+8 actual Edge paid-ingress boundary scenarios passed; no real network/provider calls
+PASS owned job refreshes before save and preserves reserved capacity
+PASS stale subscription prevents save
+PASS offline verification prevents save
+PASS account switch during status prevents save
+PASS signed-out caller cannot save job candidate
+PASS Alice job on Bob session cannot persist into Bob map
+PASS account switch during job lookup stops before save
+PASS actual savedPlacesService getUser rejects switch after preflight
+PASS late save response cannot populate new account cache
+PASS owned anonymous job skips purchase API but binds owner
+PASS anonymous account cannot save another account job
+PASS ordinary no-job manual save keeps existing behavior
+PASS promotion checks result and owning job
+PASS foreign promotion result cannot authorize current account
+PASS job lookup failure prevents persistence
+15 real recognition owner/preflight boundaries passed. Offline fixtures only.
+[share-job] job_accepted=true duplicate=false
+[share-job] job_accepted=true duplicate=false
+PASS pasted button and keyboard submit mount actual consent/handoff before any parse, extraction, provider or save
+[share-job] job_accepted=true duplicate=false
+PASS valid incoming URL preserves sid and trace ordering despite old async flag false; new URL asks consent again
+PASS invalid paste and denied consent never submit or enter legacy extraction
+PASS durable admission denial and server failure never fall back to sync provider calls
+[share-job] job_accepted=true duplicate=false
+PASS exhausted or unverified finds open the paywall and retry the identical submission through server admission
+PASS consent and provider restrictions have no network retry or paid bypass CTA
+PASS same account deduplicates concurrent requests and accepted replay without changing server SID
+PASS identical SID in a different account cannot read the prior accepted or in-flight cache
+PASS signed-out reads and account switch while returning a cache hit cannot expose acceptance
+PASS account switch after cache selection but before dispatch performs no create request
+PASS account switch during create cannot return or cache the old accepted outcome for the new account
+[share-job] durable_ack_reconciled=true reason=network
+PASS lost acknowledgement recovery queries the expected owner and discards an identity change during lookup
+PASS same-account token rotation remains valid and denied submissions retry with the original SID
+24 recognition commit authorization PostgreSQL checks passed

@@ -1,0 +1,428 @@
+{
+  "preparedAt": "2026-10-29T23:53:02.127Z",
+  "bundleSha256": "276ee9278497a5b96f27d3d2d2b05891e026252f13c2bed0425714f184a4331f",
+  "bundleBytes": 19246400,
+  "configurationSha256": "d3cbe45092308cc84090d01e5d16667e0c610b89ab60295c5bc1645a58d3f080",
+  "unchangedCurrentExtraSha256": "feacf7b7662fdffd2d915c4c883ba0f64ff5326b4a57d6b1bb3d3ef10a8789fe",
+  "assetMetadataCount": 45,
+  "assetFiles": 49,
+  "allAssetFileHashesVerified": true,
+  "copies": [
+    {
+      "asset": "close",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2freactnative2flibraries2flogbox2fui2flogboximages_close.png",
+      "md5": "369745d4a4a6fa62fa0ed495f89aa964",
+      "sha256": "bfc7811502176a8043daa7805a90c04f21cf461512072e9eba4378dabfdbbc53"
+    },
+    {
+      "asset": "chevron-left",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2freactnative2flibraries2flogbox2fui2flogboximages_chevronleft.png",
+      "md5": "5b50965d3dfbc518fe50ce36c314a6ec",
+      "sha256": "03a765c216cdbb649123cc875e0327d2a0f3cc91da60944aadbdf1bd74537fe6"
+    },
+    {
+      "asset": "chevron-right",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2freactnative2flibraries2flogbox2fui2flogboximages_chevronright.png",
+      "md5": "e62addcde857ebdb7342e6b9f1095e97",
+      "sha256": "98ecd307148f2b3a687a1961c196531a1dff2649c3d8ef686cb97e171ac32aaa"
+    },
+    {
+      "asset": "alert-triangle",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2freactnative2flibraries2flogbox2fui2flogboximages_alerttriangle.png",
+      "md5": "4f355ba1efca4b9c0e7a6271af047f61",
+      "sha256": "381ec48ab11d4d2b9e3d7e3a2a3fed3bafc7d4686cf6aa90ed729458767e400a"
+    },
+    {
+      "asset": "loader",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2freactnative2flibraries2flogbox2fui2flogboximages_loader.png",
+      "md5": "817aca47ff3cea63020753d336e628a4",
+      "sha256": "43901f8c744e543452d98de779ccb9eec2ebd99359c72cdce379757c89605e92"
+    },
+    {
+      "asset": "back-icon",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40reactnavigation2felements2fsrc2fassets_backicon.png",
+      "md5": "778ffc9fe8773a878e9c30a6304784de",
+      "sha256": "8b61a4c7ef70dc92753f0494976482f66fd4150ec23dfc772ab65e10373afa55"
+    },
+    {
+      "asset": "back-icon",
+      "type": "png",
+      "scale": 1.5,
+      "destination": "drawable-hdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40reactnavigation2felements2fsrc2fassets_backicon.png",
+      "md5": "376d6a4c7f622917c39feb23671ef71d",
+      "sha256": "409b06d15a4633ee6f8a2ad48282aad0ce3343f4d8c8f7cb84084de66acce782"
+    },
+    {
+      "asset": "back-icon",
+      "type": "png",
+      "scale": 2,
+      "destination": "drawable-xhdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40reactnavigation2felements2fsrc2fassets_backicon.png",
+      "md5": "c79c3606a1cf168006ad3979763c7e0c",
+      "sha256": "906666dd689346ada232ce3689adef907b4257fa1b593f03638d2b9497f64884"
+    },
+    {
+      "asset": "back-icon",
+      "type": "png",
+      "scale": 3,
+      "destination": "drawable-xxhdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40reactnavigation2felements2fsrc2fassets_backicon.png",
+      "md5": "02bc1fa7c0313217bde2d65ccbff40c9",
+      "sha256": "ffa7ee45b76405ba73921495008f7d68c9de6395f4b6941db063465f6e382320"
+    },
+    {
+      "asset": "back-icon",
+      "type": "png",
+      "scale": 4,
+      "destination": "drawable-xxxhdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40reactnavigation2felements2fsrc2fassets_backicon.png",
+      "md5": "35ba0eaec5a4f5ed12ca16fabeae451d",
+      "sha256": "84cf5eb3b20250f69e0e4733beb4da5f417f0682892a5ad1b5e62570753c21b1"
+    },
+    {
+      "asset": "back-icon-mask",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40reactnavigation2felements2fsrc2fassets_backiconmask.png",
+      "md5": "5223c8d9b0d08b82a5670fb5f71faf78",
+      "sha256": "2c95e8c2675e799335fd0046bb07dbda06cb7ecff51ed37922c6309d619cc4d3"
+    },
+    {
+      "asset": "error",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2fexporouter2fassets_error.png",
+      "md5": "563d5e3294b67811d0a1aede6f601e30",
+      "sha256": "337470e7976e461fac1853028c59079447ef77c1a2bd22685684095ef04d1414"
+    },
+    {
+      "asset": "file",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2fexporouter2fassets_file.png",
+      "md5": "b6c297a501e289394b0bc5dc69c265e6",
+      "sha256": "9d451494722374e78c363bca9a1612ecd2aff9259fb49912155e6bae2685b2a5"
+    },
+    {
+      "asset": "pkg",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2fexporouter2fassets_pkg.png",
+      "md5": "5974eb3e1c5314e8d5a822702d7d0740",
+      "sha256": "ac270f78154365e1006401f715d6fd93c448237148bbf3ef0ea7eb0c0b235144"
+    },
+    {
+      "asset": "forward",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2fexporouter2fassets_forward.png",
+      "md5": "9d9c5644f55c2f6e4b7f247c378b2fe9",
+      "sha256": "bda87077fccd3ca54ecff64af6bf49a2f5020cefa4aab9121cba4d92d0a3004b"
+    },
+    {
+      "asset": "alert-triangle",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fmetroruntime2fassets_alerttriangle.png",
+      "md5": "4f355ba1efca4b9c0e7a6271af047f61",
+      "sha256": "381ec48ab11d4d2b9e3d7e3a2a3fed3bafc7d4686cf6aa90ed729458767e400a"
+    },
+    {
+      "asset": "loader",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fmetroruntime2fassets_loader.png",
+      "md5": "817aca47ff3cea63020753d336e628a4",
+      "sha256": "43901f8c744e543452d98de779ccb9eec2ebd99359c72cdce379757c89605e92"
+    },
+    {
+      "asset": "AntDesign",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_antdesign.ttf",
+      "md5": "3a2ba31570920eeb9b1d217cabe58315",
+      "sha256": "7955ca14127b30412c114eb13cfd702b5dab265feb1880d1695d73caa824cde1"
+    },
+    {
+      "asset": "Entypo",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_entypo.ttf",
+      "md5": "31b5ffea3daddc69dd01a1f3d6cf63c5",
+      "sha256": "16f92298587bab2b469bc13c0dfc6d5d171bca10bad0c9053ad16bc023bf717d"
+    },
+    {
+      "asset": "EvilIcons",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_evilicons.ttf",
+      "md5": "140c53a7643ea949007aa9a282153849",
+      "sha256": "a5caeb4d395c5e32f1d5a30acb382aebc664f1badfd149319907f2215e4e3e26"
+    },
+    {
+      "asset": "Feather",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_feather.ttf",
+      "md5": "a76d309774d33d9856f650bed4292a23",
+      "sha256": "57599360fc9b80bce473b364f7f255b552019ec47462428018cb0e0f838462b4"
+    },
+    {
+      "asset": "Fontisto",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_fontisto.ttf",
+      "md5": "b49ae8ab2dbccb02c4d11caaacf09eab",
+      "sha256": "94dab9f1d5b13ea0769d124a2da0d02433f3b99d6dea5a07c0446a77158100c0"
+    },
+    {
+      "asset": "FontAwesome",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_fontawesome.ttf",
+      "md5": "b06871f281fee6b241d60582ae9369b9",
+      "sha256": "aa58f33f239a0fb02f5c7a6c45c043d7a9ac9a093335806694ecd6d4edc0d6a8"
+    },
+    {
+      "asset": "FontAwesome5_Regular",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_fontawesome5_regular.ttf",
+      "md5": "1f77739ca9ff2188b539c36f30ffa2be",
+      "sha256": "c651b8a67d3193206f622c3c3b0fbca4a2f2727108c4212b52c1e2a2e84c9b31"
+    },
+    {
+      "asset": "FontAwesome5_Solid",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_fontawesome5_solid.ttf",
+      "md5": "605ed7926cf39a2ad5ec2d1f9d391d3d",
+      "sha256": "3d06af1f31cd83ace7a265a014b8fb5dee15770ecac8f7a55555190e627e03c2"
+    },
+    {
+      "asset": "FontAwesome5_Brands",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_fontawesome5_brands.ttf",
+      "md5": "3b89dd103490708d19a95adcae52210e",
+      "sha256": "06f4d00923ea24697df5df0b92984175991d8bd25776a02d531bb401e393ec42"
+    },
+    {
+      "asset": "FontAwesome6_Regular",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_fontawesome6_regular.ttf",
+      "md5": "370dd5af19f8364907b6e2c41f45dbbf",
+      "sha256": "64f9fb623681f112261e9a2f97826782439f3925dea8f44a57d1e4db95ba6cfd"
+    },
+    {
+      "asset": "FontAwesome6_Solid",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_fontawesome6_solid.ttf",
+      "md5": "adec7d6f310bc577f05e8fe06a5daccf",
+      "sha256": "31f099c13f6e4ba05f1b471bf170cb5493249474222917372de3ca5cf29e6a1a"
+    },
+    {
+      "asset": "FontAwesome6_Brands",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_fontawesome6_brands.ttf",
+      "md5": "56c8d80832e37783f12c05db7c8849e2",
+      "sha256": "bc844b5b02d3f3adabb514de4e0c0208252d3123413bd03f6287fa446acee859"
+    },
+    {
+      "asset": "Foundation",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_foundation.ttf",
+      "md5": "e20945d7c929279ef7a6f1db184a4470",
+      "sha256": "7e1dd03dd4ce90b658052554cd7459df16716717389a552fa4c6d56a5f8933e6"
+    },
+    {
+      "asset": "Ionicons",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_ionicons.ttf",
+      "md5": "6148e7019854f3bde85b633cb88f3c25",
+      "sha256": "9c7fb9071a6c28582c6b84468cbff2c7a71e02b17e3a3b4548a159938d22916b"
+    },
+    {
+      "asset": "MaterialCommunityIcons",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_materialcommunityicons.ttf",
+      "md5": "b62641afc9ab487008e996a5c5865e56",
+      "sha256": "9e94d4dbe2e87ea495f0d42d879146bc74c4c4e910776a49154a15eefa37ef59"
+    },
+    {
+      "asset": "MaterialIcons",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_materialicons.ttf",
+      "md5": "4e85bc9ebe07e0340c9c4fc2f6c38908",
+      "sha256": "ef149f08bdd2ff09a4e2c8573476b7b0f3fbb15b623954ade59899e7175bedda"
+    },
+    {
+      "asset": "Octicons",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_octicons.ttf",
+      "md5": "f7c53c47a66934504fcbc7cc164895a7",
+      "sha256": "16db348053ea112599e2a6356f6c1fa0735d00e2ca2472acfadffcda90e2227c"
+    },
+    {
+      "asset": "SimpleLineIcons",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_simplelineicons.ttf",
+      "md5": "d2285965fe34b05465047401b8595dd0",
+      "sha256": "3f501ddb05c70829bbb51cfe9ca9fff57f39e060457c257b3ccf25df767f0870"
+    },
+    {
+      "asset": "Zocial",
+      "type": "ttf",
+      "scale": 1,
+      "destination": "raw/unstable_path2f2f2fnearrandroidqualification2fnearr2fnode_modules2f40expo2fvectoricons2fbuild2fvendor2freactnativevectoricons2ffonts_zocial.ttf",
+      "md5": "1681f34aaca71b8dfb70756bca331eb2",
+      "sha256": "dd8ee403bbcbf5e58b77dca4ac03ebafa13a284a3d87d8ea9ca490435a86fa48"
+    },
+    {
+      "asset": "icon",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2fassets_icon.png",
+      "md5": "8216cc0ec8e5c7b769011537d0e3cebc",
+      "sha256": "ac3ed31cf494843c72c5049e480e77f2af2fc74dcc8b9a85ce636aba0cc2db2a"
+    },
+    {
+      "asset": "dorset-quarry-loop",
+      "type": "mp4",
+      "scale": 1,
+      "destination": "raw/unstable_path2fassets2fonboarding2fauthentic_dorsetquarryloop.mp4",
+      "md5": "1bb1af8abfeb4f125570e09de9186062",
+      "sha256": "e363f632d7aed8274352ef422d950757550be924fe30e88ca8c180acea2e3768"
+    },
+    {
+      "asset": "dorset-quarry-poster",
+      "type": "jpg",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2fassets2fonboarding2fauthentic_dorsetquarryposter.jpg",
+      "md5": "62af208dfc076998ec65ff712118fb4e",
+      "sha256": "e9cbbea0a36657cc6e3e049c4cfbea5e364f0f333205321b4b4623bae8dca2b1"
+    },
+    {
+      "asset": "dorset-quarry-place-2",
+      "type": "jpg",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2fassets2fonboarding2fauthentic_dorsetquarryplace2.jpg",
+      "md5": "93507055c6890eb5dd75d011fa410528",
+      "sha256": "c10b432a741f6e1a1c3c0a782ff8a1d3d1c91ff76b8aeeab1c1b731ecd17cd5d"
+    },
+    {
+      "asset": "mad-yolks-loop",
+      "type": "mp4",
+      "scale": 1,
+      "destination": "raw/unstable_path2fassets2fonboarding2fauthentic_madyolksloop.mp4",
+      "md5": "526f0eba6ad93bda4c370c909687ac9c",
+      "sha256": "32f3733115b45e8e3e4a4af55110aa5737c5a8dabbbc5ea48b2a5e6c58929eb1"
+    },
+    {
+      "asset": "mad-yolks-poster",
+      "type": "jpg",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2fassets2fonboarding2fauthentic_madyolksposter.jpg",
+      "md5": "56d616b27fe4c8ddfd7a3b1ef85cc3ec",
+      "sha256": "e818e976b11769c69edceae96920ca3fddd45e52e34de7297118818b201640de"
+    },
+    {
+      "asset": "mad-yolks-place-2",
+      "type": "jpg",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2fassets2fonboarding2fauthentic_madyolksplace2.jpg",
+      "md5": "2ce6afc81b204a30d392816774d11c26",
+      "sha256": "d1e6f3eda746d0061bcdeaeeb4017825c623d9626c3cd1a0fbccb2007811844a"
+    },
+    {
+      "asset": "hydra-old-town-loop",
+      "type": "mp4",
+      "scale": 1,
+      "destination": "raw/unstable_path2fassets2fonboarding2fauthentic_hydraoldtownloop.mp4",
+      "md5": "35ae4d1764b4ee17cd67f90fcad0a871",
+      "sha256": "c6bb2b4d62c501e8d970e83a075ffc74c998da3e266ec326b13c269a9452349d"
+    },
+    {
+      "asset": "hydra-old-town-poster",
+      "type": "jpg",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2fassets2fonboarding2fauthentic_hydraoldtownposter.jpg",
+      "md5": "98b59a1693787470d7a5939fd43cf790",
+      "sha256": "2b02863d1a39fb00b6f83ce2fe80be4a3f69f312dfb0a55379a36828bce87a10"
+    },
+    {
+      "asset": "hydra-old-town-place-2",
+      "type": "jpg",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2fassets2fonboarding2fauthentic_hydraoldtownplace2.jpg",
+      "md5": "6671c1c7a91a41a68bdfd64f7d73c108",
+      "sha256": "cc6cc0908cbb9721208fcfc7a930ab8e5f1e903fb8f9d9258d813e177dae50b5"
+    },
+    {
+      "asset": "old-towne-shops-loop-v2",
+      "type": "mp4",
+      "scale": 1,
+      "destination": "raw/unstable_path2fassets2fonboarding2fauthentic_oldtowneshopsloopv2.mp4",
+      "md5": "cdcfb7bdffc66e952fb18a74bb492cde",
+      "sha256": "353a90d4629dc8b66d5af05fdb7193a46215e7bd3604a7d055058da1f925557a"
+    },
+    {
+      "asset": "old-towne-shops-poster-v2",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2fassets2fonboarding2fauthentic_oldtowneshopsposterv2.png",
+      "md5": "eb6bd6606e062ee4c14bfb38d1e94f20",
+      "sha256": "d594f0f5f75d29789b21f3219c45cd36e2033e41b744334ffa8b0a6ec2849069"
+    },
+    {
+      "asset": "old-towne-shops-place-v2",
+      "type": "png",
+      "scale": 1,
+      "destination": "drawable-mdpi/unstable_path2fassets2fonboarding2fauthentic_oldtowneshopsplacev2.png",
+      "md5": "92fe2ff90d18506eda4f50cc5e97c25f",
+      "sha256": "c3831436a53f5f93900eae6f379415990dc020144bbdbe3ad5f5da53f1e3d418"
+    }
+  ],
+  "publicConfiguration": {
+    "appEnv": "development",
+    "backendEnv": "development",
+    "configuredBackendHost": "qnfxnmvxpjzfydgudtvs.supabase.co",
+    "documentationHosts": [
+      "xyzcompany.supabase.co",
+      "example.supabase.co"
+    ],
+    "productionEndpointConfigured": false,
+    "productionProjectReferenceConstant": "Present only as the existing appEnvironmentCore validation constant; no Production endpoint configured",
+    "publicAnonJwtOccurrences": 0,
+    "serverCredentialPatternsFound": 0,
+    "privateKeyPresent": false
+  },
+  "qaOnlyOverrides": {
+    "applicationId": "com.nearr.paidqa",
+    "scheme": "nearr-paidqa",
+    "name": "Nearr Paid QA",
+    "otaUpdatesEnabled": false,
+    "originalAppTouched": false
+  },
+  "currentSourcePath": "63600e8 app and fixture sources unchanged",
+  "shippingCandidate": false,
+  "realPurchaseEvidence": false
+}

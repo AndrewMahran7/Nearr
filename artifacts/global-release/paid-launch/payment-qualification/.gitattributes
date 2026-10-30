@@ -1,0 +1,5 @@
+# Preserve downloaded price matrices and hashed evidence bytes on every checkout.
+* -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+# Raw command output may contain terminal spacing and trailing blank lines.
+# Keep it byte-exact and review it through the manifest, not a source diff.
+*.log -diff

@@ -1,0 +1,141 @@
+{
+  "state": "restricted",
+  "locale": "en-US",
+  "theme": "light",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of link observed in local HTML page screenshot",
+  "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d",
+  "bundleSha256": "276ee9278497a5b96f27d3d2d2b05891e026252f13c2bed0425714f184a4331f",
+  "display": {
+    "size": "1080x2400",
+    "density": 420,
+    "fontScale": 1
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/restricted-en-US-light-top.png",
+      "capturedAt": "2026-10-30T00:40:21.880Z",
+      "sha256": "86a1e851167eebd5ca129e374e569319471a6e111d76a7ef63a937f11907f11f",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Not now",
+        "Your next discovery",
+        "Keep discovering places",
+        "Your saved places stay yours, with or without a subscription.",
+        "Your finds",
+        "Monthly free finds",
+        "1 of 3 available",
+        "Reserved for pending results: 1",
+        "Free resets Nov 1, 2026 (UTC).",
+        "Purchased tokens: 47",
+        "Reserved for pending results: 3",
+        "Purchased tokens never expire. Plus leaves them untouched.",
+        "Purchases are unavailable under this account’s age and country settings.",
+        "Nearr Plus",
+        "Unlimited finds",
+        "Unlimited successful video finds while Plus is active. No token deductions.",
+        "Plus is not available for purchase on this account right now.",
+        "Apple bills monthly and renews automatically unless cancelled in subscription settings. No free trial or annual plan."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/restricted-en-US-light-scroll1.png",
+      "capturedAt": "2026-10-30T00:40:27.125Z",
+      "sha256": "780f44c17a291548c1153c13832fa7d28e6796f04bd1471b07cda0baf3dc5c3c",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Purchases are unavailable under this account’s age and country settings.",
+        "Nearr Plus",
+        "Unlimited finds",
+        "Unlimited successful video finds while Plus is active. No token deductions.",
+        "Plus is not available for purchase on this account right now.",
+        "Apple bills monthly and renews automatically unless cancelled in subscription settings. No free trial or annual plan.",
+        "Or buy finds when you need them",
+        "One token pays for one successful video find. Purchased tokens do not expire.",
+        "Starter",
+        "20 tokens",
+        "Store price unavailable. This package cannot be purchased yet.",
+        "Explorer",
+        "50 tokens",
+        "Store price unavailable. This package cannot be purchased yet."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/restricted-en-US-light-scroll2.png",
+      "capturedAt": "2026-10-30T00:40:32.909Z",
+      "sha256": "154d114a037e2636a1589f96e6bdf52057dc7877e87c20eaabb083a5a0b6155a",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Or buy finds when you need them",
+        "One token pays for one successful video find. Purchased tokens do not expire.",
+        "Starter",
+        "20 tokens",
+        "Store price unavailable. This package cannot be purchased yet.",
+        "Explorer",
+        "50 tokens",
+        "Store price unavailable. This package cannot be purchased yet.",
+        "Adventurer",
+        "200 tokens",
+        "Store price unavailable. This package cannot be purchased yet.",
+        "Plus is used first, then monthly free finds, then purchased tokens.",
+        "Free includes 3 successful video finds each calendar month. (UTC)",
+        "One video counts once, even when it contains several places. Failed searches do not use your allowance.",
+        "Quick Check reserves a find until you save or the reservation expires. Monthly free finds do not roll over."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/restricted-en-US-light-scroll3.png",
+      "capturedAt": "2026-10-30T00:40:38.549Z",
+      "sha256": "7a779c0bc7108447beb7f6d1edfe51d89909f48f8c5f87c021252632e76cb360",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Adventurer",
+        "200 tokens",
+        "Store price unavailable. This package cannot be purchased yet.",
+        "Plus is used first, then monthly free finds, then purchased tokens.",
+        "Free includes 3 successful video finds each calendar month. (UTC)",
+        "One video counts once, even when it contains several places. Failed searches do not use your allowance.",
+        "Quick Check reserves a find until you save or the reservation expires. Monthly free finds do not roll over.",
+        "Restore Purchases",
+        "Restore reconnects verified purchases to your account. Spent tokens are not restored.",
+        "Manage Subscription",
+        "Refresh balance",
+        "Terms of Service",
+        "Privacy Policy"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/restricted-en-US-light-scroll4.png",
+      "capturedAt": "2026-10-30T00:40:44.662Z",
+      "sha256": "5a05cb3df8ad965ca67fa67efdfec7e3a8f1d36f87806e03c9f2249bf5ea8bd2",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Adventurer",
+        "200 tokens",
+        "Store price unavailable. This package cannot be purchased yet.",
+        "Plus is used first, then monthly free finds, then purchased tokens.",
+        "Free includes 3 successful video finds each calendar month. (UTC)",
+        "One video counts once, even when it contains several places. Failed searches do not use your allowance.",
+        "Quick Check reserves a find until you save or the reservation expires. Monthly free finds do not roll over.",
+        "Restore Purchases",
+        "Restore reconnects verified purchases to your account. Spent tokens are not restored.",
+        "Manage Subscription",
+        "Refresh balance",
+        "Terms of Service",
+        "Privacy Policy"
+      ],
+      "unedited": true
+    }
+  ]
+}

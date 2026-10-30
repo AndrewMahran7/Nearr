@@ -1,0 +1,140 @@
+{
+  "state": "offers",
+  "locale": "pt-BR",
+  "theme": "dark",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of local HTML anchor observed in compact-grid screenshot",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "bundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "display": {
+    "size": "1080x2400",
+    "density": "Physical density: 420",
+    "fontScale": 1
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/offers-pt-BR-dark-default-top.png",
+      "capturedAt": "2026-10-30T01:21:42.734Z",
+      "sha256": "d5f7c0bcba2cbf4dfa7d583e9eb38038cb5a84d8a517d9880d8b3480b1cb0a0a",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+        "Agora não",
+        "Sua próxima descoberta",
+        "Continue descobrindo lugares",
+        "Seus lugares salvos continuam seus, com ou sem assinatura.",
+        "Suas buscas",
+        "Buscas grátis do mês",
+        "1 de 3 disponíveis",
+        "Reservadas para resultados pendentes: 1",
+        "A cota grátis é renovada em 1 de nov. de 2026 (UTC).",
+        "Tokens comprados: 47",
+        "Reservadas para resultados pendentes: 3",
+        "Tokens comprados não expiram. O Plus não os consome.",
+        "Nearr Plus",
+        "Buscas ilimitadas",
+        "Buscas bem-sucedidas de vídeos ilimitadas enquanto o Plus estiver ativo. Sem descontar tokens.",
+        "US$ 1,99 / mês"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-pt-BR-dark-default-scroll1.png",
+      "capturedAt": "2026-10-30T01:21:48.085Z",
+      "sha256": "6e6b9313180a95c80dc2bd292a53f95c93b22a673ef32ba034d83dc09acb47d5",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "1 de 3 disponíveis",
+        "Reservadas para resultados pendentes: 1",
+        "A cota grátis é renovada em 1 de nov. de 2026 (UTC).",
+        "Tokens comprados: 47",
+        "Reservadas para resultados pendentes: 3",
+        "Tokens comprados não expiram. O Plus não os consome.",
+        "Nearr Plus",
+        "Buscas ilimitadas",
+        "Buscas bem-sucedidas de vídeos ilimitadas enquanto o Plus estiver ativo. Sem descontar tokens.",
+        "US$ 1,99 / mês",
+        "Assinar o Nearr Plus",
+        "A Apple cobra mensalmente e renova automaticamente, salvo cancelamento nos ajustes de assinaturas. Sem teste grátis ou plano anual.",
+        "Ou compre buscas quando precisar",
+        "Um token paga uma busca de vídeo bem-sucedida. Tokens comprados não expiram.",
+        "Inicial",
+        "20 tokens"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-pt-BR-dark-default-scroll2.png",
+      "capturedAt": "2026-10-30T01:21:53.047Z",
+      "sha256": "ddaeb5985e64fea98f424a1a20ab8b9579988ec1cc96791cd45edbec7d47563f",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "A Apple cobra mensalmente e renova automaticamente, salvo cancelamento nos ajustes de assinaturas. Sem teste grátis ou plano anual.",
+        "Ou compre buscas quando precisar",
+        "Um token paga uma busca de vídeo bem-sucedida. Tokens comprados não expiram.",
+        "Inicial",
+        "20 tokens",
+        "Comprar 20 tokens · US$ 1,19",
+        "Explorador",
+        "50 tokens",
+        "Comprar 50 tokens · US$ 2,49",
+        "Aventureiro",
+        "200 tokens",
+        "Comprar 200 tokens · US$ 5,00",
+        "Primeiro o Plus, depois as buscas grátis do mês e então os tokens comprados."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-pt-BR-dark-default-scroll3.png",
+      "capturedAt": "2026-10-30T01:21:58.360Z",
+      "sha256": "6aa4652059207b2a257d8c28d3f0ede9b23e17899a2d8f5aff35b572c9c7def0",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "50 tokens",
+        "Comprar 50 tokens · US$ 2,49",
+        "Aventureiro",
+        "200 tokens",
+        "Comprar 200 tokens · US$ 5,00",
+        "Primeiro o Plus, depois as buscas grátis do mês e então os tokens comprados.",
+        "A versão grátis inclui 3 buscas bem-sucedidas de vídeo por mês do calendário. (UTC)",
+        "Cada vídeo conta uma vez, mesmo com vários lugares. Buscas malsucedidas não usam sua cota.",
+        "O Quick Check reserva uma busca até você salvar ou a reserva expirar. Buscas grátis mensais não se acumulam.",
+        "Restaurar compras",
+        "Restaurar reconecta compras verificadas à sua conta. Tokens gastos não são restaurados.",
+        "Gerenciar assinatura",
+        "Atualizar saldo"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-pt-BR-dark-default-scroll4.png",
+      "capturedAt": "2026-10-30T01:22:03.598Z",
+      "sha256": "8e2ade073c5bab0392e27dad59fd9b17e52ec1b9401b326ef50feedf6dcebe74",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "200 tokens",
+        "Comprar 200 tokens · US$ 5,00",
+        "Primeiro o Plus, depois as buscas grátis do mês e então os tokens comprados.",
+        "A versão grátis inclui 3 buscas bem-sucedidas de vídeo por mês do calendário. (UTC)",
+        "Cada vídeo conta uma vez, mesmo com vários lugares. Buscas malsucedidas não usam sua cota.",
+        "O Quick Check reserva uma busca até você salvar ou a reserva expirar. Buscas grátis mensais não se acumulam.",
+        "Restaurar compras",
+        "Restaurar reconecta compras verificadas à sua conta. Tokens gastos não são restaurados.",
+        "Gerenciar assinatura",
+        "Atualizar saldo",
+        "Termos de Serviço",
+        "Política de Privacidade"
+      ],
+      "unedited": true
+    }
+  ]
+}

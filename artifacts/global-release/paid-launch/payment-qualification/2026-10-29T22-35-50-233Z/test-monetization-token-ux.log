@@ -1,0 +1,27 @@
+
+> nearr@0.1.0 test:monetization-token-ux
+> ts-node -P scripts/tsconfig.json scripts/testMonetizationTokenUx.ts && ts-node -P scripts/tsconfig.json scripts/testPlusDisabledRuntime.ts
+
+PASS Settings does not advertise the retired token storefront
+PASS legacy balance remains intact but is absent from Settings
+PASS user-facing monetization copy never says tokens left
+PASS user-facing monetization copy has no stale place-find wording
+PASS map has no monetization balance UI
+PASS Starter Pack is 10 tokens at the Premium Request Dev price
+PASS Explorer Pack is 30 tokens at the existing Dev price
+PASS Treasure Pack is 75 tokens at the existing Dev price
+PASS legacy Explorer recommendation is preserved but not offered in Plus
+PASS Dev mock price mapping matches Premium Request V2
+PASS Plus CTA requires a qualified offer and uses its localized store price
+PASS mock purchases credit the configured quantity exactly once
+PASS Plus success requires verification, never a local token increment
+PASS legacy exact-job resume is retained server-side but unavailable in Plus
+PASS zero balance cannot trigger a storefront and existing saves stay accessible
+PASS server balance remains authoritative
+PASS Plus has localized loading, restore, alerts and accessible shared buttons
+PASS Plus never exposes mock pricing; legacy mock mode remains Development-only
+PASS responsive Plus uses scrolling and wrapping pack cards
+PASS monetization surfaces contain no user-facing Vayrin branding
+PASS wallet, reserve, consume, release, and free-grant contracts are unchanged
+PASS wrote artifacts/monetization/monetization-token-ux-test-results.json (21 cases)
+PASS Plus disabled/offline/free-only/restore client gates and 40 real-screen locale/state renders; zero native purchases

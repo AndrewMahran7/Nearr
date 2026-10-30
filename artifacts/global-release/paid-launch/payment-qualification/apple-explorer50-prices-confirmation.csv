@@ -1,0 +1,176 @@
+Countries or Regions,Currency Code,Price,May Adjust Automatically
+United States,USD,2.49,N
+Afghanistan,USD,2.49,Y
+Albania,USD,2.99,Y
+Algeria,USD,2.49,Y
+Angola,USD,2.49,Y
+Anguilla,USD,2.49,Y
+Antigua and Barbuda,USD,2.49,Y
+Argentina,USD,2.49,Y
+Armenia,USD,2.99,Y
+Australia,AUD,3.99,Y
+Austria,EUR,2.99,Y
+Azerbaijan,USD,2.99,Y
+Bahamas,USD,2.99,Y
+Bahrain,USD,2.99,Y
+Barbados,USD,2.99,Y
+Belarus,USD,2.99,Y
+Belgium,EUR,2.99,Y
+Belize,USD,2.49,Y
+Benin,USD,2.99,Y
+Bermuda,USD,2.49,Y
+Bhutan,USD,2.49,Y
+Bolivia,USD,2.49,Y
+Bosnia and Herzegovina,EUR,2.99,Y
+Botswana,USD,2.49,Y
+Brazil,BRL,14.9,Y
+British Virgin Islands,USD,2.49,Y
+Brunei,USD,2.49,Y
+Bulgaria,EUR,2.99,Y
+Burkina Faso,USD,2.49,Y
+Cambodia,USD,2.99,Y
+Cameroon,USD,2.99,Y
+Canada,CAD,2.99,Y
+Cape Verde,USD,2.49,Y
+Cayman Islands,USD,2.49,Y
+Chad,USD,2.49,Y
+Chile,CLP,2990,Y
+China mainland,CNY,18.0,Y
+Colombia,COP,9900.0,Y
+"Congo, Democratic Republic of the",USD,2.49,Y
+"Congo, Republic of the",USD,2.99,Y
+Costa Rica,USD,2.49,Y
+Côte d’Ivoire,USD,2.99,Y
+Croatia,EUR,2.99,Y
+Cyprus,EUR,2.99,Y
+Czech Republic,CZK,69.0,Y
+Denmark,DKK,19.0,Y
+Dominica,USD,2.49,Y
+Dominican Republic,USD,2.49,Y
+Ecuador,USD,2.49,Y
+Egypt,EGP,129.99,Y
+El Salvador,USD,2.49,Y
+Estonia,EUR,2.99,Y
+Eswatini,USD,2.49,Y
+Fiji,USD,2.49,Y
+Finland,EUR,2.99,Y
+France,EUR,2.99,Y
+Gabon,USD,2.49,Y
+Gambia,USD,2.49,Y
+Georgia,USD,2.99,Y
+Germany,EUR,2.99,Y
+Ghana,USD,2.99,Y
+Greece,EUR,2.99,Y
+Grenada,USD,2.49,Y
+Guatemala,USD,2.49,Y
+Guinea-Bissau,USD,2.49,Y
+Guyana,USD,2.49,Y
+Honduras,USD,2.49,Y
+Hong Kong,HKD,18.0,Y
+Hungary,HUF,999,Y
+Iceland,USD,2.99,Y
+India,INR,249.0,Y
+Indonesia,IDR,49000,Y
+Iraq,USD,2.49,Y
+Ireland,EUR,2.99,Y
+Israel,ILS,7.9,Y
+Italy,EUR,2.99,Y
+Jamaica,USD,2.49,Y
+Japan,JPY,400,Y
+Jordan,USD,2.49,Y
+Kazakhstan,KZT,1490.0,Y
+Kenya,USD,2.99,Y
+"Korea, Republic of",KRW,4400,Y
+Kosovo,EUR,2.99,Y
+Kuwait,USD,2.49,Y
+Kyrgyzstan,USD,2.99,Y
+Laos,USD,2.99,Y
+Latvia,EUR,2.99,Y
+Lebanon,USD,2.49,Y
+Liberia,USD,2.49,Y
+Libya,USD,2.49,Y
+Lithuania,EUR,2.99,Y
+Luxembourg,EUR,2.99,Y
+Macau,USD,2.49,Y
+Madagascar,USD,2.49,Y
+Malawi,USD,2.49,Y
+Malaysia,MYR,9.9,Y
+Maldives,USD,2.49,Y
+Mali,USD,2.49,Y
+Malta,EUR,2.99,Y
+Mauritania,USD,2.49,Y
+Mauritius,USD,2.99,Y
+Mexico,MXN,49.0,Y
+Micronesia,USD,2.49,Y
+Moldova,USD,2.99,Y
+Mongolia,USD,2.49,Y
+Montenegro,EUR,1.99,Y
+Montserrat,USD,2.49,Y
+Morocco,USD,2.99,Y
+Mozambique,USD,2.49,Y
+Myanmar,USD,2.49,Y
+Namibia,USD,2.49,Y
+Naoero,USD,2.49,Y
+Nepal,USD,2.99,Y
+Netherlands,EUR,2.99,Y
+New Zealand,NZD,4.99,Y
+Nicaragua,USD,2.49,Y
+Niger,USD,2.49,Y
+Nigeria,NGN,3900.0,Y
+North Macedonia,USD,2.49,Y
+Norway,NOK,29.0,Y
+Oman,USD,2.49,Y
+Pakistan,PKR,700.0,Y
+Palau,USD,2.49,Y
+Panama,USD,2.49,Y
+Papua New Guinea,USD,2.49,Y
+Paraguay,USD,2.49,Y
+Peru,PEN,9.9,Y
+Philippines,PHP,149.0,Y
+Poland,PLN,9.99,Y
+Portugal,EUR,2.99,Y
+Qatar,QAR,9.99,Y
+Romania,RON,14.99,Y
+Russia,RUB,199.0,Y
+Rwanda,USD,2.49,Y
+São Tomé and Príncipe,USD,2.49,Y
+Saudi Arabia,SAR,9.99,Y
+Senegal,USD,2.99,Y
+Serbia,EUR,2.99,Y
+Seychelles,USD,2.49,Y
+Sierra Leone,USD,2.49,Y
+Singapore,SGD,3.98,Y
+Slovakia,EUR,2.99,Y
+Slovenia,EUR,2.99,Y
+Solomon Islands,USD,2.49,Y
+South Africa,ZAR,49.99,Y
+Spain,EUR,2.99,Y
+Sri Lanka,USD,2.49,Y
+St. Kitts and Nevis,USD,2.49,Y
+St. Lucia,USD,2.49,Y
+St. Vincent and the Grenadines,USD,2.49,Y
+Suriname,USD,2.99,Y
+Sweden,SEK,29.0,Y
+Switzerland,CHF,2.0,Y
+Taiwan,TWD,90,Y
+Tajikistan,USD,2.99,Y
+Tanzania,TZS,6900.0,Y
+Thailand,THB,99.0,Y
+Tonga,USD,2.49,Y
+Trinidad and Tobago,USD,2.49,Y
+Tunisia,USD,2.49,Y
+Türkiye,TRY,129.99,Y
+Turkmenistan,USD,2.49,Y
+Turks and Caicos Islands,USD,2.49,Y
+Uganda,USD,2.99,Y
+Ukraine,USD,2.99,Y
+United Arab Emirates,AED,9.99,Y
+United Kingdom,GBP,1.99,Y
+Uruguay,USD,2.49,Y
+Uzbekistan,USD,2.99,Y
+Vanuatu,USD,2.49,Y
+Venezuela,USD,2.49,Y
+Vietnam,VND,79000,Y
+Yemen,USD,2.49,Y
+Zambia,USD,2.99,Y
+Zimbabwe,USD,2.99,Y

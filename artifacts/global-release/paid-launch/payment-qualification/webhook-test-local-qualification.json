@@ -1,0 +1,42 @@
+{
+  "recordedAtUtc": "2026-10-29T23:34:53.7773114Z",
+  "scope": "Local handler qualification only; live dashboard retest and Development deployment pending",
+  "observedBeforeFix": {
+    "source": "Root observed actual RevenueCat dashboard TEST delivery",
+    "error": "unknown_customer",
+    "httpStatus": 400,
+    "environment": "SANDBOX",
+    "eventType": "TEST",
+    "note": "Synthetic customer IDs; no response headers or credentials retained"
+  },
+  "focused": {
+    "newActualWebhookScenarios": 28,
+    "command": "npm run test:paid-config",
+    "network": "Inert test boundaries only; no live requests",
+    "elapsedSeconds": 3.4289036,
+    "existingCredentialRoutingScenarios": 8,
+    "exitCode": 0,
+    "existingSdkConfigChecks": 14
+  },
+  "source": {
+    "webhookSha256": "7797b769cbca56a46f96acde5039349ed7be246d32b08b9d1a23cf1309969d6d",
+    "testSha256": "3a05910fa22d86c6125a8f378146b4279931702d5409cbcf72a5d04178d26ba1"
+  },
+  "fullPrebuild": {
+    "command": "npm run test:prebuild",
+    "startedAtUtc": "2026-10-29T23:37:47.5261907Z",
+    "completedAtUtc": "2026-10-29T23:40:39.9702254Z",
+    "elapsedSeconds": 172.407,
+    "exitCode": 0,
+    "log": "artifacts/global-release/paid-launch/payment-qualification/webhook-test-prebuild.log",
+    "includesTypeScript": true,
+    "newActualWebhookScenarios": 28,
+    "pretestTopLevelCommands": 19,
+    "mainTopLevelCommands": 114
+  },
+  "officialDocs": [
+    "https://www.revenuecat.com/docs/integrations/webhooks/event-types-and-fields",
+    "https://www.revenuecat.com/docs/integrations/webhooks"
+  ],
+  "sourceCommit": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d"
+}

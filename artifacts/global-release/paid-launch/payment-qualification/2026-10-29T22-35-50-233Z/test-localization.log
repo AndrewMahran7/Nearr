@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:localization
+> npx ts-node -P scripts/tsconfig.json scripts/testLocalization.ts
+
+PASS localization: 10 locales, catalog parity, placeholders, quantities, plurals, fallbacks, user content, persisted preferences, relaunch, native bridge, no event loop

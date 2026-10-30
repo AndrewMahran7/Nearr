@@ -1,0 +1,176 @@
+Countries or Regions,Currency Code,Price,Proceeds,May Adjust Automatically
+United States,USD,5.0,3.5,N
+Afghanistan,USD,5.0,3.5,Y
+Albania,USD,6.0,3.5,Y
+Algeria,USD,5.0,3.5,Y
+Angola,USD,5.0,3.5,Y
+Anguilla,USD,5.0,3.5,Y
+Antigua and Barbuda,USD,5.0,3.5,Y
+Argentina,USD,5.0,3.5,Y
+Armenia,USD,6.0,3.5,Y
+Australia,AUD,8.0,5.09,Y
+Austria,EUR,6.0,3.7,Y
+Azerbaijan,USD,6.0,3.56,Y
+Bahamas,USD,5.0,3.18,Y
+Bahrain,USD,5.0,3.18,Y
+Barbados,USD,6.0,3.57,Y
+Belarus,USD,6.0,3.5,Y
+Belgium,EUR,6.0,3.67,Y
+Belize,USD,5.0,3.5,Y
+Benin,USD,6.0,3.56,Y
+Bermuda,USD,5.0,3.5,Y
+Bhutan,USD,5.0,3.33,Y
+Bolivia,USD,5.0,3.5,Y
+Bosnia and Herzegovina,EUR,6.0,3.59,Y
+Botswana,USD,5.0,3.5,Y
+Brazil,BRL,29.9,18.29,Y
+British Virgin Islands,USD,5.0,3.5,Y
+Brunei,USD,5.0,3.5,Y
+Bulgaria,EUR,6.0,3.7,Y
+Burkina Faso,USD,5.0,3.5,Y
+Cambodia,USD,5.0,3.18,Y
+Cameroon,USD,6.0,3.52,Y
+Canada,CAD,7.0,4.9,Y
+Cape Verde,USD,5.0,3.5,Y
+Cayman Islands,USD,5.0,3.5,Y
+Chad,USD,5.0,3.5,Y
+Chile,CLP,5990,3524,Y
+China mainland,CNY,38.0,26.13,Y
+Colombia,COP,24900.0,14647.06,Y
+"Congo, Democratic Republic of the",USD,5.0,3.5,Y
+"Congo, Republic of the",USD,6.0,3.56,Y
+Costa Rica,USD,5.0,3.5,Y
+Côte d’Ivoire,USD,6.0,3.56,Y
+Croatia,EUR,6.0,3.55,Y
+Cyprus,EUR,6.0,3.73,Y
+Czech Republic,CZK,129.0,78.89,Y
+Denmark,DKK,39.0,23.09,Y
+Dominica,USD,5.0,3.5,Y
+Dominican Republic,USD,5.0,3.5,Y
+Ecuador,USD,5.0,3.5,Y
+Egypt,EGP,249.99,153.5,Y
+El Salvador,USD,5.0,3.5,Y
+Estonia,EUR,6.0,3.58,Y
+Eswatini,USD,5.0,3.5,Y
+Fiji,USD,5.0,3.5,Y
+Finland,EUR,6.0,3.54,Y
+France,EUR,6.0,3.7,Y
+Gabon,USD,5.0,3.5,Y
+Gambia,USD,5.0,3.5,Y
+Georgia,USD,6.0,3.56,Y
+Germany,EUR,6.0,3.73,Y
+Ghana,USD,6.0,3.5,Y
+Greece,EUR,6.0,3.58,Y
+Grenada,USD,5.0,3.5,Y
+Guatemala,USD,5.0,3.5,Y
+Guinea-Bissau,USD,5.0,3.5,Y
+Guyana,USD,5.0,3.5,Y
+Honduras,USD,5.0,3.5,Y
+Hong Kong,HKD,38.0,26.6,Y
+Hungary,HUF,1990,1160,Y
+Iceland,USD,6.0,3.39,Y
+India,INR,499.0,296.02,Y
+Indonesia,IDR,99000,62432,Y
+Iraq,USD,5.0,3.5,Y
+Ireland,EUR,6.0,3.61,Y
+Israel,ILS,14.9,10.43,Y
+Italy,EUR,6.0,3.61,Y
+Jamaica,USD,5.0,3.5,Y
+Japan,JPY,800,509,Y
+Jordan,USD,5.0,3.5,Y
+Kazakhstan,KZT,2990.0,1804.31,Y
+Kenya,USD,6.0,3.6,Y
+"Korea, Republic of",KRW,7700,4900,Y
+Kosovo,EUR,6.0,3.56,Y
+Kuwait,USD,5.0,3.5,Y
+Kyrgyzstan,USD,5.0,3.13,Y
+Laos,USD,5.0,3.18,Y
+Latvia,EUR,6.0,3.67,Y
+Lebanon,USD,5.0,3.5,Y
+Liberia,USD,5.0,3.5,Y
+Libya,USD,5.0,3.5,Y
+Lithuania,EUR,6.0,3.67,Y
+Luxembourg,EUR,6.0,3.79,Y
+Macau,USD,5.0,3.5,Y
+Madagascar,USD,5.0,3.5,Y
+Malawi,USD,5.0,3.5,Y
+Malaysia,MYR,22.9,14.84,Y
+Maldives,USD,5.0,3.5,Y
+Mali,USD,5.0,3.5,Y
+Malta,EUR,6.0,3.76,Y
+Mauritania,USD,5.0,3.5,Y
+Mauritius,USD,6.0,3.65,Y
+Mexico,MXN,99.0,59.74,Y
+Micronesia,USD,5.0,3.5,Y
+Moldova,USD,6.0,3.5,Y
+Mongolia,USD,5.0,3.5,Y
+Montenegro,EUR,5.0,3.5,Y
+Montserrat,USD,5.0,3.5,Y
+Morocco,USD,6.0,3.5,Y
+Mozambique,USD,5.0,3.5,Y
+Myanmar,USD,5.0,3.5,Y
+Namibia,USD,5.0,3.5,Y
+Naoero,USD,5.0,3.5,Y
+Nepal,USD,6.0,3.64,Y
+Netherlands,EUR,6.0,3.67,Y
+New Zealand,NZD,9.0,5.48,Y
+Nicaragua,USD,5.0,3.5,Y
+Niger,USD,5.0,3.5,Y
+Nigeria,NGN,7900.0,5144.19,Y
+North Macedonia,USD,5.0,3.5,Y
+Norway,NOK,59.0,33.04,Y
+Oman,USD,5.0,3.33,Y
+Pakistan,PKR,1300.0,910.0,Y
+Palau,USD,5.0,3.5,Y
+Panama,USD,5.0,3.5,Y
+Papua New Guinea,USD,5.0,3.5,Y
+Paraguay,USD,5.0,3.5,Y
+Peru,PEN,22.9,13.58,Y
+Philippines,PHP,299.0,186.88,Y
+Poland,PLN,24.99,15.03,Y
+Portugal,EUR,6.0,3.61,Y
+Qatar,QAR,19.99,13.99,Y
+Romania,RON,29.99,18.34,Y
+Russia,RUB,449.0,257.62,Y
+Rwanda,USD,5.0,3.5,Y
+São Tomé and Príncipe,USD,5.0,3.5,Y
+Saudi Arabia,SAR,19.99,12.17,Y
+Senegal,USD,6.0,3.56,Y
+Serbia,EUR,6.0,3.5,Y
+Seychelles,USD,5.0,3.5,Y
+Sierra Leone,USD,5.0,3.5,Y
+Singapore,SGD,6.98,4.48,Y
+Slovakia,EUR,6.0,3.61,Y
+Slovenia,EUR,6.0,3.64,Y
+Solomon Islands,USD,5.0,3.5,Y
+South Africa,ZAR,99.99,60.86,Y
+Spain,EUR,6.0,3.66,Y
+Sri Lanka,USD,5.0,3.5,Y
+St. Kitts and Nevis,USD,5.0,3.5,Y
+St. Lucia,USD,5.0,3.5,Y
+St. Vincent and the Grenadines,USD,5.0,3.5,Y
+Suriname,USD,5.0,3.18,Y
+Sweden,SEK,69.0,40.85,Y
+Switzerland,CHF,4.0,2.59,Y
+Taiwan,TWD,150,97,Y
+Tajikistan,USD,5.0,3.07,Y
+Tanzania,TZS,14900.0,8573.81,Y
+Thailand,THB,199.0,130.19,Y
+Tonga,USD,5.0,3.5,Y
+Trinidad and Tobago,USD,5.0,3.5,Y
+Tunisia,USD,5.0,3.5,Y
+Türkiye,TRY,249.99,138.54,Y
+Turkmenistan,USD,5.0,3.5,Y
+Turks and Caicos Islands,USD,5.0,3.5,Y
+Uganda,USD,6.0,3.38,Y
+Ukraine,USD,6.0,3.5,Y
+United Arab Emirates,AED,19.99,13.33,Y
+United Kingdom,GBP,5.0,2.9,Y
+Uruguay,USD,5.0,3.39,Y
+Uzbekistan,USD,5.0,3.13,Y
+Vanuatu,USD,5.0,3.5,Y
+Venezuela,USD,5.0,3.5,Y
+Vietnam,VND,149000,93870,Y
+Yemen,USD,5.0,3.5,Y
+Zambia,USD,6.0,3.62,Y
+Zimbabwe,USD,6.0,3.45,Y

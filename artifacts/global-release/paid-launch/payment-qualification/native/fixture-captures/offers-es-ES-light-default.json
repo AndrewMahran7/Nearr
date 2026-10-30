@@ -1,0 +1,141 @@
+{
+  "state": "offers",
+  "locale": "es-ES",
+  "theme": "light",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of local HTML anchor observed in compact-grid screenshot",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "bundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "display": {
+    "size": "1080x2400",
+    "density": "Physical density: 420",
+    "fontScale": 1
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/offers-es-ES-light-default-top.png",
+      "capturedAt": "2026-10-30T00:50:07.065Z",
+      "sha256": "3196e239cb8323864f0fb017c5fac3e57372a1b746c86b7e0ffb992453aac191",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+        "Ahora no",
+        "Tu próximo descubrimiento",
+        "Sigue descubriendo lugares",
+        "Tus lugares guardados siguen siendo tuyos, con o sin suscripción.",
+        "Tus búsquedas",
+        "Búsquedas gratis del mes",
+        "1 de 3 disponibles",
+        "Reservadas para resultados pendientes: 1",
+        "La cuota gratis se renueva el 1 nov 2026 (UTC).",
+        "Tokens comprados: 47",
+        "Reservadas para resultados pendientes: 3",
+        "Los tokens comprados no caducan. Plus no los consume.",
+        "Nearr Plus",
+        "Búsquedas ilimitadas",
+        "Búsquedas de vídeo completadas sin límite mientras Plus esté activo. Sin consumir tokens.",
+        "1,99 US$ / mes"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-es-ES-light-default-scroll1.png",
+      "capturedAt": "2026-10-30T00:50:12.010Z",
+      "sha256": "920aac599e2dfc29ca358114585504de1028408e548678767a0374666e9c7fec",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Búsquedas gratis del mes",
+        "1 de 3 disponibles",
+        "Reservadas para resultados pendientes: 1",
+        "La cuota gratis se renueva el 1 nov 2026 (UTC).",
+        "Tokens comprados: 47",
+        "Reservadas para resultados pendientes: 3",
+        "Los tokens comprados no caducan. Plus no los consume.",
+        "Nearr Plus",
+        "Búsquedas ilimitadas",
+        "Búsquedas de vídeo completadas sin límite mientras Plus esté activo. Sin consumir tokens.",
+        "1,99 US$ / mes",
+        "Obtener Nearr Plus",
+        "Apple cobra mensualmente y renueva automáticamente, salvo que canceles en los ajustes de suscripciones. Sin prueba gratuita ni plan anual.",
+        "O compra búsquedas cuando las necesites",
+        "Un token paga una búsqueda de vídeo completada. Los tokens comprados no caducan."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-es-ES-light-default-scroll2.png",
+      "capturedAt": "2026-10-30T00:50:17.131Z",
+      "sha256": "5137aac43c295ac604028ac3c39920df712f1ea1dc1acd7f179886f214a1d117",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Búsquedas de vídeo completadas sin límite mientras Plus esté activo. Sin consumir tokens.",
+        "1,99 US$ / mes",
+        "Obtener Nearr Plus",
+        "Apple cobra mensualmente y renueva automáticamente, salvo que canceles en los ajustes de suscripciones. Sin prueba gratuita ni plan anual.",
+        "O compra búsquedas cuando las necesites",
+        "Un token paga una búsqueda de vídeo completada. Los tokens comprados no caducan.",
+        "Inicial",
+        "20 tokens",
+        "Comprar 20 tokens · 1,19 US$",
+        "Explorador",
+        "50 tokens",
+        "Comprar 50 tokens · 2,49 US$",
+        "Aventurero",
+        "200 tokens"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-es-ES-light-default-scroll3.png",
+      "capturedAt": "2026-10-30T00:50:22.031Z",
+      "sha256": "d8bd9a03e236df251e17162bce28c6f0cba8199fa79b59aaec3311eca70f263e",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "20 tokens",
+        "Comprar 20 tokens · 1,19 US$",
+        "Explorador",
+        "50 tokens",
+        "Comprar 50 tokens · 2,49 US$",
+        "Aventurero",
+        "200 tokens",
+        "Comprar 200 tokens · 5,00 US$",
+        "Primero se usa Plus, luego las búsquedas gratis del mes y después los tokens comprados.",
+        "La versión gratuita incluye 3 búsquedas de vídeo exitosas por mes calendario. (UTC)",
+        "Cada vídeo cuenta una vez, aunque tenga varios lugares. Las búsquedas fallidas no consumen tu cupo.",
+        "Quick Check reserva una búsqueda hasta que guardes o venza la reserva. Las búsquedas gratis mensuales no se acumulan.",
+        "Restaurar compras",
+        "Restaurar vuelve a vincular las compras verificadas con tu cuenta. No recupera tokens gastados."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-es-ES-light-default-scroll4.png",
+      "capturedAt": "2026-10-30T00:50:27.276Z",
+      "sha256": "f4553e5541acde4a6a7b7c1382f31cecef99ec328de4d840ccc227e8829f39c9",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "200 tokens",
+        "Comprar 200 tokens · 5,00 US$",
+        "Primero se usa Plus, luego las búsquedas gratis del mes y después los tokens comprados.",
+        "La versión gratuita incluye 3 búsquedas de vídeo exitosas por mes calendario. (UTC)",
+        "Cada vídeo cuenta una vez, aunque tenga varios lugares. Las búsquedas fallidas no consumen tu cupo.",
+        "Quick Check reserva una búsqueda hasta que guardes o venza la reserva. Las búsquedas gratis mensuales no se acumulan.",
+        "Restaurar compras",
+        "Restaurar vuelve a vincular las compras verificadas con tu cuenta. No recupera tokens gastados.",
+        "Administrar suscripción",
+        "Actualizar saldo",
+        "Términos de servicio",
+        "Política de privacidad"
+      ],
+      "unedited": true
+    }
+  ]
+}

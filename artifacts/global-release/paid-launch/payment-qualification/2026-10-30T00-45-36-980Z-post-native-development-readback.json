@@ -1,0 +1,265 @@
+{
+  "startedAt": "2026-10-30T00:45:36.980Z",
+  "kind": "post-native-startup-read-only-development-snapshot",
+  "target": "qnfxnmvxpjzfydgudtvs",
+  "sourceCommit": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "baseline": "artifacts\\global-release\\paid-launch\\payment-qualification\\2026-10-29T23-42-53-320Z-test-webhook\\post-dashboard-resend-readback.json",
+  "baselineFinishedAt": "2026-10-29T23:44:38.799Z",
+  "scopeLimitation": "Captured during continuing synthetic fixture matrix, after native startup; not a claim about frames or actions after this timestamp.",
+  "mutations": [],
+  "httpProbes": false,
+  "customerApiRequests": false,
+  "passed": true,
+  "config": [
+    {
+      "config": {
+        "catalog_verified": false,
+        "enforce_allowance": false,
+        "entitlement_id": "nearr_plus",
+        "environment": "SANDBOX",
+        "free_finds": 3,
+        "id": true,
+        "legacy_obligations_evidence_reference": null,
+        "legacy_obligations_reconciled": false,
+        "offering_id": "nearr_paid_v1",
+        "paid_find_policy_enabled": false,
+        "plus_finds": 10,
+        "product_id": "com.nearr.plus.unlimited.monthly.v1",
+        "release_mode": "paid",
+        "release_qualified": false,
+        "revenuecat_app_id": "app7434757255",
+        "revenuecat_project_id": "proj7d727ef6",
+        "revenuecat_token_product_ids": {
+          "com.nearr.tokens.20.v2": "prodd6ac7e45d4",
+          "com.nearr.tokens.200.v2": "prod394420f4e2",
+          "com.nearr.tokens.50.v2": "prodc41f2e9dd5"
+        },
+        "sales_enabled": false,
+        "subscription_benefit": "unlimited",
+        "token_catalog_verified": false
+      }
+    }
+  ],
+  "policy": [
+    {
+      "policy": {
+        "ai_notice_version": "nearr-ai-openai-v1",
+        "evidence_reference": null,
+        "legal_approved": false,
+        "policy_version": "nearr-global-13-v1",
+        "privacy_notice_version": "nearr-global-privacy-v1",
+        "provider_route": "disabled",
+        "purchase_qualified": false,
+        "recognition_qualified": false,
+        "singleton": true,
+        "terms_version": "nearr-global-terms-v1"
+      }
+    }
+  ],
+  "legacy": [
+    {
+      "config": {
+        "enabled": true,
+        "environment_name": "development",
+        "monthly_allowance": 10,
+        "monthly_allowance_start_month": "2026-09-01",
+        "offer_version": "nearr_dev_v2_2026_09",
+        "revenuecat_allowed_stores": [
+          "TEST_STORE"
+        ],
+        "revenuecat_app_id": "app26505bdf1c",
+        "revenuecat_project_id": "proj7d727ef6",
+        "reward_activated_at": "2026-09-10T00:00:00+00:00",
+        "rollout_cutoff": "2026-09-06T00:00:00+00:00",
+        "updated_at": "2026-09-10T19:13:34.617675+00:00"
+      }
+    }
+  ],
+  "financialFingerprints": [
+    {
+      "checksum": "8c357b20311a252365cbc95f25247ae5",
+      "relation": "place_find_wallets",
+      "rows": 93
+    },
+    {
+      "checksum": "05fe6b1584b1bd34642579d8b035c7c7",
+      "relation": "place_find_lots",
+      "rows": 111
+    },
+    {
+      "checksum": "31bf202a9deba79e1f466771796ef149",
+      "relation": "place_find_ledger",
+      "rows": 555
+    },
+    {
+      "checksum": "fe731f048c6eb1e824365603f7d41194",
+      "relation": "place_find_purchase_transactions",
+      "rows": 27
+    },
+    {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+      "relation": "nearr_plus_customers",
+      "rows": 0
+    },
+    {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+      "relation": "nearr_plus_entitlements",
+      "rows": 0
+    },
+    {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+      "relation": "nearr_plus_recognitions",
+      "rows": 0
+    },
+    {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+      "relation": "nearr_plus_webhook_events",
+      "rows": 0
+    },
+    {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+      "relation": "nearr_paid_purchase_states",
+      "rows": 0
+    },
+    {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+      "relation": "nearr_paid_recovery_receipts",
+      "rows": 0
+    },
+    {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+      "relation": "nearr_paid_finds",
+      "rows": 0
+    }
+  ],
+  "walletTotals": [
+    {
+      "available_uses": 477,
+      "reserved_uses": 0,
+      "wallets": 93
+    }
+  ],
+  "migrationCount": 94,
+  "edge": [
+    {
+      "name": "create-share-job",
+      "version": 78,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "0d9b192e25c6c0ef637cfd7fa82d35963f7ad6509bb0acc685796935935669f0",
+      "updatedAt": "2026-10-29T21:33:51.048Z"
+    },
+    {
+      "name": "delete-account",
+      "version": 60,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "6ef7334c1572f4f754d85cca815879e9ecd15625c0c6960c2063d0c5d6ab82c7",
+      "updatedAt": "2026-09-03T22:53:41.058Z"
+    },
+    {
+      "name": "delete-share-job",
+      "version": 54,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "88c625982be7d7c64d81c9bdbcd38a8333ac22c6ba61844190fb8848780c73dc",
+      "updatedAt": "2026-08-25T00:48:52.746Z"
+    },
+    {
+      "name": "e2e-place-fixture",
+      "version": 55,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "20f26cb1e6d13ebc5275901f1d467f57881e25993cdb8b0d07ad5cd2b6932397",
+      "updatedAt": "2026-08-21T03:43:48.415Z"
+    },
+    {
+      "name": "get-onboarding-tutorial",
+      "version": 13,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "59aab65fdc34c361b3b747257d5d5b0b81ba0a3e7ca596f46b37bee63d1fc542",
+      "updatedAt": "2026-09-11T02:31:47.605Z"
+    },
+    {
+      "name": "get-place-videos",
+      "version": 12,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "92141568b51776c9b6ebf348147ce0706e6172266cc3ac699af06b6edbd8f050",
+      "updatedAt": "2026-09-06T20:31:01.461Z"
+    },
+    {
+      "name": "monetization",
+      "version": 46,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "a58057377579ab1d5e447e023751c2dd5b9c7cc5d5883714b8bde77de1a8135f",
+      "updatedAt": "2026-09-10T18:45:21.565Z"
+    },
+    {
+      "name": "plus-api",
+      "version": 5,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "b4d965310981a135c59a56812c5af1f40e469c9d9fd8a7ce12ef0cbfacb4a338",
+      "updatedAt": "2026-10-29T23:11:39.978Z"
+    },
+    {
+      "name": "process-share-jobs",
+      "version": 147,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "df4827bf9a1e04c7c5ad0fdd7306db7fe51b7fb25dbbcd4f233aaa3f7a861276",
+      "updatedAt": "2026-10-29T21:34:00.107Z"
+    },
+    {
+      "name": "process-share-link",
+      "version": 91,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "bbffbb11903cce6c6f5df933dbda0365a361ebf7b67a70b8e1ef004e43645222",
+      "updatedAt": "2026-10-29T21:34:08.262Z"
+    },
+    {
+      "name": "public-place",
+      "version": 14,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "ddd57441cdd4647b14fded422375837861a489a128971054a2f7a4e2471684b9",
+      "updatedAt": "2026-09-05T23:22:31.004Z"
+    },
+    {
+      "name": "reset-onboarding-qa",
+      "version": 3,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "dd0340fea538c76ab3e6edb25ec2727b1923e7b1c74a35698e8e0289cc02f4d3",
+      "updatedAt": "2026-09-11T02:31:52.551Z"
+    },
+    {
+      "name": "revenuecat-plus-webhook",
+      "version": 5,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "5c392508046b03a2c88cb433235a735bf1c342b3ad1191a6c4b96e66e4073f35",
+      "updatedAt": "2026-10-29T23:43:16.140Z"
+    },
+    {
+      "name": "revenuecat-webhook",
+      "version": 11,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "db5a050393480243cac20326fe9843c894919a4a29791ffebe2ac362abb1a808",
+      "updatedAt": "2026-09-10T19:27:45.629Z"
+    }
+  ],
+  "allElevenFinancialFingerprintsUnchanged": true,
+  "walletTotalsUnchanged": true,
+  "configPolicyLegacyUnchanged": true,
+  "migrationsUnchanged": true,
+  "allEdgeVersionsSourcesUnchanged": true,
+  "newPaidTablesEmpty": true,
+  "allGatesClosed": true,
+  "finishedAt": "2026-10-30T00:45:56.076Z"
+}

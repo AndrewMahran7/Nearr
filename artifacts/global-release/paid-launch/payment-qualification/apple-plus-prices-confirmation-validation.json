@@ -1,0 +1,20 @@
+{
+  "validatedAt": "2026-10-29T22:44:24.0093575Z",
+  "artifact": "apple-plus-prices-confirmation.csv",
+  "sourceFilename": "Confirm Subscription Price_.csv",
+  "sourceDownloadedAtUtc": "2026-10-29T22:43:33.9967548Z",
+  "sourceAndCopySha256": "2c9b58a8c448f2c84e77df7658a698e58b2336942a82c112ce31a8aecbfc7ef4",
+  "byteLength": 3355,
+  "productId": "com.nearr.plus.unlimited.monthly.v1",
+  "appleProductId": "6828623567",
+  "subscriptionGroupId": "22527278",
+  "productIdentitySource": "Root reported current native App Store Connect UI; CSV has no embedded product ID",
+  "evidenceState": "PRICE_CONFIRMATION_BEFORE_SAVE",
+  "savedStateVerified": false,
+  "storefrontRows": 175,
+  "uniqueStorefronts": 175,
+  "usCurrency": "USD",
+  "usPrice": "1.99",
+  "allRowsWellFormed": true,
+  "passed": true
+}

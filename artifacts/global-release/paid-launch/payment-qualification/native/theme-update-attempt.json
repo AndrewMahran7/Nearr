@@ -1,0 +1,15 @@
+{
+  "recordedAt": "2026-10-30T00:42:50.164Z",
+  "operation": "Update verified com.nearr.paidqa only with adb install -r --no-streaming",
+  "result": "INSTALL_FAILED_INSUFFICIENT_STORAGE: Failed to override installation location",
+  "freeDataSpace": "476 MiB",
+  "taskApkLeftInDataLocalTmp": false,
+  "qaUid": "10227",
+  "qaFirstInstall": "2026-10-29 17:01:07",
+  "qaLastUpdate": "2026-10-29 17:01:07",
+  "originalAppTouched": false,
+  "forceStopUsed": false,
+  "clearedAppData": false,
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470"
+}

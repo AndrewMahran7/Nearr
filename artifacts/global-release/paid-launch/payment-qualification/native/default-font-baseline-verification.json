@@ -1,0 +1,40 @@
+{
+  "at": "2026-10-30T01:18:39.833Z",
+  "qaUid": 10230,
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "storedFontScale": "1.0",
+  "size": "Physical size: 1080x2400",
+  "sameSourceLightDarkTextBoundsMatch": true,
+  "comparisons": [
+    {
+      "text": "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+      "lightBounds": "[63,184][1017,267]",
+      "darkBounds": "[63,184][1017,267]"
+    },
+    {
+      "text": "Keep discovering places",
+      "lightBounds": "[63,596][1017,696]",
+      "darkBounds": "[63,596][1017,696]"
+    },
+    {
+      "text": "Monthly free finds",
+      "lightBounds": "[108,1056][972,1119]",
+      "darkBounds": "[108,1056][972,1119]"
+    }
+  ],
+  "syntheticDeclaration": {
+    "birthdayInput": "2005-10-29",
+    "country": "US",
+    "storage": "Local age range/country only"
+  },
+  "backendIdentityCreated": false,
+  "nearrOrAppleAgreementsAccepted": false,
+  "activityConfigurationReadback": {
+    "at": "2026-10-30T01:22:07.605Z",
+    "fontScale": 1,
+    "width": 1080,
+    "height": 2400,
+    "densityDpi": 420,
+    "qaUid": 10230
+  }
+}

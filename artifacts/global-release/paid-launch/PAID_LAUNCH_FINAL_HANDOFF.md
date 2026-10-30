@@ -1,5 +1,7 @@
 # PASTE BACK TO CHATGPT
 
+> Historical release snapshot. The later account configuration, source fixes, live webhook transport result and current blockers are recorded in [Paid launch qualification handoff](PAID_LAUNCH_QUALIFICATION_HANDOFF.md). Catalog/account statements below describe the earlier pass and are superseded by that readback.
+
 ## A. OVERALL STATUS
 
 **NOT SUBMITTED TO APP REVIEW.** The full paid engineering candidate is implemented, tested, pushed and deployed to Development with activation gates closed. The requested unlimited subscription and consumables remain the launch model. Recognition, purchases, native qualification and disclosures do not yet satisfy the public-release gates. No public release or automatic release was enabled.

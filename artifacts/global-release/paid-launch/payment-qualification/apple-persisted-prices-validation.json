@@ -1,0 +1,68 @@
+{
+  "checkedAt": "2026-10-29T23:11:57.3223469Z",
+  "status": "PASS_PERSISTED_APPLE_PRICE_READBACK",
+  "method": "Downloaded through saved Current Price or Starting Subscription Price UI; exact identity established on product detail, not encoded in CSV.",
+  "products": [
+    {
+      "product": "plus",
+      "file": "apple-plus-prices-persisted.csv",
+      "sha256": "a6cc4d9b54740f335060ef153504084da29400d6bdffb0c2a4fdfba579177fee",
+      "storefrontCount": 175,
+      "uniqueStorefronts": 175,
+      "us": {
+        "Countries or Regions": "United States",
+        "Currency Code": "USD",
+        "Price": "1.99",
+        "Year 1 Proceeds": "1.4",
+        "Year 2 Proceeds": "1.69"
+      },
+      "persistedReadback": true
+    },
+    {
+      "product": "starter20",
+      "file": "apple-starter20-prices-persisted.csv",
+      "sha256": "7937cea423c3ee081ec0eb6d73a55ef2f7a776acfb2f299728f6da5f293e38e8",
+      "storefrontCount": 175,
+      "uniqueStorefronts": 175,
+      "us": {
+        "Countries or Regions": "United States",
+        "Currency Code": "USD",
+        "Price": "1.19",
+        "Proceeds": "0.84",
+        "May Adjust Automatically": "N"
+      },
+      "persistedReadback": true
+    },
+    {
+      "product": "explorer50",
+      "file": "apple-explorer50-prices-persisted.csv",
+      "sha256": "039c43b945e417aa47b6340d6f629dbd749501f3c9ca421c8e8292a778cd99ca",
+      "storefrontCount": 175,
+      "uniqueStorefronts": 175,
+      "us": {
+        "Countries or Regions": "United States",
+        "Currency Code": "USD",
+        "Price": "2.49",
+        "Proceeds": "1.75",
+        "May Adjust Automatically": "N"
+      },
+      "persistedReadback": true
+    },
+    {
+      "product": "adventurer200",
+      "file": "apple-adventurer200-prices-persisted.csv",
+      "sha256": "c81851c37df913f0c8d623426a02cdd92fa8ef202ae6e3ce566e223aae206288",
+      "storefrontCount": 175,
+      "uniqueStorefronts": 175,
+      "us": {
+        "Countries or Regions": "United States",
+        "Currency Code": "USD",
+        "Price": "5.0",
+        "Proceeds": "3.5",
+        "May Adjust Automatically": "N"
+      },
+      "persistedReadback": true
+    }
+  ],
+  "remoteWritesByValidation": false
+}

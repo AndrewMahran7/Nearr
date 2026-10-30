@@ -1,0 +1,17 @@
+{
+  "startedAt": "2026-10-29T23:25:14.151Z",
+  "target": "qnfxnmvxpjzfydgudtvs",
+  "sourceCommit": "b7b59ab366fb0227dd3f035bf7786676c39ba320",
+  "authorizedSecretNames": [
+    "REVENUECAT_V2_SECRET_API_KEY",
+    "REVENUECAT_WEBHOOK_SECRET"
+  ],
+  "productionMutation": false,
+  "purchasesActivated": false,
+  "providerCalls": false,
+  "customerCreationProbe": false,
+  "realStoreKitTransactions": false,
+  "passed": false,
+  "error": "powershell -NoProfile failed (status 1); inspect privately",
+  "finishedAt": "2026-10-29T23:25:15.749Z"
+}

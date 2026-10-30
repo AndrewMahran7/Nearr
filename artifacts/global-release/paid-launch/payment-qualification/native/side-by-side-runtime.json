@@ -1,0 +1,1227 @@
+{
+  "verifiedAt": "2026-10-30T01:31:31.134Z",
+  "scope": "Actual unedited Android emulator pixels of existing paid component, synthetic Development fixtures only",
+  "currentSourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "currentApkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "currentBundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "currentConstantsSha256": "d3cbe45092308cc84090d01e5d16667e0c610b89ab60295c5bc1645a58d3f080",
+  "originalSourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d",
+  "originalAppPackage": "com.nearr.app",
+  "qaPackage": "com.nearr.paidqa",
+  "qaUid": 10230,
+  "syntheticDeclaration": {
+    "firstQaBirthday": "1999-10-29",
+    "replacementQaBirthday": "2005-10-29",
+    "country": "US",
+    "storage": "Local age range/country only; birthdays not persisted",
+    "realPersonData": false
+  },
+  "backendIdentityCreated": false,
+  "recognitionCalled": false,
+  "purchaseAttempted": false,
+  "realStoreKitPurchases": 0,
+  "independentStressVisualReview": {
+    "reviewer": "root agent",
+    "germanLightFramesViewed": ["top", "scroll3", "scroll6", "scroll9", "scroll11"],
+    "japaneseDarkFramesViewed": ["top", "scroll3", "scroll6", "scroll7", "scroll10"],
+    "materialOverlapOrHorizontalClippingObserved": false,
+    "completeLegalFootersViewed": true,
+    "duplicateBottomFramesAreNotIndependentConditions": true
+  },
+  "eligibleAppleReviewScreenshots": 0,
+  "nonShippingFixtureArtifact": true,
+  "lightDarkLocaleMatrix": [
+    {
+      "locale": "en-US",
+      "light": "offers-en-US-light-default.json",
+      "dark": "offers-en-US-dark-default.json"
+    },
+    {
+      "locale": "es-MX",
+      "light": "offers-es-MX-light-default.json",
+      "dark": "offers-es-MX-dark-default.json"
+    },
+    {
+      "locale": "es-ES",
+      "light": "offers-es-ES-light-default.json",
+      "dark": "offers-es-ES-dark-default.json"
+    },
+    {
+      "locale": "pt-BR",
+      "light": "offers-pt-BR-light-default.json",
+      "dark": "offers-pt-BR-dark-default.json"
+    },
+    {
+      "locale": "fr",
+      "light": "offers-fr-light-default.json",
+      "dark": "offers-fr-dark-default.json"
+    },
+    {
+      "locale": "de",
+      "light": "offers-de-light-default.json",
+      "dark": "offers-de-dark-default.json"
+    },
+    {
+      "locale": "it",
+      "light": "offers-it-light-default.json",
+      "dark": "offers-it-dark-default.json"
+    },
+    {
+      "locale": "ja",
+      "light": "offers-ja-light-default.json",
+      "dark": "offers-ja-dark-default.json"
+    },
+    {
+      "locale": "ko",
+      "light": "offers-ko-light-default.json",
+      "dark": "offers-ko-dark-default.json"
+    },
+    {
+      "locale": "zh-Hans",
+      "light": "offers-zh-Hans-light-default.json",
+      "dark": "offers-zh-Hans-dark-default.json"
+    }
+  ],
+  "stressCases": [
+    {
+      "receipt": "offers-de-light-narrow-large.json",
+      "locale": "de",
+      "theme": "light",
+      "display": {
+        "size": "840x2160",
+        "density": "Physical density: 420",
+        "fontScale": 1.5
+      }
+    },
+    {
+      "receipt": "offers-ja-dark-narrow-large.json",
+      "locale": "ja",
+      "theme": "dark",
+      "display": {
+        "size": "840x2160",
+        "density": "Physical density: 420",
+        "fontScale": 1.5
+      }
+    }
+  ],
+  "statePresentationCases": [
+    {
+      "receipt": "active-en-US-light.json",
+      "state": "active",
+      "locale": "en-US",
+      "theme": "light",
+      "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d"
+    },
+    {
+      "receipt": "cancelled-en-US-light.json",
+      "state": "cancelled",
+      "locale": "en-US",
+      "theme": "light",
+      "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d"
+    },
+    {
+      "receipt": "expired-en-US-light.json",
+      "state": "expired",
+      "locale": "en-US",
+      "theme": "light",
+      "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d"
+    },
+    {
+      "receipt": "grace-en-US-light.json",
+      "state": "grace",
+      "locale": "en-US",
+      "theme": "light",
+      "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d"
+    },
+    {
+      "receipt": "offline-en-US-light.json",
+      "state": "offline",
+      "locale": "en-US",
+      "theme": "light",
+      "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d"
+    },
+    {
+      "receipt": "pending-en-US-light-footer.json",
+      "state": "pending",
+      "locale": "en-US",
+      "theme": "light",
+      "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b"
+    },
+    {
+      "receipt": "pending-en-US-light.json",
+      "state": "pending",
+      "locale": "en-US",
+      "theme": "light",
+      "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d"
+    },
+    {
+      "receipt": "restricted-en-US-light.json",
+      "state": "restricted",
+      "locale": "en-US",
+      "theme": "light",
+      "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d"
+    },
+    {
+      "receipt": "revoked-en-US-light.json",
+      "state": "revoked",
+      "locale": "en-US",
+      "theme": "light",
+      "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d"
+    },
+    {
+      "receipt": "unavailable-en-US-light.json",
+      "state": "unavailable",
+      "locale": "en-US",
+      "theme": "light",
+      "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d"
+    }
+  ],
+  "captureCases": 40,
+  "captureCount": 216,
+  "allCaptureHashesAndDimensionsVerified": true,
+  "disabledControlReadbacks": [
+    {
+      "capture": "fixture-captures/offers-de-dark-default-top.png",
+      "disabledControls": [
+        "Nearr Plus abonnieren"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-dark-default-scroll1.png",
+      "disabledControls": [
+        "Nearr Plus abonnieren",
+        "20 Tokens kaufen · 1,19 $"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-dark-default-scroll2.png",
+      "disabledControls": [
+        "Nearr Plus abonnieren",
+        "20 Tokens kaufen · 1,19 $",
+        "50 Tokens kaufen · 2,49 $",
+        "200 Tokens kaufen · 5,00 $"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-dark-default-scroll3.png",
+      "disabledControls": [
+        "20 Tokens kaufen · 1,19 $",
+        "50 Tokens kaufen · 2,49 $",
+        "200 Tokens kaufen · 5,00 $",
+        "Käufe wiederherstellen",
+        "Abo verwalten",
+        "Guthaben aktualisieren"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-dark-default-scroll4.png",
+      "disabledControls": [
+        "50 Tokens kaufen · 2,49 $",
+        "200 Tokens kaufen · 5,00 $",
+        "Käufe wiederherstellen",
+        "Abo verwalten",
+        "Guthaben aktualisieren"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-default-top.png",
+      "disabledControls": [
+        "Nearr Plus abonnieren"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-default-scroll1.png",
+      "disabledControls": [
+        "Nearr Plus abonnieren"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-default-scroll2.png",
+      "disabledControls": [
+        "Nearr Plus abonnieren",
+        "20 Tokens kaufen · 1,19 $",
+        "50 Tokens kaufen · 2,49 $",
+        "200 Tokens kaufen · 5,00 $"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-default-scroll3.png",
+      "disabledControls": [
+        "20 Tokens kaufen · 1,19 $",
+        "50 Tokens kaufen · 2,49 $",
+        "200 Tokens kaufen · 5,00 $",
+        "Käufe wiederherstellen"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-default-scroll4.png",
+      "disabledControls": [
+        "200 Tokens kaufen · 5,00 $",
+        "Käufe wiederherstellen",
+        "Abo verwalten",
+        "Guthaben aktualisieren"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-narrow-large-scroll2.png",
+      "disabledControls": [
+        "Nearr Plus abonnieren"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-narrow-large-scroll3.png",
+      "disabledControls": [
+        "Nearr Plus abonnieren"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-narrow-large-scroll4.png",
+      "disabledControls": [
+        "Nearr Plus abonnieren",
+        "20 Tokens kaufen · 1,19 $"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-narrow-large-scroll5.png",
+      "disabledControls": [
+        "20 Tokens kaufen · 1,19 $",
+        "50 Tokens kaufen · 2,49 $"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-narrow-large-scroll6.png",
+      "disabledControls": [
+        "20 Tokens kaufen · 1,19 $",
+        "50 Tokens kaufen · 2,49 $",
+        "200 Tokens kaufen · 5,00 $"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-narrow-large-scroll7.png",
+      "disabledControls": [
+        "50 Tokens kaufen · 2,49 $",
+        "200 Tokens kaufen · 5,00 $"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-narrow-large-scroll8.png",
+      "disabledControls": [
+        "Käufe wiederherstellen",
+        "Abo verwalten",
+        "Guthaben aktualisieren"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-narrow-large-scroll9.png",
+      "disabledControls": [
+        "Käufe wiederherstellen",
+        "Abo verwalten",
+        "Guthaben aktualisieren"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-narrow-large-scroll10.png",
+      "disabledControls": [
+        "Käufe wiederherstellen",
+        "Abo verwalten",
+        "Guthaben aktualisieren"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-de-light-narrow-large-scroll11.png",
+      "disabledControls": [
+        "Käufe wiederherstellen",
+        "Abo verwalten",
+        "Guthaben aktualisieren"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-en-US-dark-default-top.png",
+      "disabledControls": [
+        "Get Nearr Plus"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-en-US-dark-default-scroll1.png",
+      "disabledControls": [
+        "Get Nearr Plus",
+        "Buy 20 tokens · $1.19"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-en-US-dark-default-scroll2.png",
+      "disabledControls": [
+        "Get Nearr Plus",
+        "Buy 20 tokens · $1.19",
+        "Buy 50 tokens · $2.49",
+        "Buy 200 tokens · $5.00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-en-US-dark-default-scroll3.png",
+      "disabledControls": [
+        "Buy 20 tokens · $1.19",
+        "Buy 50 tokens · $2.49",
+        "Buy 200 tokens · $5.00",
+        "Restore Purchases",
+        "Manage Subscription",
+        "Refresh balance"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-en-US-dark-default-scroll4.png",
+      "disabledControls": [
+        "Buy 50 tokens · $2.49",
+        "Buy 200 tokens · $5.00",
+        "Restore Purchases",
+        "Manage Subscription",
+        "Refresh balance"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-en-US-light-default-top.png",
+      "disabledControls": [
+        "Get Nearr Plus"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-en-US-light-default-scroll1.png",
+      "disabledControls": [
+        "Get Nearr Plus",
+        "Buy 20 tokens · $1.19"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-en-US-light-default-scroll2.png",
+      "disabledControls": [
+        "Buy 20 tokens · $1.19",
+        "Buy 50 tokens · $2.49",
+        "Buy 200 tokens · $5.00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-en-US-light-default-scroll3.png",
+      "disabledControls": [
+        "Buy 20 tokens · $1.19",
+        "Buy 50 tokens · $2.49",
+        "Buy 200 tokens · $5.00",
+        "Restore Purchases",
+        "Manage Subscription",
+        "Refresh balance"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-en-US-light-default-scroll4.png",
+      "disabledControls": [
+        "Buy 50 tokens · $2.49",
+        "Buy 200 tokens · $5.00",
+        "Restore Purchases",
+        "Manage Subscription",
+        "Refresh balance"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-ES-dark-default-scroll1.png",
+      "disabledControls": [
+        "Obtener Nearr Plus",
+        "Comprar 20 tokens · 1,19 US$"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-ES-dark-default-scroll2.png",
+      "disabledControls": [
+        "Obtener Nearr Plus",
+        "Comprar 20 tokens · 1,19 US$",
+        "Comprar 50 tokens · 2,49 US$",
+        "Comprar 200 tokens · 5,00 US$"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-ES-dark-default-scroll3.png",
+      "disabledControls": [
+        "Comprar 20 tokens · 1,19 US$",
+        "Comprar 50 tokens · 2,49 US$",
+        "Comprar 200 tokens · 5,00 US$",
+        "Restaurar compras",
+        "Administrar suscripción",
+        "Actualizar saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-ES-dark-default-scroll4.png",
+      "disabledControls": [
+        "Comprar 200 tokens · 5,00 US$",
+        "Restaurar compras",
+        "Administrar suscripción",
+        "Actualizar saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-ES-light-default-scroll1.png",
+      "disabledControls": [
+        "Obtener Nearr Plus"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-ES-light-default-scroll2.png",
+      "disabledControls": [
+        "Obtener Nearr Plus",
+        "Comprar 20 tokens · 1,19 US$",
+        "Comprar 50 tokens · 2,49 US$"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-ES-light-default-scroll3.png",
+      "disabledControls": [
+        "Comprar 20 tokens · 1,19 US$",
+        "Comprar 50 tokens · 2,49 US$",
+        "Comprar 200 tokens · 5,00 US$",
+        "Restaurar compras",
+        "Administrar suscripción"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-ES-light-default-scroll4.png",
+      "disabledControls": [
+        "Comprar 200 tokens · 5,00 US$",
+        "Restaurar compras",
+        "Administrar suscripción",
+        "Actualizar saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-MX-dark-default-scroll1.png",
+      "disabledControls": [
+        "Obtener Nearr Plus",
+        "Comprar 20 tokens · USD 1.19"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-MX-dark-default-scroll2.png",
+      "disabledControls": [
+        "Obtener Nearr Plus",
+        "Comprar 20 tokens · USD 1.19",
+        "Comprar 50 tokens · USD 2.49",
+        "Comprar 200 tokens · USD 5.00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-MX-dark-default-scroll3.png",
+      "disabledControls": [
+        "Comprar 20 tokens · USD 1.19",
+        "Comprar 50 tokens · USD 2.49",
+        "Comprar 200 tokens · USD 5.00",
+        "Restaurar compras",
+        "Administrar suscripción",
+        "Actualizar saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-MX-dark-default-scroll4.png",
+      "disabledControls": [
+        "Comprar 200 tokens · USD 5.00",
+        "Restaurar compras",
+        "Administrar suscripción",
+        "Actualizar saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-MX-light-default-scroll1.png",
+      "disabledControls": [
+        "Obtener Nearr Plus",
+        "Comprar 20 tokens · USD 1.19"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-MX-light-default-scroll2.png",
+      "disabledControls": [
+        "Obtener Nearr Plus",
+        "Comprar 20 tokens · USD 1.19",
+        "Comprar 50 tokens · USD 2.49",
+        "Comprar 200 tokens · USD 5.00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-MX-light-default-scroll3.png",
+      "disabledControls": [
+        "Comprar 20 tokens · USD 1.19",
+        "Comprar 50 tokens · USD 2.49",
+        "Comprar 200 tokens · USD 5.00",
+        "Restaurar compras",
+        "Administrar suscripción",
+        "Actualizar saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-es-MX-light-default-scroll4.png",
+      "disabledControls": [
+        "Comprar 200 tokens · USD 5.00",
+        "Restaurar compras",
+        "Administrar suscripción",
+        "Actualizar saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-fr-dark-default-top.png",
+      "disabledControls": [
+        "Passer à Nearr Plus"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-fr-dark-default-scroll1.png",
+      "disabledControls": [
+        "Passer à Nearr Plus"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-fr-dark-default-scroll2.png",
+      "disabledControls": [
+        "Passer à Nearr Plus",
+        "Acheter 20 jetons · 1,19 $US",
+        "Acheter 50 jetons · 2,49 $US",
+        "Acheter 200 jetons · 5,00 $US"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-fr-dark-default-scroll3.png",
+      "disabledControls": [
+        "Acheter 20 jetons · 1,19 $US",
+        "Acheter 50 jetons · 2,49 $US",
+        "Acheter 200 jetons · 5,00 $US",
+        "Restaurer les achats",
+        "Gérer l’abonnement",
+        "Actualiser le solde"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-fr-dark-default-scroll4.png",
+      "disabledControls": [
+        "Acheter 200 jetons · 5,00 $US",
+        "Restaurer les achats",
+        "Gérer l’abonnement",
+        "Actualiser le solde"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-fr-light-default-top.png",
+      "disabledControls": [
+        "Passer à Nearr Plus"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-fr-light-default-scroll1.png",
+      "disabledControls": [
+        "Passer à Nearr Plus",
+        "Acheter 20 jetons · 1,19 $US"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-fr-light-default-scroll2.png",
+      "disabledControls": [
+        "Passer à Nearr Plus",
+        "Acheter 20 jetons · 1,19 $US",
+        "Acheter 50 jetons · 2,49 $US"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-fr-light-default-scroll3.png",
+      "disabledControls": [
+        "Acheter 20 jetons · 1,19 $US",
+        "Acheter 50 jetons · 2,49 $US",
+        "Acheter 200 jetons · 5,00 $US"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-fr-light-default-scroll4.png",
+      "disabledControls": [
+        "Acheter 200 jetons · 5,00 $US",
+        "Restaurer les achats",
+        "Gérer l’abonnement",
+        "Actualiser le solde"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-it-dark-default-top.png",
+      "disabledControls": [
+        "Abbonati a Nearr Plus"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-it-dark-default-scroll1.png",
+      "disabledControls": [
+        "Abbonati a Nearr Plus",
+        "Acquista 20 token · 1,19 USD"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-it-dark-default-scroll2.png",
+      "disabledControls": [
+        "Acquista 20 token · 1,19 USD",
+        "Acquista 50 token · 2,49 USD",
+        "Acquista 200 token · 5,00 USD"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-it-dark-default-scroll3.png",
+      "disabledControls": [
+        "Acquista 50 token · 2,49 USD",
+        "Acquista 200 token · 5,00 USD",
+        "Ripristina acquisti",
+        "Gestisci abbonamento",
+        "Aggiorna saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-it-dark-default-scroll4.png",
+      "disabledControls": [
+        "Acquista 200 token · 5,00 USD",
+        "Ripristina acquisti",
+        "Gestisci abbonamento",
+        "Aggiorna saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-it-light-default-top.png",
+      "disabledControls": [
+        "Abbonati a Nearr Plus"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-it-light-default-scroll1.png",
+      "disabledControls": [
+        "Abbonati a Nearr Plus",
+        "Acquista 20 token · 1,19 USD"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-it-light-default-scroll2.png",
+      "disabledControls": [
+        "Abbonati a Nearr Plus",
+        "Acquista 20 token · 1,19 USD",
+        "Acquista 50 token · 2,49 USD",
+        "Acquista 200 token · 5,00 USD"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-it-light-default-scroll3.png",
+      "disabledControls": [
+        "Acquista 20 token · 1,19 USD",
+        "Acquista 50 token · 2,49 USD",
+        "Acquista 200 token · 5,00 USD",
+        "Ripristina acquisti",
+        "Gestisci abbonamento",
+        "Aggiorna saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-it-light-default-scroll4.png",
+      "disabledControls": [
+        "Acquista 200 token · 5,00 USD",
+        "Ripristina acquisti",
+        "Gestisci abbonamento",
+        "Aggiorna saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-default-top.png",
+      "disabledControls": [
+        "Nearr Plusに登録"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-default-scroll1.png",
+      "disabledControls": [
+        "Nearr Plusに登録",
+        "20トークンを購入 · $1.19"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-default-scroll2.png",
+      "disabledControls": [
+        "Nearr Plusに登録",
+        "20トークンを購入 · $1.19",
+        "50トークンを購入 · $2.49",
+        "200トークンを購入 · $5.00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-default-scroll3.png",
+      "disabledControls": [
+        "20トークンを購入 · $1.19",
+        "50トークンを購入 · $2.49",
+        "200トークンを購入 · $5.00",
+        "購入を復元",
+        "サブスクリプションを管理",
+        "残高を更新"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-default-scroll4.png",
+      "disabledControls": [
+        "50トークンを購入 · $2.49",
+        "200トークンを購入 · $5.00",
+        "購入を復元",
+        "サブスクリプションを管理",
+        "残高を更新"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-narrow-large-scroll2.png",
+      "disabledControls": [
+        "Nearr Plusに登録"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-narrow-large-scroll3.png",
+      "disabledControls": [
+        "Nearr Plusに登録"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-narrow-large-scroll4.png",
+      "disabledControls": [
+        "Nearr Plusに登録",
+        "20トークンを購入 · $1.19"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-narrow-large-scroll5.png",
+      "disabledControls": [
+        "20トークンを購入 · $1.19",
+        "50トークンを購入 · $2.49",
+        "200トークンを購入 · $5.00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-narrow-large-scroll6.png",
+      "disabledControls": [
+        "50トークンを購入 · $2.49",
+        "200トークンを購入 · $5.00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-narrow-large-scroll7.png",
+      "disabledControls": [
+        "購入を復元",
+        "サブスクリプションを管理",
+        "残高を更新"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-narrow-large-scroll8.png",
+      "disabledControls": [
+        "購入を復元",
+        "サブスクリプションを管理",
+        "残高を更新"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-narrow-large-scroll9.png",
+      "disabledControls": [
+        "購入を復元",
+        "サブスクリプションを管理",
+        "残高を更新"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-dark-narrow-large-scroll10.png",
+      "disabledControls": [
+        "購入を復元",
+        "サブスクリプションを管理",
+        "残高を更新"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-light-default-top.png",
+      "disabledControls": [
+        "Nearr Plusに登録"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-light-default-scroll1.png",
+      "disabledControls": [
+        "Nearr Plusに登録",
+        "20トークンを購入 · $1.19"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-light-default-scroll2.png",
+      "disabledControls": [
+        "Nearr Plusに登録",
+        "20トークンを購入 · $1.19",
+        "50トークンを購入 · $2.49",
+        "200トークンを購入 · $5.00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-light-default-scroll3.png",
+      "disabledControls": [
+        "20トークンを購入 · $1.19",
+        "50トークンを購入 · $2.49",
+        "200トークンを購入 · $5.00",
+        "購入を復元",
+        "サブスクリプションを管理"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ja-light-default-scroll4.png",
+      "disabledControls": [
+        "50トークンを購入 · $2.49",
+        "200トークンを購入 · $5.00",
+        "購入を復元",
+        "サブスクリプションを管理",
+        "残高を更新"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ko-dark-default-top.png",
+      "disabledControls": [
+        "Nearr Plus 구독"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ko-dark-default-scroll1.png",
+      "disabledControls": [
+        "Nearr Plus 구독",
+        "토큰 20개 구매 · US$1.19"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ko-dark-default-scroll2.png",
+      "disabledControls": [
+        "Nearr Plus 구독",
+        "토큰 20개 구매 · US$1.19",
+        "토큰 50개 구매 · US$2.49",
+        "토큰 200개 구매 · US$5.00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ko-dark-default-scroll3.png",
+      "disabledControls": [
+        "토큰 20개 구매 · US$1.19",
+        "토큰 50개 구매 · US$2.49",
+        "토큰 200개 구매 · US$5.00",
+        "구매 복원",
+        "구독 관리",
+        "잔액 새로고침"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ko-dark-default-scroll4.png",
+      "disabledControls": [
+        "토큰 50개 구매 · US$2.49",
+        "토큰 200개 구매 · US$5.00",
+        "구매 복원",
+        "구독 관리",
+        "잔액 새로고침"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ko-light-default-top.png",
+      "disabledControls": [
+        "Nearr Plus 구독"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ko-light-default-scroll1.png",
+      "disabledControls": [
+        "Nearr Plus 구독",
+        "토큰 20개 구매 · US$1.19"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ko-light-default-scroll2.png",
+      "disabledControls": [
+        "Nearr Plus 구독",
+        "토큰 20개 구매 · US$1.19",
+        "토큰 50개 구매 · US$2.49",
+        "토큰 200개 구매 · US$5.00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ko-light-default-scroll3.png",
+      "disabledControls": [
+        "토큰 20개 구매 · US$1.19",
+        "토큰 50개 구매 · US$2.49",
+        "토큰 200개 구매 · US$5.00",
+        "구매 복원",
+        "구독 관리",
+        "잔액 새로고침"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-ko-light-default-scroll4.png",
+      "disabledControls": [
+        "토큰 50개 구매 · US$2.49",
+        "토큰 200개 구매 · US$5.00",
+        "구매 복원",
+        "구독 관리",
+        "잔액 새로고침"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-pt-BR-dark-default-scroll1.png",
+      "disabledControls": [
+        "Assinar o Nearr Plus",
+        "Comprar 20 tokens · US$ 1,19"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-pt-BR-dark-default-scroll2.png",
+      "disabledControls": [
+        "Assinar o Nearr Plus",
+        "Comprar 20 tokens · US$ 1,19",
+        "Comprar 50 tokens · US$ 2,49",
+        "Comprar 200 tokens · US$ 5,00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-pt-BR-dark-default-scroll3.png",
+      "disabledControls": [
+        "Comprar 50 tokens · US$ 2,49",
+        "Comprar 200 tokens · US$ 5,00",
+        "Restaurar compras",
+        "Gerenciar assinatura",
+        "Atualizar saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-pt-BR-dark-default-scroll4.png",
+      "disabledControls": [
+        "Comprar 200 tokens · US$ 5,00",
+        "Restaurar compras",
+        "Gerenciar assinatura",
+        "Atualizar saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-pt-BR-light-default-scroll1.png",
+      "disabledControls": [
+        "Assinar o Nearr Plus",
+        "Comprar 20 tokens · US$ 1,19"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-pt-BR-light-default-scroll2.png",
+      "disabledControls": [
+        "Assinar o Nearr Plus",
+        "Comprar 20 tokens · US$ 1,19",
+        "Comprar 50 tokens · US$ 2,49",
+        "Comprar 200 tokens · US$ 5,00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-pt-BR-light-default-scroll3.png",
+      "disabledControls": [
+        "Comprar 20 tokens · US$ 1,19",
+        "Comprar 50 tokens · US$ 2,49",
+        "Comprar 200 tokens · US$ 5,00",
+        "Restaurar compras",
+        "Gerenciar assinatura",
+        "Atualizar saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-pt-BR-light-default-scroll4.png",
+      "disabledControls": [
+        "Comprar 200 tokens · US$ 5,00",
+        "Restaurar compras",
+        "Gerenciar assinatura",
+        "Atualizar saldo"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-zh-Hans-dark-default-top.png",
+      "disabledControls": [
+        "订阅 Nearr Plus"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-zh-Hans-dark-default-scroll1.png",
+      "disabledControls": [
+        "订阅 Nearr Plus",
+        "购买 20 个代币 · US$1.19"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-zh-Hans-dark-default-scroll2.png",
+      "disabledControls": [
+        "订阅 Nearr Plus",
+        "购买 20 个代币 · US$1.19",
+        "购买 50 个代币 · US$2.49",
+        "购买 200 个代币 · US$5.00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-zh-Hans-dark-default-scroll3.png",
+      "disabledControls": [
+        "购买 50 个代币 · US$2.49",
+        "购买 200 个代币 · US$5.00",
+        "恢复购买",
+        "管理订阅",
+        "刷新余额"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-zh-Hans-dark-default-scroll4.png",
+      "disabledControls": [
+        "购买 50 个代币 · US$2.49",
+        "购买 200 个代币 · US$5.00",
+        "恢复购买",
+        "管理订阅",
+        "刷新余额"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-zh-Hans-light-default-top.png",
+      "disabledControls": [
+        "订阅 Nearr Plus"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-zh-Hans-light-default-scroll1.png",
+      "disabledControls": [
+        "订阅 Nearr Plus",
+        "购买 20 个代币 · US$1.19"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-zh-Hans-light-default-scroll2.png",
+      "disabledControls": [
+        "订阅 Nearr Plus",
+        "购买 20 个代币 · US$1.19",
+        "购买 50 个代币 · US$2.49",
+        "购买 200 个代币 · US$5.00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-zh-Hans-light-default-scroll3.png",
+      "disabledControls": [
+        "购买 20 个代币 · US$1.19",
+        "购买 50 个代币 · US$2.49",
+        "购买 200 个代币 · US$5.00",
+        "恢复购买",
+        "管理订阅",
+        "刷新余额"
+      ]
+    },
+    {
+      "capture": "fixture-captures/offers-zh-Hans-light-default-scroll4.png",
+      "disabledControls": [
+        "购买 50 个代币 · US$2.49",
+        "购买 200 个代币 · US$5.00",
+        "恢复购买",
+        "管理订阅",
+        "刷新余额"
+      ]
+    },
+    {
+      "capture": "fixture-captures/pending-en-US-light-footer-top.png",
+      "disabledControls": [
+        "Check purchase status"
+      ]
+    },
+    {
+      "capture": "fixture-captures/pending-en-US-light-footer-scroll1.png",
+      "disabledControls": [
+        "Check purchase status",
+        "Get Nearr Plus"
+      ]
+    },
+    {
+      "capture": "fixture-captures/pending-en-US-light-footer-scroll2.png",
+      "disabledControls": [
+        "Check purchase status",
+        "Get Nearr Plus",
+        "Buy 20 tokens · $1.19",
+        "Buy 50 tokens · $2.49"
+      ]
+    },
+    {
+      "capture": "fixture-captures/pending-en-US-light-footer-scroll3.png",
+      "disabledControls": [
+        "Buy 20 tokens · $1.19",
+        "Buy 50 tokens · $2.49",
+        "Buy 200 tokens · $5.00"
+      ]
+    },
+    {
+      "capture": "fixture-captures/pending-en-US-light-footer-scroll4.png",
+      "disabledControls": [
+        "Buy 50 tokens · $2.49",
+        "Buy 200 tokens · $5.00",
+        "Restore Purchases",
+        "Manage Subscription",
+        "Refresh balance"
+      ]
+    },
+    {
+      "capture": "fixture-captures/pending-en-US-light-footer-scroll5.png",
+      "disabledControls": [
+        "Buy 50 tokens · $2.49",
+        "Buy 200 tokens · $5.00",
+        "Restore Purchases",
+        "Manage Subscription",
+        "Refresh balance"
+      ]
+    },
+    {
+      "capture": "fixture-captures/pending-en-US-light-footer-scroll6.png",
+      "disabledControls": [
+        "Buy 50 tokens · $2.49",
+        "Buy 200 tokens · $5.00",
+        "Restore Purchases",
+        "Manage Subscription",
+        "Refresh balance"
+      ]
+    },
+    {
+      "capture": "fixture-captures/pending-en-US-light-footer-scroll7.png",
+      "disabledControls": [
+        "Buy 50 tokens · $2.49",
+        "Buy 200 tokens · $5.00",
+        "Restore Purchases",
+        "Manage Subscription",
+        "Refresh balance"
+      ]
+    }
+  ],
+  "limits": [
+    "No real StoreKit, live balance, native purchase/restore/manage transaction or provider outcome was tested.",
+    "Android fixture screenshots are ineligible as iOS/App Store review assets.",
+    "Visual inspection is limited to recorded languages, themes, scroll positions and display combinations.",
+    "Initial state sweep first-capture positions could remain slightly scrolled; current default sweeps include absolute top and fixture banner.",
+    "Programmatic font-scale restoration left retained native text metrics until the disposable QA process was recreated; seamless live font-setting transitions were not qualified. Emulator display changes were global, while direct app operations were restricted to the QA package."
+  ],
+  "originalAppPackageOperationsPerformed": false,
+  "originalAppDirectUiActionsPerformed": false,
+  "nearrOrAppleAgreementsAccepted": false,
+  "finalQaDisposition": "Removed after captures and restored display settings; see side-by-side-cleanup.json",
+  "supplementalRetainedFontCases": [
+    "offers-de-dark-retained-large.json",
+    "offers-en-US-dark-retained-large.json",
+    "offers-es-ES-dark-retained-large.json",
+    "offers-es-MX-dark-retained-large.json",
+    "offers-fr-dark-retained-large.json",
+    "offers-it-dark-retained-large.json",
+    "offers-pt-BR-dark-retained-large.json"
+  ],
+  "defaultMetricBaselineVerification": "default-font-baseline-verification.json",
+  "independentDefaultVisualAudit": {
+    "completedAt": "2026-10-30T01:28:21.907Z",
+    "reviewer": "final_provider agent",
+    "receiptCount": 20,
+    "viewedPngCount": 100,
+    "allHashesAndSourceBindingsVerified": true,
+    "retainedLargeExcluded": true
+  },
+  "visualFindings": {
+    "materialLayoutDefectsObserved": 0,
+    "cosmeticWrapping": [
+      "Japanese hero final と on its own line at default size",
+      "Korean hero wraps within its final word at default size",
+      "German narrow1.5x Terms link final n on its own line, fully visible"
+    ],
+    "scope": "Only viewed captured frames; not universal device coverage"
+  }
+}

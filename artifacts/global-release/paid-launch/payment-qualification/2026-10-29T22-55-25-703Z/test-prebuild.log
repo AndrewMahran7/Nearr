@@ -1,0 +1,3226 @@
+
+> nearr@0.1.0 pretest:prebuild
+> npm run test:no-user-facing-vayrin && npm run test:startup-smoke && npm run test:release-gate && npm run test:result-notifications && npm run test:failure-messaging && npm run test:share-failure-presentation && npm run test:map-camera-transaction-hotfix && npm run test:map-atomic-representation-stability && npm run test:map-conservation && npm run test:map-cluster-expansion && npm run test:multi-save-tray-dismiss && npm run test:nearby-map-explorer && npm run test:vayrin-candidate-confirmation-v2 && npm run test:vayrin-multi-place-review-redesign && npm run test:canonical-save-return-contract && npm run test:multi-place-review-interactions && npm run test:quick-check-density && npm run test:quick-check-rolodex-ux && npm run test:vayrin-quick-check-evidence-ui
+
+
+> nearr@0.1.0 test:no-user-facing-vayrin
+> ts-node -P scripts/tsconfig.json scripts/testNoUserFacingVayrin.ts
+
+PASS no user-facing or accessibility Vayrin branding remains.
+Allowed: module paths, technical flags/contracts, analytics/fixture tokens, and one dev-only fixture error.
+
+> nearr@0.1.0 test:startup-smoke
+> ts-node -P scripts/tsconfig.json scripts/testStartupSmoke.ts
+
+PASS fresh signed-out launch: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS fresh anonymous onboarding launch: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS signed-in returning user: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS completed Phase 1 user: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS partially completed V2 user: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS deleted-account fresh start: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS stale V2 state: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS malformed V2 state: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS missing server checkpoint: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS transient Supabase failure: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS auth restore delayed: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS no network: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS OTA with legacy persisted state: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS post-account-link continuation: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS post-account-delete continuation: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS deep link during startup: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+PASS notification tap during startup: VISIBLE UI WITHIN BOUNDED TIME: YES; BLACK SCREEN: NO
+
+All 17 cold-start scenarios selected visible UI.
+
+> nearr@0.1.0 test:release-gate
+> ts-node -P scripts/tsconfig.json scripts/testReleaseGate.ts
+
+Production release gate contracts passed.
+
+> nearr@0.1.0 test:result-notifications
+> ts-node -P scripts/tsconfig.json scripts/testResultNotifications.ts
+
+PASS result-aware share completion notification matrix, evidence safety, privacy, branding, and routing
+
+> nearr@0.1.0 test:failure-messaging
+> ts-node -P scripts/tsconfig.json scripts/testFailureMessaging.ts
+
+PASS 6 honest failure messaging production fixtures
+
+> nearr@0.1.0 test:share-failure-presentation
+> ts-node -P scripts/tsconfig.json scripts/testShareFailurePresentation.ts
+
+PASS shared notification/detail failure presentation, structured routing, actions, and duration drift guard
+
+> nearr@0.1.0 test:map-camera-transaction-hotfix
+> ts-node -P scripts/tsconfig.json scripts/testMapCameraTransactionHotfix.ts
+
+PASS map camera transaction hotfix: 31/31 required cases
+{
+  "operations": 1000,
+  "deadTaps": 0,
+  "clusterTaps": 101,
+  "cameraCommands": 101,
+  "stackedCommands": 0,
+  "automaticChildSelections": 0,
+  "missingIds": 0,
+  "duplicateIds": 0,
+  "cameraLoops": 0,
+  "founderSequence": [
+    "continental",
+    "Southern California",
+    "cluster tap",
+    "regional",
+    "continental",
+    "foreground",
+    "cluster tap"
+  ],
+  "transactionStates": [
+    "commanding",
+    "settling",
+    "settled",
+    "cancelled",
+    "failed"
+  ],
+  "tests": 31
+}
+
+> nearr@0.1.0 test:map-atomic-representation-stability
+> ts-node -P scripts/tsconfig.json scripts/testMapAtomicRepresentationStability.ts
+
+PASS 1. transient invalid viewport cannot clear a valid visible representation
+PASS 2. stale candidate cannot commit
+PASS 3. superseded candidate cannot commit
+PASS 4. candidate missing IDs cannot commit
+PASS 5. candidate duplicates cannot commit
+PASS 6. final valid candidate commits atomically
+PASS 7. one settled viewport produces at most one final visible commit
+PASS 8. 50ms founder sequence has no visible thrash
+PASS 9. zoom boundary jitter does not alternate cluster zoom
+PASS 10. stable viewport has a stable cluster tree
+PASS 11. visual zoom is separated from integer cluster query zoom
+PASS 12. cluster tap transaction remains one command
+PASS 13. automatic child selection remains zero
+PASS 14. continental to regional to continental final conservation remains
+PASS 15. filter changes are atomic
+PASS 16. dataset save is atomic
+PASS 17. dataset delete is atomic
+PASS 18. foreground resync is atomic
+PASS 19. no temporary empty arrays appear after first valid render
+PASS 20. individual marker keys remain stable
+PASS 21. cluster keys remain stable
+PASS 22. equivalent representation causes no redundant commit
+PASS 23. 20-point conservation
+PASS 24. 100-point conservation
+PASS 25. 500-point conservation
+PASS 26. 1,000-point conservation
+PASS 27. 5,000-point conservation
+PASS 28. 10,000-point conservation
+PASS 29. 1,000-operation mixed transition stress stays valid
+PASS 30. zero stale visible commits
+PASS 31. zero invalid visible commits
+
+Founder 50ms atomic visibility timeline
+┌─────────┬──────┬────────────┬───────────┬──────────────────────────┬─────────────────────────┬────────┬────────────────────────────┐
+│ (index) │ time │ visualZoom │ queryZoom │ candidate                │ visible                 │ commit │ reason                     │
+├─────────┼──────┼────────────┼───────────┼──────────────────────────┼─────────────────────────┼────────┼────────────────────────────┤
+│ 0       │ 0    │ 4.01       │ 4         │ 'representation-nbmw6a'  │ 'representation-nbmw6a' │ true   │ 'commit_initial'           │
+│ 1       │ 10   │ 4.01       │ 4         │ 'representation-10wtn45' │ 'representation-nbmw6a' │ false  │ 'active_camera_transition' │
+│ 2       │ 30   │ 4.01       │ 4         │ 'representation-ergczp'  │ 'representation-nbmw6a' │ false  │ 'active_camera_transition' │
+│ 3       │ 50   │ 4.01       │ 4         │ 'representation-dfdpu8'  │ 'representation-dfdpu8' │ true   │ 'commit_authoritative'     │
+└─────────┴──────┴────────────┴───────────┴──────────────────────────┴─────────────────────────┴────────┴────────────────────────────┘
+
+Stress metrics {
+  candidateCount: 2001,
+  visibleCommitCount: 1001,
+  emptyVisibleCommitCount: 0,
+  nonConservedVisibleCommitCount: 0,
+  staleVisibleCommitCount: 0,
+  invalidVisibleCommitCount: 0,
+  representationReversions: 0
+}
+PASS map atomic representation stability: 31/31 cases
+
+> nearr@0.1.0 test:map-conservation
+> ts-node -P scripts/tsconfig.json scripts/testMapConservation.ts
+
+CAMERA MATRIX: PASS
+FILTER / ALL: PASS
+SELECTION / MUTATION / STALE FETCH / FOREGROUND: PASS
+CLUSTERING BYPASS: PASS
+STRESS operations=1000 missing=0 duplicates=0 invalid_members=0 silent_taps=0 camera_loops=0 unbounded_renders=0
+BENCH 20: cluster index p95=0.07ms query p95=0.04ms raw-prep p95=0.10ms raw-models=20
+BENCH 100: cluster index p95=0.51ms query p95=0.12ms raw-prep p95=0.10ms raw-models=100
+BENCH 250: cluster index p95=0.98ms query p95=0.31ms raw-prep p95=0.01ms raw-models=250
+BENCH 500: cluster index p95=2.20ms query p95=0.46ms raw-prep p95=0.01ms raw-models=500
+BENCH 1000: cluster index p95=3.87ms query p95=1.55ms raw-prep p95=0.05ms raw-models=1000
+BENCH 2000: cluster index p95=14.01ms query p95=5.58ms raw-prep p95=0.08ms raw-models=2000
+BENCH 5000: cluster index p95=34.34ms query p95=11.11ms raw-prep p95=0.41ms raw-models=5000
+BENCH 10000: cluster index p95=54.60ms query p95=20.44ms raw-prep p95=0.63ms raw-models=10000
+TUNING radius=56px representations(z:nodes) 11:2 13:17 15:76 16:54
+TUNING radius=40px representations(z:nodes) 11:3 13:28 15:120 16:69
+TUNING radius=32px representations(z:nodes) 11:3 13:47 15:165 16:78
+TUNING radius=24px representations(z:nodes) 11:7 13:74 15:226 16:91
+SAFE RAW MARKER LIMIT: 500
+MAP CONSERVATION TESTS PASSED
+
+> nearr@0.1.0 test:map-cluster-expansion
+> ts-node -P scripts/tsconfig.json scripts/testMapClusterExpansion.ts
+
+PASS cluster expansion: repeated taps, rapid taps, map readiness, filters, pan, selection, navigation, lifecycle, stale ids, single-command failure, no selection fallback, and no-loop invariant
+
+> nearr@0.1.0 test:multi-save-tray-dismiss
+> ts-node -P scripts/tsconfig.json scripts/testMultiSaveTrayDismiss.ts
+
+PASS one newly saved place presentation dismisses
+PASS three newly saved places presentation dismisses
+PASS close callback is wired and fires once
+PASS dismissal clears presentation state before navigation
+PASS saved places remain after presentation dismissal
+PASS source attachments remain after presentation dismissal
+PASS dismissed event cannot resurrect on pan or detail navigation
+PASS a genuinely new save event can present a new tray
+PASS Details opens the unified selected-place detail
+PASS individual saved cards remain wired to selection
+PASS close control has a real 44pt target and accessible semantics
+PASS tray touch layer is explicitly above the native map
+PASS 375pt layout retains close and header room
+PASS 390pt layout retains close and header room
+PASS 430pt layout retains close and header room
+PASS map filter and camera state remain unchanged by dismissal
+PASS multi-save tray dismissal, persistence, touch ownership, layout, and map-state contracts
+
+> nearr@0.1.0 test:nearby-map-explorer
+> ts-node -P scripts/tsconfig.json scripts/testNearbyMapExplorer.ts
+
+PASS nearby map explorer: 17 required behaviors, strict identity, save/filter/zoom/background conservation, bounded 10/50/100/500 scale (10:0.6ms, 50:1.2ms, 100:2.2ms, 500:15.7ms)
+
+> nearr@0.1.0 test:vayrin-candidate-confirmation-v2
+> ts-node -P scripts/tsconfig.json scripts/testVayrinCandidateConfirmationV2.ts
+
+PASS Vayrin candidate resolution, compact capped shortlist, raw search, multi-select, sticky CTA, and truthful copy V2
+
+> nearr@0.1.0 test:vayrin-multi-place-review-redesign
+> ts-node -P scripts/tsconfig.json scripts/testVayrinMultiPlaceReviewRedesign.ts
+
+PASS Fieldnotes review: 24 actual component renders across 2 appearances, 4 width/text configurations and 0/1/5 photos; independent controls, provenance, omission, disabled save, motion and virtualized Activity
+PASS Vayrin multi-place evidence-first layout, fixtures, selection, save integrity, and performance contracts
+
+> nearr@0.1.0 test:canonical-save-return-contract
+> ts-node -P scripts/tsconfig.json scripts/testCanonicalSaveReturnContract.ts
+
+PASS canonical save return contract (12 cases + screenshot regression)
+
+> nearr@0.1.0 test:multi-place-review-interactions
+> ts-node -P scripts/tsconfig.json scripts/testMultiPlaceReviewInteractions.ts
+
+PASS Fieldnotes review: 24 actual component renders across 2 appearances, 4 width/text configurations and 0/1/5 photos; independent controls, provenance, omission, disabled save, motion and virtualized Activity
+PASS multi-place stable ordering, independent selection, and native photo-carousel interaction contracts
+
+> nearr@0.1.0 test:quick-check-density
+> ts-node -P scripts/tsconfig.json scripts/testQuickCheckDensity.ts
+
+PASS Fieldnotes review: 24 actual component renders across 2 appearances, 4 width/text configurations and 0/1/5 photos; independent controls, provenance, omission, disabled save, motion and virtualized Activity
+PASS Fieldnotes Quick Check content-sized density, responsive evidence pair, bounded alternatives, sticky actions, keyboard and selection identity
+
+> nearr@0.1.0 test:quick-check-rolodex-ux
+> ts-node -P scripts/tsconfig.json scripts/testQuickCheckRolodexUx.ts
+
+PASS Fieldnotes review: 24 actual component renders across 2 appearances, 4 width/text configurations and 0/1/5 photos; independent controls, provenance, omission, disabled save, motion and virtualized Activity
+PASS Quick Check shared rolodex, compact layout, swipe ownership, accessibility, selection, and multi-place regression contracts
+
+> nearr@0.1.0 test:vayrin-quick-check-evidence-ui
+> ts-node -P scripts/tsconfig.json scripts/testVayrinQuickCheckEvidenceUi.ts && npm run test:share-evidence-lifecycle
+
+PASS Vayrin Quick Check evidence-first frames, galleries, truthful confidence, evidence, selection, fixtures, persistence, lifecycle, and safe-area CTA
+
+> nearr@0.1.0 test:share-evidence-lifecycle
+> ts-node -P scripts/tsconfig.json scripts/testShareEvidenceLifecycle.ts
+
+[test] share evidence lifecycle: 20 checks passed
+
+> nearr@0.1.0 test:prebuild
+> npm run typecheck && npm run test:e2e:harness && npm run test:app-environment && npm run test:google-places-config && npm run test:paid-config && npm run test:dev-db-guard && npm run test:root-layout-loop && npm run test:notification-tap-routing && npm run test:update-args && npm run test:share-extension-env && npm run test:dev-login-gating && npm run test:saved-place-edits && npm run test:place-note && npm run test:place-category && npm run test:category-pipeline && npm run test:place-category-migration && npm run test:google-places-fields && npm run test:auto-save-undo && npm run test:share-extension-compact && npm run test:share-completion && npm run test:queue-inbox && npm run test:source-enrichment && npm run test:source-thumbnails && npm run test:share-worker-boot && npm run test:share-job-result && npm run test:map-group-focus && npm run test:save-navigation && npm run test:phase2-ui-render && npm run test:address-first && npm run test:address-match && npm run test:multi-address && npm run test:multi-place-batch && npm run test:multi-select-places && npm run test:place-recommendations && npm run test:recovery-hints && npm run test:safety-description-only && npm run test:generic-caption-guard && npm run test:platform-noise && npm run test:manual-fallback && npm run test:tiktok-url && npm run test:platform-url-classification && npm run test:evidence-provenance && npm run test:notification-dedupe && npm run test:account && npm run test:share-job-mapping && npm run test:share-job-routing && npm run test:share-url-validation && npm run test:feature-flags && npm run test:vayrin-presentation && npm run test:vayrin-ui && npm run test:shared-auth-session && npm run test:share-routes && npm run test:sanitize-error && npm run test:breadcrumbs && npm run test:once-latch && npm run test:open-saved-place && npm run test:shared-auth-sync && npm run test:share-submission && npm run test:share-job-client && npm run test:share-jobs-dedupe && npm run test:share-jobs-realtime && npm run test:live-location && npm run test:place-share && npm run test:place-share-source && npm run test:wrong-place && npm run test:ai-place-note && npm run test:note-editor && npm run test:ai-note-integration && npm run test:video-ai-note-guarantee && npm run test:saved-browse && npm run test:place-image && npm run test:open-original-post && npm run test:share-jobs-ui && npm run test:quick-check && npm run test:share-phase1-ui && npm run test:share-phase1-render && npm run test:media-fallback && npm run test:media-evidence && npm run test:media-finalize && npm run test:post-save-enrichment && npm run test:media-reliability && npm run test:media-adversarial && npm run test:media-mentions && npm run test:media-autosave && npm run test:geographic-context && npm run test:geographic-context-source && npm run test:media-run-diagnostics && npm run test:shared-geo-context && npm run test:shared-city-context && npm run test:geographic-destinations && npm run test:source-location-tag && npm run test:no-match-diagnostics && npm run test:provider-api-path && npm run test:name-driven && npm run test:onboarding-routing && npm run test:onboarding-demo && npm run test:onboarding-v2 && npm run test:onboarding-anonymous && npm run test:auth-deeplink && npm run test:auth-account-state && npm run test:auth-errors && npm run test:auth-recovery && npm run test:auth-screen-contracts && npm run test:nearby-eligibility && npm run test:nearby-arbitration && npm run test:reminder-distance-cleanup && npm run test:offline-mode && npm run test:offline-reminders && npm run test:saved-place-snapshots && npm run test:onboarding-google-integration && npm run test:onboarding-fully-offline && npm run test:onboarding-no-live-services && npm run test:onboarding-authentic-phase2-auth && npm run test:onboarding-install-lifecycle
+
+
+> nearr@0.1.0 typecheck
+> tsc --noEmit
+
+
+> nearr@0.1.0 test:e2e:harness
+> ts-node -P scripts/tsconfig.json scripts/testE2EHarness.ts
+
+PASS the production and development refs are readable from devTarget.mjs
+PASS the two refs are distinct
+PASS the guard refuses the same production ref the deployment scripts refuse
+PASS a development Supabase URL is accepted
+PASS the PRODUCTION Supabase project is refused
+PASS an unrecognised Supabase project is refused
+PASS a missing Supabase URL is refused
+PASS a non-Supabase URL is refused as ambiguous
+PASS refFromSupabaseUrl ignores a non-Supabase host
+PASS the development Railway lane is accepted
+PASS the PRODUCTION Railway environment is refused
+PASS the PRODUCTION Railway service is refused
+PASS an unrecognised Railway environment is refused
+PASS an unrecognised Railway project is refused
+PASS a Railway snapshot with no identity at all is refused
+PASS the development worker URL is accepted
+PASS a worker URL that does not match the deployment is refused
+PASS a non-HTTPS worker URL is refused
+PASS a worker URL on an unknown host with nothing to compare against is refused
+PASS a missing worker URL is refused
+PASS a correctly configured Nearr-Dev produces no required findings
+PASS a missing Edge MEDIA_FALLBACK_ENABLED is a REQUIRED failure
+PASS the MEDIA_FALLBACK_ENABLED failure explains the consequence
+PASS a missing Edge INSTAGRAM_MEDIA_RESOLVER_ENABLED is a REQUIRED failure
+PASS the INSTAGRAM_MEDIA_RESOLVER_ENABLED failure explains the consequence
+PASS a missing Edge TIKTOK_MEDIA_RESOLVER_ENABLED is a REQUIRED failure
+PASS the TIKTOK_MEDIA_RESOLVER_ENABLED failure explains the consequence
+PASS a missing Edge FACEBOOK_MEDIA_RESOLVER_ENABLED is a REQUIRED failure
+PASS the FACEBOOK_MEDIA_RESOLVER_ENABLED failure explains the consequence
+PASS an Edge flag whose value is not the literal "true" is a REQUIRED failure
+PASS the flag check never needs a plaintext value (sha256("true") is the whole test)
+PASS a missing Railway MEDIA_FALLBACK_ENABLED is a REQUIRED failure
+PASS a missing Railway INSTAGRAM_MEDIA_RESOLVER_ENABLED is a REQUIRED failure
+PASS a missing Railway TIKTOK_MEDIA_RESOLVER_ENABLED is a REQUIRED failure
+PASS a missing Railway FACEBOOK_MEDIA_RESOLVER_ENABLED is a REQUIRED failure
+PASS a missing Railway VAYRIN_VISUAL_GEOLOCATION_ENABLED is a REQUIRED failure
+PASS a SHARE_MEDIA_WORKER_SECRET mismatch between Edge and Railway is a REQUIRED failure
+PASS the SHARE_MEDIA_WORKER_SECRET mismatch report contains no secret value
+PASS a MEDIA_FINALIZE_SECRET mismatch between Edge and Railway is a REQUIRED failure
+PASS the MEDIA_FINALIZE_SECRET mismatch report contains no secret value
+PASS a SUPABASE_URL mismatch between Edge and Railway is a REQUIRED failure
+PASS the SUPABASE_URL mismatch report contains no secret value
+PASS a service-role key difference is reported as advisory drift
+PASS a service-role key difference does NOT fail readiness (the Edge copy is platform-injected)
+PASS a SUPABASE_URL mismatch is still required (the two services must address one project)
+PASS TikTok on for the worker but off for the Edge is reported as required drift
+PASS TikTok Edge/worker drift fails phone-test readiness
+PASS Facebook on for the Edge but off for the worker is required drift
+PASS Instagram flag drift IS a required failure
+PASS a missing Railway SUPABASE_SERVICE_ROLE_KEY is a REQUIRED failure
+PASS a wrong MEDIA_ANALYSIS_PROVIDER is a REQUIRED failure
+PASS a legal job path produces no violations
+PASS the job trail is human readable
+PASS a terminal job going back to processing is a violation
+PASS a task retry (processing -> queued) is legal
+PASS a terminal task being requeued is a violation
+PASS an undeclared status is a violation
+PASS declared job progress stages are recognised
+PASS an undeclared job progress stage is rejected
+PASS declared task progress stages are recognised
+PASS an undeclared task progress stage is rejected
+PASS an unclaimed task is not counted as claimed
+PASS a claimed task is recognised by attempts + lease
+PASS a missing task is not claimed
+PASS media_fallback_enqueued with no media task FAILS
+PASS media_fallback_enqueued with a media task passes
+PASS no fallback and no task passes
+PASS a completed worker with an unfinalized parent FAILS
+PASS a completed worker with a finalized parent passes
+PASS a terminal auto_save with no saved_place_id FAILS
+PASS a terminal auto_save with a saved place passes
+PASS a completed job with no decision at all FAILS
+PASS creator-name-only evidence that auto-saved FAILS
+PASS creator-name-only evidence that persisted a place FAILS even without auto_save
+PASS creator-name-only evidence routed to needs_help passes
+PASS the cheap path with no media task passes
+PASS the cheap path that created a media task FAILS
+PASS Fixture A no longer depends on Wikipedia
+PASS Fixture A uses the fixed Nearr-Dev metadata page and exact Google identity
+PASS auto_save with a saved place counts as resolved even with zero candidates
+PASS a confirmation route with candidates and no saved place counts as resolved
+PASS a multi-place batch that recorded savedPlaceIds counts as resolved
+PASS no saved place, no candidates and no batch saves FAILS
+PASS savedPlaceIdsOnPayload ignores a payload without the field
+PASS pollUntil returns as soon as the predicate holds
+PASS a timeout reports the LAST OBSERVED state rather than only the elapsed time
+PASS a row that never appears is a timeout with no last value
+PASS a long poll interval cannot overshoot the stage timeout
+PASS a stage timeout has a default
+PASS a stage timeout is overridable from the environment
+PASS an implausibly small override is ignored
+PASS create-share-job (12ms)
+FAIL Railway never claimed task (30.0s) — no claim within 30s
+       lastObservedTask: queued
+       correlationId: nearr-e2e-selftest
+       jobId: job-123
+       taskId: task-456
+PASS the reporter tracks failures
+PASS a run with a failure is not ok
+PASS a failure carries the identifiers needed to search the deployed logs
+PASS a (1ms)
+SKIP b — paid
+PASS a skipped stage does not fail the run
+PASS package.json declares test:e2e:dev
+PASS test:prebuild does NOT run test:e2e:dev
+PASS package.json declares test:e2e:dev:config
+PASS test:prebuild does NOT run test:e2e:dev:config
+PASS package.json declares test:e2e:dev:dispatch
+PASS test:prebuild does NOT run test:e2e:dev:dispatch
+PASS package.json declares test:e2e:dev:pipeline
+PASS test:prebuild does NOT run test:e2e:dev:pipeline
+PASS package.json declares test:e2e:dev:safety
+PASS test:prebuild does NOT run test:e2e:dev:safety
+PASS package.json declares test:e2e:dev:vayrin-live
+PASS test:prebuild does NOT run test:e2e:dev:vayrin-live
+PASS package.json declares verify:dev:e2e
+PASS test:prebuild does NOT run verify:dev:e2e
+PASS test:prebuild DOES run the offline harness test
+PASS the deployed commands all target scripts/e2e/
+PASS no E2E module hardcodes the production project ref
+PASS the Railway environment is hardcoded rather than taken from a flag
+
+All E2E harness tests passed.
+
+> nearr@0.1.0 test:app-environment
+> ts-node -P scripts/tsconfig.json scripts/testAppEnvironment.ts
+
+PASS production/production is clean
+PASS development/development is clean
+PASS preview/development is clean
+PASS prod app + dev backend is flagged
+PASS prod app + dev backend BLOCKS the build
+PASS dev app + prod backend is flagged
+PASS dev app + prod backend BLOCKS the build
+PASS preview app + prod backend is flagged too
+PASS ALLOW_PRODUCTION_BACKEND cannot clear the dev->prod rule
+PASS ALLOW_PRODUCTION_BACKEND is itself a blocking retired override
+PASS ALLOW_PRODUCTION_BACKEND does NOT excuse a prod app on a dev backend
+PASS a falsey acknowledgement does not clear the rule
+PASS undeclared APP_ENV defaults to development
+PASS undeclared BACKEND_ENV defaults to production
+PASS undeclared reports APP_ENV_MISSING
+PASS undeclared reports BACKEND_ENV_MISSING
+PASS a completely undeclared build BLOCKS (dev app reaching prod backend)
+PASS a garbage APP_ENV is treated as undeclared, not as production
+PASS missing APP_ENV on a dev backend is advisory, not blocking
+PASS mismatched backend hosts are flagged
+PASS mismatched backend hosts BLOCK
+PASS partially configured hosts (some unset) do not false-positive
+PASS any declared lane without a Supabase URL is blocked
+PASS development label with production project is blocked even when labels agree
+PASS production label with development project is blocked even when labels agree
+PASS a custom/unrecognised hosted project cannot masquerade as Nearr-Dev
+PASS demo mode in production is flagged
+PASS dev password login in production is flagged
+PASS debug logs in production is flagged
+PASS dev mock monetization in production is blocked
+PASS the same dev switches are fine in development
+PASS hostOf strips path
+PASS hostOf strips port
+PASS hostOf lowercases
+PASS hostOf strips userinfo
+PASS hostOf of empty is null
+PASS hostOf of garbage is null
+PASS hostOf of non-string is null
+PASS supabaseProjectRefOfHost extracts a standard project ref
+PASS supabaseProjectRefOfHost rejects a custom host
+PASS summary identifies Nearr-Dev without exposing configuration values
+PASS validateEnvironment does not mutate its input
+
+All app-environment tests passed.
+
+> nearr@0.1.0 test:google-places-config
+> ts-node -P scripts/tsconfig.json scripts/testGooglePlacesConfig.ts
+
+PASS Google Places dedicated-key selection and development fallback guard
+
+> nearr@0.1.0 test:paid-config
+> ts-node -P scripts/tsconfig.json scripts/testRevenueCatConfig.ts && ts-node -P scripts/tsconfig.json scripts/testPaidApiCredentials.ts
+
+PASS actual public env reaches Purchases.configure through generated Expo extra
+PASS missing leaves StoreKit closed before native SDK load
+PASS empty leaves StoreKit closed before native SDK load
+PASS whitespace leaves StoreKit closed before native SDK load
+PASS no server credential fallback leaves StoreKit closed before native SDK load
+PASS no stale app.json key fallback leaves StoreKit closed before native SDK load
+PASS wrong or malformed public slot is rejected without value disclosure
+PASS wrong or malformed public slot is rejected without value disclosure
+PASS wrong or malformed public slot is rejected without value disclosure
+PASS wrong or malformed public slot is rejected without value disclosure
+PASS wrong or malformed public slot is rejected without value disclosure
+PASS wrong or malformed public slot is rejected without value disclosure
+PASS valid config does not bypass server catalog qualification
+PASS public Apple config does not enable Android StoreKit
+14 actual Expo-to-RevenueCat SDK configuration checks passed; no live SDK or network.
+8 actual paid API credential-routing scenarios passed: v1/v2 separation, sync/restore, missing-key denial, unchanged existing ledger; no live requests.
+
+> nearr@0.1.0 test:dev-db-guard
+> ts-node -P scripts/tsconfig.json scripts/testDevDatabaseGuard.ts
+
+PASS production ref exits non-zero
+PASS production ref is named as production
+PASS production ref never reaches the Supabase CLI
+PASS unknown ref exits non-zero
+PASS unknown ref explains it cannot be proven safe
+PASS unknown ref never reaches the Supabase CLI
+PASS development ref is accepted
+PASS development ref reports the target
+PASS without --yes it is a dry run
+PASS without --yes it never reaches the Supabase CLI
+PASS a successful dry run confirms the CLI link agrees
+PASS dev:functions refuses the production ref
+PASS dev:functions names it as production
+PASS dev:functions never reaches the Supabase CLI for production
+PASS dev:functions refuses an unrecognised ref
+PASS dev:functions reads NEARR_DEV_SUPABASE_REF from .env.local
+PASS dev:functions requires --yes before deploying
+PASS dev:functions preserves the first positional function selector
+PASS dev:functions does not broaden a selected deploy to unrelated functions
+PASS dev:functions preserves a single positional target
+PASS dev:functions does not widen one target to all functions
+
+All dev-database-guard tests passed.
+
+> nearr@0.1.0 test:root-layout-loop
+> ts-node -P scripts/tsconfig.json scripts/testRootLayoutRenderLoop.ts
+
+PASS reverted notification-ownership symbol absent: planNotificationNavigation
+PASS reverted notification-ownership symbol absent: takePendingNotificationNavigation
+PASS reverted notification-ownership symbol absent: setPendingNotificationNavigation
+PASS reverted notification-ownership symbol absent: clearPendingNotificationNavigation
+PASS reverted notification-ownership symbol absent: claimUiForNotification
+PASS reverted notification-ownership symbol absent: flushPendingNotificationNavigation
+PASS reverted notification-ownership symbol absent: runNotificationNavigation
+PASS reverted notification-ownership symbol absent: createNotificationOpenIntent
+PASS reverted notification-ownership symbol absent: notificationOwnsVisibleSurface
+PASS the notificationNavigation module is not imported by the root layout
+PASS lib/notificationNavigation.ts does not exist
+PASS the root layout does not dismiss the stack on a notification tap
+PASS the notification controller does not dismiss or reset the root stack
+PASS the root layout does not subscribe to expo-router rootState
+PASS useRootNavigationState is not imported by the root layout
+PASS route reads still go through the deepEqual-guarded snapshot
+PASS AuthGate still routes signed-out users to onboarding
+PASS AuthGate still pulls signed-in users into the tabs
+PASS AuthGate guards current and in-flight onboarding routes before replace
+PASS RootLayout owns no notification response listener or cold-start retrieval
+PASS RootLayout owns no notification response or pending-intent state
+PASS the renderless controller is mounted inside the existing auth shell
+PASS the root app owns a visible startup surface while dependencies hydrate
+PASS the root startup watchdog exposes explicit recovery
+PASS notification responses are still handled
+PASS cold-start notification responses are still read
+PASS notification action buttons still reach their handler
+PASS notification routing cannot block root rendering
+
+All root-layout startup-safety tests passed.
+
+> nearr@0.1.0 test:notification-tap-routing
+> ts-node -P scripts/tsconfig.json scripts/testNotificationTapRouting.ts
+
+PASS centralized notification tap routing, startup safety, stale fallback, and exactly-once delivery
+
+> nearr@0.1.0 test:update-args
+> ts-node -P scripts/tsconfig.json scripts/testUpdateArgs.ts
+
+PASS a spaced message survives as ONE argv element
+PASS the message is never split on spaces
+PASS the -m flag is still adjacent to its value
+PASS parseUpdateArgs reads the spaced message
+PASS parseUpdateArgs reads --message=value form
+PASS parseUpdateArgs strips --yes from passthrough
+PASS parseUpdateArgs reports confirmation
+PASS parseUpdateArgs defaults to unconfirmed
+PASS release record is stripped from EAS passthrough
+PASS shell metacharacters stay one argument: "msg; echo pwned"
+PASS shell metacharacters stay one argument: "msg && echo pwned"
+PASS shell metacharacters stay one argument: "msg $(echo pwned)"
+PASS shell metacharacters stay one argument: "msg `echo pwned`"
+PASS shell metacharacters stay one argument: "msg | echo pwned"
+PASS shell metacharacters stay one argument: "msg\" & echo pwned & \""
+PASS shell metacharacters stay one argument: "msg %PATH%"
+PASS development wrapper targets channel development
+PASS development wrapper targets environment development
+PASS preview wrapper targets channel preview
+PASS preview wrapper targets environment preview
+PASS production wrapper targets channel production
+PASS production wrapper targets environment production
+PASS development never mentions the production channel
+PASS preview never mentions the production channel
+PASS dev wrapper refuses --channel production
+PASS dev wrapper refuses --channel=production
+PASS dev wrapper refuses --environment production
+PASS dev wrapper refuses --branch
+PASS dev wrapper refuses --auto
+PASS preview wrapper refuses retargeting too
+PASS an unknown lane is refused
+PASS harmless flags are still forwarded
+PASS eas resolves to something runnable without a shell
+PASS eas is not resolved through a .cmd/.bat shim
+PASS eas resolves to a native executable or node + a JS entry
+
+All update-argument tests passed.
+
+> nearr@0.1.0 test:share-extension-env
+> ts-node -P scripts/tsconfig.json scripts/testShareExtensionEnv.ts
+
+PASS the expo-share-extension plugin is configured
+PASS expo-updates is excluded from the extension (so an OTA cannot change it)
+PASS expo-dev-client is excluded from the extension (so Metro cannot serve it)
+PASS the extension reads the canonical environment declaration
+PASS the extension checks BLOCKING environment violations
+PASS the extension logs a non-secret environment identity
+PASS a misconfigured extension refuses instead of submitting
+PASS the environment guard runs BEFORE createShareJob
+PASS the environment guard also runs before legacy process-share-link fetch
+PASS legacy config errors never hand off to the equally misconfigured host
+PASS the extension resolves its endpoint rather than hardcoding one
+PASS no Supabase project URL is hardcoded in the extension
+PASS the extension never interpolates a credential value into a log
+PASS presence-only token logging is what it does instead
+PASS no ANON_KEY appears in the extension at all
+PASS no SERVICE_ROLE_KEY appears in the extension at all
+PASS no GEMINI_API_KEY appears in the extension at all
+PASS a development lane on a production backend is BLOCKING
+PASS an extension whose job endpoint drifted to another host is BLOCKING
+PASS a coherent development extension is allowed to submit
+PASS consistent production URLs cannot masquerade as development
+
+All share-extension environment tests passed.
+
+> nearr@0.1.0 test:dev-login-gating
+> ts-node -P scripts/tsconfig.json scripts/testDevLoginGating.ts
+
+PASS the developer-login gate exists
+PASS the gate uses the canonical environment abstraction
+PASS the gate no longer depends on __DEV__
+PASS the explicit opt-in flag is still required on top of the lane
+PASS the gate is a conjunction, not an either/or
+PASS no developer password literal is committed
+PASS the developer password is never logged
+PASS production hides developer tools
+PASS an UNDECLARED lane hides developer tools
+PASS a garbage lane hides developer tools
+PASS development shows developer tools
+PASS preview shows developer tools
+PASS the dev-login flag in a production build is a BLOCKING violation
+
+All developer-login gating tests passed.
+
+> nearr@0.1.0 test:saved-place-edits
+> ts-node -P scripts/tsconfig.json scripts/testSavedPlaceEdits.ts
+
+PASS saved-place edit hydration
+
+> nearr@0.1.0 test:place-note
+> ts-node -P scripts/tsconfig.json scripts/testPlaceNote.ts
+
+PASS place-note derivation
+
+> nearr@0.1.0 test:place-category
+> ts-node -P scripts/tsconfig.json scripts/testPlaceCategory.ts
+
+PASS expanded Nearr taxonomy, provider precedence, guarded fallback, regressions, and filters
+
+> nearr@0.1.0 test:category-pipeline
+> ts-node -P scripts/tsconfig.json scripts/testCategoryPipelineContracts.ts
+
+PASS metadata, media, manual, multi-place, quick-check, duplicate, and correction category contracts
+
+> nearr@0.1.0 test:place-category-migration
+> ts-node -P scripts/tsconfig.json scripts/testPlaceCategoryMigration.ts
+
+PASS category and undo migration contract
+
+> nearr@0.1.0 test:google-places-fields
+> ts-node -P scripts/tsconfig.json scripts/testGooglePlacesFields.ts
+
+[places] api_new_service_blocked falling_back=places_legacy effect=primary_type_unavailable action=allow_places_api_new_on_server_key
+PASS Google Places v1 restricted-key fallback and field contracts
+
+> nearr@0.1.0 test:auto-save-undo
+> ts-node -P scripts/tsconfig.json scripts/testAutoSaveUndo.ts
+
+PASS auto-save undo analytics buckets
+
+> nearr@0.1.0 test:share-extension-compact
+> ts-node -P scripts/tsconfig.json scripts/testShareExtensionCompact.ts
+
+PASS compact native share-extension layout and Swift structure
+
+> nearr@0.1.0 test:share-completion
+> ts-node -P scripts/tsconfig.json scripts/testShareCompletionUi.ts
+
+PASS share completion surface layout, copy, dismissal, and Reduce Motion
+
+> nearr@0.1.0 test:queue-inbox
+> ts-node -P scripts/tsconfig.json scripts/testQueueInbox.ts
+
+PASS queue inbox sections, clear completed, swipe policy, accessibility, empty state
+
+> nearr@0.1.0 test:source-enrichment
+> ts-node -P scripts/tsconfig.json scripts/testSavedPlaceSourceEnrichment.ts
+
+PASS saved-place source enrichment: existing saves are enriched, never discarded or overwritten
+
+> nearr@0.1.0 test:source-thumbnails
+> ts-node -P scripts/tsconfig.json scripts/testPlaceSourceThumbnails.ts
+
+PASS source-specific evidence preview selection, thumbnail fallback, and source-card behavior
+
+> nearr@0.1.0 test:share-worker-boot
+> deno run --no-config --allow-run --allow-net scripts/testProcessShareJobsBoot.js
+
+PASS process-share-jobs boots and reaches its auth guard
+
+> nearr@0.1.0 test:share-job-result
+> ts-node -P scripts/tsconfig.json scripts/testShareJobResult.ts
+
+PASS share-job mention result contract
+
+> nearr@0.1.0 test:map-group-focus
+> ts-node -P scripts/tsconfig.json scripts/testMapGroupFocus.ts
+
+PASS authoritative multi-save and map-group focus contracts
+
+> nearr@0.1.0 test:save-navigation
+> ts-node -P scripts/tsconfig.json scripts/testSaveCompletionNavigation.ts
+
+PASS save completion navigation dismisses the queue and focuses the map exactly once
+
+> nearr@0.1.0 test:phase2-ui-render
+> ts-node -P scripts/tsconfig.json scripts/testPhase2UiRenderContracts.ts
+
+PASS Phase 2 grouped UI render contracts
+
+> nearr@0.1.0 test:address-first
+> ts-node -P scripts/tsconfig.json scripts/testAddressFirst.ts
+
+PASS A1: address extracted
+PASS A2: street includes 19688 Beach Blvd
+PASS A3: city Huntington Beach
+PASS A4: state CA
+PASS A5: zip 92648
+PASS A6: paired venue uses handle-derived name (Capones Cucina)
+PASS A7: paired venue is NOT Beach Blvd
+PASS B1: address extracted
+PASS B2: street includes 30012 Crown Valley Pkwy
+PASS B3: suite preserved in raw
+PASS B4: city Laguna Niguel
+PASS B5: state CA
+PASS B6: zip 92677
+PASS B7: venue paired (Brooklyn City Pizzeria)
+PASS B8: paired venue remains Brooklyn City Pizzeria & Market
+PASS B9: paired venue is NOT Crown Valley Pkwy
+PASS C1: type-first address extracted (Paseo Adelanto)
+PASS C2: city San Juan Capistrano
+PASS C3: full state name normalized to CA
+PASS C4: zip 92675
+PASS D1: address extracted (126 Main St)
+PASS D2: city Huntington Beach
+PASS D3: state CA
+PASS D4: zip 92648
+PASS D5: paired venue is 2nd Floor
+PASS D6: paired venue is NOT Main St
+PASS E1: three addresses extracted
+PASS E2: Telegraph Rd present
+PASS E3: W Central Ave + suite present
+PASS E4: Railroad St present
+PASS E5: city Downey preserved
+PASS E6: city Brea preserved
+PASS E7: city City of Industry preserved
+PASS E8: pairing does not become Telegraph Rd
+PASS E9: pairing does not become Central Ave
+PASS E10: pairing does not become Railroad St
+PASS E1: extracted
+PASS E2: street + suite preserved
+PASS F1: extracted without zip
+PASS F2: city Huntington Beach
+PASS F3: state CA
+PASS F4: zip null
+PASS G1: no address from ratings/prices
+PASS H1: no address from list count
+PASS I1: phone number not an address
+PASS I2: bare number + noun not an address
+PASS I3: lowercase "via" prose not an address
+
+All address-first assertions passed.
+
+> nearr@0.1.0 test:address-match
+> ts-node -P scripts/tsconfig.json scripts/testAddressMatch.ts
+
+PASS 126 Main St vs Google formatted (ZIP + country)
+PASS St → Street suffix expansion
+PASS Street → St suffix contraction
+PASS Ave ↔ Avenue
+PASS Blvd ↔ Boulevard
+PASS Different street number rejected
+PASS Different street name rejected
+PASS Missing street number rejected (no false positive on just "Main St")
+PASS Null/empty rejected
+PASS Unit suffix ignored (Suite/#)
+PASS caption "126 Main St" + Places "126 Main St, …, USA" → address match
+PASS score crosses 0.75 places_strong_match floor (was 0.70)
+PASS name overlap recognised for "2nd Floor"
+PASS no-address path still scores city + name (regression: 0.70)
+PASS no-address path reports address=miss (no false positive)
+
+All address-comparator tests passed
+
+> nearr@0.1.0 test:multi-address
+> ts-node -P scripts/tsconfig.json scripts/testMultiAddressExtraction.ts
+
+PASS A1: single address produces exactly one entry
+PASS A2: single address raw matches
+PASS B1: two distinct addresses → length 2
+PASS B2: first address detected (Tustin St)
+PASS B3: second address detected (Main St)
+PASS B4: city for first address parsed
+PASS B5: city for second address parsed
+PASS C1: repeated identical address → exactly one entry
+PASS D1: three distinct addresses → length 3
+PASS D2: extractLikelyAddresses respects max=2
+PASS E1: numbered list with 3 addresses → length 3
+PASS F1: caption with no addresses → empty array
+PASS G1: extractLikelyAddress returns the FIRST address only
+
+All multi-address extraction assertions passed.
+
+> nearr@0.1.0 test:multi-place-batch
+> ts-node -P scripts/tsconfig.json scripts/testMultiPlaceBatch.ts
+
+PASS stable persistent multi-place batch, inline resolution, dedupe, and partial-save behavior
+
+> nearr@0.1.0 test:multi-select-places
+> ts-node -P scripts/tsconfig.json scripts/testMultiSelectPlaces.ts
+
+PASS Fieldnotes review: 24 actual component renders across 2 appearances, 4 width/text configurations and 0/1/5 photos; independent controls, provenance, omission, disabled save, motion and virtualized Activity
+PASS multi-select place semantics, persistence, accessibility, and Vayrin integration
+
+> nearr@0.1.0 test:place-recommendations
+> ts-node -P scripts/tsconfig.json scripts/testPlaceRecommendations.ts
+
+[places] recommendations unavailable { source: 'google_place_id', message: 'offline' }
+Place recommendations tests passed.
+
+> nearr@0.1.0 test:recovery-hints
+> ts-node -P scripts/tsconfig.json scripts/testRecoveryHints.ts
+
+PASS paradisedynasty_usa → "Paradisedynasty" (usa suffix stripped, compact preserved)
+PASS paradisedynastyusa → "Paradisedynasty" (compact, usa stripped)
+PASS burritoslapalma → "Burritoslapalma"
+PASS 2nd_floor_hb → "2nd Floor" (hb suffix stripped)
+PASS dametra_fresh_official → "Dametra Fresh"
+PASS usa → null (nothing left)
+PASS empty → null
+PASS southcoastplaza is mall
+PASS westfieldcentury is NOT mall
+PASS blossom_mall is mall
+PASS americanaattheoutlets is mall (outlets)
+PASS paradisedynasty_usa is NOT mall
+PASS citadeloutlets is mall
+PASS venue candidates exclude poster and mall
+PASS mall context label = "Southcoastplaza" (compact, not word-split)
+PASS no tagged handles → no venue candidates
+PASS no mall context
+PASS poster=tagged → still excluded as venue candidate (handle-only guard)
+PASS name="3333 Bristol St" is generic
+PASS name="3333 Bristol Street" is generic (suffix variation)
+PASS name="Paradise Dynasty" is NOT generic
+PASS name="South Coast Plaza" is NOT generic (no leading digits)
+PASS null candidate → false
+PASS null captionAddress → false
+PASS address with no leading digits in candidate → false
+PASS first query is "Paradisedynasty 3333 Bristol St Costa Mesa CA" (venue+address first)
+PASS bare address comes after venue+mall variants
+PASS mall-context query is generated for primary venue hint
+PASS second venue hint (Burritoslapalma) also gets venue+address query
+PASS mall handle never appears as primary venue
+PASS poster handle never appears as primary venue
+PASS two venue handles → first hint is first tag (caption order preserved)
+PASS second venue hint still gets venue+address query
+PASS no venue hints → only bare-address queries produced
+PASS influencer + single venue handle → venue first
+PASS influencer handle does not appear as venue
+PASS mall-only tags → no venue hints, only bare address
+PASS mall is never the venue even when it is the only tagged handle
+PASS extractCityStateContext: "Santa Cruz, CA" → Santa Cruz / CA
+PASS extractCityStateContext: "in Newport Beach" prose → Newport Beach / CA
+PASS extractCityStateContext: #santacruz hashtag → Santa Cruz / CA
+PASS extractCityStateContext: #downtownsantacruz hashtag → Santa Cruz / CA
+PASS extractCityStateContext: unknown city → null
+PASS extractCityStateContext: empty → null
+PASS looksLikeRoundupPost: "top 5 burgers" → true
+PASS looksLikeRoundupPost: "#5 from @woodennickel_wv" → true
+PASS looksLikeRoundupPost: "best burger" alone → false (single venue context)
+PASS looksLikeRoundupPost: 3+ tagged handles ALONE → false (Patch 5: not enough signal)
+PASS looksLikeRoundupPost: 3+ tagged handles + list language → true
+PASS looksLikeRoundupPost: 1 tagged handle → false
+PASS looksLikeRoundupPost: "2nd Floor 126 Main St Huntington Beach" + collab tags → false
+PASS looksLikeRoundupPost: "Seabright Deli 415 Seabright Ave Santa Cruz" + tags → false
+PASS looksLikeRoundupPost: "Top 5 burger spots" → true
+PASS looksLikeRoundupPost: "list of our favorite pizza places" → true
+PASS looksLikeRoundupPost: "our picks for sushi" → true
+PASS looksLikeRoundupPost: 5 numbered list items → true
+PASS looksLikeRoundupPost: list keyword on a single-place post with full address → false
+PASS looksLikeRoundupPost: idiomatic "Round up your crew" → false
+PASS looksLikeRoundupPost: "roundup" (one word) still → true
+PASS looksLikeRoundupPost: "round-up" (hyphen) still → true
+PASS extractCaptionVenueHints: "Seabright Deli In Santa Cruz" → ["Seabright Deli"]
+PASS extractCaptionVenueHints: "POINT MARKET AND CAFE, Santa Cruz, CA" → ["POINT MARKET AND CAFE"]
+PASS extractCaptionVenueHints: "📍Seabright Deli" pin → ["Seabright Deli"]
+PASS extractCaptionVenueHints: no patterns → []
+PASS extractCaptionVenueHints: descriptor first-word "Easily ..." → []
+PASS extractCaptionVenueHints: "11AM - 3PM 📍" time fragment → []
+PASS extractCaptionVenueHints: "The Best ..." descriptor → []
+PASS normalizeCompactName: "Seabright Deli" → "seabrightdeli"
+PASS normalizeCompactName: "Point Market & Cafe" → "pointmarketcafe"
+PASS normalizeCompactName: accents stripped
+PASS scenario: Seabright Deli — produces venue hint + Santa Cruz city
+PASS scenario: Tacos El Chuy Truck — handle becomes venue hint, city detected
+PASS scenario: Taqueria Los Pericos — caption hint + explicit city
+PASS scenario: Point Market & Cafe — caption "Name, City, CA" pattern produces hint
+PASS scenario: Chocolate the Restaurant — hashtag city + poster-as-venue (when address-free path adds title hint)
+PASS scenario: Top 5 burgers — flagged as roundup, address-free branch must skip
+PASS compactNameMatches: bajasharkeeznb ↔ Baja Sharkeez (region suffix)
+PASS compactNameMatches: taquerialospericossocial ↔ Taqueria Los Pericos (social suffix)
+PASS compactNameMatches: paradisedynasty ↔ Paradise Dynasty (direct compact)
+PASS compactNameMatches: kenosrestaurant ↔ Keno's Restaurant (possessive)
+PASS compactNameMatches: famousdaves ↔ Famous Dave's Bar-B-Que
+PASS compactNameMatches: loadedcafe ↔ Loaded Cafe - Orange
+PASS compactNameMatches: phobamboorestaurant ↔ Pho Bamboo Vietnamese Restaurant (generic strip)
+PASS compactNameMatches: aptosstbbq ↔ Aptos St. BBQ (punctuation stripped)
+PASS compactNameMatches: pointmarketandcafe ↔ Point Market & Cafe (and ↔ &)
+PASS compactNameMatches: POINT MARKET AND CAFE ↔ Point Market & Cafe
+PASS compactNameMatches: house of pies ↔ houseofpies
+PASS compactNameMatches: Sandwich Spot NOT mangled by "and" stripping
+PASS compactNameMatches: Sandwich Spot ↔ unrelated → false
+PASS compactNameMatches: bajasharkeeznb ↔ Sushi Spot → false
+PASS compactNameMatches: paradisedynasty ↔ Panda Express → false
+PASS compactNameMatches: empty inputs → false
+PASS compactNameMatches: short stub inputs → false
+PASS compactNameMatches: symmetric for Baja Sharkeez
+PASS extractStateFromFormattedAddress: "...Costa Mesa, CA 92626, USA" → CA
+PASS extractStateFromFormattedAddress: "...Ferndale, MI 48220, USA" → MI
+PASS extractStateFromFormattedAddress: Toronto address → null
+PASS extractStateFromFormattedAddress: null input → null
+PASS isWrongLocationCandidate: Toronto candidate, expected CA → true
+PASS isWrongLocationCandidate: Michigan candidate, expected CA → true
+PASS isWrongLocationCandidate: CA candidate, expected CA → false
+PASS isWrongLocationCandidate: expectedState null → false (do not block)
+PASS isWrongLocationCandidate: candidate address null → false
+PASS isWrongLocationCandidate: NY candidate, expected NY → false
+PASS A. caption venue-before-pin → "Brooklyn City Pizzeria & Market"
+PASS B. IG title form → includes Brooklyn venue, excludes Foodie/Media/Instagram
+PASS B2. IG title form → Brooklyn venue ranks FIRST (used as placeNameHint)
+PASS C. IG description form → includes Brooklyn venue
+PASS D. generic IG metadata → no Media/Instagram/Foodie/Reel venue hints
+PASS isNoiseHandle: media (from @media CSS) → true
+PASS isNoiseHandle: @media → true (strips @)
+PASS isNoiseHandle: instagram → true
+PASS isNoiseHandle: foodie → true
+PASS isNoiseHandle: reel/reels → true
+PASS isNoiseHandle: media_kitchen → false (substring not matched)
+PASS isNoiseHandle: null/empty → false
+PASS E. isNoiseHandle: 2nd_floor_hb → false
+PASS E. isNoiseHandle: paradisedynasty_usa → false
+PASS E. isNoiseHandle: kenos → false
+PASS E. 2nd_floor_hb still → "2nd Floor"
+PASS E. paradisedynasty_usa still → "Paradisedynasty"
+
+All recovery-hint tests passed
+
+> nearr@0.1.0 test:safety-description-only
+> ts-node -P scripts/tsconfig.json scripts/testSafetyDescriptionOnly.ts
+
+PASS caption venue+address + strong Places + profile_blocked → auto_save
+PASS reasons include both profile_fetch_blocked (warning) and supersede marker
+PASS address-only + strong Places + profile_blocked → auto_save
+PASS venue+city + weak Places → candidate_confirmation (not auto)
+PASS reasons include weak_places_match
+PASS handle-only + profile_blocked → manual_fallback (no auto, no candidate)
+PASS handle-only reasons include handle_context_unverified
+PASS generic_content → manual_fallback (no auto)
+PASS generic_content reasons include weak_generic_text
+PASS strong caption + WEAK Places + profile_blocked → NOT auto_save
+PASS supersede marker NOT emitted when Places is weak
+PASS ambiguous_candidates → candidate_confirmation even with override
+PASS reasons include ambiguous_candidates
+
+All description-only safety tests passed
+
+> nearr@0.1.0 test:generic-caption-guard
+> ts-node -P scripts/tsconfig.json scripts/testGenericCaptionGuard.ts
+
+PASS casual: "pretty cool spot!! glad i stopped by..."
+PASS casual: "I’ll def be back"
+PASS casual: "so good must try"
+PASS casual: "obsessed with the vibes"
+PASS NOT casual: "NOVA Kitchen & Bar"
+PASS NOT casual: "Capo Leisure House"
+PASS A1 casual prose + no evidence → zero queries
+PASS A2 casual prose filtered even when generic seed allowed
+PASS D1 generic prose + no evidence → zero queries
+PASS B1 venue query present
+PASS B2 no tiktok query
+PASS C1 venue+city query present with gate OFF
+PASS E1 address query present with gate OFF
+
+All generic-caption-guard assertions passed.
+
+> nearr@0.1.0 test:platform-noise
+> ts-node -P scripts/tsconfig.json scripts/testPlatformNoise.ts
+
+PASS TikTok Inc. is noise (tiktok)
+PASS Tiktok Verification is noise
+PASS The Short Media - TikTok Marketing Agency is noise
+PASS ByteDance is noise (tiktok)
+PASS "Tik Tok" spaced is noise
+PASS NOVA Kitchen & Bar is NOT noise
+PASS Capo Leisure House is NOT noise
+PASS TikTok Inc. NOT noise for instagram
+PASS TikTok Inc. NOT noise for link
+PASS TikTok Inc. NOT noise for genericWeb
+PASS null name is not noise
+PASS "TikTok - Make Your Day" is boilerplate
+PASS "tiktok" is boilerplate
+PASS "Make Your Day" is boilerplate
+PASS "NOVA Kitchen & Bar" is NOT boilerplate
+PASS cleanPlacesSeed("TikTok - Make Your Day") → empty
+PASS cleanPlacesSeed keeps NOVA caption
+PASS B1 queries include "NOVA Kitchen & Bar"
+PASS B2 queries include the "and" variant
+PASS B3 NO query contains "tiktok"
+PASS A1 generic TikTok-only metadata yields NO query
+
+All platform-noise assertions passed.
+
+> nearr@0.1.0 test:manual-fallback
+> ts-node -P scripts/tsconfig.json scripts/testManualFallback.ts
+
+PASS valid candidate (id + name) is renderable
+PASS missing googlePlaceId is NOT renderable
+PASS empty googlePlaceId is NOT renderable
+PASS missing name is NOT renderable
+PASS empty name is NOT renderable
+PASS null is NOT renderable
+PASS undefined is NOT renderable
+PASS non-object is NOT renderable
+PASS numeric googlePlaceId is NOT renderable
+PASS #7 malformed array → only the single valid row survives
+PASS #7 malformed array → invalidCount counts the 5 skipped rows
+PASS #8 all-invalid array → zero valid candidates remain
+PASS #10 one invalid + one valid → exactly the valid candidate is kept
+PASS null/undefined/non-array input never throws and yields empty
+PASS prefers "<place> <city> <state>" over a raw address
+PASS address-only (no place) falls back to the address
+PASS place + city only (no state) → "<place> <city>"
+PASS no explicit signal → empty prefill (box stays empty, never auto-submits)
+PASS falls back to the raw query only when nothing structured exists
+PASS does not duplicate a state already present in the joined parts
+PASS manual fallback copy is the friendly inline message
+PASS manual fallback copy is NOT the old blocking-alert language
+
+ALL manual-fallback tests passed.
+
+> nearr@0.1.0 test:tiktok-url
+> ts-node -P scripts/tsconfig.json scripts/testTiktokUrl.ts
+
+PASS A7.1 canonical-equivalent direct form
+PASS A7.2 canonical-equivalent direct form
+PASS A7.3 canonical-equivalent direct form
+PASS A8 post id recovered
+PASS A9 creator identity recovered
+PASS A10 exact TikTok post supported
+PASS A11 different post ids remain distinct
+PASS A1 canonical platform=tiktok
+PASS A2 canonical url tracking stripped
+PASS A3 canonical not a short link
+PASS A4 canonical wasModified
+PASS A5 clean canonical idempotent
+PASS A6 clean canonical wasModified=false
+PASS B1 vm platform=tiktok
+PASS B2 vm isShortLink=true
+PASS B3 isTikTokShortLink helper
+PASS C1 vt platform=tiktok
+PASS C2 vt isShortLink=true
+PASS C3 vt tracking stripped but path kept
+PASS C4 /t/ path isShortLink=true
+PASS C5 recognized short link supported
+PASS C6 unsupported non-post: /
+PASS C6 unsupported non-post: /@creator
+PASS C6 unsupported non-post: /discover/best-pizza
+PASS C6 unsupported non-post: /search
+PASS H1 exact post host canonicalized
+PASS H2 isTikTokUrl helper
+PASS H3 oembed url built + encoded
+PASS H4 suffix-spoof host is not TikTok
+PASS H5 suffix-spoof URL has no TikTok identity
+PASS I1 instagram platform
+PASS I2 instagram tracking stripped, path kept
+PASS I3 instagram not short link
+PASS M1 malformed platform=unknown
+PASS M2 malformed url passthrough
+PASS M3 malformed host=null
+PASS M4 empty input safe
+PASS M5 non-http scheme rejected as unknown
+PASS G1 generic utm stripped, keep preserved
+PASS G2 generic platform=other
+
+All TikTok URL normalization assertions passed.
+
+> nearr@0.1.0 test:platform-url-classification
+> ts-node -P scripts/tsconfig.json scripts/testPlatformUrlClassification.ts && npm run test:tiktok-ingestion-parity && npm run test:facebook-url && npm run test:facebook-metadata
+
+PASS Instagram reel detected
+PASS Instagram post detected
+PASS Instagram legacySource=instagram
+PASS Instagram classify=instagram
+PASS Instagram tracking stripped, path kept
+PASS TikTok full URL detected
+PASS TikTok vm short link detected
+PASS TikTok vt short link detected
+PASS TikTok suffix spoof rejected
+PASS TikTok in query text does not classify host
+PASS TikTok legacySource=tiktok
+PASS YouTube /shorts/ detected
+PASS YouTube youtu.be detected
+PASS YouTube /watch?v= detected
+PASS YouTube legacySource=youtube
+PASS YouTube classify=youtube (shorts)
+PASS YouTube classify=youtube (youtu.be)
+PASS YouTube si= tracking stripped, v kept
+PASS Facebook /reel/ detected
+PASS Facebook /.../videos/ detected
+PASS Facebook fb.watch detected
+PASS Facebook legacySource=facebook
+PASS Facebook classify=facebook
+PASS Facebook tracking stripped, path kept
+PASS Snapchat Spotlight detected
+PASS Snapchat legacySource=snapchat
+PASS Snapchat classify=snapchat
+PASS Snapchat profile URL still classified snapchat (media-support gate is separate)
+PASS Unknown host falls to genericWeb
+PASS Empty string is unknown
+PASS genericWeb legacySource=link
+PASS twitter legacySource=link (no dedicated source_type)
+
+All platform URL classification assertions passed.
+
+> nearr@0.1.0 test:tiktok-ingestion-parity
+> ts-node -P scripts/tsconfig.json scripts/testTikTokIngestionParity.ts
+
+All TikTok ingestion parity assertions passed.
+
+> nearr@0.1.0 test:facebook-url
+> ts-node -P scripts/tsconfig.json scripts/testFacebookUrl.ts
+
+29 Facebook URL assertions passed.
+
+> nearr@0.1.0 test:facebook-metadata
+> ts-node -P scripts/tsconfig.json scripts/testFacebookMetadata.ts
+
+17 Facebook metadata assertions passed.
+
+> nearr@0.1.0 test:evidence-provenance
+> ts-node -P scripts/tsconfig.json scripts/testEvidenceProvenanceRegressions.ts
+
+PASS Snapchat: poster handle is the actual poster, not the platform
+PASS Snapchat: @Snapchat never enters venueHandles
+PASS Snapchat: no venue name hint derived from platform self-reference
+PASS Snapchat: "Snapchat" is never issued as a Places query
+PASS Snapchat: no explicit place evidence for a video with no venue content
+PASS YouTube: no poster handle derived from JS config noise
+PASS YouTube: ".null" never enters venueHandles
+PASS YouTube: roundup post correctly detected
+PASS YouTube: no venue name hint of "Null"
+PASS YouTube: no placeholder-only query ever issued
+PASS YouTube: zero queries => safe manual fallback (no caption venue evidence)
+PASS TikTok: App Store redirect host is recognized as non-content
+PASS isPlaceholderValue rejects "null"
+PASS isPlaceholderValue rejects "Null"
+PASS isPlaceholderValue rejects "<Null>"
+PASS isPlaceholderValue rejects "undefined"
+PASS isPlaceholderValue rejects "<undefined>"
+PASS isPlaceholderValue rejects "none"
+PASS isPlaceholderValue rejects "n/a"
+PASS isPlaceholderValue rejects "N/A"
+PASS isPlaceholderValue rejects "unknown"
+PASS isPlaceholderValue rejects "NaN"
+PASS isPlaceholderValue rejects ""
+PASS isPlaceholderValue rejects "   "
+PASS isPlaceholderValue keeps real name "Mammen & Null Lawyers LLC"
+PASS isPlaceholderValue keeps real name "None the Wiser Pub"
+PASS isPlaceholderValue keeps real name "Tony's Pizza"
+PASS isPlaceholderValue keeps real name "Unknown Brewing Co"
+PASS isPlaceholderValue treats JS null/undefined as placeholders
+PASS buildCleanPlacesQueries never returns a bare "Null" query
+PASS mapPlacesV1Candidate preserves the raw (still-unsanitized) name for the caller to filter
+PASS isPlaceholderValue flags that raw candidate name
+PASS A real candidate is never flagged as a placeholder
+PASS isNoiseHandle rejects @Snapchat
+PASS isNoiseHandle rejects Facebook
+PASS isNoiseHandle rejects a leading-dot JSON-LD/config artifact (.null)
+PASS isNoiseHandle rejects JSON-LD "@type"
+PASS isNoiseHandle keeps a real venue handle
+PASS isPlatformSelfReference recognizes every wired platform brand
+PASS isPlatformSelfReference does not flag a real handle that merely contains a platform word
+PASS extractCityStateContext recognizes "Orange County" as CA
+PASS extractCityStateContext does NOT fire on the bare "OC" abbreviation (too ambiguous)
+
+All evidence-provenance regression assertions passed.
+
+> nearr@0.1.0 test:notification-dedupe
+> ts-node -P scripts/tsconfig.json scripts/testPlaceNotificationDedupe.ts
+
+PASS first send for place A is allowed
+PASS immediate second send for place A same trigger is skipped duplicate
+PASS place A different trigger is skipped by default cross-trigger dedupe
+PASS place A different trigger can be allowed when cross-trigger dedupe is disabled
+PASS place B send is allowed
+PASS place A sends again after cooldown
+PASS missing savedPlaceId is skipped_disabled
+PASS storage read failure returns failed
+PASS storage parse failure returns failed
+PASS old dedupe entries are expired during cleanup
+
+ALL place-notification-dedupe tests passed.
+
+> nearr@0.1.0 test:account
+> ts-node -P scripts/tsconfig.json scripts/testAccountDeletion.ts && npm run test:onboarding-v2-deleted-account
+
+[test] account deletion
+  ok - first confirmation copy is exact
+  ok - final confirmation copy is exact
+  ok - retryable failure message is exact
+  ok - extracts a bearer token
+  ok - rejects missing / non-bearer auth
+  ok - deletion authority is always the token user
+  ok - classifies errors into stable reasons
+  ok - rapid repeated calls invoke the operation once
+  ok - guard resets after settle so a retry can run again
+  ok - a later call runs a fresh operation
+  ok - fresh anonymous bootstrap waits for deletion cleanup
+
+[test] account deletion: 11 checks passed
+
+> nearr@0.1.0 test:onboarding-v2-deleted-account
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingV2DeletedAccount.ts && npm run test:onboarding-v2-post-delete
+
+PASS 1 permanent progress -> confirmed delete -> fresh Welcome owner state
+PASS 2 deleted identity cannot qualify for Pick up where you left off
+PASS 3 server checkpoint is captured narrowly, then deleted after auth cannot hydrate it
+PASS 4 tutorial saved-place continuation and selections are cleared
+PASS 5 next anonymous identity starts a new funnel at Welcome
+PASS 6 post-delete Welcome remains converged across 50 renders
+PASS 7 legitimate force-quit Learn and Practice resumes remain eligible
+PASS 8 normal account linking still preserves the transferred tutorial place
+PASS 9 ordinary sign-out behavior is unchanged
+PASS 10 failed deletion returns before identity-bound local cleanup
+PASS 11 development reset remains unavailable outside the explicit Nearr-Dev lane
+PASS 12 root max-update-depth guard remains the sole V2 navigation authority
+PASS invalid persisted identities self-heal while pre-auth onboarding stays local
+
+All deleted-account Onboarding V2 regression scenarios passed.
+
+> nearr@0.1.0 test:onboarding-v2-post-delete
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingV2PostDeleteBootstrap.ts
+
+PASS 1 permanent account -> deletion clears identity-bound journey
+PASS 2 fresh V2 Welcome owns the post-delete route
+PASS 3 fresh anonymous bootstrap requires a valid Supabase session
+PASS 4 authenticated-role anonymous JWT can execute checkpoint RPC by contract
+PASS 5 fresh checkpoint persists
+PASS 6 platform/category/tutorial mutations persist locally
+PASS 7 force-close with restored anonymous JWT resumes tutorial
+PASS 8 deleted identity cannot resume
+PASS 9 missing JWT cannot leave an empty black onboarding surface
+PASS 10 transient sync failure retains usable local onboarding
+PASS 11 post-delete route does not ping-pong
+PASS 12 maximum-update-depth single-authority fix is preserved
+PASS 13 development reset remains available
+PASS 14 normal account linking remains valid
+PASS 15 normal force-quit resume remains valid
+PASS 16 unauthenticated RPC remains denied and deletion clears only the dead local session
+
+All post-delete black-screen regression scenarios passed.
+
+> nearr@0.1.0 test:share-job-mapping
+> ts-node -P scripts/tsconfig.json scripts/testShareJobDecisionMapping.ts
+
+PASS share-job resolver decision mapping
+
+> nearr@0.1.0 test:share-job-routing
+> ts-node -P scripts/tsconfig.json scripts/testShareJobRouting.ts
+
+PASS queued visible
+PASS processing_metadata visible
+PASS needs_help visible
+PASS failed visible (actionable recovery)
+PASS completed hidden
+PASS cancelled hidden
+PASS unknown status hidden
+PASS null status hidden
+PASS completed is terminal-hidden
+PASS cancelled is terminal-hidden
+PASS queued not processing-hidden but is processing
+PASS needs_help not processing
+PASS completed job is hidden
+PASS accepted job is hidden (completed)
+PASS denied job is hidden (cancelled)
+PASS cancelled job is hidden
+PASS queued job remains visible
+PASS processing job remains visible
+PASS needs-help job remains visible
+PASS failed job remains visible (actionable)
+PASS only 4 of 6 visible
+PASS terminal realtime event removes an existing queue card
+PASS delayed insert cannot re-add a terminal card
+PASS badge counts needs_help
+PASS badge does NOT count completed
+PASS badge does NOT count accepted (completed)
+PASS badge does NOT count cancelled
+PASS badge counts processing as current queue work
+PASS badge counts recoverable failed jobs
+PASS queue badge equals all visible current jobs
+PASS classify queued => processing
+PASS classify processing_metadata => processing
+PASS classify needs_help => actionable
+PASS classify failed => actionable
+PASS classify completed => completed
+PASS classify cancelled => dismissed
+PASS classify unknown terminal => dismissed
+PASS classify null => missing
+PASS classify undefined => missing
+PASS completed notification opens saved result
+PASS already-saved notification opens existing saved place
+PASS already-saved notification carries the google_place_id fallback when present
+PASS old already-saved payload without googlePlaceId routes byte-identically
+PASS completed with job id opens authoritative result even if notification omitted saved id
+PASS needs-help notification opens the queue item
+PASS resolved stale notification (needs_help w/o jobId) does not crash -> queue root
+PASS missing job notification does not crash -> queue root
+PASS malformed completed payload (non-string savedPlaceId) -> map, no throw
+PASS malformed needs_help payload (non-string jobId) -> queue root, no throw
+PASS non-share-job (nearby reminder) payload => null (falls through)
+PASS empty payload => null
+PASS completed multi-save notification => saved group
+PASS mixed notification => unresolved job, not saved group
+PASS null payload => null
+PASS undefined payload => null
+PASS queue root pushes a detail so Back returns to queue
+PASS map pushes the first detail
+PASS detail A is replaced when detail B opens
+PASS detail path with trailing slash is replaced
+PASS nested/non-detail routes are not replaced
+PASS duplicate notification handling is idempotent (pure: same input => same route)
+PASS completed card opens saved result detail
+PASS completed card without saved place still opens safe result detail
+PASS needs_help card -> queue item
+PASS failed card -> queue item (actionable)
+PASS denied (cancelled) card -> queue root, no throw
+PASS null card -> queue root, no throw
+
+ALL SHARE JOB ROUTING TESTS PASSED
+
+> nearr@0.1.0 test:share-url-validation
+> ts-node -P scripts/tsconfig.json scripts/testShareUrlValidation.ts
+
+PASS https instagram ok
+PASS http ok
+PASS tiktok short ok
+PASS public ip 8.8.8.8 ok
+PASS public ipv4 172.32 ok (outside /12)
+PASS empty => empty
+PASS whitespace => empty
+PASS non-string => not_a_string
+PASS garbage => invalid_url
+PASS ftp => unsupported_scheme
+PASS file => unsupported_scheme
+PASS data => unsupported_scheme
+PASS javascript => unsupported_scheme
+PASS credentials => has_credentials
+PASS localhost blocked
+PASS 127.0.0.1 blocked
+PASS 0.0.0.0 blocked
+PASS 10.x blocked
+PASS 192.168.x blocked
+PASS 172.16.x blocked
+PASS 172.20.x blocked
+PASS 169.254 metadata blocked
+PASS cgnat 100.64 blocked
+PASS ipv6 loopback blocked
+PASS ipv6 link-local blocked
+PASS *.local blocked
+PASS *.internal blocked
+PASS metadata.google.internal blocked
+PASS isBlockedHost public host false
+PASS isBlockedHost 172.32 false
+PASS isBlockedHost 11.0.0.1 false
+
+All share-URL validation assertions passed.
+
+> nearr@0.1.0 test:feature-flags
+> ts-node -P scripts/tsconfig.json scripts/testFeatureFlags.ts
+
+PASS unset env + unset extra => OFF
+PASS empty env + empty extra => OFF
+PASS null env + null extra => OFF
+PASS whitespace env => OFF
+PASS "false" => OFF
+PASS "0" => OFF
+PASS "no" => OFF
+PASS "off" => OFF
+PASS garbage => OFF
+PASS "true" => ON
+PASS "TRUE" (case) => ON
+PASS "1" => ON
+PASS "yes" => ON
+PASS "on" => ON
+PASS " true " (trimmed) => ON
+PASS env truthy wins over extra unset
+PASS env truthy wins over extra falsey
+PASS extra used when env empty
+PASS extra falsey when env empty => OFF
+PASS env "false" short-circuits extra "true" => OFF
+PASS isTruthyFlag("true")
+PASS isTruthyFlag(undefined)
+PASS isTruthyFlag(1 number)
+PASS 1.7 cannot disable durable financial admission with an old rollout flag
+PASS Vayrin Product UI flag reads build env
+PASS Vayrin Product UI flag has app config fallback
+PASS app config exposes Vayrin Product UI flag
+PASS map clustering bypass reads build env
+PASS map clustering bypass has app config fallback
+PASS app config exposes map clustering bypass
+PASS onboarding v2 unset => OFF
+PASS onboarding v2 explicit true => ON
+PASS phase 1 rollout flag is exposed
+PASS phase 1 rollout defaults safe
+PASS app config exposes phase 1 boundary
+PASS enabled without backend capability falls back to legacy
+PASS enabled + backend + phase1 boundary selects phase1
+PASS enabled + backend + explicit phase2 selects full
+PASS app config exposes backend capability
+
+All feature-flag tests passed.
+
+> nearr@0.1.0 test:vayrin-presentation
+> ts-node -P scripts/tsconfig.json scripts/testVayrinPresentation.ts
+
+PASS Vayrin presentation states, safety, and sync/async equivalence
+
+> nearr@0.1.0 test:vayrin-ui
+> ts-node -P scripts/tsconfig.json scripts/testVayrinPresentationUi.ts
+
+PASS Vayrin feature gate, UI wiring, boundaries, and accessibility contracts
+
+> nearr@0.1.0 test:shared-auth-session
+> ts-node -P scripts/tsconfig.json scripts/testSharedAuthSession.ts
+
+PASS decode sub
+PASS decode exp
+PASS decode null => null
+PASS decode empty => null
+PASS decode non-jwt => null
+PASS decode 2-part => null
+PASS decode garbage payload => null
+PASS decode missing sub => sub null
+PASS decode missing exp => exp null
+PASS absent: null
+PASS absent: undefined
+PASS absent: whitespace
+PASS malformed: not a jwt
+PASS malformed: jwt without exp
+PASS valid: exp 1h ahead
+PASS expired: exp 10s ago
+PASS expired: exactly now (<= treated expired)
+PASS expired: within default 30s skew
+PASS valid: just past the skew window
+PASS action: valid + initialized => submit
+PASS action: valid + NOT initialized => submit (valid wins)
+PASS action: absent + NOT initialized => needs_setup
+PASS action: absent + initialized => signed_out
+PASS action: empty token + initialized => signed_out
+PASS action: expired => session_expired (regardless of init true)
+PASS action: expired => session_expired (regardless of init false)
+PASS action: malformed => session_expired
+
+All shared-auth-session tests passed.
+
+> nearr@0.1.0 test:share-routes
+> ts-node -P scripts/tsconfig.json scripts/testShareRoutes.ts
+
+PASS route is /share-jobs
+PASS deeplink path is share-jobs
+PASS deeplink has no leading slash
+PASS deeplink derived from route
+PASS scheme is nearr
+PASS buildHostDeepLink yields empty-host form nearr:///share-jobs
+PASS exported SHARE_JOBS_DEEP_LINK is nearr:///share-jobs
+PASS buildHostDeepLink tolerates a leading slash too
+PASS empty-host form resolves to /share-jobs
+PASS host form also resolves to /share-jobs
+PASS generated deep link parses back to the route
+PASS trailing slash tolerated
+PASS non-scheme string => null
+PASS auth-callback link parses to its own path (not /share-jobs)
+
+All share-routes tests passed.
+
+> nearr@0.1.0 test:sanitize-error
+> ts-node -P scripts/tsconfig.json scripts/testSanitizeError.ts
+
+PASS redacts a JWT
+PASS jwt replaced with placeholder
+PASS redacts Bearer token
+PASS redacts URL credentials
+PASS redacts access_token value
+PASS redacts refresh_token value
+PASS redacts long opaque blob
+PASS preserves normal message
+PASS Error instance => name: message
+PASS stack capped
+PASS stack redacts bearer
+
+All sanitize-error tests passed.
+
+> nearr@0.1.0 test:breadcrumbs
+> ts-node -P scripts/tsconfig.json scripts/testBreadcrumbs.ts
+
+PASS buffer never exceeds MAX_BREADCRUMBS
+PASS oldest entries are dropped (newest kept)
+PASS chronological order preserved (newest last)
+PASS appendBreadcrumb does not mutate input
+PASS sanitizes JWT out of field values
+PASS keeps safe route field
+PASS drops null/undefined fields
+PASS formatBreadcrumb includes event + fields
+PASS formatBreadcrumbs handles empty buffer
+PASS formatBreadcrumbs joins multiple lines
+
+All breadcrumb tests passed
+
+> nearr@0.1.0 test:once-latch
+> ts-node -P scripts/tsconfig.json scripts/testOnceLatch.ts
+
+PASS not acquired before first use
+PASS first acquire wins
+PASS acquired() true after first
+PASS second acquire is rejected
+PASS third acquire is rejected
+PASS separate latch stays independent
+PASS pre-fix model navigates more than once (reproduces the bug)
+PASS post-fix model navigates exactly once
+
+All once-latch tests passed
+
+> nearr@0.1.0 test:open-saved-place
+> ts-node -P scripts/tsconfig.json scripts/testOpenSavedPlace.ts
+
+PASS validId accepts a normal id
+PASS validId trims
+PASS validId rejects empty
+PASS validId rejects whitespace
+PASS validId rejects undefined
+PASS validId rejects an array (route param quirk)
+PASS validId rejects a number
+PASS route targets the map tab
+PASS View place uses saved_places.id
+PASS route stamps the source
+PASS route carries the google_place_id fallback
+PASS route works with only a google_place_id
+PASS route with no ids falls back to the bare map (no crash)
+PASS route drops malformed/empty ids
+PASS resolves by saved_places.id
+PASS falls back to google_place_id when id absent
+PASS id wins over google_place_id when both resolve
+PASS returns null when neither matches (→ local recovery)
+PASS null list is safe
+PASS empty list is safe
+PASS missing ids resolve to null
+PASS share_job_already_saved is an open-existing source
+PASS notification is an open-existing source
+PASS reminder-ish source is NOT
+PASS undefined source is NOT
+PASS already-saved source gets completion feedback
+PASS new share save gets completion feedback
+PASS notification does not show duplicate feedback
+PASS manual save opens full details
+PASS already-saved confirmation opens full details
+PASS notification leaves details collapsed
+PASS onboarding continuation carries the exact saved_places.id
+PASS onboarding landing keeps Place Detail compact
+PASS onboarding continuation is an open-existing source
+PASS already-saved notification opens the saved-result detail
+PASS stale saved id still opens the place via google_place_id fallback
+PASS old payload (no googlePlaceId) still opens by saved_places.id
+PASS deleted place resolves to null (map + friendly recovery, no crash)
+PASS malformed already-saved payload falls back to the map
+
+All open-saved-place tests passed
+
+> nearr@0.1.0 test:shared-auth-sync
+> ts-node -P scripts/tsconfig.json scripts/testSharedAuthSync.ts
+
+PASS startup(valid) writes
+PASS late INITIAL_SESSION(null) is IGNORED (token preserved)
+PASS state stays established
+PASS INITIAL_SESSION(valid) writes
+PASS tokenless TOKEN_REFRESHED after valid is ignored
+PASS tokenless STARTUP_RESTORE after valid is ignored
+PASS SIGNED_IN writes
+PASS SIGNED_OUT clears
+PASS state reset after sign-out
+PASS USER_DELETED clears
+PASS genuine startup signed-out clears (absent)
+PASS state not established
+PASS startup restore with no session clears
+PASS after sign-out, tokenless INITIAL_SESSION clears (still signed out)
+PASS re-sign-in writes
+PASS final state established
+PASS TOKEN_REFRESHED(valid) writes
+PASS tokenless non-startup event before session is ignored
+PASS state untouched
+
+ALL SHARED AUTH SYNC TESTS PASSED
+
+> nearr@0.1.0 test:share-submission
+> ts-node -P scripts/tsconfig.json scripts/testShareSubmission.ts
+
+PASS same url + same bucket => same id (cold/warm collapse)
+PASS same url + later bucket => different id (deliberate re-share)
+PASS different url => different id
+PASS derived id is well-formed
+PASS derive is case-insensitive on url
+PASS minted ids are well-formed
+PASS minted ids differ
+PASS append adds sid param
+PASS extract roundtrips sid
+PASS append is idempotent (no double sid)
+PASS append to path with no query uses ?
+PASS extract null when absent
+PASS extract rejects malformed sid
+PASS Instagram handoff uses canonical empty-host /share route
+PASS Instagram handoff source URL decodes exactly once
+PASS Instagram handoff carries the same invocation id
+PASS resolve prefers valid deep-link sid
+PASS resolve derives when no deep-link sid
+PASS resolve derives when deep-link sid malformed
+PASS concurrent same-id => single doSubmit call
+PASS both concurrent callers get the job
+PASS accepted id: doSubmit called exactly once
+PASS accepted replay returns same job
+PASS accepted replay flagged duplicate
+PASS hasAccepted true after ok
+PASS failed submit not cached (retry calls doSubmit again)
+PASS first failed
+PASS retry succeeded
+PASS thrown submit propagates
+PASS thrown submit is retryable
+PASS distinct ids each submit
+
+ALL SHARE SUBMISSION TESTS PASSED
+
+> nearr@0.1.0 test:share-job-client
+> ts-node -P scripts/tsconfig.json scripts/testShareJobClient.ts
+
+PASS create-share-job response contract, timer lifecycle, and sanitized diagnostics
+
+> nearr@0.1.0 test:share-jobs-dedupe
+> ts-node -P scripts/tsconfig.json scripts/testShareJobsDedupe.ts
+
+PASS dedupe collapses duplicate id
+PASS dedupe preserves first-seen order
+PASS dedupe keeps freshest copy of a
+PASS older dup does not overwrite newer
+PASS drops malformed rows, keeps valid
+PASS duplicate realtime events dedupe to one
+PASS empty array => empty
+PASS null => empty
+PASS non-array => empty
+PASS missing updated_at: latest-seen wins
+PASS upsert replaces in place
+PASS upsert keeps position
+PASS upsert appends new id
+PASS upsert ignores id-less incoming (no dup)
+PASS upsert does not mutate input
+
+ALL SHARE JOBS DEDUPE TESTS PASSED
+
+> nearr@0.1.0 test:share-jobs-realtime
+> ts-node -P scripts/tsconfig.json scripts/testShareJobsRealtime.ts
+
+PASS share queue Realtime lifecycle regression
+
+> nearr@0.1.0 test:live-location
+> ts-node -P scripts/tsconfig.json scripts/testLiveLocation.ts
+
+PASS valid coordinate accepted
+PASS equator/prime-meridian accepted
+PASS boundary lat/lng accepted
+PASS NaN latitude rejected
+PASS Infinity longitude rejected
+PASS out-of-range latitude rejected
+PASS out-of-range longitude rejected
+PASS non-number rejected
+PASS first reading (no previous) accepted
+PASS newer reading replaces older reading
+PASS older timestamp is ignored
+PASS equal timestamp is ignored
+PASS invalid coordinates rejected even when newer
+PASS non-finite timestamp rejected
+PASS watch runs when focused + active + permitted
+PASS app-background transition stops tracking
+PASS foreground transition restarts tracking
+PASS blurred screen stops tracking
+PASS denied permission never tracks
+PASS can start when no active subscription
+PASS duplicate subscription is prevented
+PASS user gesture disables follow (from on)
+PASS user gesture keeps follow off
+PASS recenter enables follow (from off)
+PASS recenter keeps follow on
+PASS camera follows when follow on + accepted
+PASS camera does NOT move when follow disabled
+PASS camera does NOT move on rejected sample even if following
+
+All live-location tests passed.
+
+> nearr@0.1.0 test:place-share
+> ts-node -P scripts/tsconfig.json scripts/testPlaceShare.ts
+
+PASS clean single-link iOS and Android place-share payload, referral, privacy, and one-action contracts
+
+> nearr@0.1.0 test:place-share-source
+> ts-node -P scripts/tsconfig.json scripts/testPlaceShareSource.ts
+
+PASS saved-place source priority, normalization, safety, correction, auto-save, and multi-place isolation
+
+> nearr@0.1.0 test:wrong-place
+> ts-node -P scripts/tsconfig.json scripts/testWrongPlaceCorrection.ts
+
+PASS wrong-place correction ownership, preservation, replacement, and feedback
+
+> nearr@0.1.0 test:ai-place-note
+> ts-node -P scripts/tsconfig.json scripts/testAiPlaceNote.ts
+
+PASS AI place-note voice, grounding, omission, and persistence contracts
+
+> nearr@0.1.0 test:note-editor
+> ts-node -P scripts/tsconfig.json scripts/testNoteEditor.ts
+
+PASS dedicated note editor state, persistence, cancellation, long-text, and keyboard contracts
+
+> nearr@0.1.0 test:ai-note-integration
+> ts-node -P scripts/tsconfig.json scripts/testAiNoteIntegrationContracts.ts
+
+[offline] saved_places_cache_write count=1
+[offline] saved_places_cache_read count=1
+PASS auto/manual AI-note persistence and non-fatal finalization contracts
+
+> nearr@0.1.0 test:video-ai-note-guarantee
+> ts-node -P scripts/tsconfig.json scripts/testVideoAiNoteGuarantee.ts && npm run test:video-ai-note-product-claim
+
+PASS video-derived AI-note provenance, retry, re-arm, correction, and data-integrity contracts
+
+> nearr@0.1.0 test:video-ai-note-product-claim
+> cd services/media-worker && node --import tsx --test tests/targetedNoteContext.test.ts
+
+✔ multi-place handoff isolates the final saved place scene (2.4228ms)
+✔ unsaved candidates have observations but no note-generation obligation (0.3722ms)
+✔ weak unscoped context can widen from focused to representative frames (0.4628ms)
+✔ extracted target text is durable before a provider outage (0.7419ms)
+✔ unscoped source metadata is retained as bounded caption evidence (0.3579ms)
+✔ one bounded frame snapshot survives temp cleanup and rejects oversized blobs (28.9793ms)
+✔ visual-heavy food fixture yields a grounded cue with empty text (39.7443ms)
+✔ visual-heavy outdoor fixture yields a grounded cue with empty text (4.3778ms)
+✔ visual-heavy hotel fixture yields a grounded cue with empty text (4.942ms)
+✔ visual-heavy visible activity fixture yields a grounded cue with empty text (6.2832ms)
+✔ provider outage recovers from durable evidence after frames are gone (2.537ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 988.9796
+
+> nearr@0.1.0 test:saved-browse
+> ts-node -P scripts/tsconfig.json scripts/testSavedPlacesBrowse.ts
+
+PASS Saved Places pipeline, Recent/Nearby, filters, search, presentation, and cache-state behavior
+
+> nearr@0.1.0 test:place-image
+> ts-node -P scripts/tsconfig.json scripts/testPlaceImage.ts
+
+PASS place image source hierarchy and cache
+
+> nearr@0.1.0 test:open-original-post
+> ts-node -P scripts/tsconfig.json scripts/testOpenOriginalPost.ts
+
+PASS instagram post is allowed
+PASS instagram reel is allowed
+PASS tiktok video is allowed
+PASS tiktok short link is allowed
+PASS youtube watch is allowed
+PASS youtube short link is allowed
+PASS youtube shorts is allowed
+PASS facebook reel is allowed
+PASS facebook videos is allowed
+PASS fb.watch is allowed
+PASS snapchat spotlight is allowed
+PASS x.com is allowed
+PASS null is missing
+PASS undefined is missing
+PASS empty string is missing
+PASS missing reason is "missing"
+PASS canOpenOriginal false when missing
+PASS garbage is malformed
+PASS bare host without scheme is malformed
+PASS http is rejected
+PASS javascript: is rejected
+PASS data: is rejected
+PASS file: is rejected
+PASS a javascript URL reports insecure_scheme
+PASS random https host rejected
+PASS lookalike host rejected (not a real subdomain)
+PASS unsupported host reports unsupported_host
+PASS valid plan is an "open"
+PASS open plan fires share_job_original_post_opened
+PASS plan has NO resolve/remove/save outcome (open or unavailable only)
+PASS invalid plan is "unavailable"
+PASS planOpenOriginal is idempotent
+
+All open-original-post tests passed.
+
+> nearr@0.1.0 test:share-jobs-ui
+> ts-node -P scripts/tsconfig.json scripts/testShareJobsUi.ts
+
+PASS actionable = needs_help + failed
+PASS needs_help leads before failed
+PASS processing = queued + processing_metadata
+PASS count matches visible actionable jobs (needs_help + failed)
+PASS count excludes processing jobs
+PASS Needs-your-help empty when only processing
+PASS Processing non-empty when processing present
+PASS not empty when processing present
+PASS Processing empty when only actionable
+PASS Needs-your-help non-empty when actionable present
+PASS completed is not actionable
+PASS cancelled is not actionable
+PASS completed is not processing
+PASS terminal excluded from count
+PASS empty when no jobs
+PASS empty when only terminal jobs slip through
+PASS back when a previous route exists
+PASS replace to fallback when trapped
+PASS confirmation falls back to the queue
+PASS null candidate input => []
+PASS non-array candidate input => []
+PASS object (not array) => []
+PASS rows missing id/name are dropped
+PASS malformed field types are coerced safely
+PASS finds saved id by google place id
+PASS returns null when not saved
+PASS returns null for missing place id
+PASS returns null for missing saved list
+PASS ordinary review keeps likely-match copy
+PASS location conflict never claims an unqualified likely match
+PASS permanent closure is explained explicitly
+PASS singular heading for 1
+PASS singular heading for 0 (defensive)
+PASS plural heading for 3
+PASS plural heading avoids system vocabulary
+
+All share-jobs-ui tests passed.
+
+> nearr@0.1.0 test:quick-check
+> ts-node -P scripts/tsconfig.json scripts/testQuickCheckResolution.ts
+
+PASS query is normalized in request key
+PASS prefilled query claims initial search on mount
+PASS rerender does not search again
+PASS screen refocus does not search again
+PASS changed query allows another search
+PASS logical places have independent request keys
+PASS normalizer collapses case and whitespace
+PASS one strong result becomes selected
+PASS multiple results remain unselected
+PASS missing coordinates cannot auto-select
+PASS incompatible single result remains unselected
+PASS no result preserves manual recovery
+
+All Quick check resolution tests passed.
+
+> nearr@0.1.0 test:share-phase1-ui
+> ts-node -P scripts/tsconfig.json scripts/testSharePhase1Ui.ts
+
+PASS Phase 1 presentation contracts
+
+> nearr@0.1.0 test:share-phase1-render
+> ts-node -P scripts/tsconfig.json scripts/testSharePhase1RenderContracts.ts
+
+PASS Fieldnotes review: 24 actual component renders across 2 appearances, 4 width/text configurations and 0/1/5 photos; independent controls, provenance, omission, disabled save, motion and virtualized Activity
+PASS Phase 1 render contracts
+
+> nearr@0.1.0 test:media-fallback
+> ts-node -P scripts/tsconfig.json scripts/testMediaFallbackTrigger.ts
+
+PASS matching canary user enables only its effective flags
+PASS different user stays Phase 1-only
+PASS invalid canary id cannot enable infrastructure
+PASS valid canary id keeps bounded recovery active
+PASS master flag off => no run
+PASS IG resolver flag off => no run
+PASS both flags off => no run (default prod state)
+PASS platform tiktok => no run (its resolver flag is off)
+PASS platform facebook => no run (its resolver flag is off)
+PASS platform youtube => no run (its resolver flag is off)
+PASS platform snapchat => no run (its resolver flag is off)
+PASS platform twitter => no run (its resolver flag is off)
+PASS platform genericWeb => no run (its resolver flag is off)
+PASS platform unknown => no run (its resolver flag is off)
+PASS isSupportedMediaPlatform instagram+flag => true
+PASS isSupportedMediaPlatform instagram no-flag => false
+PASS isSupportedMediaPlatform tiktok, flag off => false
+PASS tiktok + its flag on => RUN
+PASS isSupportedMediaPlatform tiktok+flag => true
+PASS youtube + its flag on => RUN
+PASS isSupportedMediaPlatform youtube+flag => true
+PASS facebook + its flag on => RUN
+PASS isSupportedMediaPlatform facebook+flag => true
+PASS snapchat + its flag on => RUN
+PASS isSupportedMediaPlatform snapchat+flag => true
+PASS tiktok flag on does not enable facebook
+PASS cancelled job => no run
+PASS terminal job => no run
+PASS media task already exists => no run
+PASS metadata safe auto-save => no run
+PASS multi-candidate resolved => no run (do not delay)
+PASS two explicit addresses => no run (multi-address intent)
+PASS places_error => no run (infra, not media)
+PASS roundup_post => run (video can preserve multiple places)
+PASS address-verified candidate => no run
+PASS manual_fallback => RUN
+PASS generic caption blocked (no explicit evidence) => RUN
+PASS resolver failed (recoverable) => RUN
+PASS weak candidate_confirmation => RUN
+PASS candidate_picker (weak) => RUN
+PASS auto_save that failed safety gate => RUN
+PASS degenerate multi (<=1 candidate) => RUN as manual
+PASS auto-save guard precedes any positive trigger
+PASS completed metadata auto-save => post-save enrichment runs
+PASS post-save retry cannot duplicate media task
+PASS post-save task waits for user-facing completion
+PASS unsupported source does not create enrichment task
+
+ALL MEDIA FALLBACK TRIGGER TESTS PASSED
+
+> nearr@0.1.0 test:media-evidence
+> ts-node -P scripts/tsconfig.json scripts/testMediaEvidenceAdapter.ts
+
+PASS parse null => not ok
+PASS parse string => not ok
+PASS parse empty object => ok, empty places, insufficient false
+PASS parse valid => places=1, multiple=true
+PASS parse warnings preserved
+PASS parse drops malformed places (name required)
+PASS parse drops evidence with invalid source
+PASS confidence clamped to <= 1
+PASS confidence clamped to >= 0
+PASS coordinates never forwarded from model
+PASS hasExplicitEvidence true when explicit present
+PASS hasExplicitEvidence false when only inferred
+PASS render single explicit place => 1 place
+PASS render title = primary name
+PASS render description contains address + city
+PASS inferred-only place => rendered 0 (no fabrication)
+PASS insufficientEvidence => rendered 0
+PASS passing_mention excluded
+PASS secondary dropped when not multi-intent
+PASS secondary kept when multi-intent
+PASS multi description has both places on separate lines
+PASS primary ordered first
+PASS no places => rendered 0
+
+ALL MEDIA EVIDENCE ADAPTER TESTS PASSED
+
+> nearr@0.1.0 test:media-finalize
+> ts-node -P scripts/tsconfig.json scripts/testMediaFinalizePlan.ts
+
+PASS isTerminalTaskStatus completed
+PASS terminal task completed => idempotent_task_terminal
+PASS isTerminalTaskStatus needs_help
+PASS terminal task needs_help => idempotent_task_terminal
+PASS isTerminalTaskStatus failed
+PASS terminal task failed => idempotent_task_terminal
+PASS isTerminalTaskStatus cancelled
+PASS terminal task cancelled => idempotent_task_terminal
+PASS processing task is not terminal
+PASS queued task is not terminal
+PASS parent cancelled => parent_already_terminal
+PASS parent completed => parent_already_terminal
+PASS parent needs_help => parent_already_terminal
+PASS parent failed => parent_already_terminal
+PASS completed metadata save with authoritative savedPlaceId => enrich existing place
+PASS post-save media failure is supplemental
+PASS outcome unavailable => manual_fallback needs_help
+PASS retrieved media with no place evidence => insufficient_evidence
+PASS outcome failed => manual_fallback failed
+PASS authentication_required survives worker -> finalizer planning
+PASS duration_too_long survives worker -> finalizer planning
+PASS download_timeout survives exhausted retry -> finalizer planning
+PASS malformed evidence => manual_fallback
+PASS insufficient evidence (0 rendered) => manual_fallback
+PASS valid evidence => resolve
+PASS terminal-task guard precedes everything
+PASS parent-terminal guard precedes resolve
+PASS auto_save + eligible => auto_save
+PASS auto_save + NOT eligible => needs_help single (downgraded)
+PASS needs_help single passthrough
+PASS needs_help multi passthrough
+PASS needs_help manual passthrough
+PASS auth: correct secret authorizes
+PASS auth: case-insensitive scheme authorizes
+PASS auth: wrong secret rejected
+PASS auth: secret prefix rejected
+PASS auth: secret superstring rejected
+PASS auth: missing header rejected
+PASS auth: empty header rejected
+PASS auth: non-bearer scheme rejected
+PASS auth: bearer without token rejected
+PASS auth: empty expected secret fails closed
+PASS auth: raw token without scheme rejected
+PASS extractBearerToken parses token
+PASS extractBearerToken trims token
+PASS extractBearerToken non-bearer => empty
+PASS worker: exact secret authorizes
+PASS worker: wrong secret rejected
+PASS worker: prefix rejected
+PASS worker: superstring rejected
+PASS worker: empty presented rejected
+PASS worker: null presented rejected
+PASS worker: empty expected fails closed
+PASS worker: null expected fails closed
+PASS ct: equal strings match
+PASS ct: different-length mismatch
+PASS ct: same-length one-char diff mismatch
+PASS ct: both empty match
+
+ALL MEDIA FINALIZE PLAN TESTS PASSED
+
+> nearr@0.1.0 test:post-save-enrichment
+> ts-node -P scripts/tsconfig.json scripts/testPostSaveEnrichmentContracts.ts
+
+PASS Santa Fe-shaped save-first enrichment, exact linkage, dedupe, isolation, and async UI contracts
+
+> nearr@0.1.0 test:media-reliability
+> ts-node -P scripts/tsconfig.json scripts/testMediaFinalizeReliability.ts
+
+PASS HTTP 503 provider failure is classified
+PASS provider transport failure is classified as timeout
+PASS retry scheduling failure is classified as database unavailable
+PASS deterministic exception is not mislabeled transient
+PASS first transient failure is durably accepted, not returned as 503
+PASS durable retries use exponential backoff
+PASS Retry-After is respected and bounded
+PASS retry exhaustion becomes a successful terminal response
+PASS structured log contains correlation fields and no payload
+PASS Edge callback schedules durable retry and never explicitly returns 503
+PASS concurrent or duplicate callback conflict is an idempotent success
+PASS retry exhaustion is terminal and does not schedule another attempt
+PASS deterministic provider 4xx is not retried
+
+ALL MEDIA FINALIZE RELIABILITY TESTS PASSED
+
+> nearr@0.1.0 test:media-adversarial
+> ts-node -P scripts/tsconfig.json scripts/testMediaAdversarialEvidence.ts
+
+PASS explicit high-confidence street address => eligible
+PASS natural place with explicit city and region => eligible without street address
+PASS exact visible natural-place identity remains eligible without redundant geography text
+PASS inferred-only place => NOT eligible
+PASS passing_mention => NOT eligible
+PASS creator handle name only => NOT eligible
+PASS dish name => NOT eligible
+PASS cuisine name => NOT eligible
+PASS city-as-context (no street) => NOT eligible
+PASS unrelated subtitle => NOT eligible
+PASS platform UI text => NOT eligible
+PASS low-confidence explicit address => NOT eligible
+PASS low-confidence speech address => NOT eligible
+PASS multiple intentional places => NOT eligible
+PASS conflicting name without explicit address => NOT eligible
+PASS model coordinates ignored (name-only + coords) => NOT eligible
+PASS insufficientEvidence flag => NOT eligible
+PASS no places => NOT eligible
+PASS selectRenderablePlaces keeps only explicit non-passing primary
+PASS name-only renders a query
+PASS name-only NOT auto-save eligible
+
+ALL MEDIA ADVERSARIAL EVIDENCE TESTS PASSED
+
+> nearr@0.1.0 test:media-mentions
+> ts-node -P scripts/tsconfig.json scripts/testMediaMentions.ts
+
+PASS normalizeVenueName preserves ampersand
+PASS normalizeVenueName preserves apostrophe
+PASS normalizeVenueName collapses whitespace
+PASS eligible: proper venue name
+PASS eligible: ampersand brand
+PASS eligible: apostrophe brand
+PASS eligible: single-letter brand (X Eats)
+PASS eligible: region-tagged name
+PASS NOT eligible: bare cuisine "Pizza"
+PASS NOT eligible: "best pizza"
+PASS NOT eligible: vague "this pizza place"
+PASS NOT eligible: "the spot"
+PASS NOT eligible: CTA "Subscribe now"
+PASS NOT eligible: platform noise
+PASS distinctiveTokensOf drops generic
+PASS distinctiveTokensOf keeps brand
+PASS five explicit names => five mentions
+PASS mention ids are stable m1..m5
+PASS geoContext region from explicit field
+PASS geoContext city null (not inferred)
+PASS repeated visual+audio => one grouped mention
+PASS grouped mention combines sources
+PASS grouped mention records both name evidence sources
+PASS grouped mention marked repeated
+PASS grouped mention keeps both timestamps
+PASS handle-only name evidence is marked as creator identity
+PASS independent spoken name clears creator-only marker
+PASS apostrophe brand keeps speech name evidence
+PASS apostrophe variant keeps frame name evidence
+PASS ampersand brand keeps speech name evidence
+PASS ampersand variant keeps frame name evidence
+PASS same name different region => two mentions
+PASS two identities in one scene produce one logical mention
+PASS same-scene alternative is retained inside m1
+PASS distinct scene remains independent m2
+PASS scene timestamps remain isolated
+PASS cross-country scenes do not lend geography to each other
+PASS same-scene alternatives do not consume the logical-place cap
+PASS later distinct scene survives an alternative-heavy first scene
+PASS punctuation-only identity variants deduplicate
+PASS inferred-only place dropped
+PASS droppedInferredOnly counted
+PASS generic-only names + passing dropped, real kept
+PASS droppedIneligibleName counted
+PASS droppedPassingMention counted
+PASS insufficientEvidence => no mentions
+PASS normalizePhrase converts @ to at
+PASS detectRelationshipPhrase finds "at"
+PASS detectRelationshipPhrase finds @ (normalized)
+PASS detectRelationshipPhrase: no connector => null
+PASS "X Eats located at Brewery X" => one mention
+PASS merged displayName is "X Eats at Brewery X"
+PASS merged primaryVenueName
+PASS merged hostVenueName
+PASS merged relationshipType located_at
+PASS host retained as supportingEvidence
+PASS merged distinctiveTokens include host+primary
+PASS relationship diagnostic recorded
+PASS "X Eats @ Brewery X" => one mention
+PASS adjacent split relationship => one mention
+PASS adjacent split relationship groups host
+PASS split relationship outside one-second window stays separate
+PASS independently-featured host stays separate
+PASS relationship marked hostIndependentlyFeatured
+PASS two unrelated same-city venues stay separate
+PASS no relationship recorded for unrelated venues
+PASS five-pizza fixture => exactly 5 mention slots
+PASS one merged X Eats at Brewery X slot
+PASS no standalone Brewery X slot
+PASS single name => one mention, no relationship
+
+ALL MEDIA MENTIONS TESTS PASSED
+
+> nearr@0.1.0 test:media-autosave
+> ts-node -P scripts/tsconfig.json scripts/testMediaAutoSaveGate.ts
+
+PASS auto-save authorization requires exact canary user
+PASS auto-save authorization rejects another user
+PASS auto-save authorization is global without a canary restriction
+PASS auto-save authorization obeys kill switch
+PASS global auto-save authorization obeys kill switch
+PASS default gate threshold is 0.70
+PASS absent threshold uses valid default
+PASS configured production threshold accepts 0.70
+PASS configured threshold accepts inclusive zero
+PASS configured threshold accepts inclusive one
+PASS configured threshold rejects below zero
+PASS configured threshold rejects above one
+PASS configured threshold rejects non-number
+PASS one distinctive transcript mention with a strong provider match is eligible
+PASS gate emits versioned rule
+PASS gate returns deterministic score
+PASS gate explains the successful decision
+PASS model-prior recognition can never auto-save
+PASS creator-handle-only media identity can never auto-save
+PASS unresolved same-scene identity uncertainty requires review
+PASS provider-verified natural place needs no business taxonomy marker
+PASS Woods Cove production shape auto-saves without a business marker
+PASS generic establishment taxonomy cannot veto strong identity and context
+PASS Paradise Falls production shape auto-saves from one named channel
+PASS one plausible candidate auto-saves despite the old ambiguous outcome
+PASS one plausible candidate at 0.69 auto-saves
+PASS one clearly matched candidate below the old threshold auto-saves
+PASS candidate below the resolver plausibility floor stays in review
+PASS gate score 0.70 auto-saves when all requirements pass
+PASS gate score 0.71 auto-saves when all requirements pass
+PASS gate score 0.95 cannot overcome a competing candidate
+PASS two close same-name branches require confirmation
+PASS one speech name channel is sufficient
+PASS one visible_text name channel is sufficient
+PASS one caption name channel is sufficient
+PASS missing transcript, OCR, caption, and frame identity is a veto
+PASS positive provider taxonomy and distinctive markers are not vetoes
+PASS one weaker but semantically plausible candidate auto-saves
+PASS repeated exact visual identity plus provider geography is sufficient
+PASS visual evidence records distinctive support
+PASS model confidence is diagnostic only
+PASS host context does not overwrite or block the named child identity
+PASS gate score 0.95 without valid coordinates remains blocked
+PASS gate score 0.95 without a provider Place ID remains blocked
+PASS missing positive state marker is supporting, not a veto
+PASS missing positive city proximity marker is supporting, not a veto
+PASS conflicting locality remains blocked
+PASS permanently closed rejected
+PASS same canonical place across slots rejected
+PASS mixed post keeps eligible slot independent
+PASS mixed post keeps ambiguous slot for review
+PASS weak generic name with insufficient identity support stays in review
+PASS one-token broad geography expanded into a provider name stays in review
+PASS obviously unrelated provider entity stays in review
+PASS address-like provider entity is not a plausible saved place
+PASS shared generic loop/trail wording cannot make an unrelated trail plausible
+PASS zero plausible candidates stays in review
+PASS exact one-word brand remains eligible
+PASS hidden invalid alternatives do not reject one valid verified candidate
+PASS one meaningful candidate plus a rejected garbage alternative auto-saves
+PASS two logical places auto-save independently
+PASS one unresolved result with one option uses single review
+PASS one logical result with two options uses multi review
+PASS multiple unresolved logical results use multi review
+PASS one-candidate auto-save cannot generate unresolved notification
+PASS decision log includes job_id=
+PASS decision log includes logical_place_id=
+PASS decision log includes raw_candidate_count=
+PASS decision log includes plausible_candidate_count=
+PASS decision log includes selected_provider_id=
+PASS decision log includes selected_score=
+PASS decision log includes rejection_reasons=
+PASS decision log includes explicit_conflict_flags=
+PASS decision log includes final_decision=
+PASS decision log includes decision_reason=
+PASS decision log excludes transcripts and candidate names
+
+ALL MEDIA AUTO-SAVE GATE TESTS PASSED
+
+> nearr@0.1.0 test:geographic-context
+> ts-node -P scripts/tsconfig.json scripts/testGeographicContextCandidates.ts
+
+PASS geographic context never becomes the saved destination
+
+> nearr@0.1.0 test:geographic-context-source
+> ts-node -P scripts/tsconfig.json scripts/testGeographicContextSource.ts
+
+PASS production Rio place is source geographic context
+PASS its scenic_spot category does not rescue it
+PASS confidence 1.0 does not rescue it
+PASS still classified geographic: Rio de Janeiro [city]
+PASS laundering blocked: Rio de Janeiro [city] never becomes an ordinary venue mention
+PASS laundering blocked: Rio de Janeiro [city] is counted as a peer, never a business
+PASS still classified geographic: Los Angeles [city]
+PASS laundering blocked: Los Angeles [city] never becomes an ordinary venue mention
+PASS laundering blocked: Los Angeles [city] is counted as a peer, never a business
+PASS still classified geographic: New York [city]
+PASS laundering blocked: New York [city] never becomes an ordinary venue mention
+PASS laundering blocked: New York [city] is counted as a peer, never a business
+PASS still classified geographic: Paris [city]
+PASS laundering blocked: Paris [city] never becomes an ordinary venue mention
+PASS laundering blocked: Paris [city] is counted as a peer, never a business
+PASS still classified geographic: Orange County [admin region]
+PASS laundering blocked: Orange County [admin region] never becomes an ordinary venue mention
+PASS laundering blocked: Orange County [admin region] is counted as a peer, never a business
+PASS still classified geographic: Brazil [country]
+PASS laundering blocked: Brazil [country] never becomes an ordinary venue mention
+PASS laundering blocked: Brazil [country] is counted as a peer, never a business
+PASS still classified geographic: compound "Los Angeles, California"
+PASS laundering blocked: compound "Los Angeles, California" never becomes an ordinary venue mention
+PASS laundering blocked: compound "Los Angeles, California" is counted as a peer, never a business
+PASS still classified geographic: accent/case insensitive
+PASS laundering blocked: accent/case insensitive never becomes an ordinary venue mention
+PASS laundering blocked: accent/case insensitive is counted as a peer, never a business
+PASS geographic brand survives: California Pizza Kitchen
+PASS geographic brand survives: California Pizza Kitchen is still a searchable mention
+PASS geographic brand survives: California Pizza Kitchen still renders
+PASS geographic brand survives: Brooklyn City Pizzeria & Market
+PASS geographic brand survives: Brooklyn City Pizzeria & Market is still a searchable mention
+PASS geographic brand survives: Brooklyn City Pizzeria & Market still renders
+PASS geographic brand survives: New York Pizza
+PASS geographic brand survives: New York Pizza is still a searchable mention
+PASS geographic brand survives: New York Pizza still renders
+PASS geographic brand survives: Paris Baguette
+PASS geographic brand survives: Paris Baguette is still a searchable mention
+PASS geographic brand survives: Paris Baguette still renders
+PASS geographic brand survives: Rio Hotel
+PASS geographic brand survives: Rio Hotel is still a searchable mention
+PASS geographic brand survives: Rio Hotel still renders
+PASS geographic brand survives: Los Angeles Cafe [restaurant]
+PASS geographic brand survives: Los Angeles Cafe [restaurant] is still a searchable mention
+PASS geographic brand survives: Los Angeles Cafe [restaurant] still renders
+PASS geographic brand survives: Orange County Mining Co [restaurant]
+PASS geographic brand survives: Orange County Mining Co [restaurant] is still a searchable mention
+PASS geographic brand survives: Orange County Mining Co [restaurant] still renders
+PASS geographic brand survives: Santa Fe Importers
+PASS geographic brand survives: Santa Fe Importers is still a searchable mention
+PASS geographic brand survives: Santa Fe Importers still renders
+PASS destination survives: Copacabana Beach
+PASS destination survives: Copacabana Beach is still a searchable mention
+PASS destination survives: Christ the Redeemer
+PASS destination survives: Christ the Redeemer is still a searchable mention
+PASS destination survives: Sugarloaf Mountain Cable Car
+PASS destination survives: Sugarloaf Mountain Cable Car is still a searchable mention
+PASS destination survives: Ipanema Beach
+PASS destination survives: Ipanema Beach is still a searchable mention
+PASS destination survives: Maya Bay
+PASS destination survives: Maya Bay is still a searchable mention
+PASS destination survives: Chapada das Mesas National Park
+PASS destination survives: Chapada das Mesas National Park is still a searchable mention
+PASS destination survives: Bradley Mountain
+PASS destination survives: Bradley Mountain is still a searchable mention
+PASS street address in the address field overrides self-reference
+PASS street address spoken/shown in explicit evidence overrides self-reference
+PASS a non-street "address" does NOT override (city text is not an address)
+PASS hasStreetAddressText: positive
+PASS hasStreetAddressText: negative
+PASS hasStreetAddressText: null-safe
+PASS a city name with no admin fields of its own is NOT suppressed (unchanged behavior)
+PASS a city name whose fields name a DIFFERENT place is not self-referential
+PASS an empty name is not classified
+PASS Rio reel: the city produces no searchable mention
+PASS Rio reel: all four real destinations survive
+PASS Rio reel: the city is counted as dropped context
+PASS Rio reel: the city still scopes its siblings (geo context preserved)
+PASS Rio reel: the city is not counted as an ineligible NAME (it is context, not junk)
+PASS Rio reel: the rendered caption does not lead with the city
+PASS Rio reel: four places render
+PASS Rio reel: the city never appears as its own rendered line
+PASS Rio reel: multi-place content is never silently auto-saved
+PASS city-only post: becomes exactly one peer geographic destination
+PASS city-only post: it is a geographic mention, never a venue one
+PASS city-only post: it renders as a destination
+PASS city-only post: the city is still available on the mention itself
+PASS city-only post: a lone peer city is not published as shared context
+PASS mixed: only the real venue is searchable
+PASS mixed: the locality is dropped as context
+PASS mixed: the real venue still renders as primary
+PASS mixed: the real venue remains auto-save eligible
+PASS orchestrator: no query is ever issued for the city
+PASS orchestrator: no mention result carries the city as its display name
+PASS orchestrator: 7 Mares never becomes a candidate of a city mention
+PASS orchestrator: the four real destinations are still searched
+PASS candidate-side geographic guard is unchanged and still rejects the locality
+
+ALL PASS
+
+> nearr@0.1.0 test:media-run-diagnostics
+> ts-node -P scripts/tsconfig.json scripts/testMediaRunDiagnostics.ts
+
+PASS all valid: emitted persists
+PASS all valid: valid persists
+PASS all valid: rejected persists as 0
+PASS all valid: analysis-attempted persists
+PASS all valid: no rejection labels emitted
+PASS all valid: no geographic context dropped
+PASS all valid: no context labels emitted
+PASS all valid: four destination places
+PASS grouping telemetry: bounded counts persist
+PASS grouping telemetry: only closed reason codes persist
+PASS grouping telemetry: confidence and separation flag persist
+PASS partial: emitted 4
+PASS partial: valid 3
+PASS partial: rejected 1
+PASS partial: rejection label is the structural path+code only
+PASS partial: three destination places
+PASS all rejected: emitted 3
+PASS all rejected: valid 0 is persisted, not omitted
+PASS all rejected: rejected 3
+PASS all rejected: three labels
+PASS all rejected: zero destination places
+PASS all rejected: the evidence itself is untouched (still insufficient, still empty)
+PASS rio: emitted 3
+PASS rio: schema rejected none
+PASS rio: exactly one suppressed as source geographic context
+PASS rio: the label names the index, the model category, and the reason
+PASS rio: two legitimate destinations still reach the resolver
+PASS rio: the funnel reconstructs without the raw preview
+PASS back-compat: no diagnostics key at all does not throw and omits model counts
+PASS back-compat: no diagnostics key at all still yields the edge-computed half
+PASS back-compat: empty diagnostics object does not throw and omits model counts
+PASS back-compat: empty diagnostics object still yields the edge-computed half
+PASS back-compat: old-style bag with only the pre-existing fields does not throw and omits model counts
+PASS back-compat: old-style bag with only the pre-existing fields still yields the edge-computed half
+PASS back-compat: null does not throw and omits model counts
+PASS back-compat: null still yields the edge-computed half
+PASS back-compat: a non-object does not throw and omits model counts
+PASS back-compat: a non-object still yields the edge-computed half
+PASS hostile: negative count rejected
+PASS hostile: non-integer count rejected
+PASS hostile: non-numeric count rejected
+PASS hostile: non-array rejection paths ignored
+PASS hostile: null evidence omits the edge half entirely
+PASS bounds: rejection labels capped at 8
+PASS bounds: an over-long label is truncated to 120 chars
+PASS bounds: empty labels are dropped
+PASS bounds: every geographic place is counted (as peers here - none contains another)
+PASS bounds: context labels capped at 12
+PASS vayrin telemetry: invocation persisted
+PASS vayrin telemetry: extracted and considered remain distinct
+PASS vayrin telemetry: selected timestamps persisted
+PASS vayrin telemetry: actual transmitted frames persisted
+PASS vayrin telemetry: baseline model inputs persisted
+PASS vayrin telemetry: usage and cost persisted
+PASS vayrin telemetry: selector rationale persisted
+PASS privacy: no place name in the funnel
+PASS privacy: no transcript text in the funnel
+PASS privacy: no country/region strings in the funnel
+PASS privacy: only closed-vocabulary labels survive
+PASS automatic deep: invocation decision persisted
+PASS automatic deep: bounded normal outputs persisted
+PASS automatic deep: costs and provider calls persisted
+PASS agreement: "Rio de Janeiro" -> name_matches_city
+PASS agreement: "California" -> name_matches_region
+PASS agreement: "Brazil" -> name_matches_country
+PASS agreement: "Los Angeles, California" -> name_matches_compound_admin_context
+PASS agreement: "California Pizza Kitchen" -> destination
+PASS agreement: "Copacabana Beach" -> destination
+PASS agreement: "Brooklyn" -> destination
+PASS agreement: "Granada" -> destination
+PASS agreement: "(blank)" -> destination
+PASS reason: city match reports name_matches_city
+PASS reason: region match reports name_matches_region
+PASS reason: country match reports name_matches_country
+PASS reason: compound match reports name_matches_compound_admin_context
+PASS reason: the narrowest field wins precedence over a compound
+PASS summary: a clean multi-place reel reports zero dropped and no labels
+
+ALL PASS
+
+> nearr@0.1.0 test:shared-geo-context
+> ts-node -P scripts/tsconfig.json scripts/testSharedGeoContext.ts
+
+PASS strong: two places independently naming the same country
+PASS strong: source is multiple_places_agree
+PASS strong: a destination plus a context-only place naming the same country
+PASS strong: a context-only place ALONE corroborates (the post named the country as a place)
+PASS strong: the country stated verbatim in explicit evidence corroborates
+PASS weak: exactly one place quietly carrying a country field
+PASS none: no country anywhere
+PASS unicode: accents fold for COMPARISON but the original is carried forward
+PASS conflict: a Spain+Portugal post is conflicted
+PASS conflict: no shared country is offered
+PASS conflict: both countries recorded
+PASS conflict: no query is coerced into a single country
+PASS conflict: each mention still carries only its OWN country
+PASS weak: verdict is weak, not strong
+PASS weak: a sibling with no country of its own is NOT scoped
+PASS weak: the place that DID assert the country still uses its own
+PASS contradiction: the post is conflicted, not Nicaragua
+PASS contradiction: the Spanish mention keeps Spain
+PASS contradiction: the Spanish mention is never given Nicaragua
+PASS cross-border: the Costa Rican hotel keeps Costa Rica
+PASS reel: Nicaragua is established as STRONG
+PASS reel: exactly one country candidate
+PASS reel: the country survives even though the cities are suppressed
+PASS reel: THE BIAS GEOCODE NO LONGER ASKS FOR A BARE "Granada"
+PASS reel: the bias geocode now names the country
+PASS reel: Ometepe is searched inside Nicaragua
+PASS reel: Ometepe resolves to the Nicaraguan island
+PASS reel: task B admits the three cities as PEER geographic destinations
+PASS reel: no Spanish candidate is reachable at all
+PASS ambiguity: the query is scoped to Nicaragua despite Spain ranking first
+PASS ambiguity: the geocode bias is Nicaraguan, not Spanish
+PASS regression: Brooklyn City Pizzeria still resolves
+PASS regression: a US venue keeps its own country in the query
+PASS regression: Rio city is still context, never a mention
+PASS regression: both Rio landmarks still resolve
+PASS regression: Rio landmarks are scoped to Brazil
+PASS regression: "Nicaragua Restaurant" is still a searchable business
+PASS regression: "Granada Hotel" is still a searchable business
+PASS regression: "León Cafe" is still a searchable business
+PASS unicode: accented names and countries reach the provider unfolded
+PASS wrong-save: the Nicaragua reel is not auto-save eligible, before or after
+PASS wrong-save: a country-only place can never satisfy the auto-save gate
+PASS wrong-save: multi-country travel content is never silently saved
+PASS wrong-save: a genuine street-address venue is still eligible (gate not tightened)
+
+ALL PASS
+
+> nearr@0.1.0 test:shared-city-context
+> ts-node -P scripts/tsconfig.json scripts/testSharedCityContext.ts
+
+PASS nicaragua: no city is shared across peer destinations
+PASS nicaragua: recorded as no container claim at all
+PASS nicaragua: Granada never becomes the post city
+PASS nicaragua: shared country is still Nicaragua
+PASS nicaragua: shared country is still STRONG
+PASS nicaragua: Ometepe has no city of its own
+PASS nicaragua: Ometepe keeps Nicaragua
+PASS nicaragua: Granada keeps its own city identity
+PASS nicaragua: Granada still resolves geographically
+PASS nicaragua: San Juan del Sur keeps its own city identity
+PASS nicaragua: San Juan del Sur still resolves geographically
+PASS nicaragua: León keeps its own city identity
+PASS nicaragua: León still resolves geographically
+PASS nicaragua: all four destinations survive
+PASS two-stop: a lone peer city is not inheritable
+PASS paris: an agreed city IS shared
+PASS paris: recorded as strong
+PASS paris: source is independent agreement
+PASS rio: the container city still scopes its landmarks
+PASS rio: recorded as strong
+PASS rio: attributed to the container
+PASS rio: the city itself is suppressed as a destination
+PASS rio: Rio is not offered as a peer destination
+PASS rio: the three landmarks survive
+PASS tokyo: a single-city roundup shares its city
+PASS weak: one quiet city is not propagated
+PASS weak: it is recorded as weak, not absent
+PASS weak: country context is unaffected
+PASS multi-country: no shared city
+PASS multi-country: no shared country either
+PASS override: the mention keeps its own city
+PASS override: and its own country
+PASS override: the post has no single shared city to force
+PASS region: an agreed region IS shared
+PASS region: recorded as strong
+PASS region: two different cities still share no city
+PASS region: peer cities in one state still share the state
+PASS region: but never each other's city
+PASS region: conflicting regions share nothing
+PASS region: a lone region is weak, not propagated
+PASS general: a beach does not inherit a peer city
+PASS general: the shared country still holds
+PASS general: an agreed container still scopes a city-less landmark
+PASS general: recorded as container-sourced
+PASS degenerate: empty and blank geo never throw
+PASS degenerate: blank strings are not treated as a city
+PASS consumer: Ometepe is no longer searched inside Granada
+PASS consumer: Ometepe keeps its country scope
+PASS consumer: no coordinate bias is geocoded from a peer city
+PASS consumer: each peer city is still searched as itself
+PASS consumer: an agreed container city still scopes its siblings
+PASS consumer: and still supplies a coordinate bias
+
+ALL PASS
+
+> nearr@0.1.0 test:geographic-destinations
+> ts-node -P scripts/tsconfig.json scripts/testGeographicDestinations.ts
+
+PASS rio: the city is classified a redundant container
+PASS rio: the landmarks are not geographic context at all
+PASS rio: no mention is created for the city
+PASS rio: the three landmarks all become destinations
+PASS rio: ZERO destination queries for the city
+PASS rio: 7 Mares never enters any candidate set
+PASS rio: container counted, no peers admitted
+PASS attack: 7 Mares is REJECTED by the geographic path
+PASS attack: the Rio locality is ACCEPTED by the geographic path
+PASS attack: in ordinary venue mode the locality is still rejected (guard intact)
+PASS nicaragua: shared country is STRONG
+PASS nicaragua: Granada is a peer geographic destination
+PASS nicaragua: San Juan del Sur is a peer geographic destination
+PASS nicaragua: León is a peer geographic destination
+PASS nicaragua: Ometepe is not geographic context at all
+PASS nicaragua: all four intended destinations become mentions
+PASS nicaragua: the three cities resolve GEOGRAPHICALLY
+PASS nicaragua: Ometepe stays on the ordinary destination path
+PASS nicaragua: peer count recorded, no container suppressed
+PASS nicaragua: every city query is scoped to Nicaragua
+PASS nicaragua: Granada resolves to the Nicaraguan geographic entity
+PASS nicaragua: Granada never accepts es-granada
+PASS nicaragua: Granada never accepts granada-hotel
+PASS nicaragua: León resolves to the Nicaraguan geographic entity
+PASS nicaragua: León never accepts es-leon
+PASS nicaragua: León never accepts leon-cafe
+PASS nicaragua: San Juan del Sur resolves to the Nicaraguan geographic entity
+PASS nicaragua: Ometepe still resolves to the island
+PASS nicaragua: no wrong silent save is possible for this reel
+PASS safety-net: a city destination is NEVER auto-save eligible
+PASS safety-net: the gate names the reason
+PASS city-hop: all three cities are peers
+PASS city-hop: all resolve geographically
+PASS city-hop: a multi-country post applies no shared country
+PASS paris+landmarks: Paris is a redundant container (Rio pattern generalizes)
+PASS paris+landmarks: only the three landmarks become destinations
+PASS mixed: both cities are containers of their own landmark
+PASS mixed: the two landmarks survive as destinations
+PASS single-city: a city-only post yields one geographic destination
+PASS single-city: it resolves to the locality, not the hotel
+PASS single-city: the hotel is excluded
+PASS contradiction: the post is conflicted, so no shared country is forced
+PASS contradiction: "Granada, Spain" is queried with Spain
+PASS contradiction: it resolves to Granada, Spain — not Nicaragua
+PASS business: "Paris Baguette" stays an ordinary venue mention
+PASS business: "Los Angeles Cafe" stays an ordinary venue mention
+PASS business: "Brooklyn City Pizzeria & Market" stays an ordinary venue mention
+PASS business: "Orange County Mining Co" stays an ordinary venue mention
+PASS business: "Rio Hotel" stays an ordinary venue mention
+PASS natural: beaches/islands/parks are untouched by the city path
+PASS unicode: accented city and country reach the provider unfolded
+PASS diagnostics: Rio reports one container and no peers
+PASS diagnostics: the Rio label names the role
+PASS diagnostics: Nicaragua reports three peers and no container
+PASS diagnostics: every Nicaragua label names the peer role
+PASS diagnostics: labels carry no place names or countries
+PASS diagnostics: renderable destinations exclude the container but keep peers
+
+ALL PASS
+
+> nearr@0.1.0 test:source-location-tag
+> ts-node -P scripts/tsconfig.json scripts/testSourceLocationTag.ts
+
+PASS business tag is recovered
+PASS business tag keeps its name
+PASS business tag keeps its coordinates
+PASS business tag keeps Instagram location id
+PASS city tag is recovered
+PASS untagged post yields no tag
+PASS page with no location key at all yields no tag
+PASS provenance names the exact first-party feature
+PASS source type stays tagged_location
+PASS source platform stays instagram
+PASS raw page HTML is never carried on the signal
+PASS tiktok is untouched by this change
+PASS youtube is untouched by this change
+PASS facebook is untouched by this change
+PASS snapchat is untouched by this change
+PASS genericWeb is untouched by this change
+PASS instagram routes through the new extractor
+PASS malformed tag never throws: empty name
+PASS malformed tag yields no signal: empty name
+PASS malformed tag never throws: whitespace name
+PASS malformed tag yields no signal: whitespace name
+PASS malformed tag never throws: name of the wrong type
+PASS malformed tag yields no signal: name of the wrong type
+PASS malformed tag never throws: no name and no coordinates
+PASS malformed tag yields no signal: no name and no coordinates
+PASS malformed tag never throws: null island
+PASS malformed tag yields no signal: null island
+PASS malformed tag never throws: wrong typename
+PASS malformed tag yields no signal: wrong typename
+PASS malformed tag never throws: not an object
+PASS malformed tag yields no signal: not an object
+PASS an unbalanced payload yields no signal
+PASS a bare marker with no object yields no signal
+PASS bad coordinates keep the name: out of range latitude
+PASS bad coordinates are dropped: out of range latitude
+PASS bad coordinates keep the name: out of range longitude
+PASS bad coordinates are dropped: out of range longitude
+PASS bad coordinates keep the name: string coordinates
+PASS bad coordinates are dropped: string coordinates
+PASS bad coordinates keep the name: null coordinates
+PASS bad coordinates are dropped: null coordinates
+PASS bad coordinates keep the name: null island with a name
+PASS bad coordinates are dropped: null island with a name
+PASS NaN coordinates cannot survive parsing
+PASS a tagged business is an exact place
+PASS a tagged city is geographic context
+PASS a tagged city with the admin suffix still matches its locality
+PASS a tagged country is geographic context
+PASS rio: a city tag stays geographic context even beside a business carrying its name
+PASS rio: 7 Mares can never make the tag look like an exact place
+PASS a geographic-sounding business name is still an exact place
+PASS a natural destination is not administrative
+PASS an island destination is not administrative
+PASS a mall destination is not administrative
+PASS an unmatched tag is unknown, not silently geographic
+PASS an empty tag name is unknown
+PASS no provider results is unknown
+PASS valid coordinates become a bias
+PASS a tagless evidence field yields no bias
+PASS absent tag adds no evidence key
+PASS present tag adds exactly one evidence key
+PASS the tag never rewrites what the caption established
+PASS the caption address still wins its own extraction
+PASS a caption address is still found beside a city tag
+PASS an independently named venue at an address defers a different parent/context tag
+PASS a matching exact-place tag remains the highest-priority identity
+PASS a tenant written in caption prose overrides a different tagged parent complex
+
+ALL PASS
+
+> nearr@0.1.0 test:no-match-diagnostics
+> ts-node -P scripts/tsconfig.json scripts/testNoMatchDiagnostics.ts
+
+PASS provider empty: outcome is no_match
+PASS provider empty: reason is provider_empty
+PASS provider empty: search status is empty
+PASS provider empty: zero results recorded
+PASS provider empty: no rejection counts fabricated
+PASS provider empty: no best candidate invented
+PASS provider error: outcome is provider_error, not no_match
+PASS provider error: search status is error
+PASS provider error: error kind preserved
+PASS provider error: status code preserved
+PASS provider error: never labelled provider_empty
+PASS name mismatch: outcome is no_match
+PASS name mismatch: reason is name_match_failed
+PASS name mismatch: provider results counted
+PASS name mismatch: candidates survived the guards
+PASS name mismatch: none carried name evidence
+PASS name mismatch: best candidate recorded as failing name
+PASS name mismatch: best score is a bounded number
+PASS venue mode: locality-only results produce no_match
+PASS venue mode: reason is geographic_context_rejected
+PASS venue mode: mode recorded as venue
+PASS venue mode: rejection counted under the real guard name
+PASS venue mode: nothing survived
+PASS geographic mode: a same-named business is rejected
+PASS geographic mode: reason is geographic_destination_type_rejected
+PASS geographic mode: mode recorded as geographic
+PASS geographic mode: 7 Mares never survives
+PASS geographic mode: rejection attributed to the geographic-entity guard
+PASS wrong country: rejected
+PASS wrong country: reason is distance_or_geo_rejected
+PASS wrong country: country guard named
+PASS wrong country: shared country was applied to the query
+PASS wrong country: query carried a country
+PASS mixed: falls back to all_candidates_rejected
+PASS mixed: both distinct guards preserved in counts
+PASS mixed: counts sum to the candidates considered
+PASS types: primaryType presence counted
+PASS types: types-array presence counted
+PASS types: fully untyped candidates counted
+PASS types: counts never exceed candidates considered
+PASS insufficient evidence: outcome preserved
+PASS insufficient evidence: provider never blamed
+PASS insufficient evidence: no no-match reason
+PASS insufficient evidence: no provider request made
+PASS scoping: shared Nicaragua context recorded as applied
+PASS scoping: country did not come from the mention
+PASS scoping: no city context
+PASS scoping: no location bias without a city
+PASS scoping: a mention country is recorded as its own
+PASS scoping: mention country is not credited to shared context
+PASS aggregate: attempts counted
+PASS aggregate: no-match counted
+PASS aggregate: reason counts grouped
+PASS aggregate: one trace per failed mention
+PASS aggregate: traces are per-slot ids, not source text
+PASS success: mention resolved
+PASS success: no failure trace emitted
+PASS success: no no-match reasons recorded
+PASS bounds: traces capped at 10
+PASS privacy: no candidate names in persisted diagnostics
+PASS privacy: no query text in persisted diagnostics
+PASS privacy: no address text
+PASS privacy: no googlePlaceId leakage
+PASS bounds: provider result count capped at 25
+PASS fault isolation: absent provider fields never throw
+PASS fault isolation: resolution still completed
+PASS fault isolation: a trace was still produced
+PASS fault isolation: absent types counted as untyped
+PASS fault isolation: trace builder tolerates wrong-typed provider fields
+PASS fault isolation: non-array types counted as untyped
+PASS fault isolation: non-string primaryType counted as untyped
+PASS fault isolation: an unnamed rejection still tallies
+PASS unchanged: verified_single still verified
+PASS unchanged: two close candidates still ambiguous
+PASS unchanged: business-only still no_match
+PASS unchanged: empty still no_match
+PASS unchanged: a resolved mention carries no reason
+PASS unchanged: name-evidence failure and floor failure are both no_match
+PASS split: low-scoring name match is score_below_acceptance, not name_match_failed
+
+ALL PASS
+
+> nearr@0.1.0 test:provider-api-path
+> ts-node -P scripts/tsconfig.json scripts/testProviderApiPath.ts
+
+PASS new: primaryType survives normalization
+PASS new: types survive normalization
+PASS new: display label retained
+PASS new: id/name/coords retained
+PASS legacy: primaryType is absent, never guessed from types
+PASS legacy: types still present
+PASS legacy: the first type is NOT promoted to primaryType
+PASS new success: provider path recorded as places_new
+PASS new success: no fallback flagged
+PASS new success: no fallback reason
+PASS new success: exactly one provider call (no double billing)
+PASS new success: primaryType reached the resolver
+PASS service blocked: provider path recorded as places_legacy
+PASS service blocked: fallback flagged
+PASS service blocked: reason is the bounded code
+PASS service blocked: reason is a closed vocabulary, not a raw error
+PASS transient error: still attributed to the new path
+PASS transient error: not reported as a fallback
+PASS transient error: outcome is provider_error
+PASS mixed: one degraded search marks the whole task degraded
+PASS mixed: fallback flagged
+PASS unknown path: absent apiPath is not invented
+PASS unknown path: fallback not asserted
+PASS trace: a no-match records which surface produced it
+PASS trace: reason still derived normally
+PASS privacy: no api key in diagnostics
+PASS privacy: no endpoint url
+PASS privacy: no raw google error text
+
+ALL PASS
+
+> nearr@0.1.0 test:name-driven
+> ts-node -P scripts/tsconfig.json scripts/testNameDrivenResolver.ts
+
+PASS normalizeStateToAbbr maps full name
+PASS normalizeStateToAbbr passes abbr through
+PASS normalizeStateToAbbr null on unknown
+PASS strong+distinctive+business => high score
+PASS reasons include distinctive_token_match
+PASS reasons include state_match
+PASS apostrophe brand keeps distinctive token match
+PASS ampersand variant keeps distinctive token match
+PASS generic-only name match is demoted
+PASS wrong state => rejected
+PASS permanently closed penalized
+PASS platform noise rejected
+PASS hotel category is a soft positive signal
+PASS park category is a soft positive signal
+PASS trail category is a soft positive signal
+PASS beach category is a soft positive signal
+PASS museum category is a soft positive signal
+PASS attraction category is a soft positive signal
+PASS store category is a soft positive signal
+PASS fitness category is a soft positive signal
+PASS wellness category is a soft positive signal
+PASS transit category is a soft positive signal
+PASS education category is a soft positive signal
+PASS category-biased merge preserves neutral candidate
+PASS same-name hotel branches remain ambiguous
+PASS classify verified_single (clear winner)
+PASS classify ambiguous (two close)
+PASS classify no_match (business only, no name evidence)
+PASS classify no_match (empty)
+PASS single verified => candidate_confirmation
+PASS single verified never auto-saves
+PASS single ambiguous >=2 => multi_candidate_confirmation
+PASS single ambiguous 1 cand => candidate_confirmation (low)
+PASS single no candidates => manual_fallback
+PASS multi verified => multi_candidate_confirmation
+PASS multi no candidates => manual_fallback
+PASS decision mapping never auto-saves (any case)
+PASS same-scene identities reconverge to one mention id
+PASS same-scene identities route two canonical candidates to picker
+PASS identity hypotheses remain ranked in the logical slot
+PASS host-only candidate is detected
+PASS primary candidate is not host-only
+PASS all Places provider errors are retryable
+PASS partial Places success is not retried
+PASS real no-match is not a provider retry
+PASS request-limit exhaustion is not retried
+PASS single clear candidate => verified_single
+PASS verified aggregate has 1
+PASS two same-name candidates => ambiguous
+PASS ambiguous preserves both
+PASS same-scene resolver returns one logical result
+PASS same-scene resolver searches both identities
+PASS same-scene resolver preserves two ranked picker candidates
+PASS no results => no_match
+PASS no_match aggregate empty
+PASS one provider_error preserved
+PASS provider status preserved for reliability classification
+PASS other mention still verified
+PASS failed mention does NOT discard verified
+PASS search throw => provider_error
+PASS dedup by Place ID => aggregate 1
+PASS distinct places stay distinct => aggregate 2
+PASS request limit caps searches
+PASS over-limit mentions => provider_error
+PASS identical query searched once (cache)
+PASS no safeToAutoSave leaks from resolver
+PASS single name + city context => verified_single
+PASS single verified aggregate has 1 canonical
+PASS city-only context uses geocoded state
+PASS city-only context keeps nearby verification
+PASS apostrophe name => resolves
+PASS apostrophe name aggregate populated
+PASS conflicting geo (TX vs CA) => no_match
+PASS conflicting geo preserves name, no canonical
+PASS single-name dedup by Place ID
+PASS single-name timeout => provider_error (not no_match)
+PASS provider_error is not a permanent lost place
+PASS merged query includes primary + host (not the "at" label)
+PASS merged mention resolves (not manual)
+PASS merged mentionResult keeps relationship context
+PASS merged mention is a single aggregate slot
+
+ALL NAME-DRIVEN RESOLVER TESTS PASSED
+
+> nearr@0.1.0 test:onboarding-routing
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingRouting.ts
+
+testOnboardingRouting: all assertions passed
+
+> nearr@0.1.0 test:onboarding-demo
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingDemoCopy.ts
+
+testOnboardingDemoCopy: all assertions passed
+
+> nearr@0.1.0 test:onboarding-v2
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingV2FirstMagicMoment.ts && ts-node -P scripts/tsconfig.json scripts/testOnboardingV2Immersive.ts && ts-node -P scripts/tsconfig.json scripts/testOnboardingV2SecondHalf.ts && npm run test:onboarding-v2-deleted-account && npm run test:onboarding-v2-dev-reset
+
+PASS Onboarding V2 first magic-moment state, fixture, handoff, provenance, UI, accessibility, and Dev guards
+PASS hands-on rehearsal order, durable resume, truthful analytics, exact-source creative, and saved-card retrieval
+PASS Onboarding V2 second-half value, permissions, auth transfer, activation, completion, and Development guards
+
+> nearr@0.1.0 test:onboarding-v2-deleted-account
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingV2DeletedAccount.ts && npm run test:onboarding-v2-post-delete
+
+PASS 1 permanent progress -> confirmed delete -> fresh Welcome owner state
+PASS 2 deleted identity cannot qualify for Pick up where you left off
+PASS 3 server checkpoint is captured narrowly, then deleted after auth cannot hydrate it
+PASS 4 tutorial saved-place continuation and selections are cleared
+PASS 5 next anonymous identity starts a new funnel at Welcome
+PASS 6 post-delete Welcome remains converged across 50 renders
+PASS 7 legitimate force-quit Learn and Practice resumes remain eligible
+PASS 8 normal account linking still preserves the transferred tutorial place
+PASS 9 ordinary sign-out behavior is unchanged
+PASS 10 failed deletion returns before identity-bound local cleanup
+PASS 11 development reset remains unavailable outside the explicit Nearr-Dev lane
+PASS 12 root max-update-depth guard remains the sole V2 navigation authority
+PASS invalid persisted identities self-heal while pre-auth onboarding stays local
+
+All deleted-account Onboarding V2 regression scenarios passed.
+
+> nearr@0.1.0 test:onboarding-v2-post-delete
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingV2PostDeleteBootstrap.ts
+
+PASS 1 permanent account -> deletion clears identity-bound journey
+PASS 2 fresh V2 Welcome owns the post-delete route
+PASS 3 fresh anonymous bootstrap requires a valid Supabase session
+PASS 4 authenticated-role anonymous JWT can execute checkpoint RPC by contract
+PASS 5 fresh checkpoint persists
+PASS 6 platform/category/tutorial mutations persist locally
+PASS 7 force-close with restored anonymous JWT resumes tutorial
+PASS 8 deleted identity cannot resume
+PASS 9 missing JWT cannot leave an empty black onboarding surface
+PASS 10 transient sync failure retains usable local onboarding
+PASS 11 post-delete route does not ping-pong
+PASS 12 maximum-update-depth single-authority fix is preserved
+PASS 13 development reset remains available
+PASS 14 normal account linking remains valid
+PASS 15 normal force-quit resume remains valid
+PASS 16 unauthenticated RPC remains denied and deletion clears only the dead local session
+
+All post-delete black-screen regression scenarios passed.
+
+> nearr@0.1.0 test:onboarding-v2-dev-reset
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingV2DevReset.ts
+
+PASS reset is fail-closed in both client and server outside explicit Nearr-Dev
+PASS both actions clear V2 state, completion, transfer, fixture attempts, and pending navigation
+PASS onboarding-only reset removes only token-owned server checkpoints and preserves product data
+PASS fresh-user reset rotates auth locally without deleting permanent accounts or unrelated data
+PASS Settings and the independent direct route expose guarded explicit reset choices
+PASS successful reset returns to Welcome through the bounded navigation authority
+
+All Onboarding V2 development reset contracts passed.
+
+> nearr@0.1.0 test:onboarding-anonymous
+> ts-node -P scripts/tsconfig.json scripts/testAnonymousOnboardingV2.ts
+
+PASS anonymous creation/resume contract
+PASS same-user and cross-user conversion contracts
+PASS transfer authorization/idempotency/analytics contracts
+PASS anonymous cleanup eligibility and retention contracts
+All anonymous Onboarding V2 tests passed.
+
+> nearr@0.1.0 test:auth-deeplink
+> ts-node -P scripts/tsconfig.json scripts/testAuthDeepLink.ts
+
+[test:auth-deeplink] all assertions passed
+
+> nearr@0.1.0 test:auth-account-state
+> ts-node -P scripts/tsconfig.json scripts/testAuthAccountState.ts
+
+testAuthAccountState: all assertions passed
+
+> nearr@0.1.0 test:auth-errors
+> ts-node -P scripts/tsconfig.json scripts/testAuthErrors.ts
+
+testAuthErrors: all assertions passed
+
+> nearr@0.1.0 test:auth-recovery
+> ts-node -P scripts/tsconfig.json scripts/testAuthRecovery.ts
+
+testAuthRecovery: all assertions passed
+
+> nearr@0.1.0 test:auth-screen-contracts
+> ts-node -P scripts/tsconfig.json scripts/testAuthScreenContracts.ts
+
+testAuthScreenContracts: all assertions passed
+
+> nearr@0.1.0 test:nearby-eligibility
+> ts-node -P scripts/tsconfig.json scripts/testNearbyEligibility.ts
+
+PASS every NearrCategory has exactly one radius bucket
+PASS restaurant -> 3 mi
+PASS cafe -> 3 mi
+PASS bakery -> 3 mi
+PASS bar -> 3 mi
+PASS brewery -> 3 mi
+PASS dessert -> 3 mi
+PASS shopping -> 4 mi
+PASS fitness -> 4 mi
+PASS wellness -> 4 mi
+PASS hotel -> 4 mi
+PASS resort -> 4 mi
+PASS transportation -> 4 mi
+PASS education -> 4 mi
+PASS service -> 4 mi
+PASS beach -> 6 mi
+PASS park -> 6 mi
+PASS waterfall -> 6 mi
+PASS lake -> 6 mi
+PASS marina -> 6 mi
+PASS island -> 6 mi
+PASS scenic_spot -> 6 mi
+PASS hiking_trail -> 10 mi
+PASS attraction -> 10 mi
+PASS winery -> 10 mi
+PASS museum -> 10 mi
+PASS entertainment -> 10 mi
+PASS nightlife -> 10 mi
+PASS sports -> 10 mi
+PASS other -> default (4 mi)
+PASS unknown string -> default (4 mi)
+PASS null -> default (4 mi)
+PASS undefined -> default (4 mi)
+PASS default bucket matches the suggested V1 default
+PASS restaurant stays category-driven with legacy profile absent
+PASS restaurant stays category-driven with legacy profile 1
+PASS restaurant stays category-driven with legacy profile 99
+PASS explicit per-place override remains active V2 behavior
+PASS resolveReminderPlaceCategory reads a valid stored category
+PASS resolveReminderPlaceCategory falls back to other for null
+PASS resolveReminderPlaceCategory falls back to other for an invalid legacy string
+PASS resolveReminderPlaceCategory falls back to other when absent
+PASS restaurant radius converts to meters correctly
+PASS restaurant meters convert back to 3 mi
+PASS shopping radius converts to meters correctly
+PASS shopping meters convert back to 4 mi
+PASS beach radius converts to meters correctly
+PASS beach meters convert back to 6 mi
+PASS hiking_trail radius converts to meters correctly
+PASS hiking_trail meters convert back to 10 mi
+PASS just inside radius -> eligible
+PASS exactly at radius -> eligible
+PASS just outside radius -> not eligible
+PASS visited -> suppressed
+PASS recently notified -> suppressed
+PASS closed -> suppressed
+PASS none of the above -> eligible
+PASS CLOSED_PERMANENTLY -> reliably closed
+PASS CLOSED_TEMPORARILY -> reliably closed
+PASS OPERATIONAL -> not closed
+PASS unknown hours (null business_status) -> not automatically closed
+PASS unknown hours (undefined business_status) -> not automatically closed
+PASS unrecognized status string -> not automatically closed
+PASS one eligible candidate -> selected
+PASS multiple eligible -> nearest wins
+PASS losers are everyone else, nearest-first
+PASS no eligible candidates -> no winner
+PASS a suppressed candidate cannot win (never enters the winner pool)
+
+ALL nearby-eligibility tests passed.
+
+> nearr@0.1.0 test:nearby-arbitration
+> ts-node -P scripts/tsconfig.json scripts/testNearbyArbitration.ts
+
+PASS first nearby send in the window reserves the slot
+PASS a second nearby send 1.5s later (same window) is suppressed, not a burst
+PASS two truly concurrent geofence ENTER events -> exactly one notification wins
+PASS first send wins
+PASS just inside the window is still suppressed
+PASS a later, unrelated notification just past the window is never blocked
+PASS slot reserved before the (simulated) send attempt
+PASS a failed send releases the slot immediately, not for the rest of the window
+PASS arbitration wiring matches lib/notifications.ts
+
+ALL nearby-arbitration tests passed.
+
+> nearr@0.1.0 test:reminder-distance-cleanup
+> ts-node -P scripts/tsconfig.json scripts/testReminderDistanceCleanup.ts
+
+PASS Settings no longer renders the obsolete distance control
+PASS Settings keeps the nearby reminder preference
+PASS Current profile reads exclude legacy radius columns
+PASS Current profile writes cannot include legacy radius columns
+PASS Offline reminder profile excludes legacy radius fields
+PASS Notification radius resolver has no profile/default input
+PASS Geofence registration uses the same V2 radius resolver
+PASS Map radius display uses the shared V2 policy without fetching a profile default
+PASS Per-place automatic mode no longer implies a profile default
+PASS Legacy database columns remain for old-client compatibility
+PASS reminder-distance cleanup contracts (10 checks)
+
+> nearr@0.1.0 test:offline-mode
+> ts-node -P scripts/tsconfig.json scripts/testOfflineMode.ts
+
+[offline] saved_places_cache_write count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_write count=0
+[offline] saved_places_cache_read count=0
+[offline] saved_places_cache_write count=3
+[offline] saved_places_cache_write count=1
+[offline] saved_places_cache_read count=3
+[offline] saved_places_cache_read count=1
+[offline] saved_places_cache_read count=1
+[offline] saved_places_cache_miss
+[offline] saved_places_cache_miss
+[offline] saved_places_cache_miss
+[offline] saved_places_cache_read_failed SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)
+    at JSON.parse (<anonymous>)
+    at readSavedPlacesCache (C:\Users\andre\.codex\worktrees\nearr-paid-launch-final\Nearr\lib\savedPlacesCache.ts:167:25)
+    at async main (C:\Users\andre\.codex\worktrees\nearr-paid-launch-final\Nearr\scripts\testOfflineMode.ts:223:5)
+[offline] saved_places_cache_miss
+[offline] saved_places_cache_write count=1
+[offline] saved_places_cache_read count=1
+PASS testOfflineMode
+
+> nearr@0.1.0 test:offline-reminders
+> ts-node -P scripts/tsconfig.json scripts/testOfflineReminders.ts
+
+[offline] reminder_snapshot_write count=2
+[offline] reminder_snapshot_write count=1
+[offline] reminder_snapshot_write count=2
+[offline] reminder_snapshot_write count=2
+[offline] reminder_snapshot_read_failed SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)
+    at JSON.parse (<anonymous>)
+    at readEnvelope (C:\Users\andre\.codex\worktrees\nearr-paid-launch-final\Nearr\lib\reminderSnapshot.ts:350:25)
+    at async readReminderSnapshot (C:\Users\andre\.codex\worktrees\nearr-paid-launch-final\Nearr\lib\reminderSnapshot.ts:393:20)
+    at async main (C:\Users\andre\.codex\worktrees\nearr-paid-launch-final\Nearr\scripts\testOfflineReminders.ts:492:5)
+[offline] reminder_snapshot_write count=2
+[offline] reminder_snapshot_write_failed Error: disk full
+    at MemoryStore.setItem (C:\Users\andre\.codex\worktrees\nearr-paid-launch-final\Nearr\scripts\testOfflineReminders.ts:61:32)
+    at writeReminderSnapshot (C:\Users\andre\.codex\worktrees\nearr-paid-launch-final\Nearr\lib\reminderSnapshot.ts:338:19)
+    at async main (C:\Users\andre\.codex\worktrees\nearr-paid-launch-final\Nearr\scripts\testOfflineReminders.ts:559:3)
+PASS testOfflineReminders
+
+> nearr@0.1.0 test:saved-place-snapshots
+> ts-node -P scripts/tsconfig.json scripts/testSavedPlaceSnapshots.ts
+
+[saved-place-snapshot] write failed { savedPlaceId: 'saved-1', message: 'disk_full' }
+PASS saved-place snapshot serialization, isolation, local-first hydration, fallback, photos, restart, and failure safety
+
+> nearr@0.1.0 test:onboarding-google-integration
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingGoogleCostIntegration.ts
+
+PASS 1 onboarding navigation loads and retains the latest route-ownership guards
+PASS 2 hardcoded onboarding demonstration remains backend-independent
+PASS 3 zero-token Development share configuration remains suspended
+PASS 4 durable share acceptance still routes through the diagnosed queue/result flow
+PASS 5 recognized save writes a visual snapshot without an extra Google request
+PASS 6 restart uses persisted imagery with zero provider hydration
+PASS 7 manual search reuses visible imagery and suppresses offscreen fan-out
+PASS 8 five recognition candidates permit only the active visual fallback
+PASS 9 Wrong Place alternatives remain lazy until selected
+PASS 10 multi-place hydration follows only the inspected selection
+PASS 11 onboarding/source-backed places do not become legacy Google fallbacks
+PASS 12 latest share-result save path retains snapshot persistence and active imagery context
+PASS 13 integrated Development QA performs no token reserve or consume path
+PASS 14 suspension cannot activate as a Production bypass
+
+PASS combined onboarding + Google cost-control integration contract (14 cases)
+
+> nearr@0.1.0 test:onboarding-fully-offline
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingFullyOffline.ts
+
+PASS 1–2 local platform/content fixture matrix is complete and render-ready
+PASS 3 bundled post and place media exists without remote URLs
+PASS 4–5 Share → More → Nearr enters local scripted processing without auth
+PASS 6–7 recognition, local save, and saved-place detail are deterministic
+PASS 8 process-death resume preserves the local fixture and save
+PASS 9–13 network, Supabase, Google, Railway, and social availability are irrelevant
+PASS 14–18 fixed timing; no share job, Places, worker, remote media, or real save mutation
+
+All fully offline onboarding contracts passed.
+
+> nearr@0.1.0 test:onboarding-no-live-services
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingNoLiveServices.ts
+
+PASS onboarding sandbox import guard (4 files)
+PASS retired network/retry copy guard
+PASS pre-auth state persistence does not read or write Supabase
+PASS reminder/geofence networking begins only after auth_success
+
+> nearr@0.1.0 test:onboarding-authentic-phase2-auth
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingAuthenticPhase2Auth.ts
+
+PASS TEST 1: Dorset Quarry video and images share one fixture identity
+PASS TEST 2: Mad Yolks video and images share one fixture identity
+PASS TEST 3: Hydra Old Town video and images share one fixture identity
+PASS TEST 4: Old Towne Orange Shops video and images share one fixture identity
+PASS TEST 4: every platform/category mapping references a complete atomic fixture
+PASS TEST 5: no fixture mixes media and place identities
+PASS TEST 6: all required video/image assets exist locally
+PASS TEST 7: Phase 1 runtime media requires no remote URL
+PASS TEST 8: scripted save opens the map payoff centered on the saved fixture
+PASS TEST 9: the correct fixture pin is selected
+PASS TEST 10: the correct place card automatically opens
+PASS TEST 11: the card uses local fixture data and imagery
+PASS TEST 12: closing the card advances to Phase 2 intro
+PASS TEST 13: card close advances exactly once
+PASS TEST 14: reopening cannot restart Phase 1
+PASS TEST 15: Phase 2 intro appears immediately after map-card close
+PASS TEST 16: I’ll try this later acknowledges tutorial completion without a real share
+PASS TEST 17: real-practice choice transitions to actual share flow
+PASS TEST 18: Phase 2 real job uses the real backend/share URL, not the fixture
+PASS TEST 19: offline real-practice requests degrade gracefully and remain skippable
+PASS TEST 20: real practice does not mutate the scripted fixture
+PASS TEST 21: first onboarding screen contains existing-account sign-in CTA
+PASS TEST 22: known durable existing account bypasses onboarding
+PASS TEST 23: existing account receives no onboarding fixture state
+PASS TEST 24: OAuth identity without qualifying Nearr history is not treated as existing
+PASS TEST 25: non-qualifying OAuth path signs out and returns safely to onboarding
+PASS TEST 26: later signup remains available
+PASS TEST 27: existing-account check creates no duplicate auth/profile rows
+PASS TEST 28: Google structured first/last names are stored
+PASS TEST 29: Google without structured names still succeeds with nullable fields
+PASS TEST 30: Apple first-authorization names are stored immediately
+PASS TEST 31: later null Apple names preserve stored values
+PASS TEST 32: provider null never overwrites an existing first_name
+PASS TEST 33: changed non-empty structured values use provider-wins merge policy
+PASS TEST 34: name is not surfaced in onboarding UI
+PASS TEST 35: name remains nullable and is not required for signup
+
+All 35 authentic onboarding, Phase 2, account, and name-storage contracts passed.
+
+> nearr@0.1.0 test:onboarding-install-lifecycle
+> ts-node -P scripts/tsconfig.json scripts/testOnboardingInstallLifecycle.ts
+
+PASS TEST 1 — normal force close resumes the same-install checkpoint
+PASS TEST 2 — new installation rejects install A checkpoint on install B
+PASS TEST 3 — fresh install with stale anonymous auth starts Welcome
+PASS TEST 4 — fresh install clears scripted fixture state
+PASS TEST 5 — fresh install from Phase 2 intro returns to Welcome
+PASS TEST 6 — fresh install discards an old practice job route
+PASS TEST 7 — fresh install discards an old onboarding map selection
+PASS TEST 8 — fresh install keeps the established-account sign-in CTA
+PASS TEST 9 — an established user who signs in routes to the normal map
+PASS TEST 10 — a new OAuth identity still requires activation/onboarding
+PASS TEST 11 — account creation remains wired after fresh install
+PASS TEST 12 — deterministic recognition resumes on the same install
+PASS TEST 13 — map payoff resumes on the same install
+PASS TEST 14 — a real Phase 2 job resumes on the same install
+PASS TEST 15 — stale checkpoints resolve to Welcome, never ERROR_RECOVERY
+PASS TEST 16 — startup promise chains terminate with rejection handlers
+PASS TEST 17 — checkpoint schema mismatch resets safely
+PASS TEST 18 — Development reset controls remain available only in Nearr-Dev
+PASS onboarding install lifecycle: 18/18

@@ -1,0 +1,169 @@
+{
+  "capturedAt": "2026-10-29T23:27:14.146Z",
+  "target": "qnfxnmvxpjzfydgudtvs",
+  "sourceCommit": "b7b59ab366fb0227dd3f035bf7786676c39ba320",
+  "migrationCount": 94,
+  "config": [
+    {
+      "catalog_verified": false,
+      "enforce_allowance": false,
+      "environment": "SANDBOX",
+      "legacy_obligations_reconciled": false,
+      "paid_find_policy_enabled": false,
+      "product_id": "com.nearr.plus.unlimited.monthly.v1",
+      "release_mode": "paid",
+      "release_qualified": false,
+      "sales_enabled": false,
+      "subscription_benefit": "unlimited",
+      "token_catalog_verified": false
+    }
+  ],
+  "policy": [
+    {
+      "legal_approved": false,
+      "provider_route": "disabled",
+      "purchase_qualified": false,
+      "recognition_qualified": false
+    }
+  ],
+  "triggers": [
+    {
+      "relation": "account_age_eligibility",
+      "tgname": "legacy_eligibility_recognition_parent"
+    },
+    {
+      "relation": "saved_place_sources",
+      "tgname": "worker_recognition_commit_guard"
+    },
+    {
+      "relation": "saved_places",
+      "tgname": "worker_recognition_commit_guard"
+    },
+    {
+      "relation": "share_job_place_results",
+      "tgname": "worker_recognition_commit_guard"
+    },
+    {
+      "relation": "share_jobs",
+      "tgname": "worker_recognition_commit_guard"
+    }
+  ],
+  "financialUnchanged": true,
+  "financialFingerprints": [
+    {
+      "checksum": "8c357b20311a252365cbc95f25247ae5",
+      "relation": "place_find_wallets",
+      "rows": 93
+    },
+    {
+      "checksum": "05fe6b1584b1bd34642579d8b035c7c7",
+      "relation": "place_find_lots",
+      "rows": 111
+    },
+    {
+      "checksum": "31bf202a9deba79e1f466771796ef149",
+      "relation": "place_find_ledger",
+      "rows": 555
+    },
+    {
+      "checksum": "fe731f048c6eb1e824365603f7d41194",
+      "relation": "place_find_purchase_transactions",
+      "rows": 27
+    },
+    {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+      "relation": "nearr_plus_entitlements",
+      "rows": 0
+    },
+    {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+      "relation": "nearr_plus_recognitions",
+      "rows": 0
+    }
+  ],
+  "edge": [
+    {
+      "name": "create-share-job",
+      "version": 78,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "0d9b192e25c6c0ef637cfd7fa82d35963f7ad6509bb0acc685796935935669f0",
+      "updatedAt": "2026-10-29T21:33:51.048Z"
+    },
+    {
+      "name": "process-share-jobs",
+      "version": 147,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "df4827bf9a1e04c7c5ad0fdd7306db7fe51b7fb25dbbcd4f233aaa3f7a861276",
+      "updatedAt": "2026-10-29T21:34:00.107Z"
+    },
+    {
+      "name": "process-share-link",
+      "version": 91,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "bbffbb11903cce6c6f5df933dbda0365a361ebf7b67a70b8e1ef004e43645222",
+      "updatedAt": "2026-10-29T21:34:08.262Z"
+    },
+    {
+      "name": "plus-api",
+      "version": 5,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "b4d965310981a135c59a56812c5af1f40e469c9d9fd8a7ce12ef0cbfacb4a338",
+      "updatedAt": "2026-10-29T23:11:39.978Z"
+    },
+    {
+      "name": "revenuecat-plus-webhook",
+      "version": 4,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "ae0e1d55f8d5856fd7cbad249e638edfb44a50b1f099fdfaabe9578553b931cc",
+      "updatedAt": "2026-10-29T21:33:42.927Z"
+    }
+  ],
+  "probes": [
+    {
+      "name": "plus-api",
+      "method": "OPTIONS",
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "name": "revenuecat-plus-webhook",
+      "method": "POST",
+      "status": 401,
+      "expected": 401
+    },
+    {
+      "name": "create-share-job",
+      "method": "OPTIONS",
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "name": "process-share-jobs",
+      "method": "POST",
+      "status": 401,
+      "expected": 401
+    },
+    {
+      "name": "process-share-link",
+      "method": "OPTIONS",
+      "status": 200,
+      "expected": 200
+    }
+  ],
+  "sourceHashes": {
+    "plus-api": "aafb25f31609f2fdd78020cdfc4e13d7045b4e6bd762facf179c5630fb9086e7",
+    "revenuecat-plus-webhook": "5dfc14d574e27c2477f472fdc24881288f0ade5e5c2247bd222214471905cca8",
+    "create-share-job": "520a06b86ba484e77f459c10b427c762f91cff6d7df84c0d46bc8409093cc77c",
+    "process-share-jobs": "268aaea3bcf8a8edd6ad440a98832cd4f7b48cca11e9e99413f7e204d0a3a645",
+    "process-share-link": "c2d06fef1a89850cfd831cb4d3047f2f7632619de93e4e7a6a9827250763a459"
+  },
+  "providerCalls": false,
+  "purchasesActivated": false,
+  "productionMutation": false,
+  "passed": true
+}

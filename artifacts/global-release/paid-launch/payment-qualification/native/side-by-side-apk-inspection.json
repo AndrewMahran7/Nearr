@@ -1,0 +1,33 @@
+{
+  "inspectedAt": "2026-10-29T23:59:53.0375906Z",
+  "status": "PASS_ARTIFACT_ONLY",
+  "applicationId": "com.nearr.paidqa",
+  "apkSha256": "647ed3c1f170a8fed504e11a85118cc306ac1f7fd37a09146ad3655a98e2f795",
+  "bundleSha256": "276ee9278497a5b96f27d3d2d2b05891e026252f13c2bed0425714f184a4331f",
+  "bundleBytes": 19246400,
+  "configurationSha256": "d3cbe45092308cc84090d01e5d16667e0c610b89ab60295c5bc1645a58d3f080",
+  "embeddedInputsMatch": true,
+  "assetFilesVerified": 49,
+  "assetResourceMappingCount": 49,
+  "rawAssetHashesVerified": 23,
+  "manifestOtaDisabled": true,
+  "applicationDebuggable": false,
+  "nativeDeveloperSupportConfigured": false,
+  "certificateSha256": "fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c",
+  "expectedDebugSigningVerified": true,
+  "providerAuthorityConflicts": false,
+  "appEnvironment": "development",
+  "backendEnvironment": "development",
+  "backendHost": "qnfxnmvxpjzfydgudtvs.supabase.co",
+  "runtime": "1.7-onboarding-date-android-v2",
+  "nonShippingFixtureArtifact": true,
+  "realPurchaseEvidence": false,
+  "nativePixelsVerified": false,
+  "installed": false,
+  "originalAppTouched": false,
+  "package": [
+    "package: name='com.nearr.paidqa' versionCode='1' versionName='1.7.0' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'",
+    "launchable-activity: name='com.nearr.app.MainActivity'  label='' icon=''",
+    "native-code: 'arm64-v8a' 'armeabi-v7a' 'x86' 'x86_64'"
+  ]
+}

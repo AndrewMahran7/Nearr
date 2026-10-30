@@ -1,0 +1,18 @@
+{
+  "capturedAt": "2026-10-29T22:54:12.697Z",
+  "head": "49f559d488f133a744c7cd21809cc65c15cf9b8d",
+  "appConfigSha256": "abdf00108f89ce888d9460ae7008ec371233cc1fd17969e5f041582e3b13ee25",
+  "status": 200,
+  "bytes": 19246420,
+  "sha256": "7f963695301008362323ad99c48b8d0f21c2986f2f1a30c612e4fb59fcc38620",
+  "elapsedMs": 3147,
+  "requestAccept": "multipart/mixed",
+  "requestEncoding": "gzip",
+  "responseContentType": "application/javascript; charset=UTF-8",
+  "responseContentLength": "19246420",
+  "responseContentEncoding": null,
+  "responseTransferEncoding": null,
+  "qaOnlyTransport": true,
+  "fixture": true,
+  "liveStoreProof": false
+}

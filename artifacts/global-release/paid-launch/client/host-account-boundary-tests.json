@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-10-29T21:16:38.644Z",
+  "createdAt": "2026-10-29T22:43:50.761Z",
   "kind": "actual hostShareSubmit and createShareJob with mocked auth/network/query boundaries",
   "tests": [
     "same account deduplicates concurrent requests and accepted replay without changing server SID",

@@ -1,0 +1,143 @@
+{
+  "state": "offers",
+  "locale": "de",
+  "theme": "dark",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of local HTML anchor observed in compact-grid screenshot",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "bundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "display": {
+    "size": "1080x2400",
+    "density": "Physical density: 420",
+    "fontScale": 1
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/offers-de-dark-default-top.png",
+      "capturedAt": "2026-10-30T01:23:32.541Z",
+      "sha256": "2721192df910c1c5eaf01e4aecb560747e1ca045eb04a6a93114c019f094d580",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+        "Nicht jetzt",
+        "Deine nächste Entdeckung",
+        "Entdecke weitere Orte",
+        "Deine gespeicherten Orte gehören dir, mit oder ohne Abo.",
+        "Deine Suchvorgänge",
+        "Monatliche kostenlose Suchen",
+        "1 von 3 verfügbar",
+        "Für ausstehende Ergebnisse reserviert: 1",
+        "Kostenlose Suchen werden am 1. Nov. 2026 erneuert (UTC).",
+        "Gekaufte Tokens: 47",
+        "Für ausstehende Ergebnisse reserviert: 3",
+        "Gekaufte Tokens verfallen nicht. Plus verbraucht sie nicht.",
+        "Nearr Plus",
+        "Unbegrenzte Suchen",
+        "Unbegrenzte erfolgreiche Videosuchen, solange Plus aktiv ist. Kein Tokenverbrauch.",
+        "1,99 $ / Monat"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-dark-default-scroll1.png",
+      "capturedAt": "2026-10-30T01:23:37.787Z",
+      "sha256": "a3c32c13edac58e2089b5cc45f22580c98c1dbd5180cb80b83eab6446214a0ee",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Für ausstehende Ergebnisse reserviert: 1",
+        "Kostenlose Suchen werden am 1. Nov. 2026 erneuert (UTC).",
+        "Gekaufte Tokens: 47",
+        "Für ausstehende Ergebnisse reserviert: 3",
+        "Gekaufte Tokens verfallen nicht. Plus verbraucht sie nicht.",
+        "Nearr Plus",
+        "Unbegrenzte Suchen",
+        "Unbegrenzte erfolgreiche Videosuchen, solange Plus aktiv ist. Kein Tokenverbrauch.",
+        "1,99 $ / Monat",
+        "Nearr Plus abonnieren",
+        "Apple rechnet monatlich ab und verlängert automatisch, sofern du nicht in den Abonnementeinstellungen kündigst. Kein kostenloser Testzeitraum und kein Jahresabo.",
+        "Oder kaufe Suchen nach Bedarf",
+        "Ein Token bezahlt eine erfolgreiche Videosuche. Gekaufte Tokens verfallen nicht.",
+        "Starter",
+        "20 Tokens",
+        "20 Tokens kaufen · 1,19 $"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-dark-default-scroll2.png",
+      "capturedAt": "2026-10-30T01:23:42.968Z",
+      "sha256": "a3bfbe9b3b3e2b379be9cc4140b0e360dcbb571ea11896e447ddcedc8ea903fa",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Nearr Plus abonnieren",
+        "Apple rechnet monatlich ab und verlängert automatisch, sofern du nicht in den Abonnementeinstellungen kündigst. Kein kostenloser Testzeitraum und kein Jahresabo.",
+        "Oder kaufe Suchen nach Bedarf",
+        "Ein Token bezahlt eine erfolgreiche Videosuche. Gekaufte Tokens verfallen nicht.",
+        "Starter",
+        "20 Tokens",
+        "20 Tokens kaufen · 1,19 $",
+        "Entdecker",
+        "50 Tokens",
+        "50 Tokens kaufen · 2,49 $",
+        "Abenteurer",
+        "200 Tokens",
+        "200 Tokens kaufen · 5,00 $",
+        "Zuerst gilt Plus, dann die monatlichen kostenlosen Suchen, dann gekaufte Tokens."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-dark-default-scroll3.png",
+      "capturedAt": "2026-10-30T01:23:47.988Z",
+      "sha256": "18101394d6022dd49483800068104f49b4f24a000dea49483a3f7811ecd5b746",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Entdecker",
+        "50 Tokens",
+        "50 Tokens kaufen · 2,49 $",
+        "Abenteurer",
+        "200 Tokens",
+        "200 Tokens kaufen · 5,00 $",
+        "Zuerst gilt Plus, dann die monatlichen kostenlosen Suchen, dann gekaufte Tokens.",
+        "Die kostenlose Version enthält 3 erfolgreiche Videosuchen pro Kalendermonat. (UTC)",
+        "Ein Video zählt einmal, auch wenn es mehrere Orte enthält. Fehlgeschlagene Suchen verbrauchen dein Kontingent nicht.",
+        "Quick Check reserviert eine Suche bis zum Speichern oder Ablauf der Reservierung. Monatliche kostenlose Suchen werden nicht übertragen.",
+        "Käufe wiederherstellen",
+        "Wiederherstellen verknüpft bestätigte Käufe mit deinem Konto. Verbrauchte Tokens werden nicht erneut gutgeschrieben.",
+        "Abo verwalten",
+        "Guthaben aktualisieren"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-dark-default-scroll4.png",
+      "capturedAt": "2026-10-30T01:23:53.973Z",
+      "sha256": "469500a74e831ae60c7a000227a93cead22de6a71c17d44d6566a58724594947",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Abenteurer",
+        "200 Tokens",
+        "200 Tokens kaufen · 5,00 $",
+        "Zuerst gilt Plus, dann die monatlichen kostenlosen Suchen, dann gekaufte Tokens.",
+        "Die kostenlose Version enthält 3 erfolgreiche Videosuchen pro Kalendermonat. (UTC)",
+        "Ein Video zählt einmal, auch wenn es mehrere Orte enthält. Fehlgeschlagene Suchen verbrauchen dein Kontingent nicht.",
+        "Quick Check reserviert eine Suche bis zum Speichern oder Ablauf der Reservierung. Monatliche kostenlose Suchen werden nicht übertragen.",
+        "Käufe wiederherstellen",
+        "Wiederherstellen verknüpft bestätigte Käufe mit deinem Konto. Verbrauchte Tokens werden nicht erneut gutgeschrieben.",
+        "Abo verwalten",
+        "Guthaben aktualisieren",
+        "Nutzungsbedingungen",
+        "Datenschutzerklärung"
+      ],
+      "unedited": true
+    }
+  ]
+}

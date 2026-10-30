@@ -1,0 +1,12 @@
+Deploying Supabase Edge Functions (development)
+  project ref  qnfxnmvxpjzfydgudtvs  (Nearr-Dev)
+  functions    revenuecat-plus-webhook
+               revenuecat-plus-webhook -> --no-verify-jwt
+
+$ supabase functions deploy revenuecat-plus-webhook --project-ref qnfxnmvxpjzfydgudtvs --no-verify-jwt
+
+{"project_ref":"qnfxnmvxpjzfydgudtvs","functions":["revenuecat-plus-webhook"],"dashboard_url":"https://supabase.com/dashboard/project/qnfxnmvxpjzfydgudtvs/functions","message":"Deployed Functions."}
+
+All selected functions deployed.
+Bundling Function: revenuecat-plus-webhook
+Deploying Function: revenuecat-plus-webhook (script size: 721 kB)

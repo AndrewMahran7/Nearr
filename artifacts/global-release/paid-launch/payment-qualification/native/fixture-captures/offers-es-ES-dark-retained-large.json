@@ -1,0 +1,125 @@
+{
+  "state": "offers",
+  "locale": "es-ES",
+  "theme": "dark",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of local HTML anchor observed in compact-grid screenshot",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "bundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "display": {
+    "size": "1080x2400",
+    "density": "Physical density: 420",
+    "storedFontScale": 1,
+    "effectiveFontScale": 1.5,
+    "effectiveFontScaleEvidence": "Banner line height and title line height approximately 1.5 times same-source Light/default despite stored and Activity configuration 1.0; retained native text metrics after prior stress. Excluded from default-size matrix."
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/offers-es-ES-dark-retained-large-top.png",
+      "capturedAt": "2026-10-30T01:06:13.492Z",
+      "sha256": "004dceaa987795cb4914788f330814b9978a3f967ca06725233e5f5938b3e669",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+        "Ahora no",
+        "Tu próximo descubrimiento",
+        "Sigue descubriendo lugares",
+        "Tus lugares guardados siguen siendo tuyos, con o sin suscripción.",
+        "Tus búsquedas",
+        "Búsquedas gratis del mes",
+        "1 de 3 disponibles",
+        "Reservadas para resultados pendientes: 1",
+        "La cuota gratis se renueva el 1 nov 2026 (UTC).",
+        "Tokens comprados: 47"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-es-ES-dark-retained-large-scroll1.png",
+      "capturedAt": "2026-10-30T01:06:18.925Z",
+      "sha256": "0450211db7cc83f6297d41fae5b2e88388265639e1a952f0f39210431acd9c54",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Tus lugares guardados siguen siendo tuyos, con o sin suscripción.",
+        "Tus búsquedas",
+        "Búsquedas gratis del mes",
+        "1 de 3 disponibles",
+        "Reservadas para resultados pendientes: 1",
+        "La cuota gratis se renueva el 1 nov 2026 (UTC).",
+        "Tokens comprados: 47",
+        "Reservadas para resultados pendientes: 3",
+        "Los tokens comprados no caducan. Plus no los consume.",
+        "Nearr Plus",
+        "Búsquedas ilimitadas",
+        "Búsquedas de vídeo completadas sin límite mientras Plus esté activo. Sin consumir tokens.",
+        "1,99 US$ / mes"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-es-ES-dark-retained-large-scroll2.png",
+      "capturedAt": "2026-10-30T01:06:24.071Z",
+      "sha256": "400ab0c84597b0d2d95d2226569ecbc7a76dbab27740f1ee5ec8dabc71bff315",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Los tokens comprados no caducan. Plus no los consume.",
+        "Nearr Plus",
+        "Búsquedas ilimitadas",
+        "Búsquedas de vídeo completadas sin límite mientras Plus esté activo. Sin consumir tokens.",
+        "1,99 US$ / mes",
+        "Obtener Nearr Plus",
+        "Apple cobra mensualmente y renueva automáticamente, salvo que canceles en los ajustes de suscripciones. Sin prueba gratuita ni plan anual.",
+        "O compra búsquedas cuando las necesites",
+        "Un token paga una búsqueda de vídeo completada. Los tokens comprados no caducan."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-es-ES-dark-retained-large-scroll3.png",
+      "capturedAt": "2026-10-30T01:06:29.059Z",
+      "sha256": "9ea90cd831ed5b8e0dcbda782f1a605ab0fc8a18b052099b469f1d76934cd984",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Obtener Nearr Plus",
+        "Apple cobra mensualmente y renueva automáticamente, salvo que canceles en los ajustes de suscripciones. Sin prueba gratuita ni plan anual.",
+        "O compra búsquedas cuando las necesites",
+        "Un token paga una búsqueda de vídeo completada. Los tokens comprados no caducan.",
+        "Inicial",
+        "20 tokens",
+        "Comprar 20 tokens · 1,19 US$",
+        "Explorador",
+        "50 tokens"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-es-ES-dark-retained-large-scroll4.png",
+      "capturedAt": "2026-10-30T01:06:34.051Z",
+      "sha256": "6f53c85158c179d041fc0cbe05d5089eb564f0ee862001eef6ff5ec19aaf39f8",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Un token paga una búsqueda de vídeo completada. Los tokens comprados no caducan.",
+        "Inicial",
+        "20 tokens",
+        "Comprar 20 tokens · 1,19 US$",
+        "Explorador",
+        "50 tokens",
+        "Comprar 50 tokens · 2,49 US$",
+        "Aventurero",
+        "200 tokens",
+        "Comprar 200 tokens · 5,00 US$",
+        "Primero se usa Plus, luego las búsquedas gratis del mes y después los tokens comprados."
+      ],
+      "unedited": true
+    }
+  ],
+  "provisionalCapture": true
+}

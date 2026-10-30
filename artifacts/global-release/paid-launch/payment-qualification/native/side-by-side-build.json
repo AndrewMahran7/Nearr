@@ -1,0 +1,22 @@
+{
+  "startedAt": "2026-10-29T23:53:02.892Z",
+  "deadlineAt": "2026-10-30T00:03:02.892Z",
+  "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d",
+  "pid": 5556,
+  "command": "gradlew.bat :app:assembleRelease --offline -PreactNativeArchitectures=x86_64 --max-workers=1 --no-daemon --console=plain --init-script C:\\Users\\andre\\.codex\\worktrees\\nearr-paid-launch-final\\Nearr\\.tmp\\payment-side-by-side.init.gradle",
+  "applicationIdIntent": "com.nearr.paidqa",
+  "bundleSha256": "276ee9278497a5b96f27d3d2d2b05891e026252f13c2bed0425714f184a4331f",
+  "configurationSha256": "d3cbe45092308cc84090d01e5d16667e0c610b89ab60295c5bc1645a58d3f080",
+  "abi": "x86_64",
+  "workers": 1,
+  "offline": true,
+  "nonShippingFixtureBuild": true,
+  "installed": false,
+  "originalAppTouched": false,
+  "finishedAt": "2026-10-29T23:57:56.515Z",
+  "exitCode": 0,
+  "timedOut": false,
+  "apk": "C:\\Users\\andre\\.codex\\worktrees\\nearr-paid-launch-final\\Nearr\\.tmp\\android-standalone-app\\outputs\\apk\\release\\app-release.apk",
+  "apkSha256": "647ed3c1f170a8fed504e11a85118cc306ac1f7fd37a09146ad3655a98e2f795",
+  "apkBytes": 86867158
+}

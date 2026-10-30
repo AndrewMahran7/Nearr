@@ -1,5 +1,5 @@
 {
-  "testedAt": "2026-10-29T21:29:58.649Z",
+  "testedAt": "2026-10-29T22:45:40.084Z",
   "passed": 24,
   "failed": 0,
   "scope": "Actual PostgreSQL authorization migration + real consent policy + delegate boundary probes; not a complete Places/save integration",

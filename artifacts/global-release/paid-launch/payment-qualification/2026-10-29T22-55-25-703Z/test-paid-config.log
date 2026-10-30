@@ -1,0 +1,20 @@
+
+> nearr@0.1.0 test:paid-config
+> ts-node -P scripts/tsconfig.json scripts/testRevenueCatConfig.ts && ts-node -P scripts/tsconfig.json scripts/testPaidApiCredentials.ts
+
+PASS actual public env reaches Purchases.configure through generated Expo extra
+PASS missing leaves StoreKit closed before native SDK load
+PASS empty leaves StoreKit closed before native SDK load
+PASS whitespace leaves StoreKit closed before native SDK load
+PASS no server credential fallback leaves StoreKit closed before native SDK load
+PASS no stale app.json key fallback leaves StoreKit closed before native SDK load
+PASS wrong or malformed public slot is rejected without value disclosure
+PASS wrong or malformed public slot is rejected without value disclosure
+PASS wrong or malformed public slot is rejected without value disclosure
+PASS wrong or malformed public slot is rejected without value disclosure
+PASS wrong or malformed public slot is rejected without value disclosure
+PASS wrong or malformed public slot is rejected without value disclosure
+PASS valid config does not bypass server catalog qualification
+PASS public Apple config does not enable Android StoreKit
+14 actual Expo-to-RevenueCat SDK configuration checks passed; no live SDK or network.
+8 actual paid API credential-routing scenarios passed: v1/v2 separation, sync/restore, missing-key denial, unchanged existing ledger; no live requests.

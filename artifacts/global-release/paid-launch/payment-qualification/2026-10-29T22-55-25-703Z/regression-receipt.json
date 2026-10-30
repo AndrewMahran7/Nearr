@@ -1,0 +1,66 @@
+{
+  "startedAt": "2026-10-29T22:55:25.703Z",
+  "sourceCommit": "49f559d488f133a744c7cd21809cc65c15cf9b8d",
+  "kind": "post-payment-configuration-fix-regressions",
+  "productionAccess": false,
+  "activation": false,
+  "providerCalls": false,
+  "storeKitTransactions": 0,
+  "sourceHashes": {
+    "app.config.js": "abdf00108f89ce888d9460ae7008ec371233cc1fd17969e5f041582e3b13ee25",
+    ".env.example": "5be5a4b70326bdb5974e49415f2f0a14673ee680726d2aae2f8a6f0f9a8ff332",
+    "package.json": "fe9471be851eb740cd499c5a2360223e0942032fdd446318b01c1bef76616f52",
+    "lib/plusClient.ts": "d0918d565b27ed7ddfa1cba0ab1f84214395c696d2ee6e250040fbd7b990ed4e",
+    "supabase/functions/plus-api/index.ts": "aafb25f31609f2fdd78020cdfc4e13d7045b4e6bd762facf179c5630fb9086e7",
+    "scripts/testRevenueCatConfig.ts": "7cdd16ce73f3b56ae26899bdab614124bd710b1684dcd36ee9899ccde8aaecd1",
+    "scripts/testPaidApiCredentials.ts": "012aa16b2c886f590a33569f7ae642cbd9afeaa9e50fc8d7460fa63436702985"
+  },
+  "phases": [
+    {
+      "name": "test-paid-client-runtime",
+      "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testPaidFindsClientRuntime.ts",
+      "startedAt": "2026-10-29T22:55:25.898Z",
+      "log": "test-paid-client-runtime.log",
+      "exitCode": 1,
+      "finishedAt": "2026-10-29T22:55:27.299Z",
+      "passed": false,
+      "sha256": "61c6972e6ba2d4e78262ef6ca9724ad97052f74fac3985235089260cb0bdd70f"
+    },
+    {
+      "name": "test-paid-config",
+      "command": "npm run test:paid-config",
+      "startedAt": "2026-10-29T22:55:27.301Z",
+      "log": "test-paid-config.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:55:29.770Z",
+      "passed": true,
+      "sha256": "03dab33083c09242ceb6789563966c8dd8a15c7940923f6b472777b69c481172"
+    },
+    {
+      "name": "test-prebuild",
+      "command": "npm run test:prebuild",
+      "startedAt": "2026-10-29T22:55:29.776Z",
+      "log": "test-prebuild.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:59:26.356Z",
+      "passed": true,
+      "sha256": "eed77d537b2478ef066d3348f631f1d3f02f4892ded31abec631ca290391d391"
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "startedAt": "2026-10-29T22:59:26.363Z",
+      "log": "typecheck.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T23:00:00.477Z",
+      "passed": true,
+      "sha256": "ec1a99323ca96275587fef6746160a09e98e365777b3a2623c34d90e565a77dd"
+    }
+  ],
+  "diffCheck": {
+    "passed": true,
+    "output": ""
+  },
+  "finishedAt": "2026-10-29T23:00:00.634Z",
+  "passed": false
+}

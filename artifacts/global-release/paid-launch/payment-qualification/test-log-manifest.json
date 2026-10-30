@@ -1,0 +1,122 @@
+{
+  "generatedAtUtc": "2026-10-30T00:35:48.0583234Z",
+  "purpose": "Preserved qualification logs; fixtures and dashboard TEST are not real StoreKit purchases",
+  "sensitiveValueReview": "PASS: bounded reviewer scans of the original21 and later2 theme qualification logs; no credential/cookie/contact/account values found",
+  "logs": [
+    {
+      "path": "2026-10-29T22-35-50-233Z/development-readback.log",
+      "bytes": 1388,
+      "sha256": "c07386b8c815d48438cbe80611154bb0fd01e0e23a13b44438fa91d730b839e4"
+    },
+    {
+      "path": "2026-10-29T22-35-50-233Z/test-consent-identity.log",
+      "bytes": 278,
+      "sha256": "abf05af3c0717a8a6b2958db5391fdd636b7408d94276fe3921c1f73c1dfe792"
+    },
+    {
+      "path": "2026-10-29T22-35-50-233Z/test-exact-identity-safety.log",
+      "bytes": 204,
+      "sha256": "bbae0e1239d7cf3e41d0e1bd8ea19ddc93d215d081d01c8e38a8720d5bc4e120"
+    },
+    {
+      "path": "2026-10-29T22-35-50-233Z/test-global-eligibility-db.log",
+      "bytes": 203,
+      "sha256": "1b95d6a9e2a70fbb2d76215afd8af9108cadae7513ba4adbb3c4dc37e1ee6507"
+    },
+    {
+      "path": "2026-10-29T22-35-50-233Z/test-localization.log",
+      "bytes": 270,
+      "sha256": "22288da7723cbe53c6012a0d91ec26e231a9eef71989448b3af57a59ade51bf9"
+    },
+    {
+      "path": "2026-10-29T22-35-50-233Z/test-monetization-token-ux.log",
+      "bytes": 1763,
+      "sha256": "a64f6c498e6713f948992ec78620a4cb40485c2cf420665a3f2ac41751e3c176"
+    },
+    {
+      "path": "2026-10-29T22-35-50-233Z/test-native-localization.log",
+      "bytes": 208,
+      "sha256": "630b21ebee875f3fc97bba80d7ea4c9482f18020c2b81a164ca6f585d5374351"
+    },
+    {
+      "path": "2026-10-29T22-35-50-233Z/test-paid-launch.log",
+      "bytes": 13192,
+      "sha256": "c3bd6f49464c8955236e7a81d95c09987fef294630a20102fc1f6187b99ccf34"
+    },
+    {
+      "path": "2026-10-29T22-35-50-233Z/test-prebuild.log",
+      "bytes": 153463,
+      "sha256": "19057d0610c539a3c87e714432c92cfc03dd7f2f5dae1bbb79c323907c0803fd"
+    },
+    {
+      "path": "2026-10-29T22-35-50-233Z/test-recognition-consent.log",
+      "bytes": 318,
+      "sha256": "cacff63c8ac0faf90fc28a995f23558ff3879f7a239759e040e95649d8740372"
+    },
+    {
+      "path": "2026-10-29T22-35-50-233Z/test-safe-development.log",
+      "bytes": 12450,
+      "sha256": "621f018e26ae778c60423289895ae53ecdf19c2d53167e97dfb9e691a1368a13"
+    },
+    {
+      "path": "2026-10-29T22-35-50-233Z/typecheck.log",
+      "bytes": 41,
+      "sha256": "ec1a99323ca96275587fef6746160a09e98e365777b3a2623c34d90e565a77dd"
+    },
+    {
+      "path": "2026-10-29T22-55-25-703Z/test-paid-client-runtime-retry.log",
+      "bytes": 1603,
+      "sha256": "fbac985da02dee9a8062b8e23959e890824e28f62034f35b95707880d7b4ee37"
+    },
+    {
+      "path": "2026-10-29T22-55-25-703Z/test-paid-client-runtime.log",
+      "bytes": 2044,
+      "sha256": "61c6972e6ba2d4e78262ef6ca9724ad97052f74fac3985235089260cb0bdd70f"
+    },
+    {
+      "path": "2026-10-29T22-55-25-703Z/test-paid-config.log",
+      "bytes": 1388,
+      "sha256": "03dab33083c09242ceb6789563966c8dd8a15c7940923f6b472777b69c481172"
+    },
+    {
+      "path": "2026-10-29T22-55-25-703Z/test-prebuild.log",
+      "bytes": 154878,
+      "sha256": "eed77d537b2478ef066d3348f631f1d3f02f4892ded31abec631ca290391d391"
+    },
+    {
+      "path": "2026-10-29T22-55-25-703Z/typecheck.log",
+      "bytes": 41,
+      "sha256": "ec1a99323ca96275587fef6746160a09e98e365777b3a2623c34d90e565a77dd"
+    },
+    {
+      "path": "2026-10-29T23-11-11-920Z-development-plus-api/deployment.log",
+      "bytes": 492,
+      "sha256": "89ebd5997369ffed233aa186a4084f9d468346a2ad25f28bf7d1ea207f1dd98d"
+    },
+    {
+      "path": "2026-10-29T23-11-11-920Z-development-plus-api/readback.log",
+      "bytes": 1388,
+      "sha256": "b184669ed065b3bd052d61c3c0961d321c39ec0bd41de3a1798501fc107c2e51"
+    },
+    {
+      "path": "2026-10-29T23-42-53-320Z-test-webhook/deployment.log",
+      "bytes": 641,
+      "sha256": "3f233e9981e6aaa9c6c3dbcf950859f421ca83dd89f4ad2ce9171a3614d77895"
+    },
+    {
+      "path": "native-theme-client-runtime.log",
+      "bytes": 1603,
+      "sha256": "fbac985da02dee9a8062b8e23959e890824e28f62034f35b95707880d7b4ee37"
+    },
+    {
+      "path": "native-theme-prebuild.log",
+      "bytes": 160522,
+      "sha256": "4f62db41e10d0d139d45e48be37329a108ad8f2566cb7daa622b7e48dbe0a5d2"
+    },
+    {
+      "path": "webhook-test-prebuild.log",
+      "bytes": 159513,
+      "sha256": "e390a18f1cb602a344391475851bec6e9c49668611bc0ec574216a0a9570f3e3"
+    }
+  ]
+}

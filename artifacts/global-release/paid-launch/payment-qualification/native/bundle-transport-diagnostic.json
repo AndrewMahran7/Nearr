@@ -1,0 +1,38 @@
+{
+  "inspectionDateUtc": "2026-10-29",
+  "sourceHead": "49f559d488f133a744c7cd21809cc65c15cf9b8d",
+  "installedAndroidPackage": "com.nearr.app",
+  "installedVersionName": "1.7.0",
+  "installedVersionCode": 1,
+  "installedDebuggable": true,
+  "device": "Existing Pixel 8a API36 emulator",
+  "nativeSessionRecoveredWithoutForceStop": true,
+  "observedFailure": {
+    "component": "React Native BundleDownloader / OkHttp",
+    "exception": "java.net.ProtocolException",
+    "message": "Expected leading [0-9a-fA-F] character but was 0xd",
+    "stackMethod": "BundleDownloader.processMultipartResponse",
+    "visibleState": "Blank application view with Loading from 10.0.2.2:8082 banner",
+    "connectedJsInspectorTargets": 0
+  },
+  "hostBundle": {
+    "httpStatus": 200,
+    "bytes": 19246420,
+    "sha256": "7f963695301008362323ad99c48b8d0f21c2986f2f1a30c612e4fb59fcc38620"
+  },
+  "plainResponseRetry": {
+    "qaOnlyIgnoredMetroMiddleware": true,
+    "requestAcceptForcedTo": "application/javascript",
+    "requestEncodingForcedTo": "identity",
+    "hostResponseContentLength": 19246420,
+    "hostResponseTransferEncoding": null,
+    "hostResponseEncoding": null,
+    "hostResponseVerified": true,
+    "nativeException": "java.net.ProtocolException: unexpected end of stream",
+    "nativeStackMethod": "BundleDownloader.storePlainJSInFile",
+    "paywallRendered": false,
+    "resolution": "The host transport workaround did not restore the native session. Stopped after this bounded retry."
+  },
+  "interpretation": "The observed native failure occurs while reading the Development bundle before the paywall can render. It is not a StoreKit, entitlement or token-ledger test result.",
+  "rawLogsLocation": "Ignored local scratch only; no credentials or account identifiers included here."
+}

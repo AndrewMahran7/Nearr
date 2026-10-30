@@ -1,0 +1,31 @@
+{
+  "inspectionDateUtc": "2026-10-29",
+  "hostPlatform": "Windows",
+  "headAtInspection": "49f559d488f133a744c7cd21809cc65c15cf9b8d",
+  "connectedAppleDeviceFound": false,
+  "appleDevicesApplicationInstalled": true,
+  "appleDevicesApplicationObservation": "Connect an Apple device to get started.",
+  "presentPnpApplePhoneOrTabletFound": false,
+  "toolsOnPath": {
+    "xcrun": false,
+    "xcodebuild": false,
+    "idevice_id": false,
+    "ideviceinfo": false,
+    "ios": false,
+    "go-ios": false
+  },
+  "localSimulatorRouteAvailable": false,
+  "existingInternalIpa": {
+    "buildId": "da13c7d7-b11d-4497-8862-615af269ec76",
+    "version": "1.7.0",
+    "buildNumber": "73",
+    "distribution": "INTERNAL",
+    "developmentClient": true,
+    "hostApplicationJavaScriptEmbedded": false,
+    "installedOnAppleDeviceByThisTask": false
+  },
+  "realAppleStoreKitTransactionsExecuted": 0,
+  "localBlocker": "No connected Apple device or local Mac/Xcode simulator route is available. An internal IPA alone cannot execute StoreKit transactions on this Windows host.",
+  "scopeLimit": "This inventory does not establish account-side TestFlight or remote device-farm availability; App Store Connect and RevenueCat inspection is owned by the coordinating agent.",
+  "privacy": "No Apple account identifiers, device identifiers, credentials or provisioning files are included."
+}

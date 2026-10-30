@@ -1,0 +1,263 @@
+- region "Notifications alt+T"
+- link "skip to content":
+  - /url: "#main-content"
+- banner:
+  - link "Home":
+    - /url: /overview
+    - img "Home"
+  - button "Nearr Dev":
+    - generic: Nearr Dev
+  - combobox "Search…"
+  - generic: Ctrl+K
+  - button "Rico":
+  - link "Help":
+    - /url: /settings/support
+  - link "Notifications":
+    - /url: /whats-new
+    - img "Unread notifications"
+  - link "Account":
+    - /url: /settings
+- navigation:
+  - link "Overview":
+    - /url: /projects/7d727ef6/overview
+    - generic: Overview
+  - link "Analytics":
+    - /url: /projects/7d727ef6/charts
+    - text: Analytics
+  - link "Customers":
+    - /url: /projects/7d727ef6/customer-lists
+    - generic: Customers
+  - link "Product catalog":
+    - /url: /projects/7d727ef6/product-catalog
+    - text: Product catalog
+  - link "Paywalls":
+    - /url: /projects/7d727ef6/paywalls
+    - generic: Paywalls
+  - link "Targeting":
+    - /url: /projects/7d727ef6/targeting
+    - generic: Targeting
+  - link "Experiments":
+    - /url: /projects/7d727ef6/experiments
+    - generic: Experiments
+  - link "Funnels":
+    - /url: /projects/7d727ef6/funnels
+    - generic: Funnels
+  - link "Ads":
+    - /url: /projects/7d727ef6/ads
+    - text: Ads
+  - link "Lifecycle":
+    - /url: /projects/7d727ef6/lifecycle/customer-center
+    - text: Lifecycle
+  - link "Authentication":
+    - /url: /projects/7d727ef6/auth/methods
+    - text: Authentication
+  - separator
+  - link "Apps":
+    - /url: /projects/7d727ef6/apps
+    - generic: Apps
+  - link "Web":
+    - /url: /projects/7d727ef6/web
+    - generic: Web
+  - link "API keys":
+    - /url: /projects/7d727ef6/api-keys
+    - generic: API keys
+  - link "Integrations":
+    - /url: /projects/7d727ef6/integrations
+    - generic: Integrations
+  - link "Project settings":
+    - /url: /projects/7d727ef6/settings
+    - generic: Project settings
+  - button "Collapse navigation":
+- main:
+  - navigation:
+    - list:
+      - link "Nearr Dev":
+        - /url: /projects/7d727ef6
+      - listitem: /
+      - link "API keys":
+        - /url: /projects/7d727ef6/api-keys
+  - heading "Update Nearr Development Purchase Recovery Read Only" [level=2]
+  - generic: Name
+  - textbox "Name":
+    - /placeholder: name
+    - text: Nearr Development Purchase Recovery Read Only
+  - text: API version
+  - button "API keys V2 allow for more detailed access and setup permissions control.":
+  - combobox "API version API keys V2 allow for more detailed access and setup permissions control." [disabled]: V2
+  - textbox [disabled]: "2"
+  - heading "Audiences permissions Permissions:" [level=3]:
+    - button "Audiences permissions" [expanded]:
+      - paragraph: Audiences permissions
+    - paragraph: "Permissions:"
+    - combobox "Audiences permissions": No access
+    - textbox: "null"
+  - region "Audiences permissions Permissions:":
+    - table:
+      - row "Permission Type Access Level":
+        - columnheader "Permission Type"
+        - columnheader "Access Level"
+      - row "Audiences Configuration":
+        - cell "Audiences Configuration":
+          - generic: Audiences Configuration
+        - cell:
+          - combobox "Audiences Configuration Access Level": No access
+          - textbox: "null"
+  - heading "Charts metrics permissions Permissions:" [level=3]:
+    - button "Charts metrics permissions":
+      - paragraph: Charts metrics permissions
+    - paragraph: "Permissions:"
+    - combobox "Charts metrics permissions": No access
+    - textbox: "null"
+  - heading "Customer information permissions Permissions:" [level=3]:
+    - button "Customer information permissions" [expanded]:
+      - paragraph: Customer information permissions
+    - paragraph: "Permissions:"
+    - combobox "Customer information permissions": Custom
+    - textbox: custom
+  - region "Customer information permissions Permissions:":
+    - table:
+      - row "Permission Type Access Level":
+        - columnheader "Permission Type"
+        - columnheader "Access Level"
+      - row "Customers Configuration Allows the API key to access customers data in this project.":
+        - cell "Customers Configuration Allows the API key to access customers data in this project.":
+          - text: Customers Configuration
+          - button "Allows the API key to access customers data in this project.":
+        - cell:
+          - combobox "Customers Configuration Access Level": No access
+          - textbox: "null"
+      - row "Subscriptions Configuration":
+        - cell "Subscriptions Configuration":
+          - generic: Subscriptions Configuration
+        - cell:
+          - combobox "Subscriptions Configuration Access Level": No access
+          - textbox: "null"
+      - row "Purchases Configuration":
+        - cell "Purchases Configuration":
+          - generic: Purchases Configuration
+        - cell:
+          - combobox "Purchases Configuration Access Level": Read only
+          - textbox: read
+      - row "Invoices Configuration":
+        - cell "Invoices Configuration":
+          - generic: Invoices Configuration
+        - cell:
+          - combobox "Invoices Configuration Access Level": No access
+          - textbox: "null"
+  - heading "Iam permissions Permissions:" [level=3]:
+    - button "Iam permissions":
+      - paragraph: Iam permissions
+    - paragraph: "Permissions:"
+    - combobox "Iam permissions": No access
+    - textbox: "null"
+  - heading "Project configuration permissions Permissions:" [level=3]:
+    - button "Project configuration permissions" [expanded] [active]:
+      - paragraph: Project configuration permissions
+    - paragraph: "Permissions:"
+    - combobox "Project configuration permissions": Custom
+    - textbox: custom
+  - region "Project configuration permissions Permissions:":
+    - table:
+      - row "Permission Type Access Level":
+        - columnheader "Permission Type"
+        - columnheader "Access Level"
+      - row "Projects Configuration":
+        - cell "Projects Configuration":
+          - generic: Projects Configuration
+        - cell:
+          - combobox "Projects Configuration Access Level": No access
+          - textbox: "null"
+      - row "Collaborators Configuration":
+        - cell "Collaborators Configuration":
+          - generic: Collaborators Configuration
+        - cell:
+          - combobox "Collaborators Configuration Access Level": No access
+          - textbox: "null"
+      - row "Apps Configuration Allows the API key to access apps of this project.":
+        - cell "Apps Configuration Allows the API key to access apps of this project.":
+          - text: Apps Configuration
+          - button "Allows the API key to access apps of this project.":
+        - cell:
+          - combobox "Apps Configuration Access Level": Read only
+          - textbox: read
+      - row "Audit logs Configuration":
+        - cell "Audit logs Configuration":
+          - generic: Audit logs Configuration
+        - cell:
+          - combobox "Audit logs Configuration Access Level": No access
+          - textbox: "null"
+      - row "Entitlements Configuration Allows the API key to access entitlements of this project.":
+        - cell "Entitlements Configuration Allows the API key to access entitlements of this project.":
+          - text: Entitlements Configuration
+          - button "Allows the API key to access entitlements of this project.":
+        - cell:
+          - combobox "Entitlements Configuration Access Level": No access
+          - textbox: "null"
+      - row "Offerings Configuration Allows the API key to access offerings of this project.":
+        - cell "Offerings Configuration Allows the API key to access offerings of this project.":
+          - text: Offerings Configuration
+          - button "Allows the API key to access offerings of this project.":
+        - cell:
+          - combobox "Offerings Configuration Access Level": No access
+          - textbox: "null"
+      - row "Discounts Configuration":
+        - cell "Discounts Configuration":
+          - generic: Discounts Configuration
+        - cell:
+          - combobox "Discounts Configuration Access Level": No access
+          - textbox: "null"
+      - row "Packages Configuration Allows the API key to access packages of this project.":
+        - cell "Packages Configuration Allows the API key to access packages of this project.":
+          - text: Packages Configuration
+          - button "Allows the API key to access packages of this project.":
+        - cell:
+          - combobox "Packages Configuration Access Level": No access
+          - textbox: "null"
+      - row "Products Configuration Allows the API key to access products of this project.":
+        - cell "Products Configuration Allows the API key to access products of this project.":
+          - text: Products Configuration
+          - button "Allows the API key to access products of this project.":
+        - cell:
+          - combobox "Products Configuration Access Level": Read only
+          - textbox: read
+      - row "Integrations Configuration Allows the API key to access integrations of this project.":
+        - cell "Integrations Configuration Allows the API key to access integrations of this project.":
+          - text: Integrations Configuration
+          - button "Allows the API key to access integrations of this project.":
+        - cell:
+          - combobox "Integrations Configuration Access Level": No access
+          - textbox: "null"
+      - row "Experiments Configuration":
+        - cell "Experiments Configuration":
+          - generic: Experiments Configuration
+        - cell:
+          - combobox "Experiments Configuration Access Level": No access
+          - textbox: "null"
+      - row "Virtual currencies Configuration":
+        - cell "Virtual currencies Configuration":
+          - generic: Virtual currencies Configuration
+        - cell:
+          - combobox "Virtual currencies Configuration Access Level": No access
+          - textbox: "null"
+      - row "Targeting rules Configuration":
+        - cell "Targeting rules Configuration":
+          - generic: Targeting rules Configuration
+        - cell:
+          - combobox "Targeting rules Configuration Access Level": No access
+          - textbox: "null"
+      - row "Sdk compatibility Configuration":
+        - cell "Sdk compatibility Configuration":
+          - generic: Sdk compatibility Configuration
+        - cell:
+          - combobox "Sdk compatibility Configuration Access Level": No access
+          - textbox: "null"
+      - row "Paywall Configuration":
+        - cell "Paywall Configuration":
+          - generic: Paywall Configuration
+        - cell:
+          - combobox "Paywall Configuration Access Level": No access
+          - textbox: "null"
+  - heading "Actions" [level=3]:
+    - button "Actions":
+      - paragraph: Actions
+  - button "Submit" [disabled]

@@ -1,0 +1,37 @@
+{
+  "capturedAt": "2026-10-29T23:00:43.489Z",
+  "sourceCommitBeforeFix": "49f559d488f133a744c7cd21809cc65c15cf9b8d",
+  "sourceHashes": {
+    "app.config.js": "abdf00108f89ce888d9460ae7008ec371233cc1fd17969e5f041582e3b13ee25",
+    ".env.example": "5be5a4b70326bdb5974e49415f2f0a14673ee680726d2aae2f8a6f0f9a8ff332",
+    "package.json": "fe9471be851eb740cd499c5a2360223e0942032fdd446318b01c1bef76616f52",
+    "lib/plusClient.ts": "d0918d565b27ed7ddfa1cba0ab1f84214395c696d2ee6e250040fbd7b990ed4e",
+    "supabase/functions/plus-api/index.ts": "aafb25f31609f2fdd78020cdfc4e13d7045b4e6bd762facf179c5630fb9086e7",
+    "scripts/testRevenueCatConfig.ts": "7cdd16ce73f3b56ae26899bdab614124bd710b1684dcd36ee9899ccde8aaecd1",
+    "scripts/testPaidApiCredentials.ts": "012aa16b2c886f590a33569f7ae642cbd9afeaa9e50fc8d7460fa63436702985"
+  },
+  "passed": true,
+  "originalRun": "regression-receipt.json",
+  "originalFailure": {
+    "phase": "test-paid-client-runtime",
+    "exitCode": 1,
+    "reason": "Windows UNKNOWN opening runtime-tests.json receipt file after assertions; original log retained"
+  },
+  "retry": "client-runtime-retry-receipt.json",
+  "results": {
+    "configToSdk": 14,
+    "edgeCredentialRouting": 8,
+    "clientGroups": 16,
+    "clientRenders": 110,
+    "prebuildPrerequisiteCommands": 19,
+    "prebuildMainCommands": 114,
+    "typecheck": true,
+    "diffCheck": true
+  },
+  "liveStoreKitTransactions": 0,
+  "remoteMutation": false,
+  "developmentRedeployRequired": [
+    "plus-api"
+  ],
+  "productionMutation": false
+}

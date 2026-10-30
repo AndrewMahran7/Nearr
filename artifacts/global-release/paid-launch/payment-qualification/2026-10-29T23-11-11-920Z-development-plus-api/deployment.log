@@ -1,0 +1,11 @@
+Deploying Supabase Edge Functions (development)
+  project ref  qnfxnmvxpjzfydgudtvs  (Nearr-Dev)
+  functions    plus-api
+
+$ supabase functions deploy plus-api --project-ref qnfxnmvxpjzfydgudtvs
+
+{"project_ref":"qnfxnmvxpjzfydgudtvs","functions":["plus-api"],"dashboard_url":"https://supabase.com/dashboard/project/qnfxnmvxpjzfydgudtvs/functions","message":"Deployed Functions."}
+
+All selected functions deployed.
+Bundling Function: plus-api
+Deploying Function: plus-api (script size: 738 kB)

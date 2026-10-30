@@ -1,0 +1,25 @@
+{
+  "capturedAt": "2026-10-29T22:56:44.938Z",
+  "source": "adb exec-out screencap -p",
+  "platform": "Android",
+  "device": "existing Pixel 8a API36 emulator",
+  "width": 1080,
+  "height": 2400,
+  "head": "49f559d488f133a744c7cd21809cc65c15cf9b8d",
+  "appConfigWorkingTreeEdit": true,
+  "sourceFileSha256": {
+    "app.config.js": "abdf00108f89ce888d9460ae7008ec371233cc1fd17969e5f041582e3b13ee25",
+    "app/plus.tsx": "354cfcf24af9a666cdee848e6ba2a04fc0f369b4a8e9553155ac0dcf8f066aad",
+    "app/dev-qa.tsx": "153ee2f6d3540480eced5d1483fba2e77c1cbbda47e0ea7e90a82d8ddf903d59",
+    "components/PaidFindsNativePreview.tsx": "90e6ae3b261c76ba2098292e87498472c3419b1798c65c325e066cb182ceb9dd",
+    "lib/paidPreviewFixtures.ts": "54d17e0bd37369d95e450baf97419f13857f6f847b57c302d4c7ef431a6a5adb",
+    "metro.config.js": "a68aeda5721f91d9a98185e55dbed2dbea74559b528f5b5fddff5f662b937c62",
+    "package-lock.json": "023782d169101d044b08e40d6cdc1d9d83168f125b1f6095cbd6ffaa4b773bd8"
+  },
+  "screenshotSha256": "70f58622d4980770facbbcea416c9ba16cc4702f1511287eb47358c1b8677805",
+  "content": "Development bundle download failure before paywall rendered",
+  "paywallRendered": false,
+  "livePurchaseProof": false,
+  "iosEvidence": false,
+  "appReviewEligible": false
+}

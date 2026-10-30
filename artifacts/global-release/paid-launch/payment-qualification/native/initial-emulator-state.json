@@ -1,0 +1,13 @@
+{
+  "fileWrittenAt": "2026-10-29T22:35:10.760Z",
+  "source": "adb exec-out screencap -p",
+  "platform": "Android",
+  "width": 1080,
+  "height": 2400,
+  "sha256": "f4fd3cb4727937566046d61aa87616aa8be0f212556680134b75b232ef8f67b4",
+  "content": "Existing Development client error from previous bundle-resolution failure",
+  "paywallRendered": false,
+  "iosEvidence": false,
+  "livePurchaseProof": false,
+  "appReviewEligible": false
+}

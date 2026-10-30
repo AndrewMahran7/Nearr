@@ -1,0 +1,123 @@
+- region "Notifications alt+T"
+- link "skip to content":
+  - /url: "#main-content"
+- banner:
+  - link "Home":
+    - /url: /overview
+    - img "Home"
+  - button "Nearr Dev":
+    - generic: Nearr Dev
+  - combobox "Search…"
+  - generic: Ctrl+K
+  - button "Rico":
+  - link "Help":
+    - /url: /settings/support
+  - link "Notifications":
+    - /url: /whats-new
+    - img "Unread notifications"
+  - link "Account":
+    - /url: /settings
+- navigation:
+  - link "Overview":
+    - /url: /projects/7d727ef6/overview
+    - generic: Overview
+  - link "Analytics":
+    - /url: /projects/7d727ef6/charts
+    - text: Analytics
+  - link "Customers":
+    - /url: /projects/7d727ef6/customer-lists
+    - generic: Customers
+  - link "Product catalog":
+    - /url: /projects/7d727ef6/product-catalog
+    - text: Product catalog
+  - link "Paywalls":
+    - /url: /projects/7d727ef6/paywalls
+    - generic: Paywalls
+  - link "Targeting":
+    - /url: /projects/7d727ef6/targeting
+    - generic: Targeting
+  - link "Experiments":
+    - /url: /projects/7d727ef6/experiments
+    - generic: Experiments
+  - link "Funnels":
+    - /url: /projects/7d727ef6/funnels
+    - generic: Funnels
+  - link "Ads":
+    - /url: /projects/7d727ef6/ads
+    - text: Ads
+  - link "Lifecycle":
+    - /url: /projects/7d727ef6/lifecycle/customer-center
+    - text: Lifecycle
+  - link "Authentication":
+    - /url: /projects/7d727ef6/auth/methods
+    - text: Authentication
+  - separator
+  - link "Apps":
+    - /url: /projects/7d727ef6/apps
+    - generic: Apps
+  - link "Web":
+    - /url: /projects/7d727ef6/web
+    - generic: Web
+  - link "API keys":
+    - /url: /projects/7d727ef6/api-keys
+    - generic: API keys
+  - link "Integrations":
+    - /url: /projects/7d727ef6/integrations
+    - generic: Integrations
+  - link "Project settings":
+    - /url: /projects/7d727ef6/settings
+    - generic: Project settings
+  - button "Collapse navigation":
+- main:
+  - navigation:
+    - list:
+      - link "Nearr Dev":
+        - /url: /projects/7d727ef6
+      - listitem: /
+      - link "Integrations":
+        - /url: /projects/7d727ef6/integrations
+      - listitem: /
+      - link "Send a Test Webhook":
+        - /url: /projects/7d727ef6/integrations/webhooks/whintgr3b60e37d68/test
+  - heading "Send a Test Webhook" [level=2]
+  - paragraph:
+    - text: You can test your server side implementation by purchasing
+    - link "sandbox subscriptions":
+      - /url: https://www.revenuecat.com/docs/sandbox
+    - text: or by issuing test events below.
+  - paragraph:
+    - text: Learn more about configuring Webhooks
+    - link "in our docs.":
+      - /url: https://www.revenuecat.com/docs/webhooks
+  - button "Resend Test Event"
+  - tablist "event information tabs":
+    - tab "Request"
+    - tab "Response 400" [active] [selected]:
+      - text: Response
+      - generic: "400"
+  - tabpanel "Response 400":
+    - paragraph: Response headers
+    - generic: "{"
+    - generic: "\"CF-Cache-Status\": \"DYNAMIC\","
+    - generic: "\"CF-Ray\": \"a525f311ca28a9d6-IAD\","
+    - generic: "\"Cache-Control\": \"no-store\","
+    - generic: "\"Connection\": \"keep-alive\","
+    - generic: "\"Content-Encoding\": \"gzip\","
+    - generic: "\"Content-Length\": \"59\","
+    - generic: "\"Content-Type\": \"application/json\","
+    - generic: "\"Date\": \"Thu, 29 Oct 2026 23:27:11 GMT\","
+    - generic: "\"Server\": \"cloudflare\","
+    - generic: "\"Strict-Transport-Security\": \"max-age=31536000; includeSubDomains; preload\","
+    - generic: "\"Vary\": \"Accept-Encoding\","
+    - generic: "\"alt-svc\": \"h3=\\\":443\\\"; ma=86400\","
+    - generic: "\"endpoint-load-metrics\": \"application_utilization:6,named_metrics.queue_depth:6\","
+    - generic: "\"sb-gateway-version\": \"1\","
+    - generic: "\"sb-project-ref\": \"qnfxnmvxpjzfydgudtvs\","
+    - generic: "\"sb-request-id\": \"01a189fd-2730-749f-a1f9-b39edb5a9bbc\","
+    - generic: "\"x-deno-execution-id\": \"a0f19690-e8cb-4cc8-be78-4fb1096b81ee\","
+    - generic: "\"x-sb-edge-region\": \"us-east-1\","
+    - generic: "\"x-served-by\": \"supabase-edge-runtime\""
+    - generic: "}"
+    - paragraph: Response body
+    - generic: "{\"ok\":false,\"error\":\"unknown_customer\"}"
+[Set-Cookie response header omitted.]

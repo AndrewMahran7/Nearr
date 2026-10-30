@@ -1,0 +1,142 @@
+{
+  "state": "offers",
+  "locale": "zh-Hans",
+  "theme": "light",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of link observed in local HTML page screenshot",
+  "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d",
+  "bundleSha256": "276ee9278497a5b96f27d3d2d2b05891e026252f13c2bed0425714f184a4331f",
+  "display": {
+    "size": "1080x2400",
+    "density": 420,
+    "fontScale": 1
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/offers-zh-Hans-light-top.png",
+      "capturedAt": "2026-10-30T00:30:15.975Z",
+      "sha256": "0f87f1628749cee4cfd0059d2a80f3fc79b35b596b11f351fc1164d99f078169",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+        "暂不",
+        "下一次发现",
+        "继续发现心仪地点",
+        "无论是否订阅，你已保存的地点始终属于你。",
+        "你的地点查找",
+        "每月免费查找",
+        "3 次中可用 1 次",
+        "为待处理结果预留：1",
+        "免费额度于 2026年11月1日（UTC）重置。",
+        "已购代币：47",
+        "为待处理结果预留：3",
+        "已购代币永不过期，Plus 不会消耗它们。",
+        "Nearr Plus",
+        "无限次地点查找",
+        "Plus 有效期间，成功的视频地点查找次数不限，不扣除代币。",
+        "US$1.99 / 月",
+        "订阅 Nearr Plus",
+        "Apple 按月收费，除非在订阅设置中取消，否则会自动续订。无免费试用或年度方案。"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-zh-Hans-light-scroll1.png",
+      "capturedAt": "2026-10-30T00:30:21.894Z",
+      "sha256": "76d9e11dbe091f091898f1be33bbe1e990a11bf9127f39f41499770c7ce7210e",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "已购代币永不过期，Plus 不会消耗它们。",
+        "Nearr Plus",
+        "无限次地点查找",
+        "Plus 有效期间，成功的视频地点查找次数不限，不扣除代币。",
+        "US$1.99 / 月",
+        "订阅 Nearr Plus",
+        "Apple 按月收费，除非在订阅设置中取消，否则会自动续订。无免费试用或年度方案。",
+        "也可按需购买查找次数",
+        "一个代币可支付一次成功的视频地点查找。已购代币永不过期。",
+        "入门",
+        "20 个代币",
+        "购买 20 个代币 · US$1.19",
+        "探索",
+        "50 个代币",
+        "购买 50 个代币 · US$2.49"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-zh-Hans-light-scroll2.png",
+      "capturedAt": "2026-10-30T00:30:27.719Z",
+      "sha256": "214ee118699a02b92e81e870caca9bf5ad2da4cb5d4aa8ea19ebda45346a320b",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "也可按需购买查找次数",
+        "一个代币可支付一次成功的视频地点查找。已购代币永不过期。",
+        "入门",
+        "20 个代币",
+        "购买 20 个代币 · US$1.19",
+        "探索",
+        "50 个代币",
+        "购买 50 个代币 · US$2.49",
+        "冒险",
+        "200 个代币",
+        "购买 200 个代币 · US$5.00",
+        "依次使用 Plus、每月免费额度、已购代币。",
+        "免费方案每个自然月包含 3 次成功的视频地点查找。 (UTC)",
+        "一段视频即使包含多个地点，也只计为一次。查找失败不会消耗你的额度。"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-zh-Hans-light-scroll3.png",
+      "capturedAt": "2026-10-30T00:30:33.110Z",
+      "sha256": "b5a4a427089aeae9fbc445644f18f0435cecabbf5bdc422d6895d2b67c40be8e",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "冒险",
+        "200 个代币",
+        "购买 200 个代币 · US$5.00",
+        "依次使用 Plus、每月免费额度、已购代币。",
+        "免费方案每个自然月包含 3 次成功的视频地点查找。 (UTC)",
+        "一段视频即使包含多个地点，也只计为一次。查找失败不会消耗你的额度。",
+        "Quick Check 会预留一次查找，直至保存或预留到期。每月免费额度不结转。",
+        "恢复购买",
+        "恢复操作会将已验证购买重新关联至账户，不会补回已使用的代币。",
+        "管理订阅",
+        "刷新余额",
+        "服务条款",
+        "隐私政策"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-zh-Hans-light-scroll4.png",
+      "capturedAt": "2026-10-30T00:30:38.542Z",
+      "sha256": "61ed2f2527792d3668c532025e434660e2b4006fcc03ea02ccb470fd247cbc87",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "冒险",
+        "200 个代币",
+        "购买 200 个代币 · US$5.00",
+        "依次使用 Plus、每月免费额度、已购代币。",
+        "免费方案每个自然月包含 3 次成功的视频地点查找。 (UTC)",
+        "一段视频即使包含多个地点，也只计为一次。查找失败不会消耗你的额度。",
+        "Quick Check 会预留一次查找，直至保存或预留到期。每月免费额度不结转。",
+        "恢复购买",
+        "恢复操作会将已验证购买重新关联至账户，不会补回已使用的代币。",
+        "管理订阅",
+        "刷新余额",
+        "服务条款",
+        "隐私政策"
+      ],
+      "unedited": true
+    }
+  ]
+}

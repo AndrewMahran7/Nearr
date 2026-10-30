@@ -1,0 +1,153 @@
+- region "Notifications alt+T"
+- link "skip to content":
+  - /url: "#main-content"
+- banner:
+  - link "Home":
+    - /url: /overview
+    - img "Home"
+  - button "Nearr Dev":
+    - generic: Nearr Dev
+  - combobox "Search…"
+  - generic: Ctrl+K
+  - button "Rico":
+  - link "Help":
+    - /url: /settings/support
+  - link "Notifications":
+    - /url: /whats-new
+    - img "Unread notifications"
+  - link "Account":
+    - /url: /settings
+- navigation:
+  - link "Overview":
+    - /url: /projects/7d727ef6/overview
+    - generic: Overview
+  - link "Analytics":
+    - /url: /projects/7d727ef6/charts
+    - text: Analytics
+  - link "Customers":
+    - /url: /projects/7d727ef6/customer-lists
+    - generic: Customers
+  - link "Product catalog" [expanded]:
+    - /url: /projects/7d727ef6/product-catalog
+    - text: Product catalog
+  - link "Offerings" [active]:
+    - /url: /projects/7d727ef6/product-catalog/offerings
+    - generic: Offerings
+  - link "Products":
+    - /url: /projects/7d727ef6/product-catalog/products
+    - generic: Products
+  - link "Entitlements":
+    - /url: /projects/7d727ef6/product-catalog/entitlements
+    - generic: Entitlements
+  - link "In-app currencies":
+    - /url: /projects/7d727ef6/product-catalog/virtual-currencies
+    - generic: In-app currencies
+  - link "Web discounts":
+    - /url: /projects/7d727ef6/web-discounts
+    - generic: Web discounts
+  - link "Paywalls":
+    - /url: /projects/7d727ef6/paywalls
+    - generic: Paywalls
+  - link "Targeting":
+    - /url: /projects/7d727ef6/targeting
+    - generic: Targeting
+  - link "Experiments":
+    - /url: /projects/7d727ef6/experiments
+    - generic: Experiments
+  - link "Funnels":
+    - /url: /projects/7d727ef6/funnels
+    - generic: Funnels
+  - link "Ads":
+    - /url: /projects/7d727ef6/ads
+    - text: Ads
+  - link "Lifecycle":
+    - /url: /projects/7d727ef6/lifecycle/customer-center
+    - text: Lifecycle
+  - link "Authentication":
+    - /url: /projects/7d727ef6/auth/methods
+    - text: Authentication
+  - separator
+  - link "Apps":
+    - /url: /projects/7d727ef6/apps
+    - generic: Apps
+  - link "Web":
+    - /url: /projects/7d727ef6/web
+    - generic: Web
+  - link "API keys":
+    - /url: /projects/7d727ef6/api-keys
+    - generic: API keys
+  - link "Integrations":
+    - /url: /projects/7d727ef6/integrations
+    - generic: Integrations
+  - link "Project settings":
+    - /url: /projects/7d727ef6/settings
+    - generic: Project settings
+  - button "Collapse navigation":
+- main:
+  - heading "Offerings" [level=2]
+  - button "New offering":
+    - text: New offering
+  - paragraph:
+    - text: Offerings are the selection of products that are "offered" to a customer on your paywall.
+    - text: They're an optional, but recommended feature of RevenueCat that can make it easier to change and experiment with your paywalls.
+    - link "info":
+      - /url: https://www.revenuecat.com/docs/offerings/overview
+      - img "info"
+  - paragraph:
+    - text: Offerings can also be used to test different pricing combinations as variants in an experiment.
+    - link "Learn more":
+      - /url: https://www.revenuecat.com/docs/experiments-overview-v1
+    - text: .
+  - group "Filter offerings by state":
+    - button "All":
+      - generic: All
+    - button "Active" [pressed]:
+      - generic: Active
+    - button "Inactive":
+      - generic: Inactive
+  - table:
+    - row "Identifier Display name Packages Created Actions":
+      - columnheader "Identifier"
+      - columnheader "Display name"
+      - columnheader "Packages"
+      - columnheader "Created"
+      - columnheader "Actions"
+    - row "nearr_tokens_v1 copy text Nearr Token Packs v1 copy text 3 packages Sep 7, 2026 More":
+      - cell "nearr_tokens_v1 copy text":
+        - link "nearr_tokens_v1":
+          - /url: /projects/7d727ef6/product-catalog/offerings/ofrng8f65966d0c
+        - button "copy text":
+      - cell "Nearr Token Packs v1 copy text":
+        - generic: Nearr Token Packs v1
+        - button "copy text":
+      - cell "3 packages"
+      - cell "Sep 7, 2026":
+        - generic "Sep 7, 2026"
+      - cell "More":
+        - button "More":
+    - row "nearr_monetization_v2 copy text Nearr Monetization v2 copy text 4 packages Sep 10, 2026 More":
+      - cell "nearr_monetization_v2 copy text":
+        - link "nearr_monetization_v2":
+          - /url: /projects/7d727ef6/product-catalog/offerings/ofrngd8d2f9cccd
+        - button "copy text":
+      - cell "Nearr Monetization v2 copy text":
+        - generic: Nearr Monetization v2
+        - button "copy text":
+      - cell "4 packages"
+      - cell "Sep 10, 2026":
+        - generic "Sep 10, 2026"
+      - cell "More":
+        - button "More":
+    - row "nearr_paid_v1 copy text Nearr Plus and Token Packs copy text 4 packages Oct 29, 2026 More":
+      - cell "nearr_paid_v1 copy text":
+        - link "nearr_paid_v1":
+          - /url: /projects/7d727ef6/product-catalog/offerings/ofrngca684d8d47
+        - button "copy text":
+      - cell "Nearr Plus and Token Packs copy text":
+        - generic: Nearr Plus and Token Packs
+        - button "copy text":
+      - cell "4 packages"
+      - cell "Oct 29, 2026":
+        - generic "Oct 29, 2026"
+      - cell "More":
+        - button "More":

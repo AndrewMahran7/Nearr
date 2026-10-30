@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:native-localization
+> node scripts/testNativeLocalization.cjs
+
+PASS native localization: host + extension, 10 locales, 40 files, real PBX variant groups, idempotence and parser round trip

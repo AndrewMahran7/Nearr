@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:consent-identity
+> ts-node -P scripts/tsconfig.json scripts/testConsentIdentityBoundary.ts
+
+PASS consent identity: fresh bearer RPCs, host and extension account-change guards, stale async generations, withdrawal ownership, no invented privacy acknowledgment

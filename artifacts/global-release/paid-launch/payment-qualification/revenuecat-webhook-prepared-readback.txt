@@ -1,0 +1,119 @@
+- region "Notifications alt+T"
+- link "skip to content":
+  - /url: "#main-content"
+- banner:
+  - link "Home":
+    - /url: /overview
+    - img "Home"
+  - button "Nearr Dev":
+    - generic: Nearr Dev
+  - combobox "Search…"
+  - generic: Ctrl+K
+  - button "Rico":
+  - link "Help":
+    - /url: /settings/support
+  - link "Notifications":
+    - /url: /whats-new
+    - img "Unread notifications"
+  - link "Account":
+    - /url: /settings
+- navigation:
+  - link "Overview":
+    - /url: /projects/7d727ef6/overview
+    - generic: Overview
+  - link "Analytics":
+    - /url: /projects/7d727ef6/charts
+    - text: Analytics
+  - link "Customers":
+    - /url: /projects/7d727ef6/customer-lists
+    - generic: Customers
+  - link "Product catalog":
+    - /url: /projects/7d727ef6/product-catalog
+    - text: Product catalog
+  - link "Paywalls":
+    - /url: /projects/7d727ef6/paywalls
+    - generic: Paywalls
+  - link "Targeting":
+    - /url: /projects/7d727ef6/targeting
+    - generic: Targeting
+  - link "Experiments":
+    - /url: /projects/7d727ef6/experiments
+    - generic: Experiments
+  - link "Funnels":
+    - /url: /projects/7d727ef6/funnels
+    - generic: Funnels
+  - link "Ads":
+    - /url: /projects/7d727ef6/ads
+    - text: Ads
+  - link "Lifecycle":
+    - /url: /projects/7d727ef6/lifecycle/customer-center
+    - text: Lifecycle
+  - link "Authentication":
+    - /url: /projects/7d727ef6/auth/methods
+    - text: Authentication
+  - separator
+  - link "Apps":
+    - /url: /projects/7d727ef6/apps
+    - generic: Apps
+  - link "Web":
+    - /url: /projects/7d727ef6/web
+    - generic: Web
+  - link "API keys":
+    - /url: /projects/7d727ef6/api-keys
+    - generic: API keys
+  - link "Integrations":
+    - /url: /projects/7d727ef6/integrations
+    - generic: Integrations
+  - link "Project settings":
+    - /url: /projects/7d727ef6/settings
+    - generic: Project settings
+  - button "Collapse navigation":
+- main:
+  - navigation:
+    - list:
+      - link "Nearr Dev":
+        - /url: /projects/7d727ef6
+      - listitem: /
+      - link "Integrations":
+        - /url: /projects/7d727ef6/integrations
+      - listitem: /
+      - link "New Webhook":
+        - /url: /projects/7d727ef6/integrations/webhooks/add
+  - heading "General" [level=3]
+  - generic: Webhook name
+  - textbox "Webhook name":
+    - /placeholder: Webhook Name
+    - text: Nearr Paid v1 Apple Sandbox
+  - generic: Webhook URL
+  - paragraph: HTTPS endpoint that receives POST deliveries.
+  - textbox "Webhook URL":
+    - /placeholder: e.g. https://api.yourdomain.com/endpoint
+    - text: https://qnfxnmvxpjzfydgudtvs.supabase.co/functions/v1/revenuecat-plus-webhook
+  - generic: Authorization header value
+  - paragraph:
+    - text: Optional value sent in the
+    - link "Authorization header":
+      - /url: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization
+    - text: on each request.
+  - textbox "Authorization header value" [active]:
+    - /placeholder: e.g. Bearer Xz3aHxYNQFcdgRvb
+  - switch "Show value":
+  - generic: Environment to send events for
+  - paragraph: Production, Sandbox, or both.
+  - combobox "Environment to send events for": Sandbox only
+  - textbox: sandbox
+  - heading "Events filter" [level=3]
+  - paragraph:
+    - text: Filter by
+    - link "event type":
+      - /url: https://www.revenuecat.com/docs/event-types-and-fields
+    - text: or app.
+  - generic: App
+  - paragraph: One app, or all apps.
+  - combobox "App": Nearr iOS Dev Sandbox (App Store)
+  - textbox: app7434757255
+  - generic: Event type
+  - paragraph: All events, or specific types.
+  - combobox "Event type": All events
+  - textbox
+  - button "Add webhook"

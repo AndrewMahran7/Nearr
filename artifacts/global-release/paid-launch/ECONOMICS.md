@@ -1,5 +1,7 @@
 # Paid launch economics
 
+> Historical planning analysis. Actual Apple draft prices and displayed proceeds were subsequently recorded in [Apple catalog readback](APPLE_CATALOG_READBACK.md); the actual RevenueCat plan is recorded in [RevenueCat configuration readback](REVENUECAT_CONFIGURATION_READBACK.md). The earlier assumptions below are retained as planning history, not current account facts or measured margins.
+
 Calculated 2026-10-29 UTC. USD planning analysis, not measured production unit cost. The requested product remains **unlimited**; this analysis does not introduce a hidden find cap.
 
 ## Subscription exposure

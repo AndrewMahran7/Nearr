@@ -1,0 +1,36 @@
+{
+  "capturedAt": "2026-10-29T23:44:35.796Z",
+  "kind": "synthetic RevenueCat dashboard TEST, not StoreKit",
+  "webhookId": "whintgr3b60e37d68",
+  "endpoint": "https://qnfxnmvxpjzfydgudtvs.supabase.co/functions/v1/revenuecat-plus-webhook",
+  "request": {
+    "id": "3DC5ABD0-1691-4A5D-A808-7973BB4A668B",
+    "type": "TEST",
+    "app_id": "app7434757255",
+    "environment": "SANDBOX",
+    "store": "APP_STORE",
+    "product_id": "test_product"
+  },
+  "before": {
+    "status": 400,
+    "error": "unknown_customer",
+    "at": "2026-10-29T23:27:11Z",
+    "eventId": "CF99E59A-C3EE-4CC3-8170-9BFAF6A16525"
+  },
+  "after": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "test": true,
+      "applied": false
+    },
+    "at": "2026-10-29T23:44:00Z",
+    "eventId": "3DC5ABD0-1691-4A5D-A808-7973BB4A668B"
+  },
+  "sourceCommit": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d",
+  "realStoreKitTransaction": false,
+  "customerIdsAndAttributesOmitted": true,
+  "authorizationAndResponseCookiesOmitted": true,
+  "dashboardResendGeneratedNewEventId": true,
+  "sameEventDuplicateDeliveryVerified": false
+}

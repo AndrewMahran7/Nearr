@@ -1,0 +1,48 @@
+{
+  "installedAt": "2026-10-30T00:43:36.460Z",
+  "operation": "Verified UID10227 task-owned QA uninstall, then fresh adb install --no-streaming of verified com.nearr.paidqa ONLY",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "bundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "certificateSha256": "fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c",
+  "result": "Performing Push Install\r\nSuccess",
+  "before": {
+    "original": {
+      "package": "com.nearr.app",
+      "uid": "10228",
+      "firstInstallTime": "2026-10-26 10:15:51",
+      "lastUpdateTime": "2026-10-29 13:31:43"
+    },
+    "qa": {
+      "package": "com.nearr.paidqa",
+      "uid": "10227",
+      "firstInstallTime": "2026-10-29 17:01:07",
+      "lastUpdateTime": "2026-10-29 17:01:07"
+    }
+  },
+  "after": {
+    "original": {
+      "package": "com.nearr.app",
+      "uid": "10228",
+      "firstInstallTime": "2026-10-26 10:15:51",
+      "lastUpdateTime": "2026-10-29 13:31:43"
+    },
+    "qa": {
+      "package": "com.nearr.paidqa",
+      "uid": "10229",
+      "firstInstallTime": "2026-10-29 17:43:28",
+      "lastUpdateTime": "2026-10-29 17:43:28"
+    }
+  },
+  "qaUidAndFirstInstallRetained": false,
+  "syntheticOnlyQaStateRemovedForReconstruction": true,
+  "removedPackage": "com.nearr.paidqa",
+  "removalResult": "Success",
+  "unrelatedPackageRemoved": false,
+  "originalPackageMetadataUnchanged": true,
+  "userdataByteComparisonPerformed": false,
+  "originalAppDataAccessed": false,
+  "forceStopUsed": false,
+  "activityLaunchCommandUsed": false,
+  "realPurchaseEvidence": false
+}

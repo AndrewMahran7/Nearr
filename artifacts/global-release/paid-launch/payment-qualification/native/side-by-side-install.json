@@ -1,0 +1,28 @@
+{
+  "verifiedAt": "2026-10-30T00:02:11.497Z",
+  "operation": "fresh adb install --no-streaming; no replace/reinstall flag",
+  "result": "Success confirmed by package readback",
+  "applicationId": "com.nearr.paidqa",
+  "apkSha256": "647ed3c1f170a8fed504e11a85118cc306ac1f7fd37a09146ad3655a98e2f795",
+  "original": {
+    "package": "com.nearr.app",
+    "uid": "10228",
+    "versionName": "1.7.0",
+    "firstInstallTime": "2026-10-26 10:15:51",
+    "lastUpdateTime": "2026-10-29 13:31:43"
+  },
+  "qa": {
+    "package": "com.nearr.paidqa",
+    "uid": "10227",
+    "versionName": "1.7.0",
+    "firstInstallTime": "2026-10-29 17:01:07",
+    "lastUpdateTime": "2026-10-29 17:01:07"
+  },
+  "distinctUid": true,
+  "originalLastUpdatePredatesQaInstall": true,
+  "initialVerifierIssue": "Android36 reports appId rather than userId in dumpsys; the post-install parser failed. Read-only pm list packages -U resolved both actual distinct UIDs; no repeat install was attempted.",
+  "forceStopUsed": false,
+  "activityLaunchCommandUsed": false,
+  "originalAppDataAccessed": false,
+  "realPurchaseEvidence": false
+}

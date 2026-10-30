@@ -1,0 +1,29 @@
+{
+  "checkedAt": "2026-10-29T23:38:13.1989929Z",
+  "knownBuildPids": [
+    36984,
+    43632,
+    36996,
+    67716,
+    25484,
+    74552,
+    53984,
+    12716,
+    89760,
+    101428,
+    46704,
+    96560,
+    67576,
+    10204,
+    17812,
+    87188,
+    103948
+  ],
+  "remainingOwnedProcesses": [],
+  "apkExists": false,
+  "bundleExists": false,
+  "emulatorMutations": 0,
+  "installedNewApk": false,
+  "changedTrackedNativeCacheFiles": false,
+  "existingAppDataPreserved": true
+}

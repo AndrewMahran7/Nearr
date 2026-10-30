@@ -1,0 +1,258 @@
+
+> nearr@0.1.0 test:safe-development
+> npm run typecheck && npm run test:app-environment && npm run test:google-places-config && npm run test:dev-db-guard && npm run test:root-layout-loop && npm run test:update-args && npm run test:share-extension-env && npm run test:dev-login-gating && npm run test:deployment-guards && npm run test:worktree-workflow
+
+
+> nearr@0.1.0 typecheck
+> tsc --noEmit
+
+
+> nearr@0.1.0 test:app-environment
+> ts-node -P scripts/tsconfig.json scripts/testAppEnvironment.ts
+
+PASS production/production is clean
+PASS development/development is clean
+PASS preview/development is clean
+PASS prod app + dev backend is flagged
+PASS prod app + dev backend BLOCKS the build
+PASS dev app + prod backend is flagged
+PASS dev app + prod backend BLOCKS the build
+PASS preview app + prod backend is flagged too
+PASS ALLOW_PRODUCTION_BACKEND cannot clear the dev->prod rule
+PASS ALLOW_PRODUCTION_BACKEND is itself a blocking retired override
+PASS ALLOW_PRODUCTION_BACKEND does NOT excuse a prod app on a dev backend
+PASS a falsey acknowledgement does not clear the rule
+PASS undeclared APP_ENV defaults to development
+PASS undeclared BACKEND_ENV defaults to production
+PASS undeclared reports APP_ENV_MISSING
+PASS undeclared reports BACKEND_ENV_MISSING
+PASS a completely undeclared build BLOCKS (dev app reaching prod backend)
+PASS a garbage APP_ENV is treated as undeclared, not as production
+PASS missing APP_ENV on a dev backend is advisory, not blocking
+PASS mismatched backend hosts are flagged
+PASS mismatched backend hosts BLOCK
+PASS partially configured hosts (some unset) do not false-positive
+PASS any declared lane without a Supabase URL is blocked
+PASS development label with production project is blocked even when labels agree
+PASS production label with development project is blocked even when labels agree
+PASS a custom/unrecognised hosted project cannot masquerade as Nearr-Dev
+PASS demo mode in production is flagged
+PASS dev password login in production is flagged
+PASS debug logs in production is flagged
+PASS dev mock monetization in production is blocked
+PASS the same dev switches are fine in development
+PASS hostOf strips path
+PASS hostOf strips port
+PASS hostOf lowercases
+PASS hostOf strips userinfo
+PASS hostOf of empty is null
+PASS hostOf of garbage is null
+PASS hostOf of non-string is null
+PASS supabaseProjectRefOfHost extracts a standard project ref
+PASS supabaseProjectRefOfHost rejects a custom host
+PASS summary identifies Nearr-Dev without exposing configuration values
+PASS validateEnvironment does not mutate its input
+
+All app-environment tests passed.
+
+> nearr@0.1.0 test:google-places-config
+> ts-node -P scripts/tsconfig.json scripts/testGooglePlacesConfig.ts
+
+PASS Google Places dedicated-key selection and development fallback guard
+
+> nearr@0.1.0 test:dev-db-guard
+> ts-node -P scripts/tsconfig.json scripts/testDevDatabaseGuard.ts
+
+PASS production ref exits non-zero
+PASS production ref is named as production
+PASS production ref never reaches the Supabase CLI
+PASS unknown ref exits non-zero
+PASS unknown ref explains it cannot be proven safe
+PASS unknown ref never reaches the Supabase CLI
+PASS development ref is accepted
+PASS development ref reports the target
+PASS without --yes it is a dry run
+PASS without --yes it never reaches the Supabase CLI
+PASS a successful dry run confirms the CLI link agrees
+PASS dev:functions refuses the production ref
+PASS dev:functions names it as production
+PASS dev:functions never reaches the Supabase CLI for production
+PASS dev:functions refuses an unrecognised ref
+PASS dev:functions reads NEARR_DEV_SUPABASE_REF from .env.local
+PASS dev:functions requires --yes before deploying
+PASS dev:functions preserves the first positional function selector
+PASS dev:functions does not broaden a selected deploy to unrelated functions
+PASS dev:functions preserves a single positional target
+PASS dev:functions does not widen one target to all functions
+
+All dev-database-guard tests passed.
+
+> nearr@0.1.0 test:root-layout-loop
+> ts-node -P scripts/tsconfig.json scripts/testRootLayoutRenderLoop.ts
+
+PASS reverted notification-ownership symbol absent: planNotificationNavigation
+PASS reverted notification-ownership symbol absent: takePendingNotificationNavigation
+PASS reverted notification-ownership symbol absent: setPendingNotificationNavigation
+PASS reverted notification-ownership symbol absent: clearPendingNotificationNavigation
+PASS reverted notification-ownership symbol absent: claimUiForNotification
+PASS reverted notification-ownership symbol absent: flushPendingNotificationNavigation
+PASS reverted notification-ownership symbol absent: runNotificationNavigation
+PASS reverted notification-ownership symbol absent: createNotificationOpenIntent
+PASS reverted notification-ownership symbol absent: notificationOwnsVisibleSurface
+PASS the notificationNavigation module is not imported by the root layout
+PASS lib/notificationNavigation.ts does not exist
+PASS the root layout does not dismiss the stack on a notification tap
+PASS the notification controller does not dismiss or reset the root stack
+PASS the root layout does not subscribe to expo-router rootState
+PASS useRootNavigationState is not imported by the root layout
+PASS route reads still go through the deepEqual-guarded snapshot
+PASS AuthGate still routes signed-out users to onboarding
+PASS AuthGate still pulls signed-in users into the tabs
+PASS AuthGate guards current and in-flight onboarding routes before replace
+PASS RootLayout owns no notification response listener or cold-start retrieval
+PASS RootLayout owns no notification response or pending-intent state
+PASS the renderless controller is mounted inside the existing auth shell
+PASS the root app owns a visible startup surface while dependencies hydrate
+PASS the root startup watchdog exposes explicit recovery
+PASS notification responses are still handled
+PASS cold-start notification responses are still read
+PASS notification action buttons still reach their handler
+PASS notification routing cannot block root rendering
+
+All root-layout startup-safety tests passed.
+
+> nearr@0.1.0 test:update-args
+> ts-node -P scripts/tsconfig.json scripts/testUpdateArgs.ts
+
+PASS a spaced message survives as ONE argv element
+PASS the message is never split on spaces
+PASS the -m flag is still adjacent to its value
+PASS parseUpdateArgs reads the spaced message
+PASS parseUpdateArgs reads --message=value form
+PASS parseUpdateArgs strips --yes from passthrough
+PASS parseUpdateArgs reports confirmation
+PASS parseUpdateArgs defaults to unconfirmed
+PASS release record is stripped from EAS passthrough
+PASS shell metacharacters stay one argument: "msg; echo pwned"
+PASS shell metacharacters stay one argument: "msg && echo pwned"
+PASS shell metacharacters stay one argument: "msg $(echo pwned)"
+PASS shell metacharacters stay one argument: "msg `echo pwned`"
+PASS shell metacharacters stay one argument: "msg | echo pwned"
+PASS shell metacharacters stay one argument: "msg\" & echo pwned & \""
+PASS shell metacharacters stay one argument: "msg %PATH%"
+PASS development wrapper targets channel development
+PASS development wrapper targets environment development
+PASS preview wrapper targets channel preview
+PASS preview wrapper targets environment preview
+PASS production wrapper targets channel production
+PASS production wrapper targets environment production
+PASS development never mentions the production channel
+PASS preview never mentions the production channel
+PASS dev wrapper refuses --channel production
+PASS dev wrapper refuses --channel=production
+PASS dev wrapper refuses --environment production
+PASS dev wrapper refuses --branch
+PASS dev wrapper refuses --auto
+PASS preview wrapper refuses retargeting too
+PASS an unknown lane is refused
+PASS harmless flags are still forwarded
+PASS eas resolves to something runnable without a shell
+PASS eas is not resolved through a .cmd/.bat shim
+PASS eas resolves to a native executable or node + a JS entry
+
+All update-argument tests passed.
+
+> nearr@0.1.0 test:share-extension-env
+> ts-node -P scripts/tsconfig.json scripts/testShareExtensionEnv.ts
+
+PASS the expo-share-extension plugin is configured
+PASS expo-updates is excluded from the extension (so an OTA cannot change it)
+PASS expo-dev-client is excluded from the extension (so Metro cannot serve it)
+PASS the extension reads the canonical environment declaration
+PASS the extension checks BLOCKING environment violations
+PASS the extension logs a non-secret environment identity
+PASS a misconfigured extension refuses instead of submitting
+PASS the environment guard runs BEFORE createShareJob
+PASS the environment guard also runs before legacy process-share-link fetch
+PASS legacy config errors never hand off to the equally misconfigured host
+PASS the extension resolves its endpoint rather than hardcoding one
+PASS no Supabase project URL is hardcoded in the extension
+PASS the extension never interpolates a credential value into a log
+PASS presence-only token logging is what it does instead
+PASS no ANON_KEY appears in the extension at all
+PASS no SERVICE_ROLE_KEY appears in the extension at all
+PASS no GEMINI_API_KEY appears in the extension at all
+PASS a development lane on a production backend is BLOCKING
+PASS an extension whose job endpoint drifted to another host is BLOCKING
+PASS a coherent development extension is allowed to submit
+PASS consistent production URLs cannot masquerade as development
+
+All share-extension environment tests passed.
+
+> nearr@0.1.0 test:dev-login-gating
+> ts-node -P scripts/tsconfig.json scripts/testDevLoginGating.ts
+
+PASS the developer-login gate exists
+PASS the gate uses the canonical environment abstraction
+PASS the gate no longer depends on __DEV__
+PASS the explicit opt-in flag is still required on top of the lane
+PASS the gate is a conjunction, not an either/or
+PASS no developer password literal is committed
+PASS the developer password is never logged
+PASS production hides developer tools
+PASS an UNDECLARED lane hides developer tools
+PASS a garbage lane hides developer tools
+PASS development shows developer tools
+PASS preview shows developer tools
+PASS the dev-login flag in a production build is a BLOCKING violation
+
+All developer-login gating tests passed.
+
+> nearr@0.1.0 test:deployment-guards
+> ts-node -P scripts/tsconfig.json scripts/testDeploymentGuards.ts
+
+PASS dev build uses the fixed-lane wrapper
+PASS preview build uses the fixed-lane wrapper
+PASS dev worker uses the fixed-lane wrapper
+PASS prod:update has an explicit guarded command
+PASS prod:rollback has an explicit guarded command
+PASS prod:build has an explicit guarded command
+PASS prod:functions has an explicit guarded command
+PASS prod:db has an explicit guarded command
+PASS prod:worker has an explicit guarded command
+PASS dev build rejects caller targeting flags
+PASS rejected dev build never reaches EAS
+PASS dev worker requires explicit deployment ownership
+PASS unconfirmed dev worker never reaches Railway
+PASS dev rollback rejects caller targeting flags
+PASS rejected dev rollback never reaches EAS
+PASS production build refuses this non-main/dirty checkout
+PASS production build refusal occurs before deployment
+PASS production worker refuses this non-main/dirty checkout
+PASS production worker refusal occurs before deployment
+PASS production functions refuses this non-main/dirty checkout
+PASS production functions refusal occurs before deployment
+PASS production database refuses this non-main/dirty checkout
+PASS production database refusal occurs before deployment
+PASS build verifies the environment before invoking EAS
+PASS worker verifies Railway SUPABASE_URL before railway up
+PASS worker preserves the configured /services/media-worker Railway root
+PASS worker has no shell interpolation
+PASS worker yt-dlp version is the tested explicit pin
+PASS worker yt-dlp install has no floating release URL or default
+PASS worker yt-dlp install verifies the pinned release checksum
+PASS production functions refuse the development-only E2E fixture
+
+All deployment-guard tests passed.
+
+> nearr@0.1.0 test:worktree-workflow
+> ts-node -P scripts/tsconfig.json scripts/testWorktreeWorkflow.ts
+
+PASS task:new requires an explicit starting ref
+PASS missing-base probe creates no worktree
+PASS canonical root is Nearr-worktrees
+PASS helper creates a missing worktree root
+PASS helper uses git worktree add with argv
+PASS helper never enables a shell
+
+All worktree-workflow tests passed.

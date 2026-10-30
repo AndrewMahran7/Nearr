@@ -1,0 +1,142 @@
+{
+  "state": "offers",
+  "locale": "fr",
+  "theme": "light",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of local HTML anchor observed in compact-grid screenshot",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "bundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "display": {
+    "size": "1080x2400",
+    "density": "Physical density: 420",
+    "fontScale": 1
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/offers-fr-light-default-top.png",
+      "capturedAt": "2026-10-30T00:51:50.936Z",
+      "sha256": "6e8e02e704d379e6f95f1a79ad7e63df3d38ab95640638b3bef9e99317e8f749",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+        "Pas maintenant",
+        "Votre prochaine découverte",
+        "Continuez à découvrir des lieux",
+        "Vos lieux enregistrés restent les vôtres, avec ou sans abonnement.",
+        "Vos recherches",
+        "Recherches gratuites du mois",
+        "1 sur 3 disponibles",
+        "Réservées pour des résultats en attente : 1",
+        "La part gratuite est renouvelée le 1 nov. 2026 (UTC).",
+        "Jetons achetés : 47",
+        "Réservées pour des résultats en attente : 3",
+        "Les jetons achetés n’expirent pas. Plus ne les utilise pas.",
+        "Nearr Plus",
+        "Recherches illimitées",
+        "Recherches vidéo réussies illimitées tant que Plus est actif. Aucun jeton déduit.",
+        "1,99 $US / mois"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-fr-light-default-scroll1.png",
+      "capturedAt": "2026-10-30T00:51:55.877Z",
+      "sha256": "57518ee8bd7ce59f4dea460d86609cdef74a12ce7a9c083ba2e7619d2924b028",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Réservées pour des résultats en attente : 1",
+        "La part gratuite est renouvelée le 1 nov. 2026 (UTC).",
+        "Jetons achetés : 47",
+        "Réservées pour des résultats en attente : 3",
+        "Les jetons achetés n’expirent pas. Plus ne les utilise pas.",
+        "Nearr Plus",
+        "Recherches illimitées",
+        "Recherches vidéo réussies illimitées tant que Plus est actif. Aucun jeton déduit.",
+        "1,99 $US / mois",
+        "Passer à Nearr Plus",
+        "Apple facture chaque mois avec renouvellement automatique, sauf résiliation dans les réglages des abonnements. Sans essai gratuit ni formule annuelle.",
+        "Ou achetez des recherches à la demande",
+        "Un jeton paie une recherche vidéo réussie. Les jetons achetés n’expirent pas.",
+        "Découverte",
+        "20 jetons",
+        "Acheter 20 jetons · 1,19 $US"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-fr-light-default-scroll2.png",
+      "capturedAt": "2026-10-30T00:52:01.102Z",
+      "sha256": "bee55f5caf1b9f9d3213385b0651f6c2ff00cc0eeb921ec1cb5674b6417327ce",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Nearr Plus",
+        "Recherches illimitées",
+        "Recherches vidéo réussies illimitées tant que Plus est actif. Aucun jeton déduit.",
+        "1,99 $US / mois",
+        "Passer à Nearr Plus",
+        "Apple facture chaque mois avec renouvellement automatique, sauf résiliation dans les réglages des abonnements. Sans essai gratuit ni formule annuelle.",
+        "Ou achetez des recherches à la demande",
+        "Un jeton paie une recherche vidéo réussie. Les jetons achetés n’expirent pas.",
+        "Découverte",
+        "20 jetons",
+        "Acheter 20 jetons · 1,19 $US",
+        "Explorateur",
+        "50 jetons",
+        "Acheter 50 jetons · 2,49 $US"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-fr-light-default-scroll3.png",
+      "capturedAt": "2026-10-30T00:52:06.247Z",
+      "sha256": "e3400641e2f2f05f5b1d92a2a19022e129b0ef2681f2cb125df62ecf04816075",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Un jeton paie une recherche vidéo réussie. Les jetons achetés n’expirent pas.",
+        "Découverte",
+        "20 jetons",
+        "Acheter 20 jetons · 1,19 $US",
+        "Explorateur",
+        "50 jetons",
+        "Acheter 50 jetons · 2,49 $US",
+        "Aventurier",
+        "200 jetons",
+        "Acheter 200 jetons · 5,00 $US",
+        "Plus est utilisé en premier, puis les recherches gratuites du mois, puis les jetons achetés.",
+        "La version gratuite comprend 3 recherches de vidéo réussies par mois civil. (UTC)",
+        "Une vidéo compte une seule fois, même si elle contient plusieurs lieux. Les recherches échouées ne réduisent pas votre quota.",
+        "Quick Check réserve une recherche jusqu’à l’enregistrement ou l’expiration de la réservation. Les recherches gratuites ne sont pas reportées."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-fr-light-default-scroll4.png",
+      "capturedAt": "2026-10-30T00:52:11.353Z",
+      "sha256": "b8efa6ddd41cd250bb772912d6cf89b42ed67c9057d24be4e2c819a7997c449d",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "200 jetons",
+        "Acheter 200 jetons · 5,00 $US",
+        "Plus est utilisé en premier, puis les recherches gratuites du mois, puis les jetons achetés.",
+        "La version gratuite comprend 3 recherches de vidéo réussies par mois civil. (UTC)",
+        "Une vidéo compte une seule fois, même si elle contient plusieurs lieux. Les recherches échouées ne réduisent pas votre quota.",
+        "Quick Check réserve une recherche jusqu’à l’enregistrement ou l’expiration de la réservation. Les recherches gratuites ne sont pas reportées.",
+        "Restaurer les achats",
+        "La restauration rattache les achats vérifiés à votre compte. Les jetons dépensés ne sont pas recrédités.",
+        "Gérer l’abonnement",
+        "Actualiser le solde",
+        "Conditions d’utilisation",
+        "Politique de confidentialité"
+      ],
+      "unedited": true
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "historicalIntermediateCleanup": true,
+  "scopeNote": "This receipt predates later local-helper restart, synthetic declaration, theme-package update and native matrix. Final cleanup is recorded separately.",
+  "verifiedAt": "2026-10-30T00:16:52.260Z",
+  "knownMetroPidsAbsent": [
+    76760,
+    41660,
+    68484
+  ],
+  "localLinkHelperPid": 25148,
+  "localLinkHelperStopped": true,
+  "ports8082And8094NoListener": true,
+  "remoteTaskXmlRemoved": "/sdcard/payment-qa-ui.xml",
+  "nativeCacheTrackedDiffEmpty": true,
+  "originalPackage": "com.nearr.app",
+  "originalUid": 10228,
+  "qaPackage": "com.nearr.paidqa",
+  "qaUid": 10227,
+  "qaPackageRetainedForReview": true,
+  "qaApkRetainedIgnored": ".tmp/android-standalone-app/outputs/apk/release/app-release.apk",
+  "device": {
+    "size": "1080x2400",
+    "density": 420,
+    "fontScale": 1,
+    "nightMode": "no",
+    "displaySettingsUnchanged": true
+  },
+  "chrome": {
+    "firstRunCompletedSignedOut": true,
+    "notificationPromptDeclined": true,
+    "localLinkTabRetained": true
+  },
+  "identityOrPurchaseCreated": false,
+  "originalAppDataReadOrReset": false,
+  "cleanupScope": "Only verified task-owned host helper processes and remote UI XML; no emulator app force-stop or data reset"
+}

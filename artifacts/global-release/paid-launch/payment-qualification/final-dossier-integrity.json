@@ -1,0 +1,24 @@
+{
+  "checkedAtUtc": "2026-10-30T01:38:28.710Z",
+  "sourceCommit": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "requiredReports": [
+    "APPLE_CATALOG_READBACK.md",
+    "REVENUECAT_CONFIGURATION_READBACK.md",
+    "REAL_STOREKIT_SANDBOX_RESULTS.md",
+    "PURCHASE_RESTORE_REFUND_QA.md",
+    "PAYWALL_NATIVE_VISUAL_QA.md",
+    "TEN_LOCALE_IAP_METADATA.md",
+    "PAID_LAUNCH_QUALIFICATION_HANDOFF.md"
+  ],
+  "localLinksPassed": 94,
+  "validEvidenceJsonFiles": 111,
+  "preservedLogHashesPassed": 23,
+  "nativeCaptureManifests": 40,
+  "nativePngHashesAndDimensionsPassed": 216,
+  "sensitivePatternScanTextFiles": 162,
+  "sensitivePatternScan": "PASS; bounded automated scan plus separate reviewer screenshot/text inspection",
+  "diffCheck": "PASS (working and staged)",
+  "realStoreKitTransactions": 0,
+  "productionMutation": false,
+  "limitations": "Artifact integrity checks do not establish a real purchase or native visual pass; see the seven reports for actual qualification status."
+}

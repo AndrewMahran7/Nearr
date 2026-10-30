@@ -1,0 +1,64 @@
+{
+  "at": "2026-10-30T01:30:27.322Z",
+  "operation": "Restore only task-modified size/font settings; uninstall exact disposable QA package; remove exact task UI dump",
+  "before": {
+    "original": {
+      "package": "com.nearr.app",
+      "uid": "10228",
+      "firstInstallTime": "2026-10-26 10:15:51",
+      "lastUpdateTime": "2026-10-29 13:31:43"
+    },
+    "qa": {
+      "package": "com.nearr.paidqa",
+      "uid": "10230",
+      "firstInstallTime": "2026-10-29 18:14:32",
+      "lastUpdateTime": "2026-10-29 18:14:32"
+    }
+  },
+  "originalAfter": {
+    "package": "com.nearr.app",
+    "uid": "10228",
+    "firstInstallTime": "2026-10-26 10:15:51",
+    "lastUpdateTime": "2026-10-29 13:31:43"
+  },
+  "originalPackageMetadataUnchanged": true,
+  "originalUserDataAccessed": false,
+  "originalUserDataByteComparison": false,
+  "qaRemoved": true,
+  "qaRemovalResult": "Success",
+  "qaProcessAbsent": true,
+  "display": {
+    "size": "Physical size: 1080x2400",
+    "density": "Physical density: 420",
+    "fontScale": "1.0",
+    "nightMode": "Night mode: no"
+  },
+  "taskRemoteUiDumpRemoved": true,
+  "nativeCacheTrackedFilesClean": true,
+  "retainedArtifacts": [
+    {
+      "path": "C:\\Users\\andre\\.codex\\worktrees\\nearr-paid-launch-final\\Nearr\\.tmp\\android-standalone-app\\outputs\\apk\\release\\app-release.apk",
+      "bytes": 86867516,
+      "sha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470"
+    },
+    {
+      "path": ".tmp/payment-qa-light-63600e8.apk",
+      "bytes": 86867158,
+      "sha256": "647ed3c1f170a8fed504e11a85118cc306ac1f7fd37a09146ad3655a98e2f795"
+    }
+  ],
+  "backendIdentityCreated": false,
+  "nearrOrAppleAgreementsAccepted": false,
+  "purchasesAttempted": false,
+  "realStoreKitPurchases": 0,
+  "forceStopUsed": false,
+  "activityLaunchCommandUsed": false,
+  "chromiumState": "Signed-out Chrome and local helper tab retained; its first-run setup was completed earlier, notifications declined. No account added.",
+  "themePreferenceDisposition": "Disposable QA local state and process removed, including synthetic declaration and temporary theme preference.",
+  "hostHelperReadback": {
+    "checkedAt": "2026-10-30T01:31:30.1528936Z",
+    "knownTaskNodeProcessCount": 0,
+    "knownTaskPortListenerCount": 0,
+    "portsChecked": [8082, 8094, 8095]
+  }
+}

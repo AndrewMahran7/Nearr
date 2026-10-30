@@ -1,0 +1,74 @@
+{
+  "recordedAt": "2026-10-29T23:39:16.974Z",
+  "status": "NOT_QUALIFIED_NO_ARTIFACT",
+  "overallStartedAt": "2026-10-29T23:22:23.098Z",
+  "overallDeadlineAt": "2026-10-29T23:37:23.098Z",
+  "overallFinishedAt": "2026-10-29T23:37:23.796Z",
+  "attempts": [
+    {
+      "file": "standalone-build-initial-argument-failure.json",
+      "startedAt": "2026-10-29T23:22:23.098Z",
+      "finishedAt": "2026-10-29T23:22:27.511Z",
+      "exitCode": 1,
+      "timedOut": false,
+      "diagnostic": "Gradle rejected a literal quoted init-script path; corrected ignored command syntax."
+    },
+    {
+      "file": "standalone-build-initial-included-build-failure.json",
+      "startedAt": "2026-10-29T23:22:41.089Z",
+      "finishedAt": "2026-10-29T23:22:56.109Z",
+      "exitCode": 1,
+      "timedOut": false,
+      "diagnostic": "Init script encountered included Gradle build without :app; added local guard."
+    },
+    {
+      "file": "standalone-build-source-tree-failure.json",
+      "startedAt": "2026-10-29T23:23:12.728Z",
+      "finishedAt": "2026-10-29T23:25:34.603Z",
+      "exitCode": 1,
+      "timedOut": false,
+      "diagnostic": "Gradle input/output overlap validation; excluded ignored .tmp/artifacts from JS source inputs."
+    },
+    {
+      "file": "standalone-build-export-config-diagnostic.json",
+      "startedAt": "2026-10-29T23:26:39.809Z",
+      "finishedAt": "2026-10-29T23:31:20.742Z",
+      "exitCode": 1,
+      "timedOut": false,
+      "diagnostic": "Stopped verified own bundler after inspecting Expo active export path, which did not pass the custom-config option; retried with process-local resolver hook."
+    },
+    {
+      "file": "standalone-build.json",
+      "startedAt": "2026-10-29T23:31:22.559Z",
+      "finishedAt": "2026-10-29T23:37:23.796Z",
+      "exitCode": 1,
+      "timedOut": true,
+      "diagnostic": "Stopped at fixed overall deadline during createBundleReleaseJsAndAssets / Metro cache rebuild; remaining stall not established."
+    }
+  ],
+  "artifactProduced": false,
+  "embeddedBundleProduced": false,
+  "installed": false,
+  "nativeVisualCellsPassed": 0,
+  "realStoreKitTransactions": 0,
+  "shippingSourceChanged": false,
+  "dependencySourcesOrJunctionsChanged": false,
+  "localScriptHashes": {
+    ".tmp/payment-standalone.init.gradle": "b6c174360178a8d68585c0ada1a3627e2a77e637d0162c4ad17016bc6c9f80be",
+    ".tmp/payment-standalone-build.cjs": "183a198cd96725026aac5b59da9120cd8489dee879958e219cd8b8953f357b14",
+    ".tmp/payment-standalone-metro.config.cjs": "643fcb13290ddc9556580d15070aac0807b5aeba2d9e640484876f29d957ffbf",
+    ".tmp/paid-metro-resolver.cjs": "c65652548bd00651362fc1ddd4b94dfffd37937f9de481f72a26daf038562d29"
+  },
+  "logSha256": "3020e40500f18d04302c77f1947c171b6f94d6c3a4cf8c8cb971d9b02c0508a4",
+  "rejection": {
+    "historicalAction": "combined adb force-stop + activity launch + host bundle request",
+    "message": "blocked by policy",
+    "underlyingReasonProvided": false,
+    "retried": false
+  },
+  "possibleSideBySideQaApplication": {
+    "built": false,
+    "installed": false,
+    "verified": false
+  }
+}

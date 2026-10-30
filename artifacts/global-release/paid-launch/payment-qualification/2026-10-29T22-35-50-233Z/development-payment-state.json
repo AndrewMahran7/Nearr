@@ -1,0 +1,93 @@
+{
+  "capturedAt": "2026-10-29T22:37:02.567Z",
+  "target": "qnfxnmvxpjzfydgudtvs",
+  "sourceCommit": "49f559d488f133a744c7cd21809cc65c15cf9b8d",
+  "readOnly": true,
+  "productionAccess": false,
+  "catalogConfig": [
+    {
+      "catalog_verified": false,
+      "enforce_allowance": false,
+      "entitlement_id": "nearr_plus",
+      "environment": "SANDBOX",
+      "free_finds": 3,
+      "legacy_obligations_reconciled": false,
+      "offering_id": "nearr_paid_v1",
+      "paid_find_policy_enabled": false,
+      "product_id": "com.nearr.plus.unlimited.monthly.v1",
+      "release_qualified": false,
+      "revenuecat_app_id": null,
+      "revenuecat_project_id": null,
+      "revenuecat_token_product_ids": {},
+      "sales_enabled": false,
+      "subscription_benefit": "unlimited",
+      "token_catalog_verified": false
+    }
+  ],
+  "legacyExperiment": [
+    {
+      "enabled": true,
+      "environment_name": "development"
+    }
+  ],
+  "walletTotals": [
+    {
+      "available_uses": 477,
+      "reserved_uses": 0,
+      "wallets": 93
+    }
+  ],
+  "paidCounts": [
+    {
+      "relation": "customers",
+      "rows": 0
+    },
+    {
+      "relation": "entitlements",
+      "rows": 0
+    },
+    {
+      "relation": "purchase_callback_states",
+      "rows": 0
+    },
+    {
+      "relation": "purchase_recovery_receipts",
+      "rows": 0
+    },
+    {
+      "relation": "webhook_events",
+      "rows": 0
+    },
+    {
+      "relation": "paid_finds",
+      "rows": 0
+    }
+  ],
+  "purchaseStates": [],
+  "secretPresence": {
+    "REVENUECAT_SECRET_API_KEY": false,
+    "REVENUECAT_WEBHOOK_SECRET": false
+  },
+  "secretPresenceLimitation": "Names only: existence does not verify value, RC permissions, authentication match or delivery.",
+  "edge": [
+    {
+      "name": "revenuecat-webhook",
+      "version": 9,
+      "status": "ACTIVE",
+      "verifyJwt": false
+    },
+    {
+      "name": "plus-api",
+      "version": 2,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    },
+    {
+      "name": "revenuecat-plus-webhook",
+      "version": 2,
+      "status": "ACTIVE",
+      "verifyJwt": false
+    }
+  ],
+  "finishedAt": "2026-10-29T22:37:24.945Z"
+}

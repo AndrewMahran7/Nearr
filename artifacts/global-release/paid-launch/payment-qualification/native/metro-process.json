@@ -1,0 +1,10 @@
+{
+  "pid": 56988,
+  "sourceRoot": "C:\\Users\\andre\\.codex\\worktrees\\nearr-paid-launch-final\\Nearr",
+  "development": true,
+  "fixtureMode": true,
+  "workers": 2,
+  "port": 8082,
+  "qaOnlyPlainBundleTransport": true,
+  "startedAt": "2026-10-29T22:53:41.706Z"
+}

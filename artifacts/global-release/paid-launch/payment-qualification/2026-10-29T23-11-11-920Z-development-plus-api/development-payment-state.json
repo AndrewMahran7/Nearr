@@ -1,0 +1,112 @@
+{
+  "capturedAt": "2026-10-29T23:15:41.533Z",
+  "target": "qnfxnmvxpjzfydgudtvs",
+  "sourceCommit": "b7b59ab366fb0227dd3f035bf7786676c39ba320",
+  "readOnly": true,
+  "productionAccess": false,
+  "catalogConfig": [
+    {
+      "catalog_verified": false,
+      "enforce_allowance": false,
+      "entitlement_id": "nearr_plus",
+      "environment": "SANDBOX",
+      "free_finds": 3,
+      "legacy_obligations_reconciled": false,
+      "offering_id": "nearr_paid_v1",
+      "paid_find_policy_enabled": false,
+      "product_id": "com.nearr.plus.unlimited.monthly.v1",
+      "release_qualified": false,
+      "revenuecat_app_id": "app7434757255",
+      "revenuecat_project_id": "proj7d727ef6",
+      "revenuecat_token_product_ids": {
+        "com.nearr.tokens.20.v2": "prodd6ac7e45d4",
+        "com.nearr.tokens.200.v2": "prod394420f4e2",
+        "com.nearr.tokens.50.v2": "prodc41f2e9dd5"
+      },
+      "sales_enabled": false,
+      "subscription_benefit": "unlimited",
+      "token_catalog_verified": false
+    }
+  ],
+  "legacyExperiment": [
+    {
+      "enabled": true,
+      "environment_name": "development"
+    }
+  ],
+  "walletTotals": [
+    {
+      "available_uses": 477,
+      "reserved_uses": 0,
+      "wallets": 93
+    }
+  ],
+  "paidCounts": [
+    {
+      "relation": "customers",
+      "rows": 0
+    },
+    {
+      "relation": "entitlements",
+      "rows": 0
+    },
+    {
+      "relation": "purchase_callback_states",
+      "rows": 0
+    },
+    {
+      "relation": "purchase_recovery_receipts",
+      "rows": 0
+    },
+    {
+      "relation": "webhook_events",
+      "rows": 0
+    },
+    {
+      "relation": "paid_finds",
+      "rows": 0
+    }
+  ],
+  "purchaseStates": [],
+  "revenueCatSecretNames": [
+    "REVENUECAT_ALLOWED_STORES",
+    "REVENUECAT_APP_ID",
+    "REVENUECAT_PROJECT_ID",
+    "REVENUECAT_SECRET_API_KEY",
+    "REVENUECAT_WEBHOOK_AUTHORIZATION",
+    "REVENUECAT_WEBHOOK_HMAC_SECRET"
+  ],
+  "secretPresence": {
+    "REVENUECAT_SECRET_API_KEY": true,
+    "REVENUECAT_V2_SECRET_API_KEY": false,
+    "REVENUECAT_WEBHOOK_SECRET": false
+  },
+  "secretPresenceLimitation": "Names only: existence does not verify value, RC permissions, authentication match or delivery.",
+  "edge": [
+    {
+      "name": "monetization",
+      "version": 45,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    },
+    {
+      "name": "revenuecat-webhook",
+      "version": 10,
+      "status": "ACTIVE",
+      "verifyJwt": false
+    },
+    {
+      "name": "plus-api",
+      "version": 4,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    },
+    {
+      "name": "revenuecat-plus-webhook",
+      "version": 3,
+      "status": "ACTIVE",
+      "verifyJwt": false
+    }
+  ],
+  "finishedAt": "2026-10-29T23:15:57.811Z"
+}

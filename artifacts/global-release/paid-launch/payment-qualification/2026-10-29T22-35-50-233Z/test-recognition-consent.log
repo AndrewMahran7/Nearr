@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:recognition-consent
+> ts-node -P scripts/tsconfig.json scripts/testRecognitionConsentBoundary.ts
+
+PASS actual host recognition flow: fresh authorization before source parsing; identity and withdrawal deny; null/failed server never invokes client AI, Places, save or manual fallback. No live calls.

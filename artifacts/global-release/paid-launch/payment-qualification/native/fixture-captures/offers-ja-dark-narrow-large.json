@@ -1,0 +1,219 @@
+{
+  "state": "offers",
+  "locale": "ja",
+  "theme": "dark",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of local HTML anchor observed in compact-grid screenshot",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "bundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "display": {
+    "size": "840x2160",
+    "density": "Physical density: 420",
+    "fontScale": 1.5
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/offers-ja-dark-narrow-large-top.png",
+      "capturedAt": "2026-10-30T01:28:44.077Z",
+      "sha256": "974d3507b21ab8652f212fdf18470f7a9750f4daccbf5d3e280d9005f497f874",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+        "今はしない",
+        "次の発見へ",
+        "場所との出会いを、もっと",
+        "サブスクリプションの有無にかかわらず、保存した場所はあなたのものです。",
+        "場所の検索",
+        "毎月の無料検索",
+        "3回中1回利用可能"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-ja-dark-narrow-large-scroll1.png",
+      "capturedAt": "2026-10-30T01:28:50.236Z",
+      "sha256": "44687d1b737a6be8832f3dcbb5605bcc248702ba324bcc577d5f377b4383ca54",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "サブスクリプションの有無にかかわらず、保存した場所はあなたのものです。",
+        "場所の検索",
+        "毎月の無料検索",
+        "3回中1回利用可能",
+        "未確定の結果に予約中：1",
+        "無料枠は2026年11月1日（UTC）に更新されます。",
+        "購入済みトークン：47",
+        "未確定の結果に予約中：3",
+        "購入済みトークンに有効期限はありません。Plus利用中は消費されません。",
+        "Nearr Plus"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-ja-dark-narrow-large-scroll2.png",
+      "capturedAt": "2026-10-30T01:28:55.830Z",
+      "sha256": "786cc8f03b85c9caec8081f607980b61cf48d7e70d94d4cf74cb8d19b51cf409",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "無料枠は2026年11月1日（UTC）に更新されます。",
+        "購入済みトークン：47",
+        "未確定の結果に予約中：3",
+        "購入済みトークンに有効期限はありません。Plus利用中は消費されません。",
+        "Nearr Plus",
+        "回数無制限の場所検索",
+        "Plusが有効な間は、成功した動画の場所検索が無制限。トークンは消費しません。",
+        "月額 $1.99",
+        "Nearr Plusに登録"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-ja-dark-narrow-large-scroll3.png",
+      "capturedAt": "2026-10-30T01:29:01.036Z",
+      "sha256": "5daaea96ef715d598337041152a9780b41e39b22b9dc948a3feb0ee7ca9b3851",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "回数無制限の場所検索",
+        "Plusが有効な間は、成功した動画の場所検索が無制限。トークンは消費しません。",
+        "月額 $1.99",
+        "Nearr Plusに登録",
+        "Appleが毎月請求し、サブスクリプション設定で解約しない限り自動更新されます。無料体験・年間プランはありません。",
+        "必要なときだけ検索回数を購入",
+        "1トークンで、成功した動画の場所検索1回分を支払えます。購入済みトークンに有効期限はありません。"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-ja-dark-narrow-large-scroll4.png",
+      "capturedAt": "2026-10-30T01:29:06.834Z",
+      "sha256": "e33ff5b4e02cbdb52fb184ac418e65af5e25e19c3289c6dadc769da293e6c918",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "Appleが毎月請求し、サブスクリプション設定で解約しない限り自動更新されます。無料体験・年間プランはありません。",
+        "必要なときだけ検索回数を購入",
+        "1トークンで、成功した動画の場所検索1回分を支払えます。購入済みトークンに有効期限はありません。",
+        "スターター",
+        "20トークン",
+        "20トークンを購入 · $1.19"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-ja-dark-narrow-large-scroll5.png",
+      "capturedAt": "2026-10-30T01:29:11.770Z",
+      "sha256": "5917b9c1a044a8a6637a23ff3a378f8769a5312168eca6bebe17695a56e32ff1",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "1トークンで、成功した動画の場所検索1回分を支払えます。購入済みトークンに有効期限はありません。",
+        "スターター",
+        "20トークン",
+        "20トークンを購入 · $1.19",
+        "エクスプローラー",
+        "50トークン",
+        "50トークンを購入 · $2.49",
+        "アドベンチャー",
+        "200トークン",
+        "200トークンを購入 · $5.00"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-ja-dark-narrow-large-scroll6.png",
+      "capturedAt": "2026-10-30T01:29:17.130Z",
+      "sha256": "81deb238052f764acfef93f7ee47d2b22534451228231db32b660941c0fe1bc6",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "50トークンを購入 · $2.49",
+        "アドベンチャー",
+        "200トークン",
+        "200トークンを購入 · $5.00",
+        "Plus、毎月の無料枠、購入済みトークンの順に適用されます。",
+        "無料プランでは、毎暦月3件の動画の場所を見つけられます。 (UTC)",
+        "1本の動画に複数の場所があっても、1回と数えます。検索に失敗した場合、利用枠は消費されません。",
+        "Quick Checkは保存または予約期限まで検索1回分を予約します。毎月の無料枠は繰り越されません。"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-ja-dark-narrow-large-scroll7.png",
+      "capturedAt": "2026-10-30T01:29:22.580Z",
+      "sha256": "1c961aa19132b9e0f3e6b7043bc0c1f7fa18bcf2497fda54c81aaca7f41c265c",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "Plus、毎月の無料枠、購入済みトークンの順に適用されます。",
+        "無料プランでは、毎暦月3件の動画の場所を見つけられます。 (UTC)",
+        "1本の動画に複数の場所があっても、1回と数えます。検索に失敗した場合、利用枠は消費されません。",
+        "Quick Checkは保存または予約期限まで検索1回分を予約します。毎月の無料枠は繰り越されません。",
+        "購入を復元",
+        "復元すると、確認済みの購入がアカウントに再連携されます。使用済みトークンは戻りません。",
+        "サブスクリプションを管理",
+        "残高を更新"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-ja-dark-narrow-large-scroll8.png",
+      "capturedAt": "2026-10-30T01:29:40.258Z",
+      "sha256": "a825d80d667c91df8cc2bc17c3db5791d490b8f2def9c80d77d1675d7d32007c",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "1本の動画に複数の場所があっても、1回と数えます。検索に失敗した場合、利用枠は消費されません。",
+        "Quick Checkは保存または予約期限まで検索1回分を予約します。毎月の無料枠は繰り越されません。",
+        "購入を復元",
+        "復元すると、確認済みの購入がアカウントに再連携されます。使用済みトークンは戻りません。",
+        "サブスクリプションを管理",
+        "残高を更新",
+        "利用規約",
+        "プライバシーポリシー"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-ja-dark-narrow-large-scroll9.png",
+      "capturedAt": "2026-10-30T01:29:45.330Z",
+      "sha256": "a825d80d667c91df8cc2bc17c3db5791d490b8f2def9c80d77d1675d7d32007c",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "1本の動画に複数の場所があっても、1回と数えます。検索に失敗した場合、利用枠は消費されません。",
+        "Quick Checkは保存または予約期限まで検索1回分を予約します。毎月の無料枠は繰り越されません。",
+        "購入を復元",
+        "復元すると、確認済みの購入がアカウントに再連携されます。使用済みトークンは戻りません。",
+        "サブスクリプションを管理",
+        "残高を更新",
+        "利用規約",
+        "プライバシーポリシー"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-ja-dark-narrow-large-scroll10.png",
+      "capturedAt": "2026-10-30T01:29:50.762Z",
+      "sha256": "a825d80d667c91df8cc2bc17c3db5791d490b8f2def9c80d77d1675d7d32007c",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "1本の動画に複数の場所があっても、1回と数えます。検索に失敗した場合、利用枠は消費されません。",
+        "Quick Checkは保存または予約期限まで検索1回分を予約します。毎月の無料枠は繰り越されません。",
+        "購入を復元",
+        "復元すると、確認済みの購入がアカウントに再連携されます。使用済みトークンは戻りません。",
+        "サブスクリプションを管理",
+        "残高を更新",
+        "利用規約",
+        "プライバシーポリシー"
+      ],
+      "unedited": true
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "state": "offers",
+  "locale": "fr",
+  "theme": "dark",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of local HTML anchor observed in compact-grid screenshot",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "bundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "display": {
+    "size": "1080x2400",
+    "density": "Physical density: 420",
+    "storedFontScale": 1,
+    "effectiveFontScale": 1.5,
+    "effectiveFontScaleEvidence": "Banner line height and title line height approximately 1.5 times same-source Light/default despite stored and Activity configuration 1.0; retained native text metrics after prior stress. Excluded from default-size matrix."
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/offers-fr-dark-retained-large-top.png",
+      "capturedAt": "2026-10-30T01:07:39.422Z",
+      "sha256": "f17ccd8a52c8cfef99830e4fc55ceb7781e81fe450b30d2495b1c18b5bc9ab8d",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+        "Pas maintenant",
+        "Votre prochaine découverte",
+        "Continuez à découvrir des lieux",
+        "Vos lieux enregistrés restent les vôtres, avec ou sans abonnement.",
+        "Vos recherches",
+        "Recherches gratuites du mois",
+        "1 sur 3 disponibles",
+        "Réservées pour des résultats en attente : 1",
+        "La part gratuite est renouvelée le 1 nov. 2026 (UTC)."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-fr-dark-retained-large-scroll1.png",
+      "capturedAt": "2026-10-30T01:07:44.930Z",
+      "sha256": "0d1513c6096ad7d73ccde3fb10feaba162f04bd9e5d21ad1fefe27736af0b117",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Vos lieux enregistrés restent les vôtres, avec ou sans abonnement.",
+        "Vos recherches",
+        "Recherches gratuites du mois",
+        "1 sur 3 disponibles",
+        "Réservées pour des résultats en attente : 1",
+        "La part gratuite est renouvelée le 1 nov. 2026 (UTC).",
+        "Jetons achetés : 47",
+        "Réservées pour des résultats en attente : 3",
+        "Les jetons achetés n’expirent pas. Plus ne les utilise pas.",
+        "Nearr Plus",
+        "Recherches illimitées",
+        "Recherches vidéo réussies illimitées tant que Plus est actif. Aucun jeton déduit.",
+        "1,99 $US / mois"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-fr-dark-retained-large-scroll2.png",
+      "capturedAt": "2026-10-30T01:07:50.096Z",
+      "sha256": "847dbf8252321f67b1c1f006b1f87b0705bab8bf56a00d810615c22129e32806",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Réservées pour des résultats en attente : 3",
+        "Les jetons achetés n’expirent pas. Plus ne les utilise pas.",
+        "Nearr Plus",
+        "Recherches illimitées",
+        "Recherches vidéo réussies illimitées tant que Plus est actif. Aucun jeton déduit.",
+        "1,99 $US / mois",
+        "Passer à Nearr Plus",
+        "Apple facture chaque mois avec renouvellement automatique, sauf résiliation dans les réglages des abonnements. Sans essai gratuit ni formule annuelle.",
+        "Ou achetez des recherches à la demande",
+        "Un jeton paie une recherche vidéo réussie. Les jetons achetés n’expirent pas."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-fr-dark-retained-large-scroll3.png",
+      "capturedAt": "2026-10-30T01:07:55.051Z",
+      "sha256": "cbc495e90a44795744a2790cd6ab5591f871f4b59c78b623cba84b0fdc834113",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "1,99 $US / mois",
+        "Passer à Nearr Plus",
+        "Apple facture chaque mois avec renouvellement automatique, sauf résiliation dans les réglages des abonnements. Sans essai gratuit ni formule annuelle.",
+        "Ou achetez des recherches à la demande",
+        "Un jeton paie une recherche vidéo réussie. Les jetons achetés n’expirent pas.",
+        "Découverte",
+        "20 jetons",
+        "Acheter 20 jetons · 1,19 $US",
+        "Explorateur"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-fr-dark-retained-large-scroll4.png",
+      "capturedAt": "2026-10-30T01:08:00.029Z",
+      "sha256": "7308aae103b64c400525f84a7ac0cd9cea489094aaa1c1fe10a595d756427251",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Ou achetez des recherches à la demande",
+        "Un jeton paie une recherche vidéo réussie. Les jetons achetés n’expirent pas.",
+        "Découverte",
+        "20 jetons",
+        "Acheter 20 jetons · 1,19 $US",
+        "Explorateur",
+        "50 jetons",
+        "Acheter 50 jetons · 2,49 $US",
+        "Aventurier",
+        "200 jetons",
+        "Acheter 200 jetons · 5,00 $US"
+      ],
+      "unedited": true
+    }
+  ],
+  "provisionalCapture": true
+}

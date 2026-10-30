@@ -1,0 +1,33 @@
+{
+  "startedAt": "2026-10-30T00:35:30.721Z",
+  "deadlineAt": "2026-10-30T00:38:30.721Z",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "sourceHashes": {
+    "app.config.js": "abdf00108f89ce888d9460ae7008ec371233cc1fd17969e5f041582e3b13ee25",
+    "app/plus.tsx": "354cfcf24af9a666cdee848e6ba2a04fc0f369b4a8e9553155ac0dcf8f066aad",
+    "app/dev-qa.tsx": "89918bfaf3d6d4aa847aa774093218179d2120023c43487f4ead61b51ac17e26",
+    "components/PaidFindsNativePreview.tsx": "8acf0d24b46c1d28d461ab14275e7cb2263891a635e374ed809941175709f667",
+    "lib/paidPreviewFixtures.ts": "54d17e0bd37369d95e450baf97419f13857f6f847b57c302d4c7ef431a6a5adb",
+    "metro.config.js": "a68aeda5721f91d9a98185e55dbed2dbea74559b528f5b5fddff5f662b937c62",
+    "package-lock.json": "023782d169101d044b08e40d6cdc1d9d83168f125b1f6095cbd6ffaa4b773bd8"
+  },
+  "metroPid": 41888,
+  "workers": 2,
+  "hostOnly": true,
+  "developmentOnly": true,
+  "installed": false,
+  "livePurchaseProof": false,
+  "serverReadyAt": "2026-10-30T00:35:37.123Z",
+  "httpStatus": 200,
+  "contentLength": "19248113",
+  "bytes": 19248113,
+  "sha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "syntaxValid": true,
+  "fixtureMarker": true,
+  "sourceUnchanged": true,
+  "bundlePath": "C:\\Users\\andre\\.codex\\worktrees\\nearr-paid-launch-final\\Nearr\\.tmp\\payment-theme-complete.android.bundle",
+  "status": "COMPLETE_HOST_BUNDLE_SAVED",
+  "nonLazy": true,
+  "finishedAt": "2026-10-30T00:35:48.788Z",
+  "metroStopped": true
+}

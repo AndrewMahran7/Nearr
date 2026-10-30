@@ -1,0 +1,643 @@
+{
+  "checkedAt": "2026-10-29T23:12:23.874Z",
+  "status": "PASS_LOCAL_VALIDATION_WITH_SEPARATE_SAVED_UI_READBACK",
+  "sourceSha256": "6b3431b38221d3ecb4403d8e512ba70a69c5a89417d0f22dd3cd46a3a37d6691",
+  "localizedCopyUnchangedFrom": "49f559d",
+  "localeCount": 10,
+  "localizedFields": 90,
+  "allSavedAndReopened": true,
+  "nativeSpeakerReviewed": false,
+  "signedIosVisualReviewed": false,
+  "fields": [
+    {
+      "locale": "en-US",
+      "field": "subscriptionGroupDisplayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "en-US",
+      "field": "com.nearr.plus.unlimited.monthly.v1.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "en-US",
+      "field": "com.nearr.plus.unlimited.monthly.v1.description",
+      "unicodeCharacters": 43,
+      "utf8Bytes": 43,
+      "maximum": 45
+    },
+    {
+      "locale": "en-US",
+      "field": "com.nearr.tokens.20.v2.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "en-US",
+      "field": "com.nearr.tokens.20.v2.description",
+      "unicodeCharacters": 31,
+      "utf8Bytes": 31,
+      "maximum": 45
+    },
+    {
+      "locale": "en-US",
+      "field": "com.nearr.tokens.50.v2.displayName",
+      "unicodeCharacters": 11,
+      "utf8Bytes": 11,
+      "maximum": 30
+    },
+    {
+      "locale": "en-US",
+      "field": "com.nearr.tokens.50.v2.description",
+      "unicodeCharacters": 31,
+      "utf8Bytes": 31,
+      "maximum": 45
+    },
+    {
+      "locale": "en-US",
+      "field": "com.nearr.tokens.200.v2.displayName",
+      "unicodeCharacters": 14,
+      "utf8Bytes": 14,
+      "maximum": 30
+    },
+    {
+      "locale": "en-US",
+      "field": "com.nearr.tokens.200.v2.description",
+      "unicodeCharacters": 32,
+      "utf8Bytes": 32,
+      "maximum": 45
+    },
+    {
+      "locale": "es-MX",
+      "field": "subscriptionGroupDisplayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "es-MX",
+      "field": "com.nearr.plus.unlimited.monthly.v1.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "es-MX",
+      "field": "com.nearr.plus.unlimited.monthly.v1.description",
+      "unicodeCharacters": 39,
+      "utf8Bytes": 40,
+      "maximum": 45
+    },
+    {
+      "locale": "es-MX",
+      "field": "com.nearr.tokens.20.v2.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "es-MX",
+      "field": "com.nearr.tokens.20.v2.description",
+      "unicodeCharacters": 34,
+      "utf8Bytes": 35,
+      "maximum": 45
+    },
+    {
+      "locale": "es-MX",
+      "field": "com.nearr.tokens.50.v2.displayName",
+      "unicodeCharacters": 13,
+      "utf8Bytes": 13,
+      "maximum": 30
+    },
+    {
+      "locale": "es-MX",
+      "field": "com.nearr.tokens.50.v2.description",
+      "unicodeCharacters": 34,
+      "utf8Bytes": 35,
+      "maximum": 45
+    },
+    {
+      "locale": "es-MX",
+      "field": "com.nearr.tokens.200.v2.displayName",
+      "unicodeCharacters": 14,
+      "utf8Bytes": 14,
+      "maximum": 30
+    },
+    {
+      "locale": "es-MX",
+      "field": "com.nearr.tokens.200.v2.description",
+      "unicodeCharacters": 35,
+      "utf8Bytes": 36,
+      "maximum": 45
+    },
+    {
+      "locale": "es-ES",
+      "field": "subscriptionGroupDisplayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "es-ES",
+      "field": "com.nearr.plus.unlimited.monthly.v1.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "es-ES",
+      "field": "com.nearr.plus.unlimited.monthly.v1.description",
+      "unicodeCharacters": 39,
+      "utf8Bytes": 40,
+      "maximum": 45
+    },
+    {
+      "locale": "es-ES",
+      "field": "com.nearr.tokens.20.v2.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "es-ES",
+      "field": "com.nearr.tokens.20.v2.description",
+      "unicodeCharacters": 34,
+      "utf8Bytes": 35,
+      "maximum": 45
+    },
+    {
+      "locale": "es-ES",
+      "field": "com.nearr.tokens.50.v2.displayName",
+      "unicodeCharacters": 13,
+      "utf8Bytes": 13,
+      "maximum": 30
+    },
+    {
+      "locale": "es-ES",
+      "field": "com.nearr.tokens.50.v2.description",
+      "unicodeCharacters": 34,
+      "utf8Bytes": 35,
+      "maximum": 45
+    },
+    {
+      "locale": "es-ES",
+      "field": "com.nearr.tokens.200.v2.displayName",
+      "unicodeCharacters": 14,
+      "utf8Bytes": 14,
+      "maximum": 30
+    },
+    {
+      "locale": "es-ES",
+      "field": "com.nearr.tokens.200.v2.description",
+      "unicodeCharacters": 35,
+      "utf8Bytes": 36,
+      "maximum": 45
+    },
+    {
+      "locale": "pt-BR",
+      "field": "subscriptionGroupDisplayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "pt-BR",
+      "field": "com.nearr.plus.unlimited.monthly.v1.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "pt-BR",
+      "field": "com.nearr.plus.unlimited.monthly.v1.description",
+      "unicodeCharacters": 40,
+      "utf8Bytes": 41,
+      "maximum": 45
+    },
+    {
+      "locale": "pt-BR",
+      "field": "com.nearr.tokens.20.v2.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "pt-BR",
+      "field": "com.nearr.tokens.20.v2.description",
+      "unicodeCharacters": 37,
+      "utf8Bytes": 38,
+      "maximum": 45
+    },
+    {
+      "locale": "pt-BR",
+      "field": "com.nearr.tokens.50.v2.displayName",
+      "unicodeCharacters": 13,
+      "utf8Bytes": 13,
+      "maximum": 30
+    },
+    {
+      "locale": "pt-BR",
+      "field": "com.nearr.tokens.50.v2.description",
+      "unicodeCharacters": 37,
+      "utf8Bytes": 38,
+      "maximum": 45
+    },
+    {
+      "locale": "pt-BR",
+      "field": "com.nearr.tokens.200.v2.displayName",
+      "unicodeCharacters": 15,
+      "utf8Bytes": 15,
+      "maximum": 30
+    },
+    {
+      "locale": "pt-BR",
+      "field": "com.nearr.tokens.200.v2.description",
+      "unicodeCharacters": 38,
+      "utf8Bytes": 39,
+      "maximum": 45
+    },
+    {
+      "locale": "fr-FR",
+      "field": "subscriptionGroupDisplayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "fr-FR",
+      "field": "com.nearr.plus.unlimited.monthly.v1.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "fr-FR",
+      "field": "com.nearr.plus.unlimited.monthly.v1.description",
+      "unicodeCharacters": 40,
+      "utf8Bytes": 42,
+      "maximum": 45
+    },
+    {
+      "locale": "fr-FR",
+      "field": "com.nearr.tokens.20.v2.displayName",
+      "unicodeCharacters": 13,
+      "utf8Bytes": 14,
+      "maximum": 30
+    },
+    {
+      "locale": "fr-FR",
+      "field": "com.nearr.tokens.20.v2.description",
+      "unicodeCharacters": 40,
+      "utf8Bytes": 41,
+      "maximum": 45
+    },
+    {
+      "locale": "fr-FR",
+      "field": "com.nearr.tokens.50.v2.displayName",
+      "unicodeCharacters": 14,
+      "utf8Bytes": 14,
+      "maximum": 30
+    },
+    {
+      "locale": "fr-FR",
+      "field": "com.nearr.tokens.50.v2.description",
+      "unicodeCharacters": 40,
+      "utf8Bytes": 41,
+      "maximum": 45
+    },
+    {
+      "locale": "fr-FR",
+      "field": "com.nearr.tokens.200.v2.displayName",
+      "unicodeCharacters": 14,
+      "utf8Bytes": 14,
+      "maximum": 30
+    },
+    {
+      "locale": "fr-FR",
+      "field": "com.nearr.tokens.200.v2.description",
+      "unicodeCharacters": 41,
+      "utf8Bytes": 42,
+      "maximum": 45
+    },
+    {
+      "locale": "de-DE",
+      "field": "subscriptionGroupDisplayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "de-DE",
+      "field": "com.nearr.plus.unlimited.monthly.v1.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "de-DE",
+      "field": "com.nearr.plus.unlimited.monthly.v1.description",
+      "unicodeCharacters": 43,
+      "utf8Bytes": 43,
+      "maximum": 45
+    },
+    {
+      "locale": "de-DE",
+      "field": "com.nearr.tokens.20.v2.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "de-DE",
+      "field": "com.nearr.tokens.20.v2.description",
+      "unicodeCharacters": 39,
+      "utf8Bytes": 39,
+      "maximum": 45
+    },
+    {
+      "locale": "de-DE",
+      "field": "com.nearr.tokens.50.v2.displayName",
+      "unicodeCharacters": 12,
+      "utf8Bytes": 12,
+      "maximum": 30
+    },
+    {
+      "locale": "de-DE",
+      "field": "com.nearr.tokens.50.v2.description",
+      "unicodeCharacters": 39,
+      "utf8Bytes": 39,
+      "maximum": 45
+    },
+    {
+      "locale": "de-DE",
+      "field": "com.nearr.tokens.200.v2.displayName",
+      "unicodeCharacters": 14,
+      "utf8Bytes": 14,
+      "maximum": 30
+    },
+    {
+      "locale": "de-DE",
+      "field": "com.nearr.tokens.200.v2.description",
+      "unicodeCharacters": 40,
+      "utf8Bytes": 40,
+      "maximum": 45
+    },
+    {
+      "locale": "it",
+      "field": "subscriptionGroupDisplayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "it",
+      "field": "com.nearr.plus.unlimited.monthly.v1.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "it",
+      "field": "com.nearr.plus.unlimited.monthly.v1.description",
+      "unicodeCharacters": 44,
+      "utf8Bytes": 44,
+      "maximum": 45
+    },
+    {
+      "locale": "it",
+      "field": "com.nearr.tokens.20.v2.displayName",
+      "unicodeCharacters": 7,
+      "utf8Bytes": 7,
+      "maximum": 30
+    },
+    {
+      "locale": "it",
+      "field": "com.nearr.tokens.20.v2.description",
+      "unicodeCharacters": 37,
+      "utf8Bytes": 37,
+      "maximum": 45
+    },
+    {
+      "locale": "it",
+      "field": "com.nearr.tokens.50.v2.displayName",
+      "unicodeCharacters": 14,
+      "utf8Bytes": 14,
+      "maximum": 30
+    },
+    {
+      "locale": "it",
+      "field": "com.nearr.tokens.50.v2.description",
+      "unicodeCharacters": 37,
+      "utf8Bytes": 37,
+      "maximum": 45
+    },
+    {
+      "locale": "it",
+      "field": "com.nearr.tokens.200.v2.displayName",
+      "unicodeCharacters": 16,
+      "utf8Bytes": 16,
+      "maximum": 30
+    },
+    {
+      "locale": "it",
+      "field": "com.nearr.tokens.200.v2.description",
+      "unicodeCharacters": 38,
+      "utf8Bytes": 38,
+      "maximum": 45
+    },
+    {
+      "locale": "ja",
+      "field": "subscriptionGroupDisplayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "ja",
+      "field": "com.nearr.plus.unlimited.monthly.v1.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "ja",
+      "field": "com.nearr.plus.unlimited.monthly.v1.description",
+      "unicodeCharacters": 19,
+      "utf8Bytes": 57,
+      "maximum": 45
+    },
+    {
+      "locale": "ja",
+      "field": "com.nearr.tokens.20.v2.displayName",
+      "unicodeCharacters": 8,
+      "utf8Bytes": 18,
+      "maximum": 30
+    },
+    {
+      "locale": "ja",
+      "field": "com.nearr.tokens.20.v2.description",
+      "unicodeCharacters": 19,
+      "utf8Bytes": 53,
+      "maximum": 45
+    },
+    {
+      "locale": "ja",
+      "field": "com.nearr.tokens.50.v2.displayName",
+      "unicodeCharacters": 11,
+      "utf8Bytes": 27,
+      "maximum": 30
+    },
+    {
+      "locale": "ja",
+      "field": "com.nearr.tokens.50.v2.description",
+      "unicodeCharacters": 19,
+      "utf8Bytes": 53,
+      "maximum": 45
+    },
+    {
+      "locale": "ja",
+      "field": "com.nearr.tokens.200.v2.displayName",
+      "unicodeCharacters": 11,
+      "utf8Bytes": 25,
+      "maximum": 30
+    },
+    {
+      "locale": "ja",
+      "field": "com.nearr.tokens.200.v2.description",
+      "unicodeCharacters": 20,
+      "utf8Bytes": 54,
+      "maximum": 45
+    },
+    {
+      "locale": "ko",
+      "field": "subscriptionGroupDisplayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "ko",
+      "field": "com.nearr.plus.unlimited.monthly.v1.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "ko",
+      "field": "com.nearr.plus.unlimited.monthly.v1.description",
+      "unicodeCharacters": 21,
+      "utf8Bytes": 49,
+      "maximum": 45
+    },
+    {
+      "locale": "ko",
+      "field": "com.nearr.tokens.20.v2.displayName",
+      "unicodeCharacters": 6,
+      "utf8Bytes": 12,
+      "maximum": 30
+    },
+    {
+      "locale": "ko",
+      "field": "com.nearr.tokens.20.v2.description",
+      "unicodeCharacters": 23,
+      "utf8Bytes": 51,
+      "maximum": 45
+    },
+    {
+      "locale": "ko",
+      "field": "com.nearr.tokens.50.v2.displayName",
+      "unicodeCharacters": 6,
+      "utf8Bytes": 12,
+      "maximum": 30
+    },
+    {
+      "locale": "ko",
+      "field": "com.nearr.tokens.50.v2.description",
+      "unicodeCharacters": 23,
+      "utf8Bytes": 51,
+      "maximum": 45
+    },
+    {
+      "locale": "ko",
+      "field": "com.nearr.tokens.200.v2.displayName",
+      "unicodeCharacters": 7,
+      "utf8Bytes": 13,
+      "maximum": 30
+    },
+    {
+      "locale": "ko",
+      "field": "com.nearr.tokens.200.v2.description",
+      "unicodeCharacters": 24,
+      "utf8Bytes": 52,
+      "maximum": 45
+    },
+    {
+      "locale": "zh-Hans",
+      "field": "subscriptionGroupDisplayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "zh-Hans",
+      "field": "com.nearr.plus.unlimited.monthly.v1.displayName",
+      "unicodeCharacters": 10,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "zh-Hans",
+      "field": "com.nearr.plus.unlimited.monthly.v1.description",
+      "unicodeCharacters": 16,
+      "utf8Bytes": 48,
+      "maximum": 45
+    },
+    {
+      "locale": "zh-Hans",
+      "field": "com.nearr.tokens.20.v2.displayName",
+      "unicodeCharacters": 5,
+      "utf8Bytes": 9,
+      "maximum": 30
+    },
+    {
+      "locale": "zh-Hans",
+      "field": "com.nearr.tokens.20.v2.description",
+      "unicodeCharacters": 16,
+      "utf8Bytes": 42,
+      "maximum": 45
+    },
+    {
+      "locale": "zh-Hans",
+      "field": "com.nearr.tokens.50.v2.displayName",
+      "unicodeCharacters": 5,
+      "utf8Bytes": 9,
+      "maximum": 30
+    },
+    {
+      "locale": "zh-Hans",
+      "field": "com.nearr.tokens.50.v2.description",
+      "unicodeCharacters": 16,
+      "utf8Bytes": 42,
+      "maximum": 45
+    },
+    {
+      "locale": "zh-Hans",
+      "field": "com.nearr.tokens.200.v2.displayName",
+      "unicodeCharacters": 6,
+      "utf8Bytes": 10,
+      "maximum": 30
+    },
+    {
+      "locale": "zh-Hans",
+      "field": "com.nearr.tokens.200.v2.description",
+      "unicodeCharacters": 17,
+      "utf8Bytes": 43,
+      "maximum": 45
+    }
+  ]
+}

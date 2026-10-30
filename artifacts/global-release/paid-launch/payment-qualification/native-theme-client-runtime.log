@@ -1,0 +1,16 @@
+PASS catalog rejects legacy capped, free-only, disabled, unqualified and age-ineligible responses without StoreKit
+PASS actual Store strings, exact monthly no-trial subscription and all three consumables are required
+PASS malformed balances and old same-pack product-only receipts do not prove success
+PASS Plus succeeds through real server subscriber verification and reconciliation, clearing pending
+PASS Plus old, missing, stale, legacy or mismatched server proof remains pending and blocks duplicate StoreKit
+PASS Plus callback without transaction ID requires server attempt binding; old active period cannot resolve it
+PASS Plus lost SDK callback recovers via restore using real fresh subscriber proof, with no second charge
+PASS Plus revoked fresh server transaction clears pending without success
+PASS SDK success and existing tokens do not grant credit; pending blocks a second charge until reconciliation
+PASS cancel clears recovery marker; deferred/lost callback retains it, account switching cannot grant another user access
+PASS an exactly bound revoked transaction resolves recovery without granting credit
+PASS account switch after marker creation but before StoreKit clears the never-started attempt
+PASS stale prices, offline access and account mismatch cannot start purchase; restore uses server authority
+PASS real screen purchase action reports cancellation without credit and returns controls to idle
+PASS real hook retains pending recovery offline and clears prior-account presentation on switch
+PASS 16 groups; 110 real-screen renders; no live purchases or network

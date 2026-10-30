@@ -1,5 +1,7 @@
 # StoreKit sandbox test ledger
 
+> Historical test plan. The latest device checks, explicit founder decisions and real-transaction count are recorded in [Real StoreKit sandbox results](REAL_STOREKIT_SANDBOX_RESULTS.md). Account-access and build observations below describe the earlier pass.
+
 As of 2026-10-29 UTC: **no real transaction executed in this paid-launch pass; qualification blocked**. Offline parser/SQL/UI tests and the Android emulator do not satisfy this gate.
 
 ## Available route and present blockers

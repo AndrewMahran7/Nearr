@@ -1,0 +1,24 @@
+{
+  "capturedAt": "2026-10-29T21:03:09.2059926Z",
+  "test": "paid entitlement refresh",
+  "checksPassed": 56,
+  "focusedStrictTypeScript": "passed",
+  "usesRealSharedVerifier": true,
+  "mockedDatabaseBoundary": true,
+  "liveRevenueCatCalls": 0,
+  "providerInferenceCalls": 0,
+  "actualTimeoutTest": "15-second whole-helper deadline, transport ignores abort",
+  "sourceHashes": {
+    "supabase/functions/_shared/paidEntitlementRefresh.ts": "30c621f4d7a332d54804f534f602845e465589ccbaae0635a7b103036873eed8",
+    "scripts/testPaidEntitlementRefresh.ts": "ceded49e3bdf7de1eaffd9f1f3c4792ec070c9a8cf3c4a8557f98b7f2327dc59",
+    "lib/plusEntitlements.ts": "2ecb96471fe3805a132f15e9ce38291115fb6f5ad944526dda83844a0caa9df5",
+    "artifacts/global-release/paid-launch/tests/paid-entitlement-refresh.log": "f51ade47663938f1cf09212750f7ab6dd6ac5c4ae6120878d85f2fea4b9b4f67"
+  },
+  "scope": [
+    "disabled/fresh/free/revoked/verified-expired skip external calls",
+    "stale/future proofs and ended formerly-active renewal refresh",
+    "exact primary opaque customer and fixed-origin bounded RevenueCat GET",
+    "await transactional apply and inspect persisted freshness",
+    "upstream/config/database/apply/readback failures stop caller"
+  ]
+}

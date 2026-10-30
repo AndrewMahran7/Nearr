@@ -1,0 +1,137 @@
+{
+  "startedAt": "2026-10-29T22:35:50.233Z",
+  "sourceCommit": "49f559d488f133a744c7cd21809cc65c15cf9b8d",
+  "kind": "real-local-regressions-and-read-only-development",
+  "productionAccess": false,
+  "activation": false,
+  "providerCalls": false,
+  "storeKitTransactions": 0,
+  "phases": [
+    {
+      "name": "development-readback",
+      "command": "node scripts/readPaidDevelopment.cjs",
+      "startedAt": "2026-10-29T22:35:50.365Z",
+      "log": "development-readback.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:36:07.480Z",
+      "passed": true,
+      "sha256": "c07386b8c815d48438cbe80611154bb0fd01e0e23a13b44438fa91d730b839e4"
+    },
+    {
+      "name": "test-prebuild",
+      "command": "npm run test:prebuild",
+      "startedAt": "2026-10-29T22:36:07.487Z",
+      "log": "test-prebuild.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:40:53.408Z",
+      "passed": true,
+      "sha256": "19057d0610c539a3c87e714432c92cfc03dd7f2f5dae1bbb79c323907c0803fd"
+    },
+    {
+      "name": "test-paid-launch",
+      "command": "npm run test:paid-launch",
+      "startedAt": "2026-10-29T22:40:53.412Z",
+      "log": "test-paid-launch.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:45:41.129Z",
+      "passed": true,
+      "sha256": "c3bd6f49464c8955236e7a81d95c09987fef294630a20102fc1f6187b99ccf34"
+    },
+    {
+      "name": "test-consent-identity",
+      "command": "npm run test:consent-identity",
+      "startedAt": "2026-10-29T22:45:41.136Z",
+      "log": "test-consent-identity.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:45:42.306Z",
+      "passed": true,
+      "sha256": "abf05af3c0717a8a6b2958db5391fdd636b7408d94276fe3921c1f73c1dfe792"
+    },
+    {
+      "name": "test-recognition-consent",
+      "command": "npm run test:recognition-consent",
+      "startedAt": "2026-10-29T22:45:42.311Z",
+      "log": "test-recognition-consent.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:45:43.535Z",
+      "passed": true,
+      "sha256": "cacff63c8ac0faf90fc28a995f23558ff3879f7a239759e040e95649d8740372"
+    },
+    {
+      "name": "test-global-eligibility-db",
+      "command": "npm run test:global-eligibility-db",
+      "startedAt": "2026-10-29T22:45:43.546Z",
+      "log": "test-global-eligibility-db.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:47:15.502Z",
+      "passed": true,
+      "sha256": "1b95d6a9e2a70fbb2d76215afd8af9108cadae7513ba4adbb3c4dc37e1ee6507"
+    },
+    {
+      "name": "test-exact-identity-safety",
+      "command": "npm run test:exact-identity-safety",
+      "startedAt": "2026-10-29T22:47:15.508Z",
+      "log": "test-exact-identity-safety.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:47:16.475Z",
+      "passed": true,
+      "sha256": "bbae0e1239d7cf3e41d0e1bd8ea19ddc93d215d081d01c8e38a8720d5bc4e120"
+    },
+    {
+      "name": "test-safe-development",
+      "command": "npm run test:safe-development",
+      "startedAt": "2026-10-29T22:47:16.479Z",
+      "log": "test-safe-development.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:48:07.332Z",
+      "passed": true,
+      "sha256": "621f018e26ae778c60423289895ae53ecdf19c2d53167e97dfb9e691a1368a13"
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "startedAt": "2026-10-29T22:48:07.337Z",
+      "log": "typecheck.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:48:42.101Z",
+      "passed": true,
+      "sha256": "ec1a99323ca96275587fef6746160a09e98e365777b3a2623c34d90e565a77dd"
+    },
+    {
+      "name": "test-monetization-token-ux",
+      "command": "npm run test:monetization-token-ux",
+      "startedAt": "2026-10-29T22:48:42.104Z",
+      "log": "test-monetization-token-ux.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:48:44.260Z",
+      "passed": true,
+      "sha256": "a64f6c498e6713f948992ec78620a4cb40485c2cf420665a3f2ac41751e3c176"
+    },
+    {
+      "name": "test-localization",
+      "command": "npm run test:localization",
+      "startedAt": "2026-10-29T22:48:44.264Z",
+      "log": "test-localization.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:49:00.427Z",
+      "passed": true,
+      "sha256": "22288da7723cbe53c6012a0d91ec26e231a9eef71989448b3af57a59ade51bf9"
+    },
+    {
+      "name": "test-native-localization",
+      "command": "npm run test:native-localization",
+      "startedAt": "2026-10-29T22:49:00.430Z",
+      "log": "test-native-localization.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-29T22:49:02.140Z",
+      "passed": true,
+      "sha256": "630b21ebee875f3fc97bba80d7ea4c9482f18020c2b81a164ca6f585d5374351"
+    }
+  ],
+  "diffCheck": {
+    "passed": true,
+    "output": ""
+  },
+  "finishedAt": "2026-10-29T22:49:02.441Z",
+  "passed": true
+}

@@ -1,5 +1,7 @@
 # Paid product catalog qualification
 
+> Historical planning snapshot. All four Apple draft products and the RevenueCat offering were subsequently saved and reopened. For actual IDs, supported prices and current status, use [Apple catalog readback](APPLE_CATALOG_READBACK.md) and [RevenueCat configuration readback](REVENUECAT_CONFIGURATION_READBACK.md).
+
 Reviewed 2026-10-29 UTC. Branch: `release/nearr-1.7-paid-launch-final`. This is a proposed configuration and evidence inventory; no Apple product or RevenueCat setting was changed by this review.
 
 ## Required catalog and proposed identifiers

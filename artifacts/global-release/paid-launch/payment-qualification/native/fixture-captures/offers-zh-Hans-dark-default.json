@@ -1,0 +1,143 @@
+{
+  "state": "offers",
+  "locale": "zh-Hans",
+  "theme": "dark",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of local HTML anchor observed in compact-grid screenshot",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "bundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "display": {
+    "size": "1080x2400",
+    "density": "Physical density: 420",
+    "fontScale": 1
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/offers-zh-Hans-dark-default-top.png",
+      "capturedAt": "2026-10-30T01:27:15.731Z",
+      "sha256": "a06bf9a38375b897e76fa7208175cac3ba75b23263e7960f72920c73db431c04",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+        "暂不",
+        "下一次发现",
+        "继续发现心仪地点",
+        "无论是否订阅，你已保存的地点始终属于你。",
+        "你的地点查找",
+        "每月免费查找",
+        "3 次中可用 1 次",
+        "为待处理结果预留：1",
+        "免费额度于 2026年11月1日（UTC）重置。",
+        "已购代币：47",
+        "为待处理结果预留：3",
+        "已购代币永不过期，Plus 不会消耗它们。",
+        "Nearr Plus",
+        "无限次地点查找",
+        "Plus 有效期间，成功的视频地点查找次数不限，不扣除代币。",
+        "US$1.99 / 月",
+        "订阅 Nearr Plus"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-zh-Hans-dark-default-scroll1.png",
+      "capturedAt": "2026-10-30T01:27:20.973Z",
+      "sha256": "219793145cb3b300aae03bb79ea62d6038c35ae7efb24ab8c4d63a9102c7c3e3",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "已购代币：47",
+        "为待处理结果预留：3",
+        "已购代币永不过期，Plus 不会消耗它们。",
+        "Nearr Plus",
+        "无限次地点查找",
+        "Plus 有效期间，成功的视频地点查找次数不限，不扣除代币。",
+        "US$1.99 / 月",
+        "订阅 Nearr Plus",
+        "Apple 按月收费，除非在订阅设置中取消，否则会自动续订。无免费试用或年度方案。",
+        "也可按需购买查找次数",
+        "一个代币可支付一次成功的视频地点查找。已购代币永不过期。",
+        "入门",
+        "20 个代币",
+        "购买 20 个代币 · US$1.19",
+        "探索",
+        "50 个代币"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-zh-Hans-dark-default-scroll2.png",
+      "capturedAt": "2026-10-30T01:27:26.425Z",
+      "sha256": "483242c31b009f83da15511ae0403a55a9370a6cbb03ca9d9522b8ba014fef77",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Apple 按月收费，除非在订阅设置中取消，否则会自动续订。无免费试用或年度方案。",
+        "也可按需购买查找次数",
+        "一个代币可支付一次成功的视频地点查找。已购代币永不过期。",
+        "入门",
+        "20 个代币",
+        "购买 20 个代币 · US$1.19",
+        "探索",
+        "50 个代币",
+        "购买 50 个代币 · US$2.49",
+        "冒险",
+        "200 个代币",
+        "购买 200 个代币 · US$5.00",
+        "依次使用 Plus、每月免费额度、已购代币。",
+        "免费方案每个自然月包含 3 次成功的视频地点查找。 (UTC)"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-zh-Hans-dark-default-scroll3.png",
+      "capturedAt": "2026-10-30T01:27:32.023Z",
+      "sha256": "d8c023b9a424e0e8ed7e7bc988f482b7fb8406cdff724b80240a37f3adb4764e",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "冒险",
+        "200 个代币",
+        "购买 200 个代币 · US$5.00",
+        "依次使用 Plus、每月免费额度、已购代币。",
+        "免费方案每个自然月包含 3 次成功的视频地点查找。 (UTC)",
+        "一段视频即使包含多个地点，也只计为一次。查找失败不会消耗你的额度。",
+        "Quick Check 会预留一次查找，直至保存或预留到期。每月免费额度不结转。",
+        "恢复购买",
+        "恢复操作会将已验证购买重新关联至账户，不会补回已使用的代币。",
+        "管理订阅",
+        "刷新余额",
+        "服务条款",
+        "隐私政策"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-zh-Hans-dark-default-scroll4.png",
+      "capturedAt": "2026-10-30T01:27:37.117Z",
+      "sha256": "0eac6a4e5399f82c8a8a051f6493cbe3fab01ebcd70dd6a86f924ceb4741a851",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "冒险",
+        "200 个代币",
+        "购买 200 个代币 · US$5.00",
+        "依次使用 Plus、每月免费额度、已购代币。",
+        "免费方案每个自然月包含 3 次成功的视频地点查找。 (UTC)",
+        "一段视频即使包含多个地点，也只计为一次。查找失败不会消耗你的额度。",
+        "Quick Check 会预留一次查找，直至保存或预留到期。每月免费额度不结转。",
+        "恢复购买",
+        "恢复操作会将已验证购买重新关联至账户，不会补回已使用的代币。",
+        "管理订阅",
+        "刷新余额",
+        "服务条款",
+        "隐私政策"
+      ],
+      "unedited": true
+    }
+  ]
+}

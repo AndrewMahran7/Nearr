@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-10-29T21:16:16.490Z",
+  "createdAt": "2026-10-30T00:29:34.263Z",
   "kind": "isolated native/network boundary mocks, not StoreKit or device evidence",
   "tests": [
     "catalog rejects legacy capped, free-only, disabled, unqualified and age-ineligible responses without StoreKit",

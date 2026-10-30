@@ -1,0 +1,143 @@
+{
+  "state": "revoked",
+  "locale": "en-US",
+  "theme": "light",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of link observed in local HTML page screenshot",
+  "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d",
+  "bundleSha256": "276ee9278497a5b96f27d3d2d2b05891e026252f13c2bed0425714f184a4331f",
+  "display": {
+    "size": "1080x2400",
+    "density": 420,
+    "fontScale": 1
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/revoked-en-US-light-top.png",
+      "capturedAt": "2026-10-30T00:39:17.952Z",
+      "sha256": "196bbee99d5d80410baae6f3c36ce59491e4655aec8d5fac36e7a86fcf7d3030",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Not now",
+        "Your next discovery",
+        "Keep discovering places",
+        "Your saved places stay yours, with or without a subscription.",
+        "Your finds",
+        "Monthly free finds",
+        "1 of 3 available",
+        "Reserved for pending results: 1",
+        "Free resets Nov 1, 2026 (UTC).",
+        "Purchased tokens: 47",
+        "Reserved for pending results: 3",
+        "Purchased tokens never expire. Plus leaves them untouched.",
+        "Nearr Plus",
+        "Unlimited finds",
+        "Unlimited successful video finds while Plus is active. No token deductions.",
+        "$1.99 / month",
+        "Get Nearr Plus",
+        "Apple bills monthly and renews automatically unless cancelled in subscription settings. No free trial or annual plan."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/revoked-en-US-light-scroll1.png",
+      "capturedAt": "2026-10-30T00:39:24.215Z",
+      "sha256": "8b6fbf5e495bbfcf8864f0c191c61c5ee079c6859d4e172e6b681263b640e561",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Your saved places stay yours, with or without a subscription.",
+        "Your finds",
+        "Monthly free finds",
+        "1 of 3 available",
+        "Reserved for pending results: 1",
+        "Free resets Nov 1, 2026 (UTC).",
+        "Purchased tokens: 47",
+        "Reserved for pending results: 3",
+        "Purchased tokens never expire. Plus leaves them untouched.",
+        "Nearr Plus",
+        "Unlimited finds",
+        "Unlimited successful video finds while Plus is active. No token deductions.",
+        "$1.99 / month",
+        "Get Nearr Plus",
+        "Apple bills monthly and renews automatically unless cancelled in subscription settings. No free trial or annual plan.",
+        "Plus is no longer active. Your free finds, purchased tokens and saved places remain yours.",
+        "Or buy finds when you need them"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/revoked-en-US-light-scroll2.png",
+      "capturedAt": "2026-10-30T00:39:29.687Z",
+      "sha256": "b2363814fda548c4830e09092d1abe001333767a24f0488e5c637daa13d2e948",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Unlimited successful video finds while Plus is active. No token deductions.",
+        "$1.99 / month",
+        "Get Nearr Plus",
+        "Apple bills monthly and renews automatically unless cancelled in subscription settings. No free trial or annual plan.",
+        "Plus is no longer active. Your free finds, purchased tokens and saved places remain yours.",
+        "Or buy finds when you need them",
+        "One token pays for one successful video find. Purchased tokens do not expire.",
+        "Starter",
+        "20 tokens",
+        "Buy 20 tokens · $1.19",
+        "Explorer",
+        "50 tokens",
+        "Buy 50 tokens · $2.49"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/revoked-en-US-light-scroll3.png",
+      "capturedAt": "2026-10-30T00:39:35.135Z",
+      "sha256": "af60ad0a51116d807b0ce90c8ddbb557c92709f623b141daec9af946934e6eab",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Starter",
+        "20 tokens",
+        "Buy 20 tokens · $1.19",
+        "Explorer",
+        "50 tokens",
+        "Buy 50 tokens · $2.49",
+        "Adventurer",
+        "200 tokens",
+        "Buy 200 tokens · $5.00",
+        "Plus is used first, then monthly free finds, then purchased tokens.",
+        "Free includes 3 successful video finds each calendar month. (UTC)",
+        "One video counts once, even when it contains several places. Failed searches do not use your allowance.",
+        "Quick Check reserves a find until you save or the reservation expires. Monthly free finds do not roll over.",
+        "Restore Purchases"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/revoked-en-US-light-scroll4.png",
+      "capturedAt": "2026-10-30T00:39:40.820Z",
+      "sha256": "e365ec5df2f519c2065139de84fe37180a4df01774fcd26362643a3ae6235f8b",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Adventurer",
+        "200 tokens",
+        "Buy 200 tokens · $5.00",
+        "Plus is used first, then monthly free finds, then purchased tokens.",
+        "Free includes 3 successful video finds each calendar month. (UTC)",
+        "One video counts once, even when it contains several places. Failed searches do not use your allowance.",
+        "Quick Check reserves a find until you save or the reservation expires. Monthly free finds do not roll over.",
+        "Restore Purchases",
+        "Restore reconnects verified purchases to your account. Spent tokens are not restored.",
+        "Manage Subscription",
+        "Refresh balance",
+        "Terms of Service",
+        "Privacy Policy"
+      ],
+      "unedited": true
+    }
+  ]
+}

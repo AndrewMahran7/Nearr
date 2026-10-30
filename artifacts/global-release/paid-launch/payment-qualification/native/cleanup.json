@@ -1,0 +1,22 @@
+{
+  "verifiedAt": "2026-10-29T22:57:37Z",
+  "stoppedTaskOwnedMetroPids": [53424, 98152, 56988],
+  "stoppedVerifiedChildWorkerPids": [33280, 44432, 106432, 20772, 52880, 77756],
+  "remainingOwnedProcesses": [],
+  "port8082Listening": false,
+  "adbReverseMappingsRemaining": [],
+  "removedTaskReversePorts": [8081, 8082],
+  "deviceSize": "1080x2400",
+  "deviceDensity": 420,
+  "fontScale": 1.0,
+  "displaySettingsChanged": false,
+  "networkOrPermissionSettingsChanged": false,
+  "forceStopOrProcessRelaunchUsed": false,
+  "applicationDataCleared": false,
+  "nativeSoftwareInstalled": false,
+  "accountsCreated": 0,
+  "purchasesAttempted": 0,
+  "cloudFixturesCreated": 0,
+  "shippingConfigurationOrDependencyFilesChangedByNativeQa": false,
+  "retainedLocalState": "Existing emulator and cached debug APK remain; Development launcher history includes localhost and emulator-host QA URLs. Apple Devices was opened read-only and left to the coordinating desktop owner. Ignored Metro hook and raw diagnostics remain local."
+}

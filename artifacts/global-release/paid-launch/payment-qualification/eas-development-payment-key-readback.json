@@ -1,0 +1,24 @@
+{
+  "capturedAtDate": "2026-10-29",
+  "command": "eas env:list development --format short",
+  "exitCode": 0,
+  "environment": "development",
+  "revenueCatVariableNames": [
+    "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY",
+    "EXPO_PUBLIC_REVENUECAT_OFFERING_ID",
+    "EXPO_PUBLIC_REVENUECAT_STORE_MODE",
+    "EXPO_PUBLIC_REVENUECAT_TEST_STORE_API_KEY"
+  ],
+  "iosSdkKey": {
+    "present": true,
+    "empty": false,
+    "validApplePublicKeyPrefix": true,
+    "sha256": "9386e4290b7daeac2bc5d7221a4e1765b216dbad785651c67b099a2057453f31",
+    "revenueCatAppMappingVerified": true,
+    "revenueCatAppId": "app7434757255",
+    "bundleId": "com.nearr.ios"
+  },
+  "valuesPrintedOrCommitted": false,
+  "environmentChanged": false,
+  "note": "The public SDK key was inspected only in captured command output. Its SHA-256 exactly matches the public Apple SDK key freshly observed in RevenueCat for Nearr iOS Dev Sandbox, app7434757255, com.nearr.ios. No value was printed. The config omission is fixed in b7b59ab; matching configuration is not real purchase qualification."
+}

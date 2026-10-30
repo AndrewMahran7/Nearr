@@ -1,0 +1,233 @@
+{
+  "state": "offers",
+  "locale": "de",
+  "theme": "light",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of local HTML anchor observed in compact-grid screenshot",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "bundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "display": {
+    "size": "840x2160",
+    "density": "Physical density: 420",
+    "fontScale": 1.5
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/offers-de-light-narrow-large-top.png",
+      "capturedAt": "2026-10-30T00:59:24.865Z",
+      "sha256": "288743c7724843e4a07a60efa8cab4e589c57b13be92ceafb9fcf40b852048e3",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+        "Nicht jetzt",
+        "Deine nächste Entdeckung",
+        "Entdecke weitere Orte",
+        "Deine gespeicherten Orte gehören dir, mit oder ohne Abo.",
+        "Deine Suchvorgänge",
+        "Monatliche kostenlose Suchen",
+        "1 von 3 verfügbar",
+        "Für ausstehende Ergebnisse reserviert: 1"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-light-narrow-large-scroll1.png",
+      "capturedAt": "2026-10-30T00:59:29.967Z",
+      "sha256": "ab9db75435aab0f2e4de02ab711746388fa4b52d048e3cee3cb39b93b7a67597",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "Deine gespeicherten Orte gehören dir, mit oder ohne Abo.",
+        "Deine Suchvorgänge",
+        "Monatliche kostenlose Suchen",
+        "1 von 3 verfügbar",
+        "Für ausstehende Ergebnisse reserviert: 1",
+        "Kostenlose Suchen werden am 1. Nov. 2026 erneuert (UTC).",
+        "Gekaufte Tokens: 47",
+        "Für ausstehende Ergebnisse reserviert: 3",
+        "Gekaufte Tokens verfallen nicht. Plus verbraucht sie nicht.",
+        "Nearr Plus",
+        "Unbegrenzte Suchen"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-light-narrow-large-scroll2.png",
+      "capturedAt": "2026-10-30T00:59:35.423Z",
+      "sha256": "d7ad2b233c262a42bc1fa0a17d21fbd76478d6da9c216fbc6aec6f413fef6cfe",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "Kostenlose Suchen werden am 1. Nov. 2026 erneuert (UTC).",
+        "Gekaufte Tokens: 47",
+        "Für ausstehende Ergebnisse reserviert: 3",
+        "Gekaufte Tokens verfallen nicht. Plus verbraucht sie nicht.",
+        "Nearr Plus",
+        "Unbegrenzte Suchen",
+        "Unbegrenzte erfolgreiche Videosuchen, solange Plus aktiv ist. Kein Tokenverbrauch.",
+        "1,99 $ / Monat",
+        "Nearr Plus abonnieren"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-light-narrow-large-scroll3.png",
+      "capturedAt": "2026-10-30T00:59:40.563Z",
+      "sha256": "6a5727075bf6820a5c97f5f0f352e2a0e83bf10948307419a249806aa922c101",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "Unbegrenzte Suchen",
+        "Unbegrenzte erfolgreiche Videosuchen, solange Plus aktiv ist. Kein Tokenverbrauch.",
+        "1,99 $ / Monat",
+        "Nearr Plus abonnieren",
+        "Apple rechnet monatlich ab und verlängert automatisch, sofern du nicht in den Abonnementeinstellungen kündigst. Kein kostenloser Testzeitraum und kein Jahresabo.",
+        "Oder kaufe Suchen nach Bedarf"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-light-narrow-large-scroll4.png",
+      "capturedAt": "2026-10-30T00:59:45.706Z",
+      "sha256": "b71c8721234574cbff2636338d9264b445387fcb0d7cbd79078f72a015dedf91",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "Nearr Plus abonnieren",
+        "Apple rechnet monatlich ab und verlängert automatisch, sofern du nicht in den Abonnementeinstellungen kündigst. Kein kostenloser Testzeitraum und kein Jahresabo.",
+        "Oder kaufe Suchen nach Bedarf",
+        "Ein Token bezahlt eine erfolgreiche Videosuche. Gekaufte Tokens verfallen nicht.",
+        "Starter",
+        "20 Tokens",
+        "20 Tokens kaufen · 1,19 $"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-light-narrow-large-scroll5.png",
+      "capturedAt": "2026-10-30T00:59:50.636Z",
+      "sha256": "1a9ea851c8414f5a1427ad7e3ad054f389a95b053856433a93d353522ef468a2",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "Oder kaufe Suchen nach Bedarf",
+        "Ein Token bezahlt eine erfolgreiche Videosuche. Gekaufte Tokens verfallen nicht.",
+        "Starter",
+        "20 Tokens",
+        "20 Tokens kaufen · 1,19 $",
+        "Entdecker",
+        "50 Tokens",
+        "50 Tokens kaufen · 2,49 $"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-light-narrow-large-scroll6.png",
+      "capturedAt": "2026-10-30T00:59:55.956Z",
+      "sha256": "7407ada0053409e3bea64fd87a550f7f885402361a47d8b269adf6890f4e981d",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "20 Tokens",
+        "20 Tokens kaufen · 1,19 $",
+        "Entdecker",
+        "50 Tokens",
+        "50 Tokens kaufen · 2,49 $",
+        "Abenteurer",
+        "200 Tokens",
+        "200 Tokens kaufen · 5,00 $",
+        "Zuerst gilt Plus, dann die monatlichen kostenlosen Suchen, dann gekaufte Tokens."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-light-narrow-large-scroll7.png",
+      "capturedAt": "2026-10-30T01:00:01.288Z",
+      "sha256": "96020d2e997edbda10e0a626b15cc40b96b6bb37ecec003b2232f17ae4ec44e8",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "Abenteurer",
+        "200 Tokens",
+        "200 Tokens kaufen · 5,00 $",
+        "Zuerst gilt Plus, dann die monatlichen kostenlosen Suchen, dann gekaufte Tokens.",
+        "Die kostenlose Version enthält 3 erfolgreiche Videosuchen pro Kalendermonat. (UTC)",
+        "Ein Video zählt einmal, auch wenn es mehrere Orte enthält. Fehlgeschlagene Suchen verbrauchen dein Kontingent nicht.",
+        "Quick Check reserviert eine Suche bis zum Speichern oder Ablauf der Reservierung. Monatliche kostenlose Suchen werden nicht übertragen."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-light-narrow-large-scroll8.png",
+      "capturedAt": "2026-10-30T01:00:39.739Z",
+      "sha256": "ab457faf5262aee1d141c89c321c3588c49f03d100e672966d49d9161b71db50",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "Die kostenlose Version enthält 3 erfolgreiche Videosuchen pro Kalendermonat. (UTC)",
+        "Ein Video zählt einmal, auch wenn es mehrere Orte enthält. Fehlgeschlagene Suchen verbrauchen dein Kontingent nicht.",
+        "Quick Check reserviert eine Suche bis zum Speichern oder Ablauf der Reservierung. Monatliche kostenlose Suchen werden nicht übertragen.",
+        "Käufe wiederherstellen",
+        "Wiederherstellen verknüpft bestätigte Käufe mit deinem Konto. Verbrauchte Tokens werden nicht erneut gutgeschrieben.",
+        "Abo verwalten",
+        "Guthaben aktualisieren"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-light-narrow-large-scroll9.png",
+      "capturedAt": "2026-10-30T01:00:45.202Z",
+      "sha256": "1a7e078e4b7dd4b69e99a8963c2446b9fb439867e77458928e38f5da8827a095",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "Quick Check reserviert eine Suche bis zum Speichern oder Ablauf der Reservierung. Monatliche kostenlose Suchen werden nicht übertragen.",
+        "Käufe wiederherstellen",
+        "Wiederherstellen verknüpft bestätigte Käufe mit deinem Konto. Verbrauchte Tokens werden nicht erneut gutgeschrieben.",
+        "Abo verwalten",
+        "Guthaben aktualisieren",
+        "Nutzungsbedingungen",
+        "Datenschutzerklärung"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-light-narrow-large-scroll10.png",
+      "capturedAt": "2026-10-30T01:00:50.681Z",
+      "sha256": "5ca6872fdaffa783c1632138b804c664eb76384c993456886b1fc28becfc78a4",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "Quick Check reserviert eine Suche bis zum Speichern oder Ablauf der Reservierung. Monatliche kostenlose Suchen werden nicht übertragen.",
+        "Käufe wiederherstellen",
+        "Wiederherstellen verknüpft bestätigte Käufe mit deinem Konto. Verbrauchte Tokens werden nicht erneut gutgeschrieben.",
+        "Abo verwalten",
+        "Guthaben aktualisieren",
+        "Nutzungsbedingungen",
+        "Datenschutzerklärung"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-light-narrow-large-scroll11.png",
+      "capturedAt": "2026-10-30T01:00:56.492Z",
+      "sha256": "5ca6872fdaffa783c1632138b804c664eb76384c993456886b1fc28becfc78a4",
+      "width": 840,
+      "height": 2160,
+      "visibleText": [
+        "Quick Check reserviert eine Suche bis zum Speichern oder Ablauf der Reservierung. Monatliche kostenlose Suchen werden nicht übertragen.",
+        "Käufe wiederherstellen",
+        "Wiederherstellen verknüpft bestätigte Käufe mit deinem Konto. Verbrauchte Tokens werden nicht erneut gutgeschrieben.",
+        "Abo verwalten",
+        "Guthaben aktualisieren",
+        "Nutzungsbedingungen",
+        "Datenschutzerklärung"
+      ],
+      "unedited": true
+    }
+  ]
+}

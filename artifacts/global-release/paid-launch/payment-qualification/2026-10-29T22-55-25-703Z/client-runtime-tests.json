@@ -1,0 +1,25 @@
+{
+  "createdAt": "2026-10-29T22:56:06.862Z",
+  "kind": "isolated native/network boundary mocks, not StoreKit or device evidence",
+  "tests": [
+    "catalog rejects legacy capped, free-only, disabled, unqualified and age-ineligible responses without StoreKit",
+    "actual Store strings, exact monthly no-trial subscription and all three consumables are required",
+    "malformed balances and old same-pack product-only receipts do not prove success",
+    "Plus succeeds through real server subscriber verification and reconciliation, clearing pending",
+    "Plus old, missing, stale, legacy or mismatched server proof remains pending and blocks duplicate StoreKit",
+    "Plus callback without transaction ID requires server attempt binding; old active period cannot resolve it",
+    "Plus lost SDK callback recovers via restore using real fresh subscriber proof, with no second charge",
+    "Plus revoked fresh server transaction clears pending without success",
+    "SDK success and existing tokens do not grant credit; pending blocks a second charge until reconciliation",
+    "cancel clears recovery marker; deferred/lost callback retains it, account switching cannot grant another user access",
+    "an exactly bound revoked transaction resolves recovery without granting credit",
+    "account switch after marker creation but before StoreKit clears the never-started attempt",
+    "stale prices, offline access and account mismatch cannot start purchase; restore uses server authority",
+    "real screen purchase action reports cancellation without credit and returns controls to idle",
+    "real hook retains pending recovery offline and clears prior-account presentation on switch",
+    "110 real screen locale/state component renders; 10 complete translated catalogs; Development preview gated and inert"
+  ],
+  "renders": 110,
+  "sdkPurchaseCalls": 16,
+  "realStorePurchases": 0
+}

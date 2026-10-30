@@ -1,0 +1,8 @@
+{
+  "exitCode": 0,
+  "finishedAt": "2026-10-29T22:56:06.8954071Z",
+  "startedAt": "2026-10-29T22:56:05.4934653Z",
+  "reason": "One bounded retry after Windows UNKNOWN receipt-file open error; original failure log retained",
+  "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testPaidFindsClientRuntime.ts",
+  "passed": true
+}

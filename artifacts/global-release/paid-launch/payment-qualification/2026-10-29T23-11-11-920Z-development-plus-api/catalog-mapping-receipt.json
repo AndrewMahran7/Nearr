@@ -1,0 +1,285 @@
+{
+  "startedAt": "2026-10-29T23:13:08.082Z",
+  "target": "qnfxnmvxpjzfydgudtvs",
+  "sourceCommit": "b7b59ab366fb0227dd3f035bf7786676c39ba320",
+  "authority": "Coordinator verified Apple RevenueCat app and exact product mappings; authorized only these three mapping fields with activation flags false.",
+  "productionMutation": false,
+  "secretWrites": false,
+  "purchasesActivated": false,
+  "providerCalls": false,
+  "passed": true,
+  "before": {
+    "config": [
+      {
+        "config": {
+          "catalog_verified": false,
+          "enforce_allowance": false,
+          "entitlement_id": "nearr_plus",
+          "environment": "SANDBOX",
+          "free_finds": 3,
+          "id": true,
+          "legacy_obligations_evidence_reference": null,
+          "legacy_obligations_reconciled": false,
+          "offering_id": "nearr_paid_v1",
+          "paid_find_policy_enabled": false,
+          "plus_finds": 10,
+          "product_id": "com.nearr.plus.unlimited.monthly.v1",
+          "release_mode": "paid",
+          "release_qualified": false,
+          "revenuecat_app_id": null,
+          "revenuecat_project_id": null,
+          "revenuecat_token_product_ids": {},
+          "sales_enabled": false,
+          "subscription_benefit": "unlimited",
+          "token_catalog_verified": false
+        }
+      }
+    ],
+    "policy": [
+      {
+        "policy": {
+          "ai_notice_version": "nearr-ai-openai-v1",
+          "evidence_reference": null,
+          "legal_approved": false,
+          "policy_version": "nearr-global-13-v1",
+          "privacy_notice_version": "nearr-global-privacy-v1",
+          "provider_route": "disabled",
+          "purchase_qualified": false,
+          "recognition_qualified": false,
+          "singleton": true,
+          "terms_version": "nearr-global-terms-v1"
+        }
+      }
+    ],
+    "legacy": [
+      {
+        "config": {
+          "enabled": true,
+          "environment_name": "development",
+          "monthly_allowance": 10,
+          "monthly_allowance_start_month": "2026-09-01",
+          "offer_version": "nearr_dev_v2_2026_09",
+          "revenuecat_allowed_stores": [
+            "TEST_STORE"
+          ],
+          "revenuecat_app_id": "app26505bdf1c",
+          "revenuecat_project_id": "proj7d727ef6",
+          "reward_activated_at": "2026-09-10T00:00:00+00:00",
+          "rollout_cutoff": "2026-09-06T00:00:00+00:00",
+          "updated_at": "2026-09-10T19:13:34.617675+00:00"
+        }
+      }
+    ],
+    "financialFingerprints": [
+      {
+        "checksum": "8c357b20311a252365cbc95f25247ae5",
+        "relation": "place_find_wallets",
+        "rows": 93
+      },
+      {
+        "checksum": "05fe6b1584b1bd34642579d8b035c7c7",
+        "relation": "place_find_lots",
+        "rows": 111
+      },
+      {
+        "checksum": "31bf202a9deba79e1f466771796ef149",
+        "relation": "place_find_ledger",
+        "rows": 555
+      },
+      {
+        "checksum": "fe731f048c6eb1e824365603f7d41194",
+        "relation": "place_find_purchase_transactions",
+        "rows": 27
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_plus_customers",
+        "rows": 0
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_plus_entitlements",
+        "rows": 0
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_plus_recognitions",
+        "rows": 0
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_plus_webhook_events",
+        "rows": 0
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_paid_purchase_states",
+        "rows": 0
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_paid_recovery_receipts",
+        "rows": 0
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_paid_finds",
+        "rows": 0
+      }
+    ],
+    "walletTotals": [
+      {
+        "available_uses": 477,
+        "reserved_uses": 0,
+        "wallets": 93
+      }
+    ]
+  },
+  "mapping": {
+    "revenuecat_app_id": "app7434757255",
+    "revenuecat_project_id": "proj7d727ef6",
+    "revenuecat_token_product_ids": {
+      "com.nearr.tokens.20.v2": "prodd6ac7e45d4",
+      "com.nearr.tokens.50.v2": "prodc41f2e9dd5",
+      "com.nearr.tokens.200.v2": "prod394420f4e2"
+    }
+  },
+  "sqlSha256": "e5074ef3864b832be573f9c45dd3e5e5668b199e9a0ebcf0ce17057a34b63a50",
+  "committedAt": "2026-10-29T23:13:25.083Z",
+  "after": {
+    "config": [
+      {
+        "config": {
+          "catalog_verified": false,
+          "enforce_allowance": false,
+          "entitlement_id": "nearr_plus",
+          "environment": "SANDBOX",
+          "free_finds": 3,
+          "id": true,
+          "legacy_obligations_evidence_reference": null,
+          "legacy_obligations_reconciled": false,
+          "offering_id": "nearr_paid_v1",
+          "paid_find_policy_enabled": false,
+          "plus_finds": 10,
+          "product_id": "com.nearr.plus.unlimited.monthly.v1",
+          "release_mode": "paid",
+          "release_qualified": false,
+          "revenuecat_app_id": "app7434757255",
+          "revenuecat_project_id": "proj7d727ef6",
+          "revenuecat_token_product_ids": {
+            "com.nearr.tokens.20.v2": "prodd6ac7e45d4",
+            "com.nearr.tokens.200.v2": "prod394420f4e2",
+            "com.nearr.tokens.50.v2": "prodc41f2e9dd5"
+          },
+          "sales_enabled": false,
+          "subscription_benefit": "unlimited",
+          "token_catalog_verified": false
+        }
+      }
+    ],
+    "policy": [
+      {
+        "policy": {
+          "ai_notice_version": "nearr-ai-openai-v1",
+          "evidence_reference": null,
+          "legal_approved": false,
+          "policy_version": "nearr-global-13-v1",
+          "privacy_notice_version": "nearr-global-privacy-v1",
+          "provider_route": "disabled",
+          "purchase_qualified": false,
+          "recognition_qualified": false,
+          "singleton": true,
+          "terms_version": "nearr-global-terms-v1"
+        }
+      }
+    ],
+    "legacy": [
+      {
+        "config": {
+          "enabled": true,
+          "environment_name": "development",
+          "monthly_allowance": 10,
+          "monthly_allowance_start_month": "2026-09-01",
+          "offer_version": "nearr_dev_v2_2026_09",
+          "revenuecat_allowed_stores": [
+            "TEST_STORE"
+          ],
+          "revenuecat_app_id": "app26505bdf1c",
+          "revenuecat_project_id": "proj7d727ef6",
+          "reward_activated_at": "2026-09-10T00:00:00+00:00",
+          "rollout_cutoff": "2026-09-06T00:00:00+00:00",
+          "updated_at": "2026-09-10T19:13:34.617675+00:00"
+        }
+      }
+    ],
+    "financialFingerprints": [
+      {
+        "checksum": "8c357b20311a252365cbc95f25247ae5",
+        "relation": "place_find_wallets",
+        "rows": 93
+      },
+      {
+        "checksum": "05fe6b1584b1bd34642579d8b035c7c7",
+        "relation": "place_find_lots",
+        "rows": 111
+      },
+      {
+        "checksum": "31bf202a9deba79e1f466771796ef149",
+        "relation": "place_find_ledger",
+        "rows": 555
+      },
+      {
+        "checksum": "fe731f048c6eb1e824365603f7d41194",
+        "relation": "place_find_purchase_transactions",
+        "rows": 27
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_plus_customers",
+        "rows": 0
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_plus_entitlements",
+        "rows": 0
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_plus_recognitions",
+        "rows": 0
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_plus_webhook_events",
+        "rows": 0
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_paid_purchase_states",
+        "rows": 0
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_paid_recovery_receipts",
+        "rows": 0
+      },
+      {
+        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "relation": "nearr_paid_finds",
+        "rows": 0
+      }
+    ],
+    "walletTotals": [
+      {
+        "available_uses": 477,
+        "reserved_uses": 0,
+        "wallets": 93
+      }
+    ]
+  },
+  "onlyMappingFieldsChanged": true,
+  "mappingMatches": true,
+  "financialUnchanged": true,
+  "policyAndLegacyUnchanged": true,
+  "finishedAt": "2026-10-29T23:13:37.930Z"
+}

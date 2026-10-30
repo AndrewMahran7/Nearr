@@ -1,0 +1,83 @@
+{
+  "historicalAttempt": true,
+  "supersededBy": "The same QA package reached the actual paywall after completing its synthetic local-only adult eligibility declaration. Final runtime coverage is in side-by-side-runtime.json.",
+  "recordedAt": "2026-10-30T00:16:52.256Z",
+  "sourceSha": "63600e88734d212d4cbe92b8a4ee6382e0cdf40d",
+  "sourceHashes": {
+    "app.config.js": "abdf00108f89ce888d9460ae7008ec371233cc1fd17969e5f041582e3b13ee25",
+    "app/plus.tsx": "354cfcf24af9a666cdee848e6ba2a04fc0f369b4a8e9553155ac0dcf8f066aad",
+    "app/dev-qa.tsx": "153ee2f6d3540480eced5d1483fba2e77c1cbbda47e0ea7e90a82d8ddf903d59",
+    "components/PaidFindsNativePreview.tsx": "90e6ae3b261c76ba2098292e87498472c3419b1798c65c325e066cb182ceb9dd",
+    "lib/paidPreviewFixtures.ts": "54d17e0bd37369d95e450baf97419f13857f6f847b57c302d4c7ef431a6a5adb",
+    "metro.config.js": "a68aeda5721f91d9a98185e55dbed2dbea74559b528f5b5fddff5f662b937c62",
+    "package-lock.json": "023782d169101d044b08e40d6cdc1d9d83168f125b1f6095cbd6ffaa4b773bd8"
+  },
+  "currentMobileFilesMatchBundledSources": true,
+  "applicationId": "com.nearr.paidqa",
+  "apkSha256": "647ed3c1f170a8fed504e11a85118cc306ac1f7fd37a09146ad3655a98e2f795",
+  "bundleSha256": "276ee9278497a5b96f27d3d2d2b05891e026252f13c2bed0425714f184a4331f",
+  "configurationSha256": "d3cbe45092308cc84090d01e5d16667e0c610b89ab60295c5bc1645a58d3f080",
+  "environment": "Development only",
+  "nonShippingFixtureArtifact": true,
+  "embeddedJavaScript": true,
+  "metroNeededAtRuntime": false,
+  "launchMethod": "Normal Android launcher tap of observed Nearr Paid QA icon",
+  "startupResult": "Native language screen and birthday screen rendered",
+  "routeMethod": "Normal Android Chrome tap of observed local HTML anchor to nearr-paidqa://dev-qa?paid=offers&locale=en-US",
+  "routeResult": "QA activity resumed, remained on birthday screen, React Navigation reported routes absent from root navigator",
+  "routeWarning": "The navigation state parsed from the URL contains routes not present in the root navigator. This usually means that the linking configuration does not match the navigation structure.",
+  "routeDiagnosis": "Embedded route map and current source contain dev-qa. Precise navigation mismatch not established. No shipping routing change attempted.",
+  "forceStopUsed": false,
+  "activityLaunchCommandUsed": false,
+  "originalAppReplaced": false,
+  "originalAppDataAccessed": false,
+  "qaLanguageSelection": "en-US",
+  "birthdayEntered": false,
+  "countryEntered": false,
+  "accountCreated": false,
+  "purchaseAttempted": false,
+  "realStoreKitPurchases": 0,
+  "paywallNativeCellsPassed": 0,
+  "localeCoverage": {
+    "en-US": "not reached",
+    "es-MX": "not reached",
+    "es-ES": "not reached",
+    "pt-BR": "not reached",
+    "fr": "not reached",
+    "de": "not reached",
+    "it": "not reached",
+    "ja": "not reached",
+    "ko": "not reached",
+    "zh-Hans": "not reached"
+  },
+  "displayCoverage": {
+    "lightPaywall": "not reached",
+    "darkPaywall": "not reached",
+    "largeTextPaywall": "not reached",
+    "narrowPaywall": "not reached"
+  },
+  "screenshots": [
+    {
+      "path": "side-by-side-language.png",
+      "screen": "Language chooser after normal launcher tap",
+      "capturedFileModifiedAt": "2026-10-30T00:05:02.441Z",
+      "width": 1080,
+      "height": 2400,
+      "sha256": "8ae12bede3959904be668a9c0e978a728687bdd5af315a9c3179a4805a32aadd",
+      "uneditedAdbFramebuffer": true,
+      "paywallVisible": false,
+      "eligibleAppleReviewScreenshot": false
+    },
+    {
+      "path": "side-by-side-route-failure.png",
+      "screen": "Birthday screen with navigation warning after normal local-page fixture link tap",
+      "capturedFileModifiedAt": "2026-10-30T00:14:27.939Z",
+      "width": 1080,
+      "height": 2400,
+      "sha256": "730e24f32e28ccdb2282ac061167b60485f125bcd78fb0646ed6e17bfeb1c66a",
+      "uneditedAdbFramebuffer": true,
+      "paywallVisible": false,
+      "eligibleAppleReviewScreenshot": false
+    }
+  ]
+}

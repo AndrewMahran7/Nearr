@@ -1,6 +1,10 @@
 # Apple and RevenueCat qualification
 
-Evidence date: 2026-10-29 UTC. Status: **not qualified for live purchases**. No account configuration was changed.
+This file retains the historical implementation assessment. Its initial account-access and empty-mapping observations below are superseded by [the current account readback](REVENUECAT_CONFIGURATION_READBACK.md) and [qualification handoff](PAID_LAUNCH_QUALIFICATION_HANDOFF.md). Live purchases remain unqualified.
+
+## Historical assessment before the payment configuration session
+
+Evidence date: 2026-10-29 UTC. At this earlier assessment, no account configuration had been changed.
 
 ## Known configuration
 
@@ -29,3 +33,35 @@ Implemented local recovery candidate: `GET /v2/projects/{project_id}/purchases?s
 The adapter makes at most two GETs to the fixed RevenueCat origin, refuses redirects, limits each response to 256 KiB and the entire operation to 15 seconds. It emits a recovery snapshot with explicit provenance, never a fabricated webhook. A fresh refunded snapshot conservatively revokes spendable funds unless a newer real callback occurred after the read began; an owned snapshot cannot clear a refund tombstone. Callback watermarks and recovery observations stay separate. A delayed reversal at or before the latest revoked-recovery observation cannot revive funds. SQL must enforce these rules atomically, including held and consumed amounts. `scripts/testPaidPurchaseRecovery.ts` covers these decisions and an actual 15-second hanging-transport deadline; see `tests/purchase-verification-receipt.json` for the final passing count and exact source hashes.
 
 No live v2 permission, mapping, response, historical resend or recovery transaction has been verified here. The adapter is implemented and locally tested; **live recovery remains unqualified**. Before sales, prove the integrated reconciliation route or authenticated historical resend for missed events, plus pending UX that does not encourage another charge.
+
+## Payment-session credential integration correction
+
+The October 29 payment session found two configuration gaps. `app.config.js` now maps only `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` into `extra.revenueCatIosApiKey`, which the actual Plus client uses. Missing/blank configuration remains unavailable; a nonempty secret, other-platform or malformed key is rejected without printing its value. No server secret is a fallback. The public SDK key must belong to the verified Apple app; local format validation does not establish that mapping. [RevenueCat key types](https://www.revenuecat.com/docs/projects/authentication).
+
+The Edge API now separates `REVENUECAT_SECRET_API_KEY` for v1 subscriber reads from `REVENUECAT_V2_SECRET_API_KEY` for scoped v2 purchase recovery. Missing v2 credentials leave a requested recovery pending before any recovery call or grant; they do not erase an existing ledger. The v1 key is never reused for v2. This corrects a documented incompatibility, not a claimed live authentication failure: the new required credentials were absent at the session's readback. [RevenueCat v2 authentication](https://www.revenuecat.com/docs/api-v2).
+
+`REVENUECAT_WEBHOOK_SECRET` remains the shared Authorization-header value for the new webhook; this handler does not implement HMAC. Historical secret names and legacy webhook configuration are preserved and are not automatically substituted into the new integration. Account-side key scopes, ownership, configuration and actual delivery still require live verification. See `PURCHASE_RESTORE_REFUND_QA.md` for the new test receipts and deployment boundary.
+
+## Authorized Development integration readback, 23:15 UTC
+
+This supersedes the earlier unavailable account-readback and empty new-mapping baseline above. After the coordinator verified the actual Apple app/products, Development `nearr_plus_config` now has project `proj7d727ef6`, app `app7434757255` (`com.nearr.ios`), and token mappings `com.nearr.tokens.20.v2`→`prodd6ac7e45d4`, `.50.v2`→`prodc41f2e9dd5`, `.200.v2`→`prod394420f4e2`. Only these three fields changed. All catalog/sales/policy qualification remains false; the legacy Test Store configuration and financial history are intact. The new unlimited subscription SKU remains `com.nearr.plus.unlimited.monthly.v1`; its internal Apple RevenueCat product ID `prod1af9b7c25a` was separately read back by the coordinator and is not a token-map entry.
+
+Only Development `plus-api` source was redeployed from reviewed commit `b7b59ab`, initially version 3 ACTIVE with JWT verification. The exact existing EAS public Apple key was explicitly provisioned into the historical v1 server slot `REVENUECAT_SECRET_API_KEY`; format and approved hash were verified without exposing its value. Temporary private storage was removed. After project-secret provisioning, all function version counters advanced by one with identical source hashes/JWT settings; `plus-api` is now version 4. V1 permits public-key subscriber lookup, but this GET can create missing customers, so no invented identity was used to probe it. Our verifier does not require secret-only subscriber attributes. This provides a feasible v1 credential route without creating a broader permission key; actual known-customer response qualification is still pending. [v1 authentication](https://www.revenuecat.com/docs/api-v1), [Get or Create Customer](https://www.revenuecat.com/docs/api-v1/customers).
+
+At the 23:15:11 UTC names-only readback, separate v2 and new webhook secret names were absent. V2 requires a distinct permissioned key, and no v1/public fallback exists. Coordinator operations after that timestamp require separate evidence. No customer receipt, StoreKit transaction, recovery success or webhook delivery is claimed by these configuration writes. [Deployment, mapping and credential receipts](payment-qualification/2026-10-29T23-11-11-920Z-development-plus-api/deployment-receipt.json), [purchase QA](PURCHASE_RESTORE_REFUND_QA.md).
+
+## Approved scoped credentials and live read permissions, 23:26 UTC
+
+The founder subsequently approved the scoped v2 key and authenticated Apple Sandbox webhook. The coordinator created the key; this agent provisioned only `REVENUECAT_V2_SECRET_API_KEY` and `REVENUECAT_WEBHOOK_SECRET` to Development from the restricted ignored handoff file and removed the file/directory. Previous secret digests were compared only in memory and remained unchanged. No credential value was printed or retained in the dossier.
+
+Actual v2 GET of Apple product `prodd6ac7e45d4?expand=app` returned 200 and matched the approved 20-pack, consumable type, Apple app, project and bundle. The explicitly synthetic nonexistent store-purchase lookup returned 200 with zero items and no pagination. No customer was created. This qualifies the relevant read permissions and product schema, not a purchase, refund or recovery transaction. Correct webhook authentication with an invalid empty event returned 400 `invalid_event`; wrong/missing authentication returned 401. These are direct handler probes, not RevenueCat dashboard delivery evidence. The coordinator owns the separate saved webhook and dashboard test receipt.
+
+All activation gates, configuration and eleven financial fingerprints remained unchanged. The project-secret refresh advanced `plus-api` to version 5 and the new webhook to version 4, with all source hashes/JWT settings unchanged; no function source was redeployed. [Actual provisioning and read-only checks](payment-qualification/2026-10-29T23-25-49-551Z-recovery-webhook/provisioning-receipt.json). The older absent-secret state above is historical, while real StoreKit qualification and legacy reconciliation remain open.
+
+## Qualified dashboard TEST transport, 23:44 UTC
+
+The coordinator saved the authenticated Apple-only Sandbox webhook. Its first genuine dashboard TEST returned 400 `unknown_customer`, exposing the synthetic-identity routing gap. The scoped fix in commit `63600e8` acknowledges only authenticated/configuration-matched TEST events before customer/network/financial work and retains all existing guards. It passed 28 actual-handler scenarios plus the complete prebuild/typecheck. Only Development `revenuecat-plus-webhook` was redeployed, now version 5; `plus-api` stays 5 and every other function source/version is unchanged.
+
+The actual RevenueCat dashboard resend returned HTTP 200 at 23:44:00 UTC with `{ok:true,test:true,applied:false}`. The UI generated a new TEST event UUID, so this proves the saved webhook's authenticated TEST delivery, not live duplicate-event handling, a real store purchase or a successful financial mutation. The before-fix 400 and after-fix 200 receipts remain separate. [Actual dashboard resend](payment-qualification/revenuecat-test-delivery-after-fix.txt), [event identity distinction](payment-qualification/revenuecat-test-delivery.json), [qualified deployment](payment-qualification/2026-10-29T23-42-53-320Z-test-webhook/deployment-receipt.json).
+
+Independent post-delivery readback at 23:44:38 UTC verified all eleven financial fingerprints unchanged, all seven new Plus/paid tables in scope empty, 477 available uses/zero reserved, unchanged configuration/migrations, and all qualification gates false. `plus-api` and the new webhook are both version 5. [Post-dashboard readback](payment-qualification/2026-10-29T23-42-53-320Z-test-webhook/post-dashboard-resend-readback.json). Real lifecycle purchase/recovery tests remain required before activation.

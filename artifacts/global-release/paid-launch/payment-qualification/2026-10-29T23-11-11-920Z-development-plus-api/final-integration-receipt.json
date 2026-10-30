@@ -1,0 +1,217 @@
+{
+  "capturedAt": "2026-10-29T23:17:24.669Z",
+  "target": "qnfxnmvxpjzfydgudtvs",
+  "sourceCommit": "b7b59ab366fb0227dd3f035bf7786676c39ba320",
+  "sourceDeployment": [
+    "plus-api"
+  ],
+  "edgeSourceUnchangedSinceExplicitDeployment": true,
+  "edgeVersionChangesAfterProjectSecretProvision": [
+    {
+      "name": "create-share-job",
+      "before": 76,
+      "after": 77
+    },
+    {
+      "name": "delete-account",
+      "before": 58,
+      "after": 59
+    },
+    {
+      "name": "delete-share-job",
+      "before": 52,
+      "after": 53
+    },
+    {
+      "name": "e2e-place-fixture",
+      "before": 53,
+      "after": 54
+    },
+    {
+      "name": "get-onboarding-tutorial",
+      "before": 11,
+      "after": 12
+    },
+    {
+      "name": "get-place-videos",
+      "before": 10,
+      "after": 11
+    },
+    {
+      "name": "monetization",
+      "before": 44,
+      "after": 45
+    },
+    {
+      "name": "plus-api",
+      "before": 3,
+      "after": 4
+    },
+    {
+      "name": "process-share-jobs",
+      "before": 145,
+      "after": 146
+    },
+    {
+      "name": "process-share-link",
+      "before": 89,
+      "after": 90
+    },
+    {
+      "name": "public-place",
+      "before": 12,
+      "after": 13
+    },
+    {
+      "name": "reset-onboarding-qa",
+      "before": 1,
+      "after": 2
+    },
+    {
+      "name": "revenuecat-plus-webhook",
+      "before": 2,
+      "after": 3
+    },
+    {
+      "name": "revenuecat-webhook",
+      "before": 9,
+      "after": 10
+    }
+  ],
+  "edge": [
+    {
+      "name": "create-share-job",
+      "version": 77,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "0d9b192e25c6c0ef637cfd7fa82d35963f7ad6509bb0acc685796935935669f0",
+      "updatedAt": "2026-10-29T21:33:51.048Z"
+    },
+    {
+      "name": "delete-account",
+      "version": 59,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "6ef7334c1572f4f754d85cca815879e9ecd15625c0c6960c2063d0c5d6ab82c7",
+      "updatedAt": "2026-09-03T22:53:41.058Z"
+    },
+    {
+      "name": "delete-share-job",
+      "version": 53,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "88c625982be7d7c64d81c9bdbcd38a8333ac22c6ba61844190fb8848780c73dc",
+      "updatedAt": "2026-08-25T00:48:52.746Z"
+    },
+    {
+      "name": "e2e-place-fixture",
+      "version": 54,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "20f26cb1e6d13ebc5275901f1d467f57881e25993cdb8b0d07ad5cd2b6932397",
+      "updatedAt": "2026-08-21T03:43:48.415Z"
+    },
+    {
+      "name": "get-onboarding-tutorial",
+      "version": 12,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "59aab65fdc34c361b3b747257d5d5b0b81ba0a3e7ca596f46b37bee63d1fc542",
+      "updatedAt": "2026-09-11T02:31:47.605Z"
+    },
+    {
+      "name": "get-place-videos",
+      "version": 11,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "92141568b51776c9b6ebf348147ce0706e6172266cc3ac699af06b6edbd8f050",
+      "updatedAt": "2026-09-06T20:31:01.461Z"
+    },
+    {
+      "name": "monetization",
+      "version": 45,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "a58057377579ab1d5e447e023751c2dd5b9c7cc5d5883714b8bde77de1a8135f",
+      "updatedAt": "2026-09-10T18:45:21.565Z"
+    },
+    {
+      "name": "plus-api",
+      "version": 4,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "b4d965310981a135c59a56812c5af1f40e469c9d9fd8a7ce12ef0cbfacb4a338",
+      "updatedAt": "2026-10-29T23:11:39.978Z"
+    },
+    {
+      "name": "process-share-jobs",
+      "version": 146,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "df4827bf9a1e04c7c5ad0fdd7306db7fe51b7fb25dbbcd4f233aaa3f7a861276",
+      "updatedAt": "2026-10-29T21:34:00.107Z"
+    },
+    {
+      "name": "process-share-link",
+      "version": 90,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "bbffbb11903cce6c6f5df933dbda0365a361ebf7b67a70b8e1ef004e43645222",
+      "updatedAt": "2026-10-29T21:34:08.262Z"
+    },
+    {
+      "name": "public-place",
+      "version": 13,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "ddd57441cdd4647b14fded422375837861a489a128971054a2f7a4e2471684b9",
+      "updatedAt": "2026-09-05T23:22:31.004Z"
+    },
+    {
+      "name": "reset-onboarding-qa",
+      "version": 2,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "sha256": "dd0340fea538c76ab3e6edb25ec2727b1923e7b1c74a35698e8e0289cc02f4d3",
+      "updatedAt": "2026-09-11T02:31:52.551Z"
+    },
+    {
+      "name": "revenuecat-plus-webhook",
+      "version": 3,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "ae0e1d55f8d5856fd7cbad249e638edfb44a50b1f099fdfaabe9578553b931cc",
+      "updatedAt": "2026-10-29T21:33:42.927Z"
+    },
+    {
+      "name": "revenuecat-webhook",
+      "version": 10,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "sha256": "db5a050393480243cac20326fe9843c894919a4a29791ffebe2ac362abb1a808",
+      "updatedAt": "2026-09-10T19:27:45.629Z"
+    }
+  ],
+  "financialUnchanged": true,
+  "walletTotals": [
+    {
+      "available_uses": 477,
+      "reserved_uses": 0,
+      "wallets": 93
+    }
+  ],
+  "allNewQualificationFlagsClosed": true,
+  "productionMutation": false,
+  "realStoreKitTransactions": false,
+  "providerCalls": false,
+  "liveRevenueCatCustomerApiProbe": false,
+  "secretValuesRecorded": false,
+  "passed": true,
+  "evidenceHashes": {
+    "deployment-receipt.json": "52fbc2ecbc979df41221aeceb0b1a48f7af58fe846dcf362b30aed25a7658b88",
+    "catalog-mapping-receipt.json": "d500678693651d9eebfe61b56875047f9652735f85f092ad33536ec5263c50c8",
+    "v1-credential-receipt.json": "cc6d5ffe8ca30329a73e98a39288d669c1e17da2d700d18eefab66ce1f751c87",
+    "final-development-paid-readback.json": "f83e3c5e8dd42059ff4a84c2c6ff76f102638c2c3abdf60db514746dd42d0796",
+    "development-payment-state.json": "a280a9996d91b67d151cb8b4687c970d8b18dbd956568b0984c48b7045029a4f"
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "state": "offers",
+  "locale": "de",
+  "theme": "dark",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of local HTML anchor observed in compact-grid screenshot",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "bundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "display": {
+    "size": "1080x2400",
+    "density": "Physical density: 420",
+    "storedFontScale": 1,
+    "effectiveFontScale": 1.5,
+    "effectiveFontScaleEvidence": "Banner line height and title line height approximately 1.5 times same-source Light/default despite stored and Activity configuration 1.0; retained native text metrics after prior stress. Excluded from default-size matrix."
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/offers-de-dark-retained-large-top.png",
+      "capturedAt": "2026-10-30T01:08:25.685Z",
+      "sha256": "067612f26923937f0a186427715f6d50d05d91b3ebba4bad1d667e0d328ccc7f",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+        "Nicht jetzt",
+        "Deine nächste Entdeckung",
+        "Entdecke weitere Orte",
+        "Deine gespeicherten Orte gehören dir, mit oder ohne Abo.",
+        "Deine Suchvorgänge",
+        "Monatliche kostenlose Suchen",
+        "1 von 3 verfügbar",
+        "Für ausstehende Ergebnisse reserviert: 1",
+        "Kostenlose Suchen werden am 1. Nov. 2026 erneuert (UTC).",
+        "Gekaufte Tokens: 47",
+        "Für ausstehende Ergebnisse reserviert: 3"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-dark-retained-large-scroll1.png",
+      "capturedAt": "2026-10-30T01:08:30.589Z",
+      "sha256": "e6fb5ac9666d2ba397ef82b26fef3b95ed3f1b705e95137b351f2a0d829baa37",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Deine Suchvorgänge",
+        "Monatliche kostenlose Suchen",
+        "1 von 3 verfügbar",
+        "Für ausstehende Ergebnisse reserviert: 1",
+        "Kostenlose Suchen werden am 1. Nov. 2026 erneuert (UTC).",
+        "Gekaufte Tokens: 47",
+        "Für ausstehende Ergebnisse reserviert: 3",
+        "Gekaufte Tokens verfallen nicht. Plus verbraucht sie nicht.",
+        "Nearr Plus",
+        "Unbegrenzte Suchen",
+        "Unbegrenzte erfolgreiche Videosuchen, solange Plus aktiv ist. Kein Tokenverbrauch.",
+        "1,99 $ / Monat"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-dark-retained-large-scroll2.png",
+      "capturedAt": "2026-10-30T01:08:35.872Z",
+      "sha256": "b20a8b672108e53b9aef02c817be04adca6d89b985aa1c31129e949bec533709",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Für ausstehende Ergebnisse reserviert: 3",
+        "Gekaufte Tokens verfallen nicht. Plus verbraucht sie nicht.",
+        "Nearr Plus",
+        "Unbegrenzte Suchen",
+        "Unbegrenzte erfolgreiche Videosuchen, solange Plus aktiv ist. Kein Tokenverbrauch.",
+        "1,99 $ / Monat",
+        "Nearr Plus abonnieren",
+        "Apple rechnet monatlich ab und verlängert automatisch, sofern du nicht in den Abonnementeinstellungen kündigst. Kein kostenloser Testzeitraum und kein Jahresabo.",
+        "Oder kaufe Suchen nach Bedarf",
+        "Ein Token bezahlt eine erfolgreiche Videosuche. Gekaufte Tokens verfallen nicht."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-dark-retained-large-scroll3.png",
+      "capturedAt": "2026-10-30T01:08:41.268Z",
+      "sha256": "7ef63a19400ddca85ab367140193ea2b3353766d8c3e8c22b47f471127f75d9e",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Nearr Plus abonnieren",
+        "Apple rechnet monatlich ab und verlängert automatisch, sofern du nicht in den Abonnementeinstellungen kündigst. Kein kostenloser Testzeitraum und kein Jahresabo.",
+        "Oder kaufe Suchen nach Bedarf",
+        "Ein Token bezahlt eine erfolgreiche Videosuche. Gekaufte Tokens verfallen nicht.",
+        "Starter",
+        "20 Tokens",
+        "20 Tokens kaufen · 1,19 $",
+        "Entdecker",
+        "50 Tokens"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-de-dark-retained-large-scroll4.png",
+      "capturedAt": "2026-10-30T01:08:46.238Z",
+      "sha256": "2d9af38325b98d2c1f87057cd22049d2937818bb9a12e0ea71fc12dc6fb53db0",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Ein Token bezahlt eine erfolgreiche Videosuche. Gekaufte Tokens verfallen nicht.",
+        "Starter",
+        "20 Tokens",
+        "20 Tokens kaufen · 1,19 $",
+        "Entdecker",
+        "50 Tokens",
+        "50 Tokens kaufen · 2,49 $",
+        "Abenteurer",
+        "200 Tokens",
+        "200 Tokens kaufen · 5,00 $",
+        "Zuerst gilt Plus, dann die monatlichen kostenlosen Suchen, dann gekaufte Tokens.",
+        "Die kostenlose Version enthält 3 erfolgreiche Videosuchen pro Kalendermonat. (UTC)"
+      ],
+      "unedited": true
+    }
+  ],
+  "provisionalCapture": true
+}

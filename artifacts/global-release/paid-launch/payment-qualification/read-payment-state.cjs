@@ -1,0 +1,22 @@
+/** Read-only Development configuration/aggregate evidence; no secret values. */
+const fs=require('node:fs');const path=require('node:path');
+const root=path.resolve(__dirname,'../../../..');
+const {sql,json,command}=require(path.join(root,'scripts/finalBackendReadiness.cjs'));
+const target={ref:'qnfxnmvxpjzfydgudtvs',cwd:'C:\\Users\\andre\\.codex\\worktrees\\nearr-app-store-final\\Nearr'};
+const out=path.resolve(process.argv[2]||'');
+if(!out.startsWith(__dirname+path.sep)||!fs.existsSync(out))throw Error('Existing task evidence folder required');
+const report={capturedAt:new Date().toISOString(),target:target.ref,sourceCommit:command('git',['rev-parse','HEAD']).trim(),readOnly:true,productionAccess:false};
+report.catalogConfig=sql(target,'select product_id,entitlement_id,offering_id,revenuecat_app_id,revenuecat_project_id,revenuecat_token_product_ids,environment,free_finds,subscription_benefit,sales_enabled,enforce_allowance,catalog_verified,token_catalog_verified,release_qualified,paid_find_policy_enabled,legacy_obligations_reconciled from public.nearr_plus_config');
+report.legacyExperiment=sql(target,'select environment_name,enabled from public.token_monetization_config');
+report.walletTotals=sql(target,'select count(*)::integer as wallets,coalesce(sum(available_uses),0) as available_uses,coalesce(sum(reserved_uses),0) as reserved_uses from public.place_find_wallets');
+report.paidCounts=sql(target,"select 'customers' as relation,count(*)::integer as rows from public.nearr_plus_customers union all select 'entitlements',count(*) from public.nearr_plus_entitlements union all select 'purchase_callback_states',count(*) from public.nearr_paid_purchase_states union all select 'purchase_recovery_receipts',count(*) from public.nearr_paid_recovery_receipts union all select 'webhook_events',count(*) from public.nearr_plus_webhook_events union all select 'paid_finds',count(*) from public.nearr_paid_finds");
+report.purchaseStates=sql(target,'select environment,state,count(*)::integer as count from public.nearr_paid_purchase_states group by environment,state order by environment,state');
+const secrets=json('supabase',['secrets','list','--project-ref',target.ref,'-o','json']);
+const secretNames=new Set(secrets.map(s=>s.name));
+report.revenueCatSecretNames=[...secretNames].filter(n=>/REVENUECAT|REVENUE_CAT|^RC_/i.test(n)).sort();
+report.secretPresence=Object.fromEntries(['REVENUECAT_SECRET_API_KEY','REVENUECAT_V2_SECRET_API_KEY','REVENUECAT_WEBHOOK_SECRET'].map(n=>[n,secretNames.has(n)]));
+report.secretPresenceLimitation='Names only: existence does not verify value, RC permissions, authentication match or delivery.';
+report.edge=json('supabase',['functions','list','--project-ref',target.ref,'-o','json']).filter(f=>['plus-api','revenuecat-plus-webhook','monetization','monetization-api','revenuecat-webhook'].includes(f.name)).map(f=>({name:f.name,version:f.version,status:f.status,verifyJwt:f.verify_jwt}));
+report.finishedAt=new Date().toISOString();
+fs.writeFileSync(path.join(out,'development-payment-state.json'),JSON.stringify(report,null,2)+'\n');
+console.log(JSON.stringify(report));

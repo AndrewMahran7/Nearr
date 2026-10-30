@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
   "preparedAt": "2026-10-29",
-  "status": "DRAFT_NOT_UPLOADED_NOT_NATIVE_REVIEWED",
+  "status": "SAVED_IN_APPLE_DRAFTS_NOT_SUBMITTED_NOT_NATIVE_REVIEWED",
   "readyToUpload": false,
   "nativeSpeakerReviewed": false,
-  "appStoreReadbackVerified": false,
+  "appStoreReadbackVerified": true,
   "subscriptionGroup": {
-    "referenceName": "Nearr Plus Unlimited",
+    "referenceName": "Nearr Plus",
     "appNameDisplayOption": "USE_APP_NAME",
-    "groupPlacementVerified": false,
-    "note": "Proposed group label only. Read existing Pro groups/obligations before creating or choosing a group; do not create a parallel subscription charge by assumption."
+    "groupPlacementVerified": true,
+    "note": "Actual new group22527278 contains only the new monthly unlimited subscription6828623567. All10 group labels saved/read back with Use App Name. Legacy obligations were not migrated or modified."
   },
   "products": [
     {
@@ -64,7 +64,7 @@
     "subscriptionGroupDisplayName": {
       "officialNumericMaximumVerified": null,
       "localConservativeBudget": 30,
-      "liveFieldValidationPending": true
+      "liveFieldValidationPending": false
     }
   },
   "sources": [
@@ -80,13 +80,13 @@
     }
   ],
   "notes": [
-    "Model-authored candidate copy; native-speaker and signed-iOS review remain outstanding. Nothing was uploaded or saved remotely.",
+    "Model-authored copy saved to Apple drafts and reopened2026-10-29 for all40 product localizations and10 group labels. Native-speaker and signed-iOS review remain outstanding.",
     "Pack labels reuse locales/paidMonetization.ts. Short descriptions are adapted to Apple's character limits and preserve exact quantities/non-expiry.",
     "The same ASCII brand label Nearr Plus is intentional for subscription and group in every locale. No control characters, markup, emoji or decorative symbols in those names.",
     "These descriptions express the intended paid-launch benefit. They must not be published while recognition, catalog, eligibility, provider and purchase qualification gates remain closed.",
     "No prices are embedded. StoreKit supplies current localized prices; target USD prices and unresolved Apple price points are documented separately.",
     "Descriptions do not promise recognition accuracy. Product duration is configured as one month; the app and native checkout disclose automatic renewal, exact price and cancellation.",
-    "Group reference/display label is a proposal, not evidence that a group exists or that legacy Pro obligations are resolved."
+    "Actual group Nearr Plus22527278 and10localized display names verified. Draft group creation does not certify legacy Pro obligation migration."
   ],
   "locales": {
     "en-US": {
@@ -299,5 +299,54 @@
         }
       }
     }
+  },
+  "savedProgress": {
+    "checkedAt": "2026-10-29T23:12:23.6583270Z",
+    "subscriptionAppleId": "6828623567",
+    "subscriptionGroupAppleId": "22527278",
+    "subscriptionSavedAndReadBackLocales": [
+      "en-US",
+      "es-MX",
+      "es-ES",
+      "pt-BR",
+      "fr-FR",
+      "de-DE",
+      "it",
+      "ja",
+      "ko",
+      "zh-Hans"
+    ],
+    "groupSavedAndReadBackLocales": [
+      "en-US",
+      "es-MX",
+      "es-ES",
+      "pt-BR",
+      "fr-FR",
+      "de-DE",
+      "it",
+      "ja",
+      "ko",
+      "zh-Hans"
+    ],
+    "tokenSavedAndReadBackLocales": [
+      "en-US",
+      "es-MX",
+      "es-ES",
+      "pt-BR",
+      "fr-FR",
+      "de-DE",
+      "it",
+      "ja",
+      "ko",
+      "zh-Hans"
+    ],
+    "readbackReport": "APPLE_CATALOG_READBACK.md",
+    "complete": true,
+    "tokenAppleIds": {
+      "com.nearr.tokens.20.v2": "6828629768",
+      "com.nearr.tokens.50.v2": "6828632590",
+      "com.nearr.tokens.200.v2": "6828633077"
+    },
+    "reviewScreenshots": "PENDING_GENUINE_IOS_ASSETS"
   }
 }

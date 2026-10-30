@@ -1,0 +1,188 @@
+- region "Notifications alt+T":
+  - list:
+    - button "Close toast":
+    - generic: Offering "Nearr Plus and Token Packs (nearr_paid_v1)" was updated.
+- link "skip to content":
+  - /url: "#main-content"
+- banner:
+  - link "Home":
+    - /url: /overview
+    - img "Home"
+  - button "Nearr Dev":
+    - generic: Nearr Dev
+  - combobox "Search…"
+  - generic: Ctrl+K
+  - button "Rico":
+  - link "Help":
+    - /url: /settings/support
+  - link "Notifications":
+    - /url: /whats-new
+    - img "Unread notifications"
+  - link "Account":
+    - /url: /settings
+- navigation:
+  - link "Overview":
+    - /url: /projects/7d727ef6/overview
+    - generic: Overview
+  - link "Analytics":
+    - /url: /projects/7d727ef6/charts
+    - text: Analytics
+  - link "Customers":
+    - /url: /projects/7d727ef6/customer-lists
+    - generic: Customers
+  - link "Product catalog" [expanded]:
+    - /url: /projects/7d727ef6/product-catalog
+    - text: Product catalog
+  - link "Offerings":
+    - /url: /projects/7d727ef6/product-catalog/offerings
+    - generic: Offerings
+  - link "Products":
+    - /url: /projects/7d727ef6/product-catalog/products
+    - generic: Products
+  - link "Entitlements":
+    - /url: /projects/7d727ef6/product-catalog/entitlements
+    - generic: Entitlements
+  - link "In-app currencies":
+    - /url: /projects/7d727ef6/product-catalog/virtual-currencies
+    - generic: In-app currencies
+  - link "Web discounts":
+    - /url: /projects/7d727ef6/web-discounts
+    - generic: Web discounts
+  - link "Paywalls":
+    - /url: /projects/7d727ef6/paywalls
+    - generic: Paywalls
+  - link "Targeting":
+    - /url: /projects/7d727ef6/targeting
+    - generic: Targeting
+  - link "Experiments":
+    - /url: /projects/7d727ef6/experiments
+    - generic: Experiments
+  - link "Funnels":
+    - /url: /projects/7d727ef6/funnels
+    - generic: Funnels
+  - link "Ads":
+    - /url: /projects/7d727ef6/ads
+    - text: Ads
+  - link "Lifecycle":
+    - /url: /projects/7d727ef6/lifecycle/customer-center
+    - text: Lifecycle
+  - link "Authentication":
+    - /url: /projects/7d727ef6/auth/methods
+    - text: Authentication
+  - separator
+  - link "Apps":
+    - /url: /projects/7d727ef6/apps
+    - generic: Apps
+  - link "Web":
+    - /url: /projects/7d727ef6/web
+    - generic: Web
+  - link "API keys":
+    - /url: /projects/7d727ef6/api-keys
+    - generic: API keys
+  - link "Integrations":
+    - /url: /projects/7d727ef6/integrations
+    - generic: Integrations
+  - link "Project settings":
+    - /url: /projects/7d727ef6/settings
+    - generic: Project settings
+  - button "Collapse navigation":
+- main:
+  - navigation:
+    - list:
+      - link "Nearr Dev":
+        - /url: /projects/7d727ef6
+      - listitem: /
+      - link "Product catalog":
+        - /url: /projects/7d727ef6/product-catalog
+      - listitem: /
+      - link "Offerings":
+        - /url: /projects/7d727ef6/product-catalog/offerings
+      - listitem: /
+      - link "nearr_paid_v1":
+        - /url: /projects/7d727ef6/product-catalog/offerings/ofrngca684d8d47
+  - heading "nearr_paid_v1" [level=2]
+  - button "Delete":
+    - text: Delete
+  - button "Edit":
+    - text: Edit
+  - table:
+    - row "Identifier nearr_paid_v1":
+      - rowheader "Identifier":
+        - generic: Identifier
+      - cell "nearr_paid_v1":
+        - generic: nearr_paid_v1
+    - row "Display Name Nearr Plus and Token Packs":
+      - rowheader "Display Name":
+        - generic: Display Name
+      - cell "Nearr Plus and Token Packs":
+        - paragraph: Nearr Plus and Token Packs
+    - row "Created 2026-10-29, 11:01 p.m. UTC":
+      - rowheader "Created":
+        - generic: Created
+      - cell "2026-10-29, 11:01 p.m. UTC":
+        - paragraph: 2026-10-29, 11:01 p.m. UTC
+    - row "Paywall Loading":
+      - rowheader "Paywall":
+        - generic: Paywall
+      - cell "Loading":
+        - generic "Loading"
+  - tablist:
+    - tab "Packages" [selected]:
+      - paragraph: Packages
+    - tab "Metadata":
+      - paragraph: Metadata
+    - tab "Paywall":
+      - paragraph: Paywall
+  - tabpanel "Packages":
+    - paragraph:
+      - text: Use packages to set up which products to offer in each of your apps across platforms.
+      - link "Learn more.":
+        - /url: https://www.revenuecat.com/docs/getting-started/entitlements#adding-packages
+    - heading "200 successful finds; purchased tokens never expire" [level=4]
+    - paragraph: tokens_200_v2
+    - button "copy package identifier":
+    - table:
+      - row "Nearr iOS Dev Sandbox Nearr Adventurer 200 v2 com.nearr.tokens.200.v2 copy product identifier":
+        - generic "Nearr iOS Dev Sandbox":
+        - link "Nearr Adventurer 200 v2":
+          - /url: /projects/7d727ef6/product-catalog/products/prod394420f4e2
+          - paragraph: Nearr Adventurer 200 v2
+        - generic: com.nearr.tokens.200.v2
+        - button "copy product identifier":
+    - heading "50 successful finds; purchased tokens never expire" [level=4]
+    - paragraph: tokens_50_v2
+    - button "copy package identifier":
+    - table:
+      - row "Nearr iOS Dev Sandbox Nearr Explorer 50 v2 com.nearr.tokens.50.v2 copy product identifier":
+        - generic "Nearr iOS Dev Sandbox":
+        - link "Nearr Explorer 50 v2":
+          - /url: /projects/7d727ef6/product-catalog/products/prodc41f2e9dd5
+          - paragraph: Nearr Explorer 50 v2
+        - generic: com.nearr.tokens.50.v2
+        - button "copy product identifier":
+    - heading "20 successful finds; purchased tokens never expire" [level=4]
+    - paragraph: tokens_20_v2
+    - button "copy package identifier":
+    - table:
+      - row "Nearr iOS Dev Sandbox Nearr Starter 20 v2 com.nearr.tokens.20.v2 copy product identifier":
+        - generic "Nearr iOS Dev Sandbox":
+        - link "Nearr Starter 20 v2":
+          - /url: /projects/7d727ef6/product-catalog/products/prodd6ac7e45d4
+          - paragraph: Nearr Starter 20 v2
+        - generic: com.nearr.tokens.20.v2
+        - button "copy product identifier":
+    - heading "Unlimited successful finds while subscribed" [level=4]
+    - paragraph: $rc_monthly
+    - button "copy package identifier":
+    - table:
+      - row "Nearr iOS Dev Sandbox Nearr Plus Unlimited Monthly com.nearr.plus.unlimited.monthly.v1 copy product identifier":
+        - generic "Nearr iOS Dev Sandbox":
+        - link "Nearr Plus Unlimited Monthly":
+          - /url: /projects/7d727ef6/product-catalog/products/prod1af9b7c25a
+          - paragraph: Nearr Plus Unlimited Monthly
+        - generic: com.nearr.plus.unlimited.monthly.v1
+        - button "copy product identifier":
+  - paragraph: REST API Identifier
+  - button:
+  - paragraph: ofrngca684d8d47
+  - button "copy text":

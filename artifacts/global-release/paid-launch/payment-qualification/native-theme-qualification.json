@@ -1,0 +1,49 @@
+{
+  "startedAtUtc": "2026-10-30T00:29:32.9685603Z",
+  "scope": "Development fixture theme only; no native pixel or purchase qualification",
+  "sourceSha256": {
+    "app/dev-qa.tsx": "89918bfaf3d6d4aa847aa774093218179d2120023c43487f4ead61b51ac17e26",
+    "components/PaidFindsNativePreview.tsx": "8acf0d24b46c1d28d461ab14275e7cb2263891a635e374ed809941175709f667",
+    "scripts/testPaidNativePreview.ts": "c00206ef942c279928b42f1b0a62bb09a83fdce37a248761c2d59370d16e5062",
+    "package.json": "ca647831a42121d5da222b4456927f35fec561afca4bb0b752d2c6fbc5086082"
+  },
+  "focusedRenderer": {
+    "passed": true,
+    "scenarios": 11,
+    "command": "npm run test:paid-native-preview",
+    "elapsedSeconds": 2.5235077
+  },
+  "phases": [
+    {
+      "elapsedSeconds": 1.321,
+      "sha256": "fbac985da02dee9a8062b8e23959e890824e28f62034f35b95707880d7b4ee37",
+      "startedAtUtc": "2026-10-30T00:29:32.9747873Z",
+      "exitCode": 0,
+      "command": "node node_modules/ts-node/dist/bin.js -P scripts/tsconfig.json scripts/testPaidFindsClientRuntime.ts",
+      "log": "native-theme-client-runtime.log",
+      "completedAtUtc": "2026-10-30T00:29:34.300665Z"
+    },
+    {
+      "includesTypeScript": true,
+      "elapsedSeconds": 255.126,
+      "startedAtUtc": "2026-10-30T00:29:34.3654747Z",
+      "sha256": "4f62db41e10d0d139d45e48be37329a108ad8f2566cb7daa622b7e48dbe0a5d2",
+      "completedAtUtc": "2026-10-30T00:33:49.4941814Z",
+      "log": "native-theme-prebuild.log",
+      "exitCode": 0,
+      "command": "npm run test:prebuild"
+    }
+  ],
+  "completedAtUtc": "2026-10-30T00:33:49.520901Z",
+  "passed": true,
+  "sourceHashesStable": true,
+  "logSensitiveValueScan": {
+    "passed": true,
+    "files": 2
+  },
+  "sourceCommit": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "prebuildTopLevelCommands": {
+    "prerequisites": 19,
+    "main": 114
+  }
+}

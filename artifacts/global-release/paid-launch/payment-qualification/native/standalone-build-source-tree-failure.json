@@ -1,0 +1,29 @@
+{
+  "startedAt": "2026-10-29T23:23:12.728Z",
+  "sourceSha": "b7b59ab366fb0227dd3f035bf7786676c39ba320",
+  "nativeCacheSource": "3dbf10278368c2074afa095627b71be21f24aaa3",
+  "sourceHashes": {
+    "app.config.js": "abdf00108f89ce888d9460ae7008ec371233cc1fd17969e5f041582e3b13ee25",
+    "index.js": "2e57309f242772a2f860fc69936af080d2bc71c50472f4e88d032c50a5b1a925",
+    "app/plus.tsx": "354cfcf24af9a666cdee848e6ba2a04fc0f369b4a8e9553155ac0dcf8f066aad",
+    "app/dev-qa.tsx": "153ee2f6d3540480eced5d1483fba2e77c1cbbda47e0ea7e90a82d8ddf903d59",
+    "components/PaidFindsNativePreview.tsx": "90e6ae3b261c76ba2098292e87498472c3419b1798c65c325e066cb182ceb9dd",
+    "lib/paidPreviewFixtures.ts": "54d17e0bd37369d95e450baf97419f13857f6f847b57c302d4c7ef431a6a5adb",
+    "lib/plusClient.ts": "d0918d565b27ed7ddfa1cba0ab1f84214395c696d2ee6e250040fbd7b990ed4e"
+  },
+  "command": "gradlew.bat :app:assembleRelease --offline -PreactNativeArchitectures=x86_64 --max-workers=1 --no-daemon --console=plain --init-script C:\\Users\\andre\\.codex\\worktrees\\nearr-paid-launch-final\\Nearr\\.tmp\\payment-standalone.init.gradle",
+  "pid": 36996,
+  "environment": "Development",
+  "fixtureBundleDev": true,
+  "nativeDeveloperSupport": false,
+  "abi": "x86_64",
+  "workers": 1,
+  "offline": true,
+  "deadlineMinutes": 15,
+  "storeSigned": false,
+  "realPurchaseEvidence": false,
+  "finishedAt": "2026-10-29T23:25:34.603Z",
+  "exitCode": 1,
+  "timedOut": false,
+  "sourceUnchanged": true
+}

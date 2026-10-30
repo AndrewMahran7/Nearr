@@ -1,0 +1,140 @@
+{
+  "state": "offers",
+  "locale": "it",
+  "theme": "dark",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of local HTML anchor observed in compact-grid screenshot",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "bundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "display": {
+    "size": "1080x2400",
+    "density": "Physical density: 420",
+    "fontScale": 1
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/offers-it-dark-default-top.png",
+      "capturedAt": "2026-10-30T01:24:30.837Z",
+      "sha256": "e793905f1a0cc8cdf51e3f20e561c2a576cec45921a116d99f677292ff9dda7a",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+        "Non ora",
+        "La tua prossima scoperta",
+        "Continua a scoprire luoghi",
+        "I tuoi luoghi salvati restano tuoi, con o senza abbonamento.",
+        "Le tue ricerche",
+        "Ricerche gratuite mensili",
+        "1 di 3 disponibili",
+        "Riservate per risultati in attesa: 1",
+        "La quota gratuita si rinnova il 1 nov 2026 (UTC).",
+        "Token acquistati: 47",
+        "Riservate per risultati in attesa: 3",
+        "I token acquistati non scadono. Plus non li consuma.",
+        "Nearr Plus",
+        "Ricerche illimitate",
+        "Ricerche video riuscite illimitate finché Plus è attivo. Nessun token addebitato.",
+        "1,99 USD / mese",
+        "Abbonati a Nearr Plus"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-it-dark-default-scroll1.png",
+      "capturedAt": "2026-10-30T01:24:36.025Z",
+      "sha256": "20dbdd44ab89afad469c6f86d84462d1a7492885c94a79b5987f671c2a7f915f",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Riservate per risultati in attesa: 3",
+        "I token acquistati non scadono. Plus non li consuma.",
+        "Nearr Plus",
+        "Ricerche illimitate",
+        "Ricerche video riuscite illimitate finché Plus è attivo. Nessun token addebitato.",
+        "1,99 USD / mese",
+        "Abbonati a Nearr Plus",
+        "Apple addebita mensilmente e rinnova automaticamente, salvo disdetta nelle impostazioni degli abbonamenti. Nessuna prova gratuita o piano annuale.",
+        "Oppure acquista ricerche quando servono",
+        "Un token paga una ricerca video riuscita. I token acquistati non scadono.",
+        "Base",
+        "20 token",
+        "Acquista 20 token · 1,19 USD",
+        "Esploratore"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-it-dark-default-scroll2.png",
+      "capturedAt": "2026-10-30T01:24:41.182Z",
+      "sha256": "acc5af7c9ebc32b757ec0e65806fd76befb507f9e78a9df2626e0250c1ba7be6",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Oppure acquista ricerche quando servono",
+        "Un token paga una ricerca video riuscita. I token acquistati non scadono.",
+        "Base",
+        "20 token",
+        "Acquista 20 token · 1,19 USD",
+        "Esploratore",
+        "50 token",
+        "Acquista 50 token · 2,49 USD",
+        "Avventuriero",
+        "200 token",
+        "Acquista 200 token · 5,00 USD",
+        "Prima si usa Plus, poi le ricerche gratuite mensili, infine i token acquistati.",
+        "La versione gratuita include 3 ricerche video riuscite per mese solare. (UTC)",
+        "Un video conta una volta, anche se contiene più luoghi. Le ricerche non riuscite non consumano la tua quota."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-it-dark-default-scroll3.png",
+      "capturedAt": "2026-10-30T01:24:46.293Z",
+      "sha256": "4bb1387094593ede739b49ccf279d24df6a3e378f65269d3bb5e0eae9b80f222",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Avventuriero",
+        "200 token",
+        "Acquista 200 token · 5,00 USD",
+        "Prima si usa Plus, poi le ricerche gratuite mensili, infine i token acquistati.",
+        "La versione gratuita include 3 ricerche video riuscite per mese solare. (UTC)",
+        "Un video conta una volta, anche se contiene più luoghi. Le ricerche non riuscite non consumano la tua quota.",
+        "Quick Check riserva una ricerca fino al salvataggio o alla scadenza della prenotazione. Le ricerche gratuite mensili non si accumulano.",
+        "Ripristina acquisti",
+        "Il ripristino ricollega gli acquisti verificati al tuo account. I token spesi non vengono riaccreditati.",
+        "Gestisci abbonamento",
+        "Aggiorna saldo",
+        "Termini di servizio",
+        "Informativa sulla privacy"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-it-dark-default-scroll4.png",
+      "capturedAt": "2026-10-30T01:24:51.874Z",
+      "sha256": "d5ade675122a4981b0fa60720349b34306f1c45288be4719af9b7f58185c1322",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "200 token",
+        "Acquista 200 token · 5,00 USD",
+        "Prima si usa Plus, poi le ricerche gratuite mensili, infine i token acquistati.",
+        "La versione gratuita include 3 ricerche video riuscite per mese solare. (UTC)",
+        "Un video conta una volta, anche se contiene più luoghi. Le ricerche non riuscite non consumano la tua quota.",
+        "Quick Check riserva una ricerca fino al salvataggio o alla scadenza della prenotazione. Le ricerche gratuite mensili non si accumulano.",
+        "Ripristina acquisti",
+        "Il ripristino ricollega gli acquisti verificati al tuo account. I token spesi non vengono riaccreditati.",
+        "Gestisci abbonamento",
+        "Aggiorna saldo",
+        "Termini di servizio",
+        "Informativa sulla privacy"
+      ],
+      "unedited": true
+    }
+  ]
+}

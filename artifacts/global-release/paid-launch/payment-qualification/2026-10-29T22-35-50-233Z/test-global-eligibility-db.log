@@ -1,0 +1,5 @@
+
+> nearr@0.1.0 test:global-eligibility-db
+> ts-node -P scripts/tsconfig.json scripts/testGlobalEligibilityDatabase.ts
+
+PASS 14 PostgreSQL eligibility/security suites including 60 age/region combinations

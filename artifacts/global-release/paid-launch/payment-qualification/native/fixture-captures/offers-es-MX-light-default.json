@@ -1,0 +1,142 @@
+{
+  "state": "offers",
+  "locale": "es-MX",
+  "theme": "light",
+  "synthetic": true,
+  "liveStoreData": false,
+  "purchaseActionsTaken": false,
+  "linkMethod": "Normal tap of local HTML anchor observed in compact-grid screenshot",
+  "sourceSha": "6a2a38d19637d3058d5ab130b18865892641bd3b",
+  "bundleSha256": "b747d84414403caaf8df1b502bcd64d060cfb7f8247e343a52b9130dafc39e34",
+  "apkSha256": "999d2816100b8b7700d1851657c3ec5bd6682bff99637c9bff88661e8ae12470",
+  "display": {
+    "size": "1080x2400",
+    "density": "Physical density: 420",
+    "fontScale": 1
+  },
+  "screenshots": [
+    {
+      "path": "fixture-captures/offers-es-MX-light-default-top.png",
+      "capturedAt": "2026-10-30T00:49:07.173Z",
+      "sha256": "ff5f4fcb6537324da2e508c41e5891a2d608b8d5ad770f27372813f5c31825d1",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "DEVELOPMENT FIXTURE · no live balance or Store price · purchases disabled",
+        "Ahora no",
+        "Tu próximo descubrimiento",
+        "Sigue descubriendo lugares",
+        "Tus lugares guardados siguen siendo tuyos, con o sin suscripción.",
+        "Tus búsquedas",
+        "Búsquedas gratis del mes",
+        "1 de 3 disponibles",
+        "Reservadas para resultados pendientes: 1",
+        "La cuota gratis se renueva el 1 nov 2026 (UTC).",
+        "Tokens comprados: 47",
+        "Reservadas para resultados pendientes: 3",
+        "Los tokens comprados no caducan. Plus no los consume.",
+        "Nearr Plus",
+        "Búsquedas ilimitadas",
+        "Búsquedas exitosas de videos ilimitadas mientras Plus esté activo. Sin consumir tokens.",
+        "USD 1.99 / mes"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-es-MX-light-default-scroll1.png",
+      "capturedAt": "2026-10-30T00:49:12.237Z",
+      "sha256": "0db2a416b3a8f0bb7b95bc6cff89db50833c7f7284b0a71b2c8823dfa7567b35",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "1 de 3 disponibles",
+        "Reservadas para resultados pendientes: 1",
+        "La cuota gratis se renueva el 1 nov 2026 (UTC).",
+        "Tokens comprados: 47",
+        "Reservadas para resultados pendientes: 3",
+        "Los tokens comprados no caducan. Plus no los consume.",
+        "Nearr Plus",
+        "Búsquedas ilimitadas",
+        "Búsquedas exitosas de videos ilimitadas mientras Plus esté activo. Sin consumir tokens.",
+        "USD 1.99 / mes",
+        "Obtener Nearr Plus",
+        "Apple cobra mensualmente y renueva automáticamente, salvo que canceles en los ajustes de suscripciones. Sin prueba gratis ni plan anual.",
+        "O compra búsquedas cuando las necesites",
+        "Un token paga una búsqueda de video exitosa. Los tokens comprados no caducan.",
+        "Inicial",
+        "20 tokens",
+        "Comprar 20 tokens · USD 1.19"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-es-MX-light-default-scroll2.png",
+      "capturedAt": "2026-10-30T00:49:17.959Z",
+      "sha256": "dcb6bfec7d4ec3567b3228b034a8c853de54b0566afad63699bac5baeef5ebd2",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Apple cobra mensualmente y renueva automáticamente, salvo que canceles en los ajustes de suscripciones. Sin prueba gratis ni plan anual.",
+        "O compra búsquedas cuando las necesites",
+        "Un token paga una búsqueda de video exitosa. Los tokens comprados no caducan.",
+        "Inicial",
+        "20 tokens",
+        "Comprar 20 tokens · USD 1.19",
+        "Explorador",
+        "50 tokens",
+        "Comprar 50 tokens · USD 2.49",
+        "Aventurero",
+        "200 tokens",
+        "Comprar 200 tokens · USD 5.00",
+        "Primero se usa Plus, luego las búsquedas gratis del mes y después los tokens comprados."
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-es-MX-light-default-scroll3.png",
+      "capturedAt": "2026-10-30T00:49:22.984Z",
+      "sha256": "f9daad98851b0dad44ef75534db2cd2be14b4c693072b4f468bae310af5711da",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "Explorador",
+        "50 tokens",
+        "Comprar 50 tokens · USD 2.49",
+        "Aventurero",
+        "200 tokens",
+        "Comprar 200 tokens · USD 5.00",
+        "Primero se usa Plus, luego las búsquedas gratis del mes y después los tokens comprados.",
+        "La versión gratuita incluye 3 búsquedas de video exitosas por mes calendario. (UTC)",
+        "Cada video cuenta una vez, aunque tenga varios lugares. Las búsquedas fallidas no consumen tu cupo.",
+        "Quick Check reserva una búsqueda hasta que guardes o venza la reserva. Las búsquedas gratis mensuales no se acumulan.",
+        "Restaurar compras",
+        "Restaurar vuelve a vincular las compras verificadas con tu cuenta. No recupera tokens gastados.",
+        "Administrar suscripción",
+        "Actualizar saldo"
+      ],
+      "unedited": true
+    },
+    {
+      "path": "fixture-captures/offers-es-MX-light-default-scroll4.png",
+      "capturedAt": "2026-10-30T00:49:28.581Z",
+      "sha256": "aea3a11564ee8a8baa95e8b115307e3a904ba84c2624ed945ce15652a41d9c93",
+      "width": 1080,
+      "height": 2400,
+      "visibleText": [
+        "200 tokens",
+        "Comprar 200 tokens · USD 5.00",
+        "Primero se usa Plus, luego las búsquedas gratis del mes y después los tokens comprados.",
+        "La versión gratuita incluye 3 búsquedas de video exitosas por mes calendario. (UTC)",
+        "Cada video cuenta una vez, aunque tenga varios lugares. Las búsquedas fallidas no consumen tu cupo.",
+        "Quick Check reserva una búsqueda hasta que guardes o venza la reserva. Las búsquedas gratis mensuales no se acumulan.",
+        "Restaurar compras",
+        "Restaurar vuelve a vincular las compras verificadas con tu cuenta. No recupera tokens gastados.",
+        "Administrar suscripción",
+        "Actualizar saldo",
+        "Términos de servicio",
+        "Política de privacidad"
+      ],
+      "unedited": true
+    }
+  ]
+}
